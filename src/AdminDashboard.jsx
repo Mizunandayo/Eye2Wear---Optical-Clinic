@@ -30,6 +30,26 @@ import { useImageOptimization } from './utils/imageOptimization';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 
+// Disable Mapbox telemetry globally to prevent ERR_BLOCKED_BY_CLIENT errors
+// Simple approach to prevent analytics requests that get blocked by ad blockers
+if (typeof window !== 'undefined') {
+  // Block fetch requests to analytics endpoints
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    if (typeof url === 'string' && (
+        url.includes('events.mapbox.com') || 
+        url.includes('analytics.mapbox.com') ||
+        url.includes('telemetry') ||
+        url.includes('/events/v2')
+      )) {
+      console.log('🚫 Blocked fetch telemetry request:', url);
+      // Return a resolved promise to prevent errors
+      return Promise.resolve(new Response('{}', { status: 200, statusText: 'OK' }));
+    }
+    return originalFetch.call(this, url, options);
+  };
+}
+
 // Add pulse animation CSS for user location
 const mapStyles = document.createElement('style');
 mapStyles.textContent = `
@@ -1108,6 +1128,7 @@ const [userLocationError, setUserLocationError] = useState(null);
 // Mapbox states
 const mapContainer = useRef(null);
 const map = useRef(null);
+const mapMarkersRef = useRef(new Map()); // Use a ref to persist markers across renders
 const [mapLoaded, setMapLoaded] = useState(false);
 const [mapCenter, setMapCenter] = useState([120.4818, 14.6417]); // Metro Manila center
 const [mapZoom, setMapZoom] = useState(10);
@@ -1597,6 +1618,8 @@ const copyCoordinatesToClipboard = useCallback(async () => {
   }
 }, [realtimeCoordinates]);
 
+
+
 // Handler functions for clinic location dialogs
 const handleSaveClinicLocation = useCallback(async () => {
   if (!clinicFormData?.clinicName || !clinicFormData?.coordinates?.latitude || !clinicFormData?.coordinates?.longitude) {
@@ -1627,13 +1650,8 @@ const handleSaveClinicLocation = useCallback(async () => {
     if (response.ok) {
       const data = await response.json();
       
-      // Add the new clinic to the state
+      // Add the new clinic to the state directly, which will trigger the marker effect
       setClinicLocations(prev => [...prev, data.data]);
-      
-      // Force refresh the clinic locations from the server to ensure consistency
-      setTimeout(() => {
-        fetchClinicLocations();
-      }, 500);
       
       setLocationMessage({ text: 'Clinic location saved successfully', type: 'success' });
       setShowAddClinicDialog(false);
@@ -1657,7 +1675,7 @@ const handleSaveClinicLocation = useCallback(async () => {
   } finally {
     setIsSavingLocation(false);
   }
-}, [apiUrl, currentusertoken, clinicFormData, resetClinicForm, fetchClinicLocations]);
+}, [apiUrl, currentusertoken, clinicFormData, resetClinicForm]);
 
 const handleUpdateClinicLocation = useCallback(async () => {
   if (!selectedClinicLocation || !clinicFormData?.clinicName || !clinicFormData?.coordinates?.latitude || !clinicFormData?.coordinates?.longitude) {
@@ -1688,15 +1706,10 @@ const handleUpdateClinicLocation = useCallback(async () => {
     if (response.ok) {
       const data = await response.json();
       
-      // Update the clinic in the state
+      // Update the clinic in the state directly, which will trigger the marker effect
       setClinicLocations(prev => prev.map(clinic => 
         clinic._id === selectedClinicLocation._id ? data.data : clinic
       ));
-      
-      // Force refresh the clinic locations from the server to ensure consistency
-      setTimeout(() => {
-        fetchClinicLocations();
-      }, 500);
       
       setLocationMessage({ text: 'Clinic location updated successfully', type: 'success' });
       setShowEditClinicDialog(false);
@@ -1721,7 +1734,7 @@ const handleUpdateClinicLocation = useCallback(async () => {
   } finally {
     setIsSavingLocation(false);
   }
-}, [apiUrl, currentusertoken, clinicFormData, selectedClinicLocation, resetClinicForm, fetchClinicLocations]);
+}, [apiUrl, currentusertoken, clinicFormData, selectedClinicLocation, resetClinicForm]);
 
 const handleDeleteClinicLocation = useCallback(async () => {
   if (!selectedClinicLocation) return;
@@ -1737,13 +1750,8 @@ const handleDeleteClinicLocation = useCallback(async () => {
     });
 
     if (response.ok) {
-      // Remove the clinic from the state immediately
+      // Remove the clinic from the state directly, which will trigger the marker effect
       setClinicLocations(prev => prev.filter(clinic => clinic._id !== selectedClinicLocation._id));
-      
-      // Force refresh the clinic locations from the server to ensure consistency
-      setTimeout(() => {
-        fetchClinicLocations();
-      }, 500);
       
       setLocationMessage({ text: 'Clinic location deleted successfully', type: 'success' });
       setShowDeleteClinicDialog(false);
@@ -1785,7 +1793,7 @@ const handleToggleClinicStatus = useCallback(async (clinic) => {
       const data = await response.json();
       console.log('Toggle response:', data);
       
-      // Update the clinic in the state without triggering map re-renders
+      // Update the clinic in the state, which will trigger the marker effect
       setClinicLocations(prev => 
         prev.map(c => c._id === clinic._id ? { ...c, isActive: data.data.isActive } : c)
       );
@@ -1816,52 +1824,72 @@ const handleToggleClinicStatus = useCallback(async (clinic) => {
 
 // Initialize Mapbox map
 useEffect(() => {
-  // Only initialize if we're on the mapping dashboard and haven't initialized yet
-  if (activedashboard !== 'mappingintegration' || !mapContainer.current || map.current) return;
+  // Only initialize if we're on the mapping dashboard
+  if (activedashboard !== 'mappingintegration') {
+    console.log('❌ Not on mapping dashboard, skipping map initialization');
+    return;
+  }
+
+  // Check if container exists and map needs initialization
+  if (!mapContainer.current) {
+    console.log('❌ Map container not found, waiting...');
+    return;
+  }
+
+  // If map already exists and is working properly, don't reinitialize unnecessarily
+  if (map.current && map.current.getContainer() === mapContainer.current && mapLoaded) {
+    console.log('✅ Map already initialized and working properly - KEEPING EXISTING MAP');
+    return;
+  }
+
+  // Clean up existing map if it exists but container is different or map failed to load
+  if (map.current) {
+    console.log('🧹 Cleaning up existing map before reinitializing...');
+    try {
+      map.current.remove();
+    } catch (error) {
+      console.warn('Warning during map cleanup:', error);
+    }
+    map.current = null;
+    setMapLoaded(false);
+  }
+
+  console.log('🚀 Initializing new map instance...');
 
   // Set Mapbox access token
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
-  // Initialize the map
-  map.current = new mapboxgl.Map({
-    container: mapContainer.current,
-    style: 'mapbox://styles/mapbox/streets-v11', // You can change this to satellite-v9 or other styles
-    center: [120.4818, 14.6417], // Static center - Metro Manila center
-    zoom: 10, // Static zoom level
-    projection: 'mercator',
-    // Disable rotation and pitch for smooth 2D experience
-    bearing: 0, // North-up orientation
-    pitch: 0, // Flat 2D view
-    dragRotate: false, // Disable rotation with right-click drag
-    pitchWithRotate: false, // Disable pitch adjustment
-    touchPitch: false, // Disable touch pitch on mobile
-    keyboard: true, // Keep keyboard navigation
-    scrollZoom: true, // Keep scroll zoom
-    boxZoom: true, // Keep box zoom
-    dragPan: true, // Keep pan/drag
-    doubleClickZoom: true, // Keep double-click zoom
-    touchZoomRotate: {
-      around: 'center' // Keep zoom but disable rotate on touch
-    },
-    // Performance optimizations for smooth interactions
-    performanceMetricsCollection: false, // Disable metrics collection
-    preserveDrawingBuffer: false, // Better performance
-    antialias: false, // Disable antialiasing for better performance
-    attributionControl: false, // Remove attribution for better performance
-    logoPosition: 'bottom-right', // Keep logo but optimize position
-    maxZoom: 18, // Limit max zoom for better performance
-    minZoom: 8, // Limit min zoom for Metro Manila area
-    renderWorldCopies: false, // Don't render world copies for better performance
-    optimizeForTerrain: false, // Optimize for 2D performance
-    // Reduce rendering frequency for smoother interactions
-    maxTileCacheSize: 50, // Reduce tile cache size
-    localIdeographFontFamily: false, // Disable local font loading
-    // Enable hardware acceleration
-    failIfMajorPerformanceCaveat: false,
-    // Smooth transitions but optimized
-    fadeDuration: 0, // Disable fade for better performance during interaction
-    crossSourceCollisions: false // Disable collision detection for better performance
-  });
+  try {
+    // Initialize the map with minimal, stable configuration
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [120.4818, 14.6417], // Metro Manila center
+      zoom: 10,
+      // Essential options only to prevent URL parsing errors
+      attributionControl: true,
+      logoPosition: 'bottom-right',
+      // Disable telemetry to prevent network errors
+      collectResourceTiming: false,
+      transformRequest: (url) => {
+        // Block analytics/telemetry requests
+        if (url.includes('events.mapbox.com') || url.includes('analytics') || url.includes('telemetry')) {
+          console.log('🚫 Blocked telemetry request:', url);
+          return { url: '', headers: {} };
+        }
+        return { url, headers: {} };
+      }
+    });
+
+    console.log('✅ Map instance created successfully');
+  } catch (error) {
+    console.error('❌ Failed to create map instance:', error);
+    setLocationMessage({ 
+      text: 'Failed to initialize map. Please refresh the page.', 
+      type: 'error' 
+    });
+    return;
+  }
 
   // Add navigation controls (without rotation controls)
   map.current.addControl(new mapboxgl.NavigationControl({
@@ -1996,60 +2024,6 @@ useEffect(() => {
   map.current.on('load', () => {
     console.log('Map loaded successfully');
     setMapLoaded(true);
-    
-    // Additional performance optimizations after map loads
-    const mapInstance = map.current;
-    
-    // Optimize rendering for smooth interactions
-    mapInstance._logoControl && mapInstance.removeControl(mapInstance._logoControl);
-    
-    // Set canvas context attributes for better performance
-    const canvas = mapInstance.getCanvasContainer().querySelector('canvas');
-    if (canvas) {
-      canvas.style.willChange = 'transform';
-      canvas.style.imageRendering = 'pixelated'; // Faster rendering during movement
-    }
-    
-    // Optimize pan and zoom performance
-    mapInstance.scrollZoom.setWheelZoomRate(1/300); // Smoother scroll zoom
-    mapInstance.dragPan.setDragPan({ inertia: true, deceleration: 3000 }); // Smooth drag with inertia
-    
-    // Performance optimizations for smooth map interactions
-    const optimizeMapPerformance = () => {
-      const mapInstance = map.current;
-      
-      // Throttle move events to reduce CPU usage during pan/zoom
-      let moveTimeout;
-      mapInstance.on('movestart', () => {
-        // Disable marker animations during movement for better performance
-        const markers = document.querySelectorAll('.clinic-marker, .user-location-marker');
-        markers.forEach(marker => {
-          marker.style.transition = 'none';
-        });
-      });
-      
-      mapInstance.on('move', () => {
-        clearTimeout(moveTimeout);
-        moveTimeout = setTimeout(() => {
-          // Re-enable animations after movement stops
-          const markers = document.querySelectorAll('.clinic-marker, .user-location-marker');
-          markers.forEach(marker => {
-            marker.style.transition = 'all 0.2s ease-out';
-          });
-        }, 100);
-      });
-      
-      mapInstance.on('moveend', () => {
-        // Re-enable all animations when movement ends
-        const markers = document.querySelectorAll('.clinic-marker, .user-location-marker');
-        markers.forEach(marker => {
-          marker.style.transition = 'all 0.2s ease-out';
-        });
-      });
-    };
-    
-    // Apply performance optimizations
-    optimizeMapPerformance();
   });
 
   // Clean up on unmount
@@ -2065,7 +2039,19 @@ useEffect(() => {
       setMapLoaded(false);
     }
   };
-}, [activedashboard]); // Only re-initialize when switching to/from mapping dashboard
+}, [activedashboard]); // Only depend on dashboard switch, not refresh trigger
+
+// Simplified map container health check - prevent map destruction
+useEffect(() => {
+  if (activedashboard !== 'mappingintegration' || !map.current) return;
+
+  // Just log that we're monitoring the map health, but don't interfere with it
+  console.log('🔍 Map health check - map is active');
+
+  return () => {
+    // Cleanup timeout if needed
+  };
+}, [activedashboard]); // Removed clinicLocations to prevent unnecessary re-renders
 
 // Separate effect for map click handler to avoid dependency issues
 useEffect(() => {
@@ -2138,71 +2124,60 @@ useEffect(() => {
 // Separate effect for handling clinic markers
 useEffect(() => {
   if (!map.current || !mapLoaded || !clinicLocations) return;
-  
-  console.log('🔄 Clinic markers effect triggered');
-  console.log('📍 Map loaded:', mapLoaded);
-  console.log('🏥 Clinic locations count:', clinicLocations?.length);
-  console.log('📋 Clinic locations data:', clinicLocations);
-  
-  // Clear existing clinic markers
-  const existingMarkers = document.querySelectorAll('.clinic-marker');
-  console.log('🧹 Clearing existing markers:', existingMarkers.length);
-  existingMarkers.forEach(marker => {
-    const parent = marker.parentElement;
-    if (parent) parent.remove();
-  });
-  
-  // Add clinic markers with debugging
-  if (Array.isArray(clinicLocations) && clinicLocations.length > 0) {
-    console.log('➕ Adding clinic markers...');
-    clinicLocations.forEach((clinic, index) => {
-      console.log(`🏥 Processing clinic ${index + 1}/${clinicLocations.length}:`, clinic.clinicName);
-      console.log(`📍 Clinic coordinates:`, clinic.coordinates);
-      
-      // Handle GeoJSON format from database: coordinates.coordinates = [longitude, latitude]
+
+  console.log('🔄 Syncing clinic markers with map...');
+  const markersOnMap = mapMarkersRef.current;
+  const newMarkers = new Map();
+
+  // Add or update markers for current clinic locations
+  if (Array.isArray(clinicLocations)) {
+    clinicLocations.forEach(clinic => {
+      const clinicId = clinic._id;
+      if (!clinicId) {
+        console.warn('Clinic found with no _id:', clinic);
+        return;
+      }
+
       let longitude, latitude;
-      
+
       if (clinic.coordinates?.coordinates && Array.isArray(clinic.coordinates.coordinates)) {
-        // GeoJSON format from database
         longitude = clinic.coordinates.coordinates[0];
         latitude = clinic.coordinates.coordinates[1];
-        console.log(`Using GeoJSON coordinates: [${longitude}, ${latitude}]`);
       } else if (clinic.coordinates?.longitude && clinic.coordinates?.latitude) {
-        // Object format
         longitude = clinic.coordinates.longitude;
         latitude = clinic.coordinates.latitude;
-        console.log(`Using object coordinates: [${longitude}, ${latitude}]`);
       }
-      
-      if (longitude && latitude) {
-        console.log(`Creating marker for ${clinic.clinicName} at [${longitude}, ${latitude}]`);
-        
-        // Create marker element with enhanced styling for different clinic types
+
+      if (!longitude || !latitude) {
+        console.warn(`Clinic ${clinic.clinicName} has invalid coordinates.`);
+        return;
+      }
+
+      // If marker already exists, keep it and move it to the new set
+      if (markersOnMap.has(clinicId)) {
+        const existingMarker = markersOnMap.get(clinicId);
+        // Optional: Update position if it can change, though full re-render on location change is often fine
+        existingMarker.setLngLat([longitude, latitude]);
+        newMarkers.set(clinicId, existingMarker);
+        markersOnMap.delete(clinicId); // Mark as processed
+      } else {
+        // Create a new marker
         const markerEl = document.createElement('div');
         markerEl.className = 'clinic-marker';
         
-        // Determine marker styling based on clinic type
-        let backgroundColor, borderColor, markerText, markerIcon;
+        let backgroundColor, borderColor, markerText;
         if (clinic.clinicType === 'Ambher Optical') {
           backgroundColor = '#3B82F6';
           borderColor = 'white';
           markerText = 'A';
-          markerIcon = '';
         } else if (clinic.clinicType === 'Bautista Eye Center') {
           backgroundColor = '#EF4444';
           borderColor = 'white';
           markerText = 'B';
-          markerIcon = '';
-        } else if (clinic.clinicType === 'External Eye Clinic' || clinic.isExternal) {
-          backgroundColor = '#10B981';
-          borderColor = 'white';
-          markerText = 'E';
-          markerIcon = '👁️';
         } else {
           backgroundColor = '#8B5CF6';
           borderColor = 'white';
           markerText = 'O';
-          markerIcon = '';
         }
         
         markerEl.style.cssText = `
@@ -2218,185 +2193,47 @@ useEffect(() => {
           justify-content: center;
           color: white;
           font-weight: bold;
-          font-size: ${clinic.isExternal ? '16px' : '12px'};
+          font-size: 12px;
           z-index: 1000;
           transition: all 0.2s ease;
         `;
-        markerEl.innerHTML = clinic.isExternal ? markerIcon : markerText;
+        markerEl.innerHTML = markerText;
 
-        // Enhanced popup content with more details
         const popupContent = `
           <div class="p-3 min-w-64">
-            <div class="flex items-start justify-between mb-2">
-              <h3 class="font-bold text-sm text-gray-800 flex-1">${clinic.clinicName}</h3>
-              <span class="ml-2 px-2 py-1 text-xs rounded-full ${
-                clinic.clinicType === 'Ambher Optical' ? 'bg-blue-100 text-blue-800' :
-                clinic.clinicType === 'Bautista Eye Center' ? 'bg-red-100 text-red-800' :
-                clinic.isExternal ? 'bg-green-100 text-green-800' :
-                'bg-purple-100 text-purple-800'
-              }">${clinic.clinicType}</span>
-            </div>
-            
-            <div class="space-y-1 text-xs text-gray-600">
-              <div class="flex items-start">
-                <i class="bx bx-map-pin text-gray-400 mr-1 mt-0.5"></i>
-                <span>${clinic.address?.fullAddress || 'No address available'}</span>
-              </div>
-              
-              <div class="flex items-center">
-                <i class="bx bx-phone text-gray-400 mr-1"></i>
-                <span>${clinic.contactInfo?.phone || 'Contact info not available'}</span>
-              </div>
-              
-              ${clinic.distance ? `
-                <div class="flex items-center">
-                  <i class="bx bx-current-location text-gray-400 mr-1"></i>
-                  <span>${clinic.distance}km from your location</span>
-                </div>
-              ` : ''}
-              
-              ${clinic.services && clinic.services.length > 0 ? `
-                <div class="mt-2">
-                  <div class="text-xs font-medium text-gray-700 mb-1">Services:</div>
-                  <div class="flex flex-wrap gap-1">
-                    ${clinic.services.slice(0, 3).map(service => 
-                      `<span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">${service}</span>`
-                    ).join('')}
-                    ${clinic.services.length > 3 ? `<span class="text-xs text-gray-500">+${clinic.services.length - 3} more</span>` : ''}
-                  </div>
-                </div>
-              ` : ''}
-              
-              ${clinic.isExternal ? `
-                <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                  <div class="flex items-center text-xs text-yellow-800">
-                    <i class="bx bx-info-circle mr-1"></i>
-                    External clinic - verify details before visiting
-                  </div>
-                  ${clinic.verified === false ? `
-                    <button onclick="addToDatabase('${clinic.id}')" class="mt-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600">
-                      Add to Database
-                    </button>
-                  ` : ''}
-                </div>
-              ` : ''}
-            </div>
+            <h3 class="font-bold text-sm text-gray-800">${clinic.clinicName}</h3>
+            <p class="text-xs text-gray-600 mb-2">${clinic.address?.fullAddress || 'No address available'}</p>
+            <a href="https://www.google.com/maps?q=&layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors">
+              <i class="bx bx-street-view"></i>
+              Street View
+            </a>
           </div>
         `;
 
-        // Create popup
-        const popup = new mapboxgl.Popup({ 
-          offset: 25,
-          closeButton: true,
-          closeOnClick: false
-        }).setHTML(popupContent);
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
 
-        // Add marker to map
-        const marker = new mapboxgl.Marker(markerEl)
+        const newMarker = new mapboxgl.Marker(markerEl)
           .setLngLat([longitude, latitude])
           .setPopup(popup)
           .addTo(map.current);
           
-        console.log(`Marker created and added for ${clinic.clinicName}`);
-      } else {
-        console.warn(`Clinic ${clinic.clinicName} has invalid coordinates:`, clinic.coordinates);
-      }
-    });
-    
-    setLocationMessage({ 
-      text: `${clinicLocations.length} clinic locations loaded on map`, 
-      type: 'success' 
-    });
-  } else {
-    console.warn('No clinic locations found or not an array:', clinicLocations);
-    setLocationMessage({ 
-      text: 'No clinic locations available to display', 
-      type: 'warning' 
-    });
-  }
-
-  // Add nearby clinic markers if they exist
-  if (Array.isArray(nearbyEyeClinics) && nearbyEyeClinics.length > 0) {
-    nearbyEyeClinics.forEach((clinic) => {
-      if (clinic.coordinates?.longitude && clinic.coordinates?.latitude) {
-        console.log(`Creating nearby clinic marker for ${clinic.name}`);
-        
-        // Create marker for nearby clinic with special styling
-        const nearbyMarkerEl = document.createElement('div');
-        nearbyMarkerEl.className = 'clinic-marker nearby-clinic-marker';
-        nearbyMarkerEl.style.cssText = `
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background-color: #10B981;
-          border: 2px solid #FBBF24;
-          box-shadow: 0 2px 8px rgba(16,185,129,0.4);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 16px;
-          z-index: 1000;
-          animation: pulse 2s infinite;
-        `;
-        nearbyMarkerEl.innerHTML = '👁️';
-
-        // Create popup for nearby clinic
-        const nearbyPopup = new mapboxgl.Popup({ 
-          offset: 25,
-          closeButton: true,
-          closeOnClick: false
-        }).setHTML(`
-          <div class="p-3 min-w-64">
-            <div class="flex items-start justify-between mb-2">
-              <h3 class="font-bold text-sm text-gray-800 flex-1">${clinic.name}</h3>
-              <span class="ml-2 px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                Nearby
-              </span>
-            </div>
-            
-            <div class="space-y-1 text-xs text-gray-600">
-              <div class="flex items-start">
-                <i class="bx bx-map-pin text-gray-400 mr-1 mt-0.5"></i>
-                <span>${clinic.address?.fullAddress || 'Address not available'}</span>
-              </div>
-              
-              <div class="flex items-center">
-                <i class="bx bx-current-location text-gray-400 mr-1"></i>
-                <span>${clinic.distance}km from your location</span>
-              </div>
-              
-              <div class="flex items-center">
-                <i class="bx bx-search-alt text-gray-400 mr-1"></i>
-                <span>Found via: ${clinic.searchTerm}</span>
-              </div>
-              
-              <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                <div class="flex items-center text-xs text-green-800 mb-2">
-                  <i class="bx bx-info-circle mr-1"></i>
-                  External clinic found nearby
-                </div>
-                <button 
-                  onclick="window.addNearbyClinicToDatabase('${clinic.id}')" 
-                  class="w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600">
-                  Add to Database
-                </button>
-              </div>
-            </div>
-          </div>
-        `);
-
-        // Add nearby clinic marker to map
-        new mapboxgl.Marker(nearbyMarkerEl)
-          .setLngLat([clinic.coordinates.longitude, clinic.coordinates.latitude])
-          .setPopup(nearbyPopup)
-          .addTo(map.current);
+        newMarkers.set(clinicId, newMarker);
       }
     });
   }
-}, [mapLoaded, clinicLocations, nearbyEyeClinics]);
+
+  // Remove markers that are no longer in clinicLocations
+  markersOnMap.forEach((marker, clinicId) => {
+    console.log(`Removing stale marker for clinic ID: ${clinicId}`);
+    marker.remove();
+  });
+
+  // Update the ref with the new set of markers
+  mapMarkersRef.current = newMarkers;
+
+  console.log(`✅ Map synced. Total markers: ${mapMarkersRef.current.size}`);
+
+}, [mapLoaded, clinicLocations]);
 
 // Global function for adding nearby clinic from popup
 useEffect(() => {
