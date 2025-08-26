@@ -105,6 +105,72 @@ mapStyles.textContent = `
     background-color: rgba(0,0,0,0.05);
   }
   
+  /* Enhanced fullscreen control styling */
+  .mapboxgl-ctrl-fullscreen {
+    position: relative;
+  }
+  
+  .mapboxgl-ctrl-fullscreen button {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .mapboxgl-ctrl-fullscreen button:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+  }
+  
+  .mapboxgl-ctrl-fullscreen button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  /* Fullscreen mode optimizations */
+  .mapboxgl-map:-webkit-full-screen {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .mapboxgl-map:-moz-full-screen {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .mapboxgl-map:fullscreen {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Enhanced map controls positioning in fullscreen */
+  .mapboxgl-map:fullscreen .mapboxgl-ctrl-top-right {
+    top: 20px;
+    right: 20px;
+  }
+  
+  .mapboxgl-map:fullscreen .mapboxgl-ctrl-top-left {
+    top: 20px;
+    left: 20px;
+  }
+  
+  .mapboxgl-map:fullscreen .mapboxgl-ctrl-bottom-right {
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .mapboxgl-map:fullscreen .mapboxgl-ctrl-bottom-left {
+    bottom: 20px;
+    left: 20px;
+  }
+  
   /* Optimize during map interactions */
   .mapboxgl-map.mapboxgl-interactive {
     cursor: grab;
@@ -1144,7 +1210,7 @@ const fetchClinicLocations = useCallback(async () => {
 }, [apiUrl, currentusertoken]);
 
 
-// Get user's current location with ultra-high accuracy - Enhanced for automatic high precision
+// Get user's current location with highest accuracy possible (Google-like approach)
 const getUserLocation = useCallback(() => {
   if (!navigator.geolocation) {
     setUserLocationError('Geolocation is not supported by this browser');
@@ -1158,164 +1224,100 @@ const getUserLocation = useCallback(() => {
   setLoadingUserLocation(true);
   setUserLocationError(null);
   setLocationMessage({ 
-    text: 'Auto-detecting your precise location for best clinic recommendations...', 
+    text: 'Getting your precise location...', 
     type: 'info' 
   });
 
-  // Ultra-high accuracy options for maximum precision - Enhanced for automatic use
-  const highAccuracyOptions = {
+  // Ultra-high accuracy options for maximum precision (Google-like)
+  const maxAccuracyOptions = {
     enableHighAccuracy: true, // Force GPS usage
-    timeout: 60000, // Extended timeout for automatic high precision
+    timeout: 30000, // 30 second timeout for GPS lock
     maximumAge: 0 // No cached data - force fresh reading
   };
 
-  // Enhanced medium accuracy options with longer timeouts
-  const mediumAccuracyOptions = {
-    enableHighAccuracy: true,
-    timeout: 30000, // Extended timeout for better accuracy
-    maximumAge: 2000 // Very short cache for fresher data
-  };
+  console.log('🎯 Getting highest accuracy location (Google-like approach)...');
 
-  // Improved fallback options with network-based location
-  const fallbackOptions = {
-    enableHighAccuracy: false,
-    timeout: 20000, // Longer timeout for network location
-    maximumAge: 10000 // Shorter cache for automatic detection
-  };
-
-  let bestPosition = null;
-  let attemptCount = 0;
-  const maxAttempts = 4; // Increased attempts for automatic high precision
-  let isCompleted = false; // Flag to prevent multiple completions
-
-  const completeLocationUpdate = (position, accuracyType) => {
-    if (isCompleted) return; // Prevent multiple completions
-    isCompleted = true;
-    
-    const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = position.coords;
-    
-    console.log('🎯 High precision location obtained:', {
-      accuracy: Math.round(accuracy) + 'm',
-      coordinates: [longitude, latitude],
-      type: accuracyType
-    });
-    
-    setUserLocation({
-      latitude,
-      longitude,
-      accuracy,
-      altitude,
-      altitudeAccuracy,
-      heading,
-      speed,
-      timestamp: position.timestamp
-    });
-    
-    setLoadingUserLocation(false);
-    
-    // Enhanced success message based on accuracy achieved
-    let message = '';
-    let messageType = 'success';
-    
-    if (accuracy <= 5) {
-      message = `🎯 Ultra-precision location detected (±${Math.round(accuracy)}m) - Perfect for clinic discovery!`;
-    } else if (accuracy <= 10) {
-      message = `🎯 High-precision location detected (±${Math.round(accuracy)}m) - Excellent accuracy!`;
-    } else if (accuracy <= 20) {
-      message = `📍 Precise location detected (±${Math.round(accuracy)}m) - Very good accuracy!`;
-    } else if (accuracy <= 50) {
-      message = `📍 Good location detected (±${Math.round(accuracy)}m) - Suitable for clinic finding!`;
-    } else {
-      message = `📍 Location detected (±${Math.round(accuracy)}m) - Basic accuracy achieved`;
-      messageType = 'warning';
-    }
-    
-    setLocationMessage({ text: message, type: messageType });
-
-    // Update map with enhanced zoom levels based on accuracy - Auto-zoom to user location
-    if (map.current) {
-      const zoomLevel = accuracy <= 5 ? 20 :     // Ultra-precision - street detail
-                       accuracy <= 10 ? 19 :    // High precision - building level
-                       accuracy <= 15 ? 18 :    // Excellent - detailed street
-                       accuracy <= 25 ? 17 :    // Very good - street view
-                       accuracy <= 40 ? 16 :    // Good - neighborhood
-                       accuracy <= 75 ? 15 :    // Fair - district view
-                       accuracy <= 150 ? 14 :   // Poor - city area
-                       13;                       // Very poor - wide area
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = position.coords;
       
-      console.log(`🗺️ Auto-zooming map to zoom level ${zoomLevel} based on ${Math.round(accuracy)}m accuracy`);
-      
-      map.current.flyTo({
-        center: [longitude, latitude],
-        zoom: zoomLevel,
-        duration: 2500, // Longer animation for better UX
-        essential: true,
-        easing: (t) => t * (2 - t) // Smooth easing function
+      console.log('📍 Location obtained:', {
+        accuracy: Math.round(accuracy) + 'm',
+        coordinates: [longitude, latitude]
       });
       
-      // Enhanced accuracy circle visualization
-      if (map.current.getSource('user-accuracy-circle')) {
-        map.current.removeSource('user-accuracy-circle');
-        map.current.removeLayer('user-accuracy-circle');
-      }
+      setUserLocation({
+        latitude,
+        longitude,
+        accuracy,
+        altitude,
+        altitudeAccuracy,
+        heading,
+        speed,
+        timestamp: position.timestamp
+      });
       
-      // Create enhanced accuracy circle with better visual feedback
-      const accuracyCircle = {
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [longitude, latitude]
-        },
-        properties: {
-          accuracy: accuracy,
-          type: accuracyType
+      setLoadingUserLocation(false);
+
+
+      // Auto-zoom to user location based on accuracy
+      if (map.current) {
+        const zoomLevel = accuracy <= 10 ? 18 :     // High precision - building level
+                         accuracy <= 25 ? 16 :     // Good precision - neighborhood
+                         accuracy <= 50 ? 15 :     // Fair precision - district
+                         accuracy <= 100 ? 14 :    // Basic precision - city area
+                         13;                        // Poor precision - wide area
+        
+        console.log(`🗺️ Zooming to user location (zoom: ${zoomLevel}, accuracy: ${Math.round(accuracy)}m)`);
+        
+        map.current.flyTo({
+          center: [longitude, latitude],
+          zoom: zoomLevel,
+          duration: 2000,
+          essential: true
+        });
+        
+        // Add accuracy circle visualization
+        if (map.current.getSource('user-accuracy-circle')) {
+          map.current.removeSource('user-accuracy-circle');
+          map.current.removeLayer('user-accuracy-circle');
         }
-      };
-      
-      map.current.addSource('user-accuracy-circle', {
-        type: 'geojson',
-        data: accuracyCircle
-      });
-      
-      map.current.addLayer({
-        id: 'user-accuracy-circle',
-        type: 'circle',
-        source: 'user-accuracy-circle',
-        paint: {
-          'circle-radius': accuracy <= 5 ? 6 : 
-                          accuracy <= 10 ? 8 : 
-                          accuracy <= 20 ? 12 : 
-                          accuracy <= 50 ? 16 : 20,
-          'circle-color': accuracy <= 5 ? '#059669' :   // Emerald (ultra-precision)
-                         accuracy <= 10 ? '#10b981' :  // Green (high precision)
-                         accuracy <= 20 ? '#3b82f6' :  // Blue (good precision)
-                         accuracy <= 50 ? '#f59e0b' :  // Amber (fair precision)
-                         '#ef4444',                     // Red (poor precision)
-          'circle-opacity': 0.7,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-opacity': 0.9
-        }
-      });
-    }
-  };
-
-  const handleLocationError = (error, isLastAttempt = false) => {
-    console.error(`Location attempt ${attemptCount} failed:`, error);
-    
-    if (!isLastAttempt && attemptCount < maxAttempts) {
-      // Try next accuracy level
-      if (attemptCount === 1) {
-        tryGetLocation(mediumAccuracyOptions, 'medium');
-      } else {
-        tryGetLocation(fallbackOptions, 'fallback');
+        
+        const accuracyCircle = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          },
+          properties: {
+            accuracy: accuracy
+          }
+        };
+        
+        map.current.addSource('user-accuracy-circle', {
+          type: 'geojson',
+          data: accuracyCircle
+        });
+        
+        map.current.addLayer({
+          id: 'user-accuracy-circle',
+          type: 'circle',
+          source: 'user-accuracy-circle',
+          paint: {
+            'circle-radius': Math.max(8, Math.min(accuracy / 2, 25)),
+            'circle-color': accuracy <= 10 ? '#10b981' :  // Green (high precision)
+                           accuracy <= 50 ? '#3b82f6' :  // Blue (good precision)
+                           '#f59e0b',                     // Amber (fair precision)
+            'circle-opacity': 0.6,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-opacity': 0.8
+          }
+        });
       }
-      return;
-    }
-
-    // Final error handling - ensure loading is stopped
-    if (!isCompleted) {
-      isCompleted = true;
+    },
+    (error) => {
+      console.error('❌ Location error:', error);
       setLoadingUserLocation(false);
       
       let errorMessage = 'Unable to retrieve your location';
@@ -1324,243 +1326,26 @@ const getUserLocation = useCallback(() => {
       switch (error.code) {
         case error.PERMISSION_DENIED:
           errorMessage = 'Location access denied. Please enable location permissions.';
-          retryMessage = 'Go to browser settings > Privacy & Security > Location > Allow this site to access your location. For best accuracy, also enable "High accuracy" location mode in your device settings.';
+          retryMessage = 'Click the location icon in your browser\'s address bar and allow location access.';
           break;
         case error.POSITION_UNAVAILABLE:
           errorMessage = 'Location information is unavailable.';
-          retryMessage = 'Make sure GPS is enabled on your device and you have a stable internet connection. Try moving to an open area for better GPS reception.';
+          retryMessage = 'Make sure GPS is enabled and you have an internet connection.';
           break;
         case error.TIMEOUT:
           errorMessage = 'Location request timed out.';
-          retryMessage = 'GPS signal may be weak. Try moving near a window or outdoors for better GPS reception, then try again.';
+          retryMessage = 'Try moving to an area with better GPS signal and try again.';
           break;
       }
       
       setUserLocationError(`${errorMessage} ${retryMessage}`);
       setLocationMessage({ 
-        text: `${errorMessage} Try enabling high-accuracy GPS in your device settings.`, 
+        text: `${errorMessage} ${retryMessage}`, 
         type: 'error' 
       });
-    }
-  };
-
-  const tryGetLocation = (options, attemptType = 'high') => {
-    if (isCompleted) return; // Don't start new attempts if already completed
-    
-    attemptCount++;
-    
-    console.log(`🎯 Location attempt ${attemptCount}/${maxAttempts}: Seeking ${attemptType} precision...`);
-    
-    setLocationMessage({ 
-      text: `🎯 Attempt ${attemptCount}/${maxAttempts}: Auto-detecting ${attemptType} precision location...`, 
-      type: 'info' 
-    });
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (isCompleted) return; // Don't process if already completed
-        
-        const { latitude, longitude, accuracy } = position.coords;
-        
-        console.log(`📍 Location attempt ${attemptCount} (${attemptType}) result:`, {
-          accuracy: Math.round(accuracy) + 'm',
-          coordinates: [longitude, latitude],
-          quality: accuracy <= 5 ? 'Ultra-precision' : 
-                  accuracy <= 10 ? 'High-precision' : 
-                  accuracy <= 20 ? 'Good precision' : 
-                  accuracy <= 50 ? 'Fair precision' : 'Low precision'
-        });
-
-        // Update best position if this is more accurate
-        if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
-          bestPosition = position;
-          console.log(`✅ New best position found: ${Math.round(accuracy)}m accuracy`);
-        }
-
-        // Enhanced thresholds for automatic high precision detection
-        
-        // If we get ultra-precision (≤ 5m), use it immediately - Perfect for clinic discovery
-        if (accuracy <= 5) {
-          console.log('🎯 Ultra-precision achieved! Using immediately.');
-          completeLocationUpdate(position, 'Ultra-Precision GPS');
-          return;
-        }
-
-        // If we get high precision (≤ 10m), use it immediately - Excellent for mapping
-        if (accuracy <= 10) {
-          console.log('🎯 High precision achieved! Using immediately.');
-          completeLocationUpdate(position, 'High-Precision GPS');
-          return;
-        }
-
-        // If we get very good precision (≤ 15m), use it on first attempt or immediately on later attempts
-        if (accuracy <= 15) {
-          console.log('📍 Very good precision achieved!');
-          completeLocationUpdate(position, 'Very Good Precision');
-          return;
-        }
-
-        // If we get good precision (≤ 25m), use it after second attempt
-        if (accuracy <= 25 && attemptCount >= 2) {
-          console.log('📍 Good precision achieved after multiple attempts.');
-          completeLocationUpdate(position, 'Good Precision');
-          return;
-        }
-
-        // If accuracy needs improvement, try continuous GPS tracking for ultra-high precision
-        if (accuracy > 15 && attemptCount <= 2) {
-          console.log(`🔄 Accuracy needs improvement (${Math.round(accuracy)}m). Starting continuous GPS tracking...`);
-          
-          setLocationMessage({ 
-            text: `🔄 Enhancing precision (current: ${Math.round(accuracy)}m). Continuous GPS tracking active...`, 
-            type: 'warning' 
-          });
-          
-          let watchAttempts = 0;
-          const maxWatchAttempts = 12; // More attempts for automatic high precision
-          let bestWatchPosition = position;
-          
-          const watchId = navigator.geolocation.watchPosition(
-            (watchPosition) => {
-              if (isCompleted) {
-                navigator.geolocation.clearWatch(watchId);
-                return;
-              }
-              
-              watchAttempts++;
-              const watchAccuracy = watchPosition.coords.accuracy;
-              const improvement = bestWatchPosition ? Math.round(bestWatchPosition.coords.accuracy - watchAccuracy) : 0;
-              
-              console.log(`🔄 Continuous GPS update ${watchAttempts}/${maxWatchAttempts}:`, {
-                accuracy: Math.round(watchAccuracy) + 'm',
-                improvement: improvement > 0 ? `+${improvement}m better` : improvement < 0 ? `${Math.abs(improvement)}m worse` : 'no change',
-                quality: watchAccuracy <= 5 ? 'Ultra-precision' : 
-                        watchAccuracy <= 10 ? 'High-precision' : 
-                        watchAccuracy <= 20 ? 'Good precision' : 'Fair precision'
-              });
-
-              // Update best position from watching
-              if (watchAccuracy < bestWatchPosition.coords.accuracy) {
-                bestWatchPosition = watchPosition;
-                console.log(`✅ GPS tracking improved accuracy to ${Math.round(watchAccuracy)}m`);
-                
-                // Update UI with improving accuracy
-                setLocationMessage({ 
-                  text: `🎯 GPS tracking improving: ${Math.round(watchAccuracy)}m accuracy (${watchAttempts}/${maxWatchAttempts})`, 
-                  type: 'info' 
-                });
-              }
-              
-              // Ultra-precision achieved from continuous tracking - use immediately
-              if (watchAccuracy <= 5) {
-                console.log('🎯 Ultra-precision achieved via continuous GPS tracking!');
-                navigator.geolocation.clearWatch(watchId);
-                completeLocationUpdate(watchPosition, 'Ultra-Precision Tracking');
-                return;
-              }
-              
-              // High precision achieved from continuous tracking - use immediately
-              if (watchAccuracy <= 10) {
-                console.log('🎯 High precision achieved via continuous GPS tracking!');
-                navigator.geolocation.clearWatch(watchId);
-                completeLocationUpdate(watchPosition, 'High-Precision Tracking');
-                return;
-              }
-              
-              // Very good precision from tracking - use after some attempts
-              if (watchAccuracy <= 15 && watchAttempts >= 3) {
-                console.log('📍 Very good precision achieved via GPS tracking!');
-                navigator.geolocation.clearWatch(watchId);
-                completeLocationUpdate(watchPosition, 'Enhanced GPS Tracking');
-                return;
-              }
-              
-              // Good precision from tracking - use after more attempts
-              if (watchAccuracy <= 20 && watchAttempts >= 6) {
-                console.log('📍 Good precision achieved via extended GPS tracking!');
-                navigator.geolocation.clearWatch(watchId);
-                completeLocationUpdate(watchPosition, 'Extended GPS Tracking');
-                return;
-              }
-              
-              // Stop watching after max attempts and use best position
-              if (watchAttempts >= maxWatchAttempts) {
-                console.log(`⏰ Max GPS tracking attempts reached. Best accuracy: ${Math.round(bestWatchPosition.coords.accuracy)}m`);
-                navigator.geolocation.clearWatch(watchId);
-                
-                if (bestWatchPosition.coords.accuracy <= 50) {
-                  completeLocationUpdate(bestWatchPosition, 'Best GPS Available');
-                } else {
-                  console.log('🔄 GPS tracking insufficient. Trying medium accuracy...');
-                  tryGetLocation(mediumAccuracyOptions, 'medium');
-                }
-              }
-            },
-            (watchError) => {
-              navigator.geolocation.clearWatch(watchId);
-              console.error('❌ GPS tracking error:', watchError);
-              if (!isCompleted) {
-                console.log('🔄 GPS tracking failed. Trying medium accuracy...');
-                tryGetLocation(mediumAccuracyOptions, 'medium');
-              }
-            },
-            { ...highAccuracyOptions, timeout: 30000 } // Extended timeout for watch
-          );
-
-          // Extended watch duration for automatic high precision
-          setTimeout(() => {
-            if (!isCompleted) {
-              console.log(`⏰ GPS tracking timeout after 35 seconds. Best accuracy: ${Math.round(bestWatchPosition.coords.accuracy)}m`);
-              navigator.geolocation.clearWatch(watchId);
-              
-              if (bestWatchPosition.coords.accuracy <= 40) {
-                completeLocationUpdate(bestWatchPosition, 'Enhanced Auto-GPS');
-              } else {
-                console.log('🔄 Extended GPS tracking insufficient. Trying medium accuracy...');
-                tryGetLocation(mediumAccuracyOptions, 'medium');
-              }
-            }
-          }, 35000); // Longer timeout for automatic precision
-        } else {
-          // Try next accuracy level if attempts remaining
-          if (attemptCount === 2) {
-            console.log('🔄 Trying medium accuracy mode...');
-            tryGetLocation(mediumAccuracyOptions, 'medium');
-          } else if (attemptCount === 3) {
-            console.log('🔄 Trying fallback accuracy mode...');
-            tryGetLocation(fallbackOptions, 'fallback');
-          }
-        }
-        
-        // Final attempt - use best position we have
-        if (attemptCount >= maxAttempts) {
-          console.log(`🏁 Final attempt reached. Using best available position.`);
-          if (bestPosition) {
-            const bestAccuracy = bestPosition.coords.accuracy;
-            const accuracyType = bestAccuracy <= 5 ? 'Ultra-precision (final)' :
-                                bestAccuracy <= 10 ? 'High-precision (final)' :
-                                bestAccuracy <= 25 ? 'Good precision (final)' :
-                                bestAccuracy <= 50 ? 'Fair precision (final)' :
-                                bestAccuracy <= 100 ? 'Basic precision (final)' : 'Limited precision';
-            console.log(`🎯 Using best position: ${Math.round(bestAccuracy)}m accuracy`);
-            completeLocationUpdate(bestPosition, accuracyType);
-          } else {
-            console.log('❌ No position obtained after all attempts');
-            handleLocationError(new Error('No position obtained after all attempts'), true);
-          }
-        }
-      },
-      (error) => {
-        console.error(`❌ Location attempt ${attemptCount} failed:`, error);
-        handleLocationError(error, attemptCount >= maxAttempts);
-      },
-      options
-    );
-  };
-
-  // Start with ultra-high accuracy attempt for automatic precision
-  console.log('🚀 Starting automatic high-precision location detection...');
-  tryGetLocation(highAccuracyOptions, 'high');
+    },
+    maxAccuracyOptions
+  );
 }, []);
 
 // Handle map click to add new clinic
@@ -2155,6 +1940,58 @@ useEffect(() => {
   
   map.current.addControl(geolocate);
 
+  // Add fullscreen control for better user experience
+  const fullscreenControl = new mapboxgl.FullscreenControl({
+    container: mapContainer.current // Fullscreen just the map container
+  });
+  
+  map.current.addControl(fullscreenControl, 'top-right');
+
+  // Add fullscreen event listeners for better UX
+  const handleFullscreenChange = () => {
+    const isFullscreen = document.fullscreenElement || 
+                        document.webkitFullscreenElement || 
+                        document.mozFullScreenElement;
+    
+    if (isFullscreen) {
+      console.log('🔍 Map entered fullscreen mode');
+      setLocationMessage({ 
+        text: '🔍 Map in fullscreen mode - Press ESC to exit', 
+        type: 'info' 
+      });
+      
+      // Resize map to fit fullscreen
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 100);
+    } else {
+      console.log('🔍 Map exited fullscreen mode');
+      setLocationMessage({ 
+        text: '🔍 Fullscreen mode disabled', 
+        type: 'info' 
+      });
+      
+      // Resize map back to container
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 100);
+    }
+    
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setLocationMessage({ text: '', type: '' });
+    }, 3000);
+  };
+
+  // Add fullscreen event listeners
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+
   // Handle map load
   map.current.on('load', () => {
     console.log('Map loaded successfully');
@@ -2217,6 +2054,11 @@ useEffect(() => {
 
   // Clean up on unmount
   return () => {
+    // Remove fullscreen event listeners
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+    
     if (map.current) {
       map.current.remove();
       map.current = null;
@@ -3540,7 +3382,7 @@ useEffect(() => {
                   </div>
 
                   {/* Clinic Locations Container - 30% width */}
-                  <div id="cliniclocationscontainer" className="bg-white shadow-lg rounded-2xl flex flex-col w-[30%] min-h-[580px] overflow-y-auto">
+                  <div id="cliniclocationscontainer" className="bg-white shadow-lg rounded-2xl flex flex-col w-[30%] h-[580px] overflow-y-auto">
                     {/* Header */}
                     <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                       <h3 className="font-bold text-gray-800 mb-1 flex items-center">
@@ -3551,7 +3393,7 @@ useEffect(() => {
                     </div>
                     
                     {/* Clinic List */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div className="flex-1   overflow-y-auto p-4 space-y-3">
                       {loadingClinicLocations ? (
                         <div className="text-center text-gray-500 py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
