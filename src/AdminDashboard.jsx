@@ -2556,21 +2556,21 @@ useEffect(() => {
     </div>
 
     <div class="flex flex-wrap gap-2 mb-4">
-      <button 
+      <div
         onclick="showDirectionsToClinic('${clinic._id}')"
         class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
       >
         <i class="bx bx-directions"></i>
         Get Directions
-      </button>
+      </bdiv>
       
-      <button 
+      <div 
         onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')"
         class="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
       >
         <i class="bx bx-street-view"></i>
         Street View
-      </button>
+      </div>
     </div>
 
     <div class="text-xs text-gray-500">
@@ -3461,10 +3461,10 @@ useEffect(() => {
                   
                   {/* Action Buttons */}
                   <div className="flex gap-3">
-                    <button
+                    <div
                       onClick={getUserLocation}
                       disabled={loadingUserLocation}
-                      className={`px-4 py-2 text-white rounded-lg transition-colors font-medium flex items-center gap-2 ${
+                      className={`rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out  px-4 py-2 text-white  font-medium flex items-center gap-2 ${
                         userLocation 
                           ? userLocation.accuracy <= 20 
                             ? 'bg-green-500 hover:bg-green-600' 
@@ -3477,7 +3477,7 @@ useEffect(() => {
                       } disabled:opacity-50`}
                     >
                       <i className={`bx ${loadingUserLocation ? 'bx-loader-alt bx-spin' : 'bx-current-location'}`}></i>
-                      <div className="flex flex-col items-start">
+                      <div className=" select-none   rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out flex flex-col items-start">
                         <span className="text-sm">
                           {loadingUserLocation ? 'Finding Location...' : userLocation ? 'Update Location' : 'Get My Location'}
                         </span>
@@ -3490,22 +3490,22 @@ useEffect(() => {
                           </span>
                         )}
                       </div>
-                    </button>
+                    </div>
                     
-                    <button
+                    <div
                       onClick={() => {
                         resetClinicForm();
                         setShowAddClinicDialog(true);
                       }}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                      className="select-none flex items-center rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out  px-4 py-2 bg-green-500 text-white  hover:bg-green-600 font-medium"
                     >
                       <i className="bx bx-plus mr-2"></i>
                       Add Clinic
-                    </button>
+                    </div>
                     
-                    <button
+                    <div
                       onClick={() => setIsEditingLocation(!isEditingLocation)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`flex items-center select-none rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out px-4 py-2  font-medium  ${
                         isEditingLocation 
                           ? 'bg-orange-500 text-white hover:bg-orange-600' 
                           : 'bg-blue-500 text-white hover:bg-blue-600'
@@ -3513,29 +3513,11 @@ useEffect(() => {
                     >
                       <i className={`bx ${isEditingLocation ? 'bx-x' : 'bx-edit'} mr-2`}></i>
                       {isEditingLocation ? 'Cancel Edit' : 'Edit Mode'}
-                    </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Status Messages */}
-                {locationMessage.text && (
-                  <div className={`transition-all duration-300 ease-in-out mb-4 p-3 rounded-lg ${
-                    locationMessage.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' :
-                    locationMessage.type === 'error' ? 'bg-red-100 border border-red-300 text-red-800' :
-                    locationMessage.type === 'warning' ? 'bg-yellow-100 border border-yellow-300 text-yellow-800' :
-                    'bg-blue-100 border border-blue-300 text-blue-800'
-                  }`}>
-                    <div className="transition-all duration-300 ease-in-out flex items-center">
-                      <i className={`bx ${
-                        locationMessage.type === 'success' ? 'bx-check-circle' :
-                        locationMessage.type === 'error' ? 'bx-error-circle' :
-                        locationMessage.type === 'warning' ? 'bx-error' :
-                        'bx-info-circle'
-                      } mr-2`}></i>
-                      {locationMessage.text}
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Loading States */}
                 {loadingClinicLocations && (
@@ -3807,7 +3789,7 @@ useEffect(() => {
                             </div>
                             
                             <div className="flex gap-1 mt-3">
-                              <button
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedClinicLocation(clinic);
@@ -3826,8 +3808,8 @@ useEffect(() => {
                               >
                                 <i className="bx bx-edit"></i>
                                 Edit
-                              </button>
-                              <button
+                              </div>
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleToggleClinicStatus(clinic);
@@ -3841,8 +3823,8 @@ useEffect(() => {
                               >
                                 <i className={`bx ${clinic.isActive ? 'bx-pause' : 'bx-play'}`}></i>
                                 {clinic.isActive ? 'Deactivate' : 'Activate'}
-                              </button>
-                              <button
+                              </div>
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedClinicLocation(clinic);
@@ -3852,7 +3834,7 @@ useEffect(() => {
                               >
                                 <i className="bx bx-trash"></i>
                                 Delete
-                              </button>
+                              </div>
                             </div>
                           </div>
                         ))
