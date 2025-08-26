@@ -310,6 +310,24 @@ mapStyles.textContent = `
     display: none !important; /* Hide the default control */
   }
 
+  /* Make waypoints non-draggable and non-interactive */
+  .mapbox-directions-waypoint {
+    pointer-events: none !important;
+    cursor: default !important;
+  }
+
+  .mapbox-directions-waypoint-0,
+  .mapbox-directions-waypoint-1 {
+    pointer-events: none !important;
+    cursor: default !important;
+  }
+
+  /* Disable interaction with route line */
+  .mapbox-directions-route-line,
+  .mapbox-directions-route-line-alt {
+    pointer-events: none !important;
+  }
+
   /* Route line styling */
   .mapbox-directions-route-line {
     line-color: #2781af;
@@ -1322,7 +1340,8 @@ const fetchClinicLocations = useCallback(async () => {
     setLoadingClinicLocations(true);
     // Use fallback URL if environment variable is not set
     const baseUrl = apiUrl || 'http://localhost:3000';
-    const fetchUrl = `${baseUrl}/api/cliniclocation/clinics?includeInactive=true`;
+    // Only fetch active clinics by default (don't include inactive/deleted ones)
+    const fetchUrl = `${baseUrl}/api/cliniclocation/clinics`;
     console.log('Fetching clinic locations from:', fetchUrl);
     console.log('API URL from env:', apiUrl);
     console.log('Current user token exists:', !!currentusertoken);
@@ -1882,7 +1901,12 @@ const handleDeleteClinicLocation = useCallback(async () => {
 
   setIsSavingLocation(true);
   try {
-    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${selectedClinicLocation.clinicId}`, {
+    console.log('🗑️ Deleting clinic location:', selectedClinicLocation);
+    
+    // Use the clinicId field from the selected clinic, not the MongoDB _id
+    const clinicIdToDelete = selectedClinicLocation.clinicId || selectedClinicLocation._id;
+    
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${clinicIdToDelete}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${currentusertoken}`,
@@ -1891,8 +1915,10 @@ const handleDeleteClinicLocation = useCallback(async () => {
     });
 
     if (response.ok) {
-      // Remove the clinic from the state directly, which will trigger the marker effect
-      setClinicLocations(prev => prev.filter(clinic => clinic._id !== selectedClinicLocation._id));
+      console.log('✅ Clinic deleted successfully from database');
+      
+      // Refresh the clinic locations to get updated data (removes soft-deleted clinics)
+      await fetchClinicLocations();
       
       setLocationMessage({ text: 'Clinic location deleted successfully', type: 'success' });
       setShowDeleteClinicDialog(false);
@@ -1907,15 +1933,17 @@ const handleDeleteClinicLocation = useCallback(async () => {
         });
       }
     } else {
-      throw new Error('Failed to delete clinic location');
+      const errorData = await response.text();
+      console.error('❌ Delete failed with response:', response.status, errorData);
+      throw new Error(`Failed to delete clinic location: ${response.status}`);
     }
   } catch (error) {
-    console.error('Error deleting clinic location:', error);
-    setLocationMessage({ text: 'Failed to delete clinic location', type: 'error' });
+    console.error('❌ Error deleting clinic location:', error);
+    setLocationMessage({ text: 'Failed to delete clinic location: ' + error.message, type: 'error' });
   } finally {
     setIsSavingLocation(false);
   }
-}, [apiUrl, currentusertoken, selectedClinicLocation]);
+}, [apiUrl, currentusertoken, selectedClinicLocation, fetchClinicLocations]);
 
 // Toggle clinic active status
 const handleToggleClinicStatus = useCallback(async (clinic) => {
@@ -1976,19 +2004,27 @@ const initializeDirectionsControl = useCallback(() => {
     accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN,
     unit: 'metric',
     profile: 'mapbox/driving',
-    alternatives: true,
+    alternatives: false, // Disable alternatives for cleaner display
     geometries: 'geojson',
     controls: {
-      instructions: false,
-      inputs: false,
+      instructions: false, // We'll show custom instructions
+      inputs: false, // Disable input fields to prevent manual editing
       profileSwitcher: false
     },
-    flyTo: true,
-    interactive: true
+    flyTo: false, // Disable automatic flying to route
+    interactive: false // Make waypoints non-interactive/non-draggable
   });
 
-  // Add the control to the map
+  // Add the control to the map but hide it visually
   map.current.addControl(directionsControl.current, 'top-left');
+  
+  // Hide the default directions control UI
+  setTimeout(() => {
+    const directionsElement = document.querySelector('.mapboxgl-ctrl-directions');
+    if (directionsElement) {
+      directionsElement.style.display = 'none';
+    }
+  }, 100);
   
   // Listen for route events
   directionsControl.current.on('route', (event) => {
@@ -2002,7 +2038,23 @@ const initializeDirectionsControl = useCallback(() => {
       });
       setDirectionsSteps(route.legs[0]?.steps || []);
       setIsLoadingRoute(false);
+      setShowDirections(true); // Show our custom directions panel
       console.log('✅ Route info updated successfully');
+      
+      // Make waypoints non-draggable after route calculation
+      setTimeout(() => {
+        const waypoints = document.querySelectorAll('.mapbox-directions-waypoint');
+        waypoints.forEach(waypoint => {
+          waypoint.style.pointerEvents = 'none';
+          waypoint.style.cursor = 'default';
+        });
+        
+        // Also disable dragging on route line
+        const routeLines = document.querySelectorAll('.mapbox-directions-route-line');
+        routeLines.forEach(line => {
+          line.style.pointerEvents = 'none';
+        });
+      }, 100);
     }
   });
 
@@ -2458,42 +2510,28 @@ useEffect(() => {
         markersOnMap.delete(clinicId); // Mark as processed
       } else {
         // Create a new marker
-        const markerEl = document.createElement('div');
+        const markerEl = document.createElement('img');
         markerEl.className = 'clinic-marker';
         
-        let backgroundColor, borderColor, markerText;
         if (clinic.clinicType === 'Ambher Optical') {
-          backgroundColor = '#3B82F6';
-          borderColor = 'white';
-          markerText = 'A';
+          markerEl.src = ambherlogo;
         } else if (clinic.clinicType === 'Bautista Eye Center') {
-          backgroundColor = '#EF4444';
-          borderColor = 'white';
-          markerText = 'B';
+          markerEl.src = bautistalogo;
         } else {
-          backgroundColor = '#8B5CF6';
-          borderColor = 'white';
-          markerText = 'O';
+          // Fallback for any other clinic type, though not expected
+          markerEl.src = defaultprofilepic; 
         }
         
         markerEl.style.cssText = `
-          width: 32px;
-          height: 32px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          background-color: ${backgroundColor};
-          border: 3px solid ${borderColor};
+          background-color: white;
+          border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 12px;
-          z-index: 1000;
           transition: all 0.2s ease;
         `;
-        markerEl.innerHTML = markerText;
 
         const popupContent = `
   <div class="p-4 max-w-sm">
@@ -2527,7 +2565,7 @@ useEffect(() => {
       </button>
       
       <button 
-        onclick="window.open('https://www.google.com/maps?q=${latitude},${longitude}', '_blank')"
+        onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')"
         class="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
       >
         <i class="bx bx-street-view"></i>
@@ -2811,7 +2849,7 @@ useEffect(() => {
       // Clear any existing routes first
       directionsControl.current.removeRoutes();
       
-      // Set origin (user location)
+      // Set origin (user location) - this will be locked and non-draggable
       directionsControl.current.setOrigin([userLocation.longitude, userLocation.latitude]);
       
       // Set destination (clinic location) - handle different coordinate formats
@@ -2832,6 +2870,15 @@ useEffect(() => {
 
       console.log('🎯 Setting destination:', [clinicLng, clinicLat]);
       directionsControl.current.setDestination([clinicLng, clinicLat]);
+      
+      // Fly to show the route area
+      map.current.fitBounds([
+        [Math.min(userLocation.longitude, clinicLng), Math.min(userLocation.latitude, clinicLat)],
+        [Math.max(userLocation.longitude, clinicLng), Math.max(userLocation.latitude, clinicLat)]
+      ], {
+        padding: 100,
+        duration: 1000
+      });
       
     } catch (error) {
       console.error('❌ Error setting up directions:', error);
@@ -3620,79 +3667,23 @@ useEffect(() => {
                             <div className={`w-2 h-2 rounded-full ${directionsControl.current ? 'bg-green-500' : 'bg-red-500'}`}></div>
                             <span>Directions: {directionsControl.current ? 'Ready' : 'Not Ready'}</span>
                           </div>
-                          {userLocation && clinicLocations.length > 0 && (
-                            <button
-                              onClick={() => {
-                                const firstClinic = clinicLocations[0];
-                                if (firstClinic) {
-                                  window.showDirectionsToClinic(firstClinic._id);
-                                }
-                              }}
-                              className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Test Directions
-                            </button>
-                          )}
+
                         </div>
                       </div>
                     )}
 
-                    {/*Real time longitude and latitude*/}
-                    <div 
-                      id="realtimelongitudeandlatitude" 
-                      className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20 cursor-pointer hover:bg-white transition-colors"
-                      onClick={copyCoordinatesToClipboard}
-                      title="Click to copy coordinates to clipboard"
-                    >
-                      <h4 className="font-semibold text-gray-800 mb-2 text-sm">
-                        <i className="bx bx-crosshair mr-1"></i>
-                        Real-time Coordinates
-                        <i className="bx bx-copy ml-2 text-gray-500 text-xs"></i>
-                      </h4>
-                      <div className="space-y-1 text-xs font-mono">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Longitude:</span>
-                          <span className="text-blue-600 font-semibold">
-                            {realtimeCoordinates.longitude.toFixed(6)}°
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Latitude:</span>
-                          <span className="text-green-600 font-semibold">
-                            {realtimeCoordinates.latitude.toFixed(6)}°
-                          </span>
-                        </div>
-                        {realtimeCoordinates.accuracy && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Accuracy:</span>
-                            <span className={`font-semibold ${
-                              realtimeCoordinates.accuracy <= 20 ? 'text-green-500' :
-                              realtimeCoordinates.accuracy <= 50 ? 'text-yellow-500' :
-                              'text-red-500'
-                            }`}>
-                              ±{Math.round(realtimeCoordinates.accuracy)}m
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between pt-1 border-t border-gray-200">
-                          <span className="text-gray-500">Updated:</span>
-                          <span className="text-gray-500">
-                            {realtimeCoordinates.timestamp.toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+
 
                     {/* Map Legend */}
                     <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
                       <h4 className="font-semibold text-gray-800 mb-2">Legend</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                          <img src={ambherlogo} className="w-4 h-4 rounded-full"/>
                           <span>Ambher Optical</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
+                       <img src={bautistalogo} className="w-4 h-4 rounded-full"/>
                           <span>Bautista Eye Center</span>
                         </div>
                         <div className="flex items-center gap-2">
