@@ -64,7 +64,7 @@ const server = http.createServer(app);
 app.use(cors({
   origin: true, // Allow all origins for now
   credentials: true,
-  methods:['GET','POST','PUT','DELETE'],
+  methods:['GET','POST','PUT','DELETE','PATCH'],
   allowedHeaders:['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 /*
@@ -319,8 +319,9 @@ mongoose
     await DatabaseOptimizer.analyzeSlowQueries();
     
     // Start server
-    server.listen(3000, () => {
-      console.log("🚀 Server listening on port", mongoPort);
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log("🚀 Server listening on port", PORT);
       console.log("📊 Database performance optimization enabled");
     });
   })

@@ -6,7 +6,8 @@ import {
   upsertClinicLocation,
   findNearbyClinic,
   geocodeAddress,
-  deleteClinicLocation
+  deleteClinicLocation,
+  toggleClinicActiveStatus
 } from '../controllers/cliniclocation.controller.js';
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.get('/geocode', geocodeAddress);
 router.get('/current', getCurrentUserClinicLocation);
 router.post('/clinics', upsertClinicLocation);
 router.put('/clinics/:clinicId', upsertClinicLocation);
+router.patch('/clinics/:clinicId/toggle-status', toggleClinicActiveStatus);
 router.delete('/clinics/:clinicId', deleteClinicLocation);
 
 export default router;

@@ -6,7 +6,11 @@ import mongoose from 'mongoose';
 // Get all clinic locations
 export const getAllClinicLocations = async (req, res) => {
   try {
-    const locations = await ClinicLocation.find({ isActive: true });
+    // Allow optional query parameter to include inactive clinics
+    const includeInactive = req.query.includeInactive === 'true';
+    const filter = includeInactive ? {} : { isActive: true };
+    
+    const locations = await ClinicLocation.find(filter);
     res.status(200).json({
       success: true,
       data: locations
@@ -93,7 +97,7 @@ export const getCurrentUserClinicLocation = async (req, res) => {
 export const upsertClinicLocation = async (req, res) => {
   try {
     const {
-      clinicId,
+      clinicId: bodyClinicId,
       clinicName,
       clinicType,
       address,
@@ -104,11 +108,22 @@ export const upsertClinicLocation = async (req, res) => {
       services
     } = req.body;
 
+    // Get clinicId from URL params (for PUT requests) or body (for POST requests)
+    const clinicId = req.params.clinicId || bodyClinicId;
+
     // For now, we'll use a default user ID. You should implement proper auth
     const userId = req.user?.id || new mongoose.Types.ObjectId();
 
+    // Generate unique clinic ID if not provided
+    const generateUniqueClinicId = () => {
+      const baseId = clinicType.toLowerCase().replace(/\s+/g, '-');
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      return `${baseId}-${timestamp}-${randomSuffix}`;
+    };
+
     const locationData = {
-      clinicId: clinicId || `${clinicType.toLowerCase().replace(/\s+/g, '-')}-main`,
+      clinicId: clinicId || generateUniqueClinicId(),
       clinicName,
       clinicType,
       address,
@@ -119,28 +134,42 @@ export const upsertClinicLocation = async (req, res) => {
       contactInfo: contactInfo || {},
       operatingHours: operatingHours || {},
       services: services || [],
+      isActive: true, // Explicitly set to active when creating/updating
       updatedBy: userId
     };
 
-    const location = await ClinicLocation.findOneAndUpdate(
-      { clinicId: locationData.clinicId },
-      locationData,
-      {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true
-      }
-    );
+    let location;
+    let isNewClinic = false;
 
-    // If creating new, set createdBy
-    if (!location.createdBy) {
-      location.createdBy = userId;
+    // Check if this is an update (clinicId provided and exists) or create new
+    if (clinicId) {
+      // Update existing clinic
+      location = await ClinicLocation.findOneAndUpdate(
+        { clinicId: locationData.clinicId },
+        locationData,
+        {
+          new: true,
+          runValidators: true
+        }
+      );
+
+      if (!location) {
+        return res.status(404).json({
+          success: false,
+          message: 'Clinic location not found for update'
+        });
+      }
+    } else {
+      // Create new clinic
+      locationData.createdBy = userId;
+      location = new ClinicLocation(locationData);
       await location.save();
+      isNewClinic = true;
     }
 
-    res.status(200).json({
+    res.status(isNewClinic ? 201 : 200).json({
       success: true,
-      message: 'Clinic location saved successfully',
+      message: `Clinic location ${isNewClinic ? 'created' : 'updated'} successfully`,
       data: location
     });
   } catch (error) {
@@ -248,6 +277,39 @@ export const deleteClinicLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting clinic location',
+      error: error.message
+    });
+  }
+};
+
+// Toggle clinic active status
+export const toggleClinicActiveStatus = async (req, res) => {
+  try {
+    const { clinicId } = req.params;
+    const userId = req.user?.id;
+    
+    const clinic = await ClinicLocation.findOne({ clinicId });
+    
+    if (!clinic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Clinic location not found'
+      });
+    }
+    
+    clinic.isActive = !clinic.isActive;
+    clinic.updatedBy = userId;
+    await clinic.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Clinic ${clinic.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: clinic
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error toggling clinic status',
       error: error.message
     });
   }
