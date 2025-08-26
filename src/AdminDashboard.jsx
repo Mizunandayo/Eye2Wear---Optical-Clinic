@@ -29,6 +29,15 @@ import useSmartCache from './hooks/useSmartCache';
 import { useImageOptimization } from './utils/imageOptimization';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
+import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
+import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
+
+
+
+
+
+
+
 
 // Disable Mapbox telemetry globally to prevent ERR_BLOCKED_BY_CLIENT errors
 // Simple approach to prevent analytics requests that get blocked by ad blockers
@@ -205,6 +214,113 @@ mapStyles.textContent = `
     image-rendering: optimizeSpeed;
     image-rendering: crisp-edges;
     image-rendering: pixelated;
+  }
+
+  /* Directions Panel Styles */
+  .directions-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 300px;
+    max-height: 400px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .directions-panel.active {
+    transform: translateX(0);
+  }
+
+  .directions-header {
+    background: #2781af;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .directions-content {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 10px;
+  }
+
+  .route-info {
+    background: #f8f9fa;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #2781af;
+  }
+
+  .directions-step {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .directions-step:last-child {
+    border-bottom: none;
+  }
+
+  .step-icon {
+    width: 24px;
+    height: 24px;
+    background: #2781af;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .close-directions {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .close-directions:hover {
+    background-color: rgba(255,255,255,0.2);
+  }
+
+  /* Mapbox Directions Control Customization */
+  .mapboxgl-ctrl-directions {
+    display: none !important; /* Hide the default control */
+  }
+
+  /* Route line styling */
+  .mapbox-directions-route-line {
+    line-color: #2781af;
+    line-width: 5;
+    line-opacity: 0.8;
+  }
+
+  .mapbox-directions-route-line-alt {
+    line-color: #94a3b8;
+    line-width: 3;
+    line-opacity: 0.6;
   }
 `;
 document.head.appendChild(mapStyles);
@@ -1172,6 +1288,31 @@ const [clinicFormData, setClinicFormData] = useState({
   services: []
 });
 
+//direction and routing variables
+const [showDirections, setShowDirections] = useState(false);
+const [routeInfo, setRouteInfo] = useState(null);
+const [directionsSteps, setDirectionsSteps] = useState([]);
+const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+const directionsControl = useRef(null);
+const isInitializingMap = useRef(false); // Track if map is currently being initialized
+const directionsInitialized = useRef(false); // Track if directions control has been initialized
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Add these handler functions after your existing functions (around line 1000)
 
 
@@ -1822,8 +1963,137 @@ const handleToggleClinicStatus = useCallback(async (clinic) => {
   }
 }, [apiUrl, currentusertoken]);
 
+
+
+
+const initializeDirectionsControl = useCallback(() => {
+  if (!map.current || directionsControl.current || directionsInitialized.current) return;
+
+  console.log('🧭 Initializing directions control...');
+  directionsInitialized.current = true; // Mark as initialized to prevent re-initialization
+
+  directionsControl.current = new MapboxDirections({
+    accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN,
+    unit: 'metric',
+    profile: 'mapbox/driving',
+    alternatives: true,
+    geometries: 'geojson',
+    controls: {
+      instructions: false,
+      inputs: false,
+      profileSwitcher: false
+    },
+    flyTo: true,
+    interactive: true
+  });
+
+  // Add the control to the map
+  map.current.addControl(directionsControl.current, 'top-left');
+  
+  // Listen for route events
+  directionsControl.current.on('route', (event) => {
+    console.log('🛣️ Route calculated:', event);
+    if (event.route && event.route[0]) {
+      const route = event.route[0];
+      setRouteInfo({
+        distance: (route.distance / 1000).toFixed(1), // Convert to km
+        duration: Math.round(route.duration / 60), // Convert to minutes
+        geometry: route.geometry
+      });
+      setDirectionsSteps(route.legs[0]?.steps || []);
+      setIsLoadingRoute(false);
+      console.log('✅ Route info updated successfully');
+    }
+  });
+
+  directionsControl.current.on('error', (e) => {
+    setIsLoadingRoute(false);
+    console.error('❌ Error calculating route:', e);
+    setLocationMessage({
+      text: 'Failed to calculate route. Please try again.',
+      type: 'error'
+    });
+  });
+
+  directionsControl.current.on('clear', () => {
+    console.log('🧹 Directions cleared');
+    setShowDirections(false);
+    setRouteInfo(null);
+    setDirectionsSteps([]);
+  });
+
+  console.log('✅ Directions control initialized successfully');
+}, []);
+
+const clearDirections = useCallback(() => {
+  console.log('🧹 Clearing directions...');
+  if (directionsControl.current) {
+    directionsControl.current.removeRoutes();
+  }
+  setShowDirections(false);
+  setRouteInfo(null);
+  setDirectionsSteps([]);
+  setIsLoadingRoute(false);
+  
+  setLocationMessage({
+    text: 'Directions cleared',
+    type: 'info'
+  });
+}, []);
+
+
+const getStepIcon = (maneuverType) => {
+  const iconMap = {
+    'turn': 'bx-turn-right',
+    'new name': 'bx-right-arrow',
+    'depart': 'bx-play',
+    'arrive': 'bx-flag',
+    'merge': 'bx-merge',
+    'on ramp': 'bx-up-arrow',
+    'off ramp': 'bx-down-arrow',
+    'fork': 'bx-git-branch',
+    'end of road': 'bx-stop',
+    'use lane': 'bx-right-arrow',
+    'continue': 'bx-up-arrow',
+    'roundabout': 'bx-refresh',
+    'rotary': 'bx-refresh',
+    'roundabout turn': 'bx-refresh',
+    'notification': 'bx-info-circle',
+    'exit roundabout': 'bx-log-out',
+    'exit rotary': 'bx-log-out'
+  };
+  
+  return iconMap[maneuverType] || 'bx-right-arrow';
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Initialize Mapbox map
 useEffect(() => {
+  console.log('🔄 Map useEffect triggered - Dashboard:', activedashboard);
+  
+  // Debug current state (without adding to dependencies)
+  console.log('🔍 Map Debug State:', {
+    mapExists: !!map.current,
+    mapLoaded: mapLoaded,
+    isInitializing: isInitializingMap.current,
+    activeDashboard: activedashboard,
+    containerExists: !!mapContainer.current
+  });
+  
   // Only initialize if we're on the mapping dashboard
   if (activedashboard !== 'mappingintegration') {
     console.log('❌ Not on mapping dashboard, skipping map initialization');
@@ -1836,13 +2106,23 @@ useEffect(() => {
     return;
   }
 
+  // Prevent multiple simultaneous initializations
+  if (isInitializingMap.current) {
+    console.log('⏳ Map is already being initialized, skipping...');
+    return;
+  }
+
   // If map already exists and is working properly, don't reinitialize unnecessarily
-  if (map.current && map.current.getContainer() === mapContainer.current && mapLoaded) {
+  if (map.current && map.current.getContainer() === mapContainer.current) {
     console.log('✅ Map already initialized and working properly - KEEPING EXISTING MAP');
     return;
   }
 
-  // Clean up existing map if it exists but container is different or map failed to load
+  // Set initialization flag
+  isInitializingMap.current = true;
+  console.log('🔄 Setting initialization flag to true');
+
+  // Clean up existing map if it exists but container is different
   if (map.current) {
     console.log('🧹 Cleaning up existing map before reinitializing...');
     try {
@@ -1888,6 +2168,7 @@ useEffect(() => {
       text: 'Failed to initialize map. Please refresh the page.', 
       type: 'error' 
     });
+    isInitializingMap.current = false; // Reset flag on error
     return;
   }
 
@@ -2022,8 +2303,9 @@ useEffect(() => {
 
   // Handle map load
   map.current.on('load', () => {
-    console.log('Map loaded successfully');
+    console.log('✅ Map loaded successfully');
     setMapLoaded(true);
+    isInitializingMap.current = false; // Reset initialization flag
   });
 
   // Clean up on unmount
@@ -2038,8 +2320,22 @@ useEffect(() => {
       map.current = null;
       setMapLoaded(false);
     }
+    
+    // Reset initialization flags
+    isInitializingMap.current = false;
+    directionsInitialized.current = false;
   };
-}, [activedashboard]); // Only depend on dashboard switch, not refresh trigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activedashboard]); // Only depend on dashboard switch - mapLoaded intentionally excluded to prevent infinite loop
+
+// Initialize directions control after map is loaded
+useEffect(() => {
+  if (mapLoaded && activedashboard === 'mappingintegration' && !directionsInitialized.current) {
+    console.log('🗺️ Map loaded, initializing directions control...');
+    initializeDirectionsControl();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [mapLoaded, activedashboard]); // Remove initializeDirectionsControl from deps to prevent re-runs
 
 // Simplified map container health check - prevent map destruction
 useEffect(() => {
@@ -2200,14 +2496,55 @@ useEffect(() => {
         markerEl.innerHTML = markerText;
 
         const popupContent = `
-          <div class="p-3 min-w-64">
-            <h3 class="font-bold text-sm text-gray-800">${clinic.clinicName}</h3>
-            <p class="text-xs text-gray-600 mb-2">${clinic.address?.fullAddress || 'No address available'}</p>
-            <a href="https://www.google.com/maps?q=&layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors">
-              <i class="bx bx-street-view"></i>
-              Street View
-            </a>
-          </div>
+  <div class="p-4 max-w-sm">
+    <div class="flex items-center mb-3">
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+        <i class="bx bx-clinic text-white text-xl"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg text-gray-800">${clinic.clinicName}</h3>
+        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+          clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+        }">
+          ${clinic.clinicType}
+        </span>
+      </div>
+    </div>
+    
+    <div class="space-y-2 text-sm text-gray-600 mb-4">
+      <p><i class="bx bx-map text-blue-500 mr-2"></i>${clinic.address.fullAddress}</p>
+      ${clinic.contactInfo.phone ? `<p><i class="bx bx-phone text-green-500 mr-2"></i>${clinic.contactInfo.phone}</p>` : ''}
+      ${clinic.contactInfo.email ? `<p><i class="bx bx-envelope text-red-500 mr-2"></i>${clinic.contactInfo.email}</p>` : ''}
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button 
+        onclick="showDirectionsToClinic('${clinic._id}')"
+        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+      >
+        <i class="bx bx-directions"></i>
+        Get Directions
+      </button>
+      
+      <button 
+        onclick="window.open('https://www.google.com/maps?q=${latitude},${longitude}', '_blank')"
+        class="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+      >
+        <i class="bx bx-street-view"></i>
+        Street View
+      </button>
+    </div>
+
+    <div class="text-xs text-gray-500">
+      <p>Distance: ${userLocation ? calculateDistance(
+        userLocation.latitude, 
+        userLocation.longitude, 
+        latitude, 
+        longitude
+      ).toFixed(1) + ' km' : 'Unknown'}</p>
+      <p>Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+    </div>
+  </div>
         `;
 
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
@@ -2233,7 +2570,7 @@ useEffect(() => {
 
   console.log(`✅ Map synced. Total markers: ${mapMarkersRef.current.size}`);
 
-}, [mapLoaded, clinicLocations]);
+}, [mapLoaded, clinicLocations, userLocation]); // Include userLocation since it's used in popup content
 
 // Global function for adding nearby clinic from popup
 useEffect(() => {
@@ -2438,7 +2775,76 @@ useEffect(() => {
 
 
 
+// Add this useEffect to create global functions for popup interactions
+useEffect(() => {
+  // Global function for getting directions from popup
+  window.showDirectionsToClinic = (clinicId) => {
+    console.log('🧭 Showing directions to clinic:', clinicId);
+    const clinic = clinicLocations.find(c => c._id === clinicId);
+    
+    if (!clinic) {
+      console.error('❌ Clinic not found:', clinicId);
+      return;
+    }
 
+    if (!userLocation) {
+      alert('Please enable location services to get directions');
+      return;
+    }
+
+    if (!directionsControl.current) {
+      console.error('❌ Directions control not initialized');
+      alert('Directions service is not available. Please try again.');
+      return;
+    }
+
+    console.log('📍 Setting up route from user location to clinic...');
+    console.log('User location:', userLocation);
+    console.log('Clinic coordinates:', clinic.coordinates);
+
+    setIsLoadingRoute(true);
+    setShowDirections(true);
+    setRouteInfo(null);
+    setDirectionsSteps([]);
+
+    try {
+      // Clear any existing routes first
+      directionsControl.current.removeRoutes();
+      
+      // Set origin (user location)
+      directionsControl.current.setOrigin([userLocation.longitude, userLocation.latitude]);
+      
+      // Set destination (clinic location) - handle different coordinate formats
+      let clinicLng, clinicLat;
+      
+      if (clinic.coordinates?.coordinates && Array.isArray(clinic.coordinates.coordinates)) {
+        clinicLng = clinic.coordinates.coordinates[0];
+        clinicLat = clinic.coordinates.coordinates[1];
+      } else if (clinic.coordinates?.longitude && clinic.coordinates?.latitude) {
+        clinicLng = clinic.coordinates.longitude;
+        clinicLat = clinic.coordinates.latitude;
+      } else {
+        console.error('❌ Invalid clinic coordinates format:', clinic.coordinates);
+        alert('Invalid clinic coordinates. Cannot calculate route.');
+        setIsLoadingRoute(false);
+        return;
+      }
+
+      console.log('🎯 Setting destination:', [clinicLng, clinicLat]);
+      directionsControl.current.setDestination([clinicLng, clinicLat]);
+      
+    } catch (error) {
+      console.error('❌ Error setting up directions:', error);
+      setIsLoadingRoute(false);
+      alert('Failed to calculate route. Please try again.');
+    }
+  };
+
+  return () => {
+    // Cleanup
+    delete window.showDirectionsToClinic;
+  };
+}, [clinicLocations, userLocation]); // Include userLocation as it's used in the function
 
 
 
@@ -3136,6 +3542,100 @@ useEffect(() => {
                       </div>
                     )}
 
+{/* Directions Panel */}
+{showDirections && (
+  <div className={`directions-panel ${showDirections ? 'active' : ''}`}>
+    <div className="directions-header">
+      <h3 className="font-bold">Directions</h3>
+      <button 
+        onClick={clearDirections}
+        className="close-directions"
+        title="Close directions"
+      >
+        <i className="bx bx-x"></i>
+      </button>
+    </div>
+    
+    <div className="directions-content">
+      {isLoadingRoute && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-600">Calculating route...</span>
+        </div>
+      )}
+      
+      {!isLoadingRoute && !routeInfo && directionsSteps.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <i className="bx bx-map-pin text-4xl mb-2"></i>
+          <p>Select a destination to get directions</p>
+        </div>
+      )}
+      
+      {routeInfo && (
+        <div className="route-info">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
+              <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
+            </div>
+            <i className="bx bx-car text-2xl text-blue-500"></i>
+          </div>
+        </div>
+      )}
+      
+      {directionsSteps.length > 0 && (
+        <div className="directions-steps">
+          <h4 className="font-semibold mb-3 text-gray-800">Turn-by-turn directions:</h4>
+          {directionsSteps.map((step, index) => (
+            <div key={index} className="directions-step">
+              <div className="step-icon">
+                <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
+              </div>
+              <div className="step-text">
+                <p dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(step.distance / 1000).toFixed(1)} km
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+                    {/* Debug: Location and Directions Status */}
+                    {(userLocation || directionsControl.current) && (
+                      <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
+                        <h4 className="font-semibold text-gray-800 mb-2 text-sm">
+                          <i className="bx bx-info-circle mr-1"></i>
+                          Status
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <span>Location: {userLocation ? 'Available' : 'Not Available'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${directionsControl.current ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <span>Directions: {directionsControl.current ? 'Ready' : 'Not Ready'}</span>
+                          </div>
+                          {userLocation && clinicLocations.length > 0 && (
+                            <button
+                              onClick={() => {
+                                const firstClinic = clinicLocations[0];
+                                if (firstClinic) {
+                                  window.showDirectionsToClinic(firstClinic._id);
+                                }
+                              }}
+                              className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                            >
+                              Test Directions
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/*Real time longitude and latitude*/}
                     <div 
