@@ -125,6 +125,41 @@ mapStyles.textContent = `
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   
+  /* Ensure only one set of navigation controls is visible - be specific to avoid hiding other controls */
+  /* Hide duplicate zoom buttons specifically, but preserve fullscreen and geolocate controls */
+  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
+  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
+  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
+  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
+  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
+  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
+  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
+  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out {
+    display: none !important;
+  }
+  
+  /* Preserve visibility of fullscreen and geolocate controls */
+  .mapboxgl-ctrl-fullscreen,
+  .mapboxgl-ctrl-geolocate {
+    display: block !important;
+  }
+  
+  /* Ensure fullscreen control is always visible and accessible */
+  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-fullscreen {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 1001 !important;
+  }
+  
+  /* Hide any duplicate navigation controls specifically */
+  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-nav:nth-of-type(n+2),
+  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-nav:nth-of-type(n+2),
+  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-nav:nth-of-type(n+2),
+  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-nav:nth-of-type(n+2) {
+    display: none !important;
+  }
+  
   .mapboxgl-ctrl button {
     transition: all 0.2s ease;
     will-change: background-color;
@@ -163,20 +198,178 @@ mapStyles.textContent = `
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   }
   
-  /* Fullscreen mode optimizations */
+  /* Fullscreen mode optimizations - ensure complete fullscreen coverage */
   .mapboxgl-map:-webkit-full-screen {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
   }
   
   .mapboxgl-map:-moz-full-screen {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
   }
   
   .mapboxgl-map:fullscreen {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
+  }
+  
+  /* Ensure fullscreen container takes full screen */
+  #geographicmapcontainer:-webkit-full-screen,
+  #geographicmapcontainer:-moz-full-screen,
+  #geographicmapcontainer:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
+    background: #000 !important;
+  }
+  
+  /* Hide any potential overflow or container constraints in fullscreen */
+  body:-webkit-full-screen,
+  body:-moz-full-screen,
+  body:fullscreen {
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Additional fullscreen fixes for any parent containers */
+  *:-webkit-full-screen,
+  *:-moz-full-screen,
+  *:fullscreen {
+    background: #000 !important;
+  }
+  
+  /* Ensure the map canvas fills the entire fullscreen area */
+  .mapboxgl-map:-webkit-full-screen .mapboxgl-canvas-container,
+  .mapboxgl-map:-moz-full-screen .mapboxgl-canvas-container,
+  .mapboxgl-map:fullscreen .mapboxgl-canvas-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+  
+  .mapboxgl-map:-webkit-full-screen .mapboxgl-canvas,
+  .mapboxgl-map:-moz-full-screen .mapboxgl-canvas,
+  .mapboxgl-map:fullscreen .mapboxgl-canvas {
+    width: 100vw !important;
+    height: 100vh !important;
+  }
+  
+  /* Force any remaining elements to not create white space in fullscreen */
+  *:-webkit-full-screen *,
+  *:-moz-full-screen *,
+  *:fullscreen * {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+  }
+  
+  /* Override any flex or grid constraints that might cause white space */
+  .mapboxgl-map:-webkit-full-screen,
+  .mapboxgl-map:-moz-full-screen,
+  .mapboxgl-map:fullscreen {
+    flex: none !important;
+    grid-column: unset !important;
+    grid-row: unset !important;
+    float: none !important;
+    clear: both !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    outline: none !important;
+  }
+  
+  /* Force the container and all parent elements to take full width */
+  #geographicmapcontainer:-webkit-full-screen *,
+  #geographicmapcontainer:-moz-full-screen *,
+  #geographicmapcontainer:fullscreen * {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Force full width on all fullscreen elements */
+  *:-webkit-full-screen,
+  *:-moz-full-screen,
+  *:fullscreen {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Specifically target the mapbox container in fullscreen */
+  .mapboxgl-map:-webkit-full-screen,
+  .mapboxgl-map:-moz-full-screen,
+  .mapboxgl-map:fullscreen {
+    transform: none !important;
+    scale: none !important;
+  }
+  
+  /* Additional aggressive fullscreen fixes */
+  html:-webkit-full-screen,
+  html:-moz-full-screen,
+  html:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Force viewport meta compliance in fullscreen */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    *:-webkit-full-screen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+    }
+  }
+  
+  /* Ensure no container has overflow constraints in fullscreen */
+  *:-webkit-full-screen,
+  *:-moz-full-screen,
+  *:fullscreen {
+    contain: none !important;
+    isolation: auto !important;
   }
   
   /* Enhanced map controls positioning in fullscreen */
@@ -2133,250 +2326,464 @@ const getStepIcon = (maneuverType) => {
 
 
 
-// Initialize Mapbox map
-useEffect(() => {
-  console.log('🔄 Map useEffect triggered - Dashboard:', activedashboard);
-  
-  // Debug current state (without adding to dependencies)
-  console.log('🔍 Map Debug State:', {
-    mapExists: !!map.current,
-    mapLoaded: mapLoaded,
-    isInitializing: isInitializingMap.current,
-    activeDashboard: activedashboard,
-    containerExists: !!mapContainer.current
-  });
-  
-  // Only initialize if we're on the mapping dashboard
-  if (activedashboard !== 'mappingintegration') {
-    console.log('❌ Not on mapping dashboard, skipping map initialization');
-    return;
-  }
+  const legendControlRef = useRef(null);
+  const directionsPanelRef = useRef(null);
 
-  // Check if container exists and map needs initialization
-  if (!mapContainer.current) {
-    console.log('❌ Map container not found, waiting...');
-    return;
-  }
+  // Custom Fullscreen Control
+  const toggleFullscreen = useCallback(() => {
+    const container = map.current.getContainer();
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
 
-  // Prevent multiple simultaneous initializations
-  if (isInitializingMap.current) {
-    console.log('⏳ Map is already being initialized, skipping...');
-    return;
-  }
-
-  // If map already exists and is working properly, don't reinitialize unnecessarily
-  if (map.current && map.current.getContainer() === mapContainer.current) {
-    console.log('✅ Map already initialized and working properly - KEEPING EXISTING MAP');
-    return;
-  }
-
-  // Set initialization flag
-  isInitializingMap.current = true;
-  console.log('🔄 Setting initialization flag to true');
-
-  // Clean up existing map if it exists but container is different
-  if (map.current) {
-    console.log('🧹 Cleaning up existing map before reinitializing...');
-    try {
-      map.current.remove();
-    } catch (error) {
-      console.warn('Warning during map cleanup:', error);
-    }
-    map.current = null;
-    setMapLoaded(false);
-  }
-
-  console.log('🚀 Initializing new map instance...');
-
-  // Set Mapbox access token
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-
-  try {
-    // Initialize the map with minimal, stable configuration
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [120.4818, 14.6417], // Metro Manila center
-      zoom: 10,
-      // Essential options only to prevent URL parsing errors
-      attributionControl: true,
-      logoPosition: 'bottom-right',
-      // Disable telemetry to prevent network errors
-      collectResourceTiming: false,
-      transformRequest: (url) => {
-        // Block analytics/telemetry requests
-        if (url.includes('events.mapbox.com') || url.includes('analytics') || url.includes('telemetry')) {
-          console.log('🚫 Blocked telemetry request:', url);
-          return { url: '', headers: {} };
+    if (!fullscreenElement) {
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
         }
-        return { url, headers: {} };
-      }
-    });
-
-    console.log('✅ Map instance created successfully');
-  } catch (error) {
-    console.error('❌ Failed to create map instance:', error);
-    setLocationMessage({ 
-      text: 'Failed to initialize map. Please refresh the page.', 
-      type: 'error' 
-    });
-    isInitializingMap.current = false; // Reset flag on error
-    return;
-  }
-
-  // Add navigation controls (without rotation controls)
-  map.current.addControl(new mapboxgl.NavigationControl({
-    showCompass: false, // Hide compass since rotation is disabled
-    showZoom: true,
-    visualizePitch: false // Hide pitch visualization
-  }));
-
-  // Add ultra-high accuracy geolocate control
-  const geolocate = new mapboxgl.GeolocateControl({
-    positionOptions: {
-      enableHighAccuracy: true, // Force GPS usage
-      timeout: 30000, // Extended timeout for GPS lock
-      maximumAge: 0 // No cached data - force fresh reading
-    },
-    trackUserLocation: true, // Continuously track user location
-    showUserHeading: true, // Show direction user is facing
-    showAccuracyCircle: true, // Show accuracy circle around user location
-    fitBoundsOptions: {
-      maxZoom: 17, // Higher zoom for better accuracy visualization
-      padding: 50 // Padding around accuracy circle
-    }
-  });
-  
-  // Add enhanced event listeners for accuracy feedback
-  geolocate.on('geolocate', (e) => {
-    const accuracy = e.coords.accuracy;
-    const accuracyLevel = accuracy <= 20 ? 'excellent' : accuracy <= 50 ? 'good' : accuracy <= 100 ? 'fair' : 'poor';
-    const accuracyColor = accuracy <= 20 ? 'success' : accuracy <= 50 ? 'success' : accuracy <= 100 ? 'warning' : 'error';
-    
-    console.log('Geolocate control update:', {
-      accuracy: Math.round(accuracy),
-      level: accuracyLevel,
-      coordinates: [e.coords.longitude, e.coords.latitude]
-    });
-    
-    setLocationMessage({ 
-      text: `Location updated: ${accuracyLevel} accuracy (${Math.round(accuracy)}m)`, 
-      type: accuracyColor
-    });
-    
-    // Update user location state with geolocate data
-    setUserLocation({
-      latitude: e.coords.latitude,
-      longitude: e.coords.longitude,
-      accuracy: e.coords.accuracy,
-      altitude: e.coords.altitude,
-      altitudeAccuracy: e.coords.altitudeAccuracy,
-      heading: e.coords.heading,
-      speed: e.coords.speed,
-      timestamp: Date.now()
-    });
-  });
-  
-  geolocate.on('trackuserlocationstart', () => {
-    setLocationMessage({ 
-      text: 'Starting high-accuracy location tracking...', 
-      type: 'info' 
-    });
-  });
-  
-  geolocate.on('trackuserlocationend', () => {
-    setLocationMessage({ 
-      text: 'Location tracking stopped', 
-      type: 'info' 
-    });
-  });
-  
-  geolocate.on('error', (e) => {
-    console.error('Geolocate control error:', e);
-    setLocationMessage({ 
-      text: 'Geolocate failed. Use "Get My Location" button for manual location.', 
-      type: 'error' 
-    });
-  });
-  
-  map.current.addControl(geolocate);
-
-  // Add fullscreen control for better user experience
-  const fullscreenControl = new mapboxgl.FullscreenControl({
-    container: mapContainer.current // Fullscreen just the map container
-  });
-  
-  map.current.addControl(fullscreenControl, 'top-right');
-
-  // Add fullscreen event listeners for better UX
-  const handleFullscreenChange = () => {
-    const isFullscreen = document.fullscreenElement || 
-                        document.webkitFullscreenElement || 
-                        document.mozFullScreenElement;
-    
-    if (isFullscreen) {
-      console.log('🔍 Map entered fullscreen mode');
-      setLocationMessage({ 
-        text: '🔍 Map in fullscreen mode - Press ESC to exit', 
-        type: 'info' 
-      });
-      
-      // Resize map to fit fullscreen
-      setTimeout(() => {
-        if (map.current) {
-          map.current.resize();
-        }
-      }, 100);
     } else {
-      console.log('🔍 Map exited fullscreen mode');
-      setLocationMessage({ 
-        text: '🔍 Fullscreen mode disabled', 
-        type: 'info' 
-      });
-      
-      // Resize map back to container
-      setTimeout(() => {
-        if (map.current) {
-          map.current.resize();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
         }
-      }, 100);
     }
+  }, []);
+
+  // Initialize Mapbox map
+  useEffect(() => {
+    console.log('🔄 Map useEffect triggered - Dashboard:', activedashboard);
     
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      setLocationMessage({ text: '', type: '' });
-    }, 3000);
-  };
-
-  // Add fullscreen event listeners
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
-  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-
-  // Handle map load
-  map.current.on('load', () => {
-    console.log('✅ Map loaded successfully');
-    setMapLoaded(true);
-    isInitializingMap.current = false; // Reset initialization flag
-  });
-
-  // Clean up on unmount
-  return () => {
-    // Remove fullscreen event listeners
-    document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+    // Debug current state (without adding to dependencies)
+    console.log('🔍 Map Debug State:', {
+      mapExists: !!map.current,
+      mapLoaded: mapLoaded,
+      isInitializing: isInitializingMap.current,
+      activeDashboard: activedashboard,
+      containerExists: !!mapContainer.current
+    });
     
+    // Only initialize if we're on the mapping dashboard
+    if (activedashboard !== 'mappingintegration') {
+      console.log('❌ Not on mapping dashboard, skipping map initialization');
+      return;
+    }
+
+    // Check if container exists and map needs initialization
+    if (!mapContainer.current) {
+      console.log('❌ Map container not found, waiting...');
+      return;
+    }
+
+    // Prevent multiple simultaneous initializations
+    if (isInitializingMap.current) {
+      console.log('⏳ Map is already being initialized, skipping...');
+      return;
+    }
+
+    // If map already exists and is working properly, don't reinitialize unnecessarily
+    if (map.current && map.current.getContainer() === mapContainer.current) {
+      console.log('✅ Map already initialized and working properly - KEEPING EXISTING MAP');
+      return;
+    }
+
+    // Set initialization flag
+    isInitializingMap.current = true;
+    console.log('🔄 Setting initialization flag to true');
+
+    // Clean up existing map if it exists but container is different
     if (map.current) {
-      map.current.remove();
+      console.log('🧹 Cleaning up existing map before reinitializing...');
+      try {
+        // Remove all existing controls before cleanup to prevent duplication
+        const controls = map.current._controls;
+        if (controls && controls.length > 0) {
+          controls.slice().forEach(control => {
+            try {
+              map.current.removeControl(control);
+            } catch (e) {
+              console.warn('Could not remove control:', e);
+            }
+          });
+          console.log('🧹 Removed all existing map controls');
+        }
+        map.current.remove();
+      } catch (error) {
+        console.warn('Warning during map cleanup:', error);
+      }
       map.current = null;
       setMapLoaded(false);
     }
+
+    console.log('🚀 Initializing new map instance...');
+
+    // Set Mapbox access token
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+    try {
+      // Initialize the map with minimal, stable configuration
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [120.4818, 14.6417], // Metro Manila center
+        zoom: 10,
+        // Essential options only to prevent URL parsing errors
+        attributionControl: true,
+        logoPosition: 'bottom-right',
+        // Disable telemetry to prevent network errors
+        collectResourceTiming: false,
+        transformRequest: (url) => {
+          // Block analytics/telemetry requests
+          if (url.includes('events.mapbox.com') || url.includes('analytics') || url.includes('telemetry')) {
+            console.log('🚫 Blocked telemetry request:', url);
+            return { url: '', headers: {} };
+          }
+          return { url, headers: {} };
+        }
+      });
+
+      console.log('✅ Map instance created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create map instance:', error);
+      setLocationMessage({ 
+        text: 'Failed to initialize map. Please refresh the page.', 
+        type: 'error' 
+      });
+      isInitializingMap.current = false; // Reset flag on error
+      return;
+    }
+
+    // Add navigation controls (without rotation controls) - only once
+    if (!map.current._controls || map.current._controls.length === 0) {
+      map.current.addControl(new mapboxgl.NavigationControl({
+        showCompass: false, // Hide compass since rotation is disabled
+        showZoom: true,
+        visualizePitch: false // Hide pitch visualization
+      }));
+      console.log('✅ Added navigation controls to map');
+    } else {
+      console.log('⚠️ Navigation controls already exist, skipping addition');
+    }
+
+    // Add ultra-high accuracy geolocate control
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true, // Force GPS usage
+        timeout: 30000, // Extended timeout for GPS lock
+        maximumAge: 0 // No cached data - force fresh reading
+      },
+      trackUserLocation: true, // Continuously track user location
+      showUserHeading: true, // Show direction user is facing
+      showAccuracyCircle: true, // Show accuracy circle around user location
+      fitBoundsOptions: {
+        maxZoom: 17, // Higher zoom for better accuracy visualization
+        padding: 50 // Padding around accuracy circle
+      }
+    });
     
-    // Reset initialization flags
-    isInitializingMap.current = false;
-    directionsInitialized.current = false;
-  };
+    // Add enhanced event listeners for accuracy feedback
+    geolocate.on('geolocate', (e) => {
+      const accuracy = e.coords.accuracy;
+      const accuracyLevel = accuracy <= 20 ? 'excellent' : accuracy <= 50 ? 'good' : accuracy <= 100 ? 'fair' : 'poor';
+      const accuracyColor = accuracy <= 20 ? 'success' : accuracy <= 50 ? 'success' : accuracy <= 100 ? 'warning' : 'error';
+      
+      console.log('Geolocate control update:', {
+        accuracy: Math.round(accuracy),
+        level: accuracyLevel,
+        coordinates: [e.coords.longitude, e.coords.latitude]
+      });
+      
+      setLocationMessage({ 
+        text: `Location updated: ${accuracyLevel} accuracy (${Math.round(accuracy)}m)`, 
+        type: accuracyColor
+      });
+      
+      // Update user location state with geolocate data
+      setUserLocation({
+        latitude: e.coords.latitude,
+        longitude: e.coords.longitude,
+        accuracy: e.coords.accuracy,
+        altitude: e.coords.altitude,
+        altitudeAccuracy: e.coords.altitudeAccuracy,
+        heading: e.coords.heading,
+        speed: e.coords.speed,
+        timestamp: Date.now()
+      });
+    });
+    
+    geolocate.on('trackuserlocationstart', () => {
+      setLocationMessage({ 
+        text: 'Starting high-accuracy location tracking...', 
+        type: 'info' 
+      });
+    });
+    
+    geolocate.on('trackuserlocationend', () => {
+      setLocationMessage({ 
+        text: 'Location tracking stopped', 
+        type: 'info' 
+      });
+    });
+    
+    geolocate.on('error', (e) => {
+      console.error('Geolocate control error:', e);
+      setLocationMessage({ 
+        text: 'Geolocate failed. Use "Get My Location" button for manual location.', 
+        type: 'error' 
+      });
+    });
+    
+    // Add geolocate control - check if not already added
+    const existingGeolocate = map.current._controls.find(control => 
+      control instanceof mapboxgl.GeolocateControl
+    );
+    if (!existingGeolocate) {
+      map.current.addControl(geolocate);
+      console.log('✅ Added geolocate control to map');
+    } else {
+      console.log('⚠️ Geolocate control already exists, skipping addition');
+    }
+
+    // Add fullscreen control for better user experience - check if not already added
+    const existingFullscreen = map.current._controls.find(control => 
+      control instanceof mapboxgl.FullscreenControl
+    );
+    if (!existingFullscreen) {
+      const fullscreenControl = new mapboxgl.FullscreenControl({
+        container: document.querySelector('#geographicmapcontainer')
+      });
+      map.current.addControl(fullscreenControl, 'top-right');
+      console.log('✅ Added fullscreen control to map');
+    } else {
+      console.log('⚠️ Fullscreen control already exists, skipping addition');
+    }
+
+
+    // Add fullscreen event listeners for better UX
+    const handleFullscreenChange = () => {
+      const isFullscreen = document.fullscreenElement || 
+                          document.webkitFullscreenElement || 
+                          document.mozFullScreenElement;
+      
+      if (isFullscreen) {
+        console.log('🔍 Map entered fullscreen mode');
+        setLocationMessage({ 
+          text: '🔍 Map in fullscreen mode - Press ESC to exit', 
+          type: 'info' 
+        });
+        
+        // Force map container to take full screen dimensions
+        const mapContainer = document.querySelector('#geographicmapcontainer');
+        const mapElement = map.current.getContainer();
+        
+        if (mapContainer) {
+          mapContainer.style.width = '100vw';
+          mapContainer.style.height = '100vh';
+          mapContainer.style.maxWidth = '100vw';
+          mapContainer.style.maxHeight = '100vh';
+          mapContainer.style.minWidth = '100vw';
+          mapContainer.style.minHeight = '100vh';
+          mapContainer.style.margin = '0';
+          mapContainer.style.padding = '0';
+          mapContainer.style.position = 'fixed';
+          mapContainer.style.top = '0';
+          mapContainer.style.left = '0';
+          mapContainer.style.right = '0';
+          mapContainer.style.bottom = '0';
+          mapContainer.style.zIndex = '999999';
+          mapContainer.style.border = 'none';
+          mapContainer.style.outline = 'none';
+          mapContainer.style.boxSizing = 'border-box';
+        }
+        
+        if (mapElement) {
+          mapElement.style.width = '100vw';
+          mapElement.style.height = '100vh';
+          mapElement.style.maxWidth = '100vw';
+          mapElement.style.maxHeight = '100vh';
+          mapElement.style.minWidth = '100vw';
+          mapElement.style.minHeight = '100vh';
+          mapElement.style.position = 'absolute';
+          mapElement.style.top = '0';
+          mapElement.style.left = '0';
+          mapElement.style.right = '0';
+          mapElement.style.bottom = '0';
+          mapElement.style.margin = '0';
+          mapElement.style.padding = '0';
+          mapElement.style.border = 'none';
+          mapElement.style.outline = 'none';
+          mapElement.style.boxSizing = 'border-box';
+        }
+        
+        // Also force all child elements to take full width
+        const allElements = document.querySelectorAll('#geographicmapcontainer *');
+        allElements.forEach(el => {
+          if (el.classList.contains('mapboxgl-map') || 
+              el.classList.contains('mapboxgl-canvas-container') || 
+              el.classList.contains('mapboxgl-canvas')) {
+            el.style.width = '100vw';
+            el.style.height = '100vh';
+            el.style.maxWidth = '100vw';
+            el.style.maxHeight = '100vh';
+            el.style.minWidth = '100vw';
+            el.style.minHeight = '100vh';
+            el.style.boxSizing = 'border-box';
+          }
+        });
+        
+        // Force map resize to ensure proper rendering
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+          }
+        }, 100);
+        
+        // No need to add additional controls in fullscreen mode
+        // Legend and directions panels are already properly positioned
+
+      } else {
+        console.log('🔍 Map exited fullscreen mode');
+        setLocationMessage({ 
+          text: '🔍 Fullscreen mode disabled', 
+          type: 'info' 
+        });
+        
+        // Reset container styles when exiting fullscreen but preserve visibility
+        const mapContainer = document.querySelector('#geographicmapcontainer');
+        const mapElement = map.current.getContainer();
+        
+        if (mapContainer) {
+          // Reset fullscreen-specific styles but keep essential ones
+          mapContainer.style.position = 'relative';
+          mapContainer.style.width = '100%';
+          mapContainer.style.height = '580px'; // Match container CSS class height
+          mapContainer.style.maxWidth = 'none';
+          mapContainer.style.maxHeight = 'none';
+          mapContainer.style.minWidth = 'auto';
+          mapContainer.style.minHeight = '580px'; // Match container height
+          mapContainer.style.margin = '0';
+          mapContainer.style.padding = '0';
+          mapContainer.style.top = 'auto';
+          mapContainer.style.left = 'auto';
+          mapContainer.style.right = 'auto';
+          mapContainer.style.bottom = 'auto';
+          mapContainer.style.zIndex = 'auto';
+          mapContainer.style.border = 'none';
+          mapContainer.style.outline = 'none';
+          mapContainer.style.boxSizing = 'border-box';
+          mapContainer.style.display = 'block'; // Ensure visibility
+          mapContainer.style.visibility = 'visible'; // Ensure visibility
+        }
+        
+        if (mapElement) {
+          // Reset fullscreen-specific styles but keep essential ones for map element
+          mapElement.style.position = 'relative';
+          mapElement.style.width = '100%';
+          mapElement.style.height = '100%';
+          mapElement.style.maxWidth = 'none';
+          mapElement.style.maxHeight = 'none';
+          mapElement.style.minWidth = 'auto';
+          mapElement.style.minHeight = 'auto';
+          mapElement.style.top = 'auto';
+          mapElement.style.left = 'auto';
+          mapElement.style.right = 'auto';
+          mapElement.style.bottom = 'auto';
+          mapElement.style.margin = '0';
+          mapElement.style.padding = '0';
+          mapElement.style.border = 'none';
+          mapElement.style.outline = 'none';
+          mapElement.style.boxSizing = 'border-box';
+          mapElement.style.display = 'block'; // Ensure visibility
+          mapElement.style.visibility = 'visible'; // Ensure visibility
+        }
+        
+        // Reset all child elements styles but preserve essential ones
+        const allElements = document.querySelectorAll('#geographicmapcontainer *');
+        allElements.forEach(el => {
+          if (el.classList.contains('mapboxgl-map') || 
+              el.classList.contains('mapboxgl-canvas-container') || 
+              el.classList.contains('mapboxgl-canvas')) {
+            // Reset fullscreen styles but keep essential display properties
+            el.style.width = '100%';
+            el.style.height = '100%';
+            el.style.maxWidth = 'none';
+            el.style.maxHeight = 'none';
+            el.style.minWidth = 'auto';
+            el.style.minHeight = 'auto';
+            el.style.boxSizing = 'border-box';
+            el.style.display = 'block'; // Ensure visibility
+            el.style.visibility = 'visible'; // Ensure visibility
+          }
+        });
+        
+        // Force map resize when exiting fullscreen with multiple resize calls
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+          }
+        }, 100);
+        
+        // Additional resize after DOM has settled
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            // Force a redraw to ensure proper rendering
+            map.current.getMap().triggerRepaint();
+          }
+        }, 300);
+        
+        // Move legend and directions back to their original container
+        if (legendControlRef.current && legendControlRef.current.parentNode) {
+            legendControlRef.current.parentNode.removeChild(legendControlRef.current);
+            document.querySelector('#geographicmapcontainer').appendChild(legendControlRef.current);
+        }
+        if (directionsPanelRef.current && directionsPanelRef.current.parentNode) {
+            directionsPanelRef.current.parentNode.removeChild(directionsPanelRef.current);
+            document.querySelector('#geographicmapcontainer').appendChild(directionsPanelRef.current);
+        }
+      }
+      
+      // Resize map to fit container
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 100);
+
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setLocationMessage({ text: '', type: '' });
+      }, 3000);
+    };
+
+    // Add fullscreen event listeners
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+
+    // Handle map load
+    map.current.on('load', () => {
+      console.log('✅ Map loaded successfully');
+      setMapLoaded(true);
+      isInitializingMap.current = false; // Reset initialization flag
+    });
+
+    // Clean up on unmount
+    return () => {
+      // Remove fullscreen event listeners
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+        setMapLoaded(false);
+      }
+      
+      // Reset initialization flags
+      isInitializingMap.current = false;
+      directionsInitialized.current = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [activedashboard]); // Only depend on dashboard switch - mapLoaded intentionally excluded to prevent infinite loop
 
@@ -3530,16 +3937,17 @@ useEffect(() => {
                 )}
 
                 {/* Main Content - Map and Sidebar */}
-                <div className="transition-all duration-300 ease-in-out gap-4 flex justify-center items-start flex-1 min-h-140 h-auto">
+                <div className="transition-all duration-300 ease-in-out gap-4 flex justify-center items-start flex-1 h-[580px]">
                   
                   {/* Geographic Map Container - 70% width */}
-                  <div id="geographicmapcontainer" className="transition-all duration-300 ease-in-out relative bg-gray-100 rounded-2xl shadow-lg flex flex-col justify-center items-center w-[70%]  overflow-hidden">
+                  <div id="geographicmapcontainer" className="transition-all duration-300 ease-in-out relative bg-gray-100 rounded-2xl shadow-lg flex flex-col justify-center items-center w-[70%] h-[580px] overflow-hidden">
                     {/* Mapbox Container */}
                     <div 
                       ref={mapContainer}
                       className="transition-all duration-300 ease-in-out w-full h-full rounded-2xl"
                       style={{ 
                         minHeight: '580px',
+                        height: '580px',
                         transform: 'translateZ(0)',
                         willChange: 'transform',
                         backfaceVisibility: 'hidden'
@@ -3571,93 +3979,74 @@ useEffect(() => {
                       </div>
                     )}
 
-{/* Directions Panel */}
-{showDirections && (
-  <div className={`directions-panel ${showDirections ? 'active' : ''}`}>
-    <div className="directions-header">
-      <h3 className="font-bold">Directions</h3>
-      <button 
-        onClick={clearDirections}
-        className="close-directions"
-        title="Close directions"
-      >
-        <i className="bx bx-x"></i>
-      </button>
-    </div>
-    
-    <div className="directions-content">
-      {isLoadingRoute && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3 text-gray-600">Calculating route...</span>
-        </div>
-      )}
-      
-      {!isLoadingRoute && !routeInfo && directionsSteps.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <i className="bx bx-map-pin text-4xl mb-2"></i>
-          <p>Select a destination to get directions</p>
-        </div>
-      )}
-      
-      {routeInfo && (
-        <div className="route-info">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
-              <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
-            </div>
-            <i className="bx bx-car text-2xl text-blue-500"></i>
-          </div>
-        </div>
-      )}
-      
-      {directionsSteps.length > 0 && (
-        <div className="directions-steps">
-          <h4 className="font-semibold mb-3 text-gray-800">Turn-by-turn directions:</h4>
-          {directionsSteps.map((step, index) => (
-            <div key={index} className="directions-step">
-              <div className="step-icon">
-                <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
-              </div>
-              <div className="step-text">
-                <p dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {(step.distance / 1000).toFixed(1)} km
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-)}
-                    {/* Debug: Location and Directions Status */}
-                    {(userLocation || directionsControl.current) && (
-                      <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
-                        <h4 className="font-semibold text-gray-800 mb-2 text-sm">
-                          <i className="bx bx-info-circle mr-1"></i>
-                          Status
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span>Location: {userLocation ? 'Available' : 'Not Available'}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${directionsControl.current ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span>Directions: {directionsControl.current ? 'Ready' : 'Not Ready'}</span>
-                          </div>
-
+                    {/* Directions Panel */}
+                    {showDirections && (
+                      <div ref={directionsPanelRef} className={`directions-panel ${showDirections ? 'active' : ''}`}>
+                        <div className="directions-header">
+                          <h3 className="font-bold">Directions</h3>
+                          <button 
+                            onClick={clearDirections}
+                            className="close-directions"
+                            title="Close directions"
+                          >
+                            <i className="bx bx-x"></i>
+                          </button>
+                        </div>
+                        
+                        <div className="directions-content">
+                          {isLoadingRoute && (
+                            <div className="flex items-center justify-center py-8">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                              <span className="ml-3 text-gray-600">Calculating route...</span>
+                            </div>
+                          )}
+                          
+                          {!isLoadingRoute && !routeInfo && directionsSteps.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              <i className="bx bx-map-pin text-4xl mb-2"></i>
+                              <p>Select a destination to get directions</p>
+                            </div>
+                          )}
+                          
+                          {routeInfo && (
+                            <div className="route-info">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
+                                  <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
+                                </div>
+                                <i className="bx bx-car text-2xl text-blue-500"></i>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {directionsSteps.length > 0 && (
+                            <div className="directions-steps">
+                              <h4 className="font-semibold mb-3 text-gray-800">Turn-by-turn directions:</h4>
+                              {directionsSteps.map((step, index) => (
+                                <div key={index} className="directions-step">
+                                  <div className="step-icon">
+                                    <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
+                                  </div>
+                                  <div className="step-text">
+                                    <p dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {(step.distance / 1000).toFixed(1)} km
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
 
 
 
+
                     {/* Map Legend */}
-                    <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
+                    <div ref={legendControlRef} className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
                       <h4 className="font-semibold text-gray-800 mb-2">Legend</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
