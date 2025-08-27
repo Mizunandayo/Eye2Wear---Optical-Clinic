@@ -1,4 +1,4 @@
-import React, {useState, useEffect } from "react";
+import React, {useState, useEffect, useRef } from "react";
 import {Link} from "react-router-dom";
 import landingbg2 from "../src/assets/images/landingbg2.png";
 import landingbg3 from "../src/assets/images/landingbg3.png";
@@ -20,6 +20,33 @@ import logout from "../src/assets/images/logout.png";
 import usersicon from "../src/assets/images/multiuserss.png";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "./hooks/patientuseAuth";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -51,6 +78,51 @@ function PatientLandingpage(){
 
     loadpatient();
   }, [fetchpatientdetails]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -301,19 +373,34 @@ function PatientLandingpage(){
 
 
 
-      {/*
-     {/* Third Section */} {/* Third Section */} {/* Third Section */} {/* Third Section */} {/* Third Section 
-     <section className="bg-white h-[270vh] w-[98vw]  " >
+
+     {/* Third Section */} {/* Third Section */} {/* Third Section */} {/* Third Section */}
+    <section className="pt-12 flex flex-col items-center justify-start bg-white h-screen w-[99.5%]" >
 
 
-     <div className="bg-cover bg-center h-[270vh] flex flex-col items-center " >
-          <h1 className="font-albertsans font-bold italic text-[#25255b] text-[60px] mt-20">Optometrist & Ophthalmologist</h1>
-          <h2 className="text-[25px] font-medium italic text-[#2d2d44]">What makes them different?</h2>
+          <div className="h-[10%] w-full flex px-18 items-center ">
+            <div className="flex flex-col items-start"><h1 className="font-albertsans font-semibold italic text-[#094680] text-[30px]">Where are we?</h1>
+            <p className="text-[18px] font-medium text-[#1e1e1e]"><i className="bx bx-map"></i>Locate our clinics in the map</p>
+            </div>
+          </div>
+          <div className=" h-[90%] w-full flex items-center px-18">
 
-      </div>
+                {/* geomaincontainer */}
+                <div className="transition-all duration-300 ease-in-out gap-4 flex justify-center items-start flex-1 h-[580px]">
+     
+
+                </div>
+
+          </div>
 
 
-     </section>*/}
+
+     </section>
+
+
+
+
+
 
 
 {/* 
