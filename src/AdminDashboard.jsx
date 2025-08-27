@@ -133,6 +133,74 @@ mapStyles.textContent = `
     margin: 0 !important;
     padding: 0 !important;
   }
+
+  /* Directions panel fullscreen responsiveness */
+  #geographicmapcontainer:-webkit-full-screen .directions-content,
+  #geographicmapcontainer:-moz-full-screen .directions-content,
+  #geographicmapcontainer:fullscreen .directions-content {
+    max-height: calc(100vh - 120px) !important;
+  }
+
+  /* Mapbox Popup Styling */
+  .mapboxgl-popup {
+    z-index: 1000 !important;
+    max-width: 320px !important;
+  }
+
+  .mapboxgl-popup-content {
+    background: white !important;
+    border-radius: 13px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    max-width: 320px !important;
+    width: auto !important;
+  }
+
+  .mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+    border-bottom-color: white !important;
+  }
+
+  .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+    border-top-color: white !important;
+  }
+
+  .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+    border-right-color: white !important;
+  }
+
+  .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+    border-left-color: white !important;
+  }
+
+  .mapboxgl-popup-close-button {
+    position: absolute !important;
+    right: 8px !important;
+    top: 8px !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-radius: 50% !important;
+    border: none !important;
+    color: #666 !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    z-index: 10 !important;
+  }
+
+  .mapboxgl-popup-close-button:hover {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: #333 !important;
+  }
 `;
 document.head.appendChild(mapStyles);
 
@@ -1107,6 +1175,7 @@ const [isLoadingRoute, setIsLoadingRoute] = useState(false);
 const directionsControl = useRef(null);
 const isInitializingMap = useRef(false); // Track if map is currently being initialized
 const directionsInitialized = useRef(false); // Track if directions control has been initialized
+const currentPopup = useRef(null); // Track current open popup to close it when opening a new one
 
 
 
@@ -2012,6 +2081,17 @@ const getStepIcon = (maneuverType) => {
       }
       map.current = null;
       setMapLoaded(false);
+      
+      // Clear markers reference when map is destroyed during re-initialization
+      mapMarkersRef.current.clear();
+      
+      // Clear directions control reference during re-initialization
+      if (directionsControl.current) {
+        directionsControl.current = null;
+      }
+      directionsInitialized.current = false;
+      
+      console.log('🧹 Cleared markers reference during map cleanup');
     }
 
     console.log('🚀 Initializing new map instance...');
@@ -2400,6 +2480,14 @@ const getStepIcon = (maneuverType) => {
         setMapLoaded(false);
       }
       
+      // Clear markers reference when map is destroyed
+      mapMarkersRef.current.clear();
+      
+      // Clear directions control reference
+      if (directionsControl.current) {
+        directionsControl.current = null;
+      }
+      
       // Reset initialization flags
       isInitializingMap.current = false;
       directionsInitialized.current = false;
@@ -2561,63 +2649,64 @@ useEffect(() => {
         `;
 
         const popupContent = `
-  <div class="p-4 max-w-sm">
-    <div class="flex items-center mb-3">
-      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-        <i class="bx bx-clinic text-white text-xl"></i>
-      </div>
-      <div>
-        <h3 class="font-bold text-lg text-gray-800">${clinic.clinicName}</h3>
-        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-          clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-        }">
-          ${clinic.clinicType}
-        </span>
-      </div>
-    </div>
-    
-    <div class="space-y-2 text-sm text-gray-600 mb-4">
-      <p><i class="bx bx-map text-blue-500 mr-2"></i>${clinic.address.fullAddress}</p>
-      ${clinic.contactInfo.phone ? `<p><i class="bx bx-phone text-green-500 mr-2"></i>${clinic.contactInfo.phone}</p>` : ''}
-      ${clinic.contactInfo.email ? `<p><i class="bx bx-envelope text-red-500 mr-2"></i>${clinic.contactInfo.email}</p>` : ''}
-    </div>
+          <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
+            
+            <div class="flex items-center mb-3 pr-6">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-10 h-10 rounded-full object-cover"/>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-lg text-[#1f1f1f] ">${clinic.clinicName}</h3>
+                <span class="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                  clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                }">
+                  ${clinic.clinicType}
+                </span>
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+              <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
+              ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
+              ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
+            </div>
 
-    <div class="flex flex-wrap gap-2 mb-4">
-      <div
-        onclick="showDirectionsToClinic('${clinic._id}')"
-        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-      >
-        <i class="bx bx-directions"></i>
-        Get Directions
-      </bdiv>
-      
-      <div 
-        onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')"
-        class="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-      >
-        <i class="bx bx-street-view"></i>
-        Street View
-      </div>
-    </div>
-
-    <div class="text-xs text-gray-500">
-      <p>Distance: ${userLocation ? calculateDistance(
-        userLocation.latitude, 
-        userLocation.longitude, 
-        latitude, 
-        longitude
-      ).toFixed(1) + ' km' : 'Unknown'}</p>
-      <p>Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
-    </div>
-  </div>
+            <div class="flex w-full h-10 mb-4 gap-1">
+              <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-2xl bg-[#0e80a7] text-xs sm:text-sm"><i class="bx bx-directions"></i> Directions</div>
+              <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-2xl bg-[#dd9a2d] text-xs sm:text-sm"><i class="bx bx-street-view"></i> Street View</div>
+            </div>
+          </div>
         `;
 
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
+        const popup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false 
+        }).setHTML(popupContent);
+
+        // Add event listener to track when this popup opens
+        popup.on('open', () => {
+          // Close the previously open popup if it exists
+          if (currentPopup.current && currentPopup.current !== popup) {
+            currentPopup.current.remove();
+          }
+          // Set this popup as the current one
+          currentPopup.current = popup;
+        });
+
+        // Add event listener to clear reference when popup closes
+        popup.on('close', () => {
+          if (currentPopup.current === popup) {
+            currentPopup.current = null;
+          }
+        });
 
         const newMarker = new mapboxgl.Marker(markerEl)
           .setLngLat([longitude, latitude])
           .setPopup(popup)
           .addTo(map.current);
+
+
           
         newMarkers.set(clinicId, newMarker);
       }
@@ -2836,21 +2925,55 @@ useEffect(() => {
   // Global function for getting directions from popup
   window.showDirectionsToClinic = (clinicId) => {
     console.log('🧭 Showing directions to clinic:', clinicId);
+    console.log('🔍 Debug state:', {
+      mapLoaded,
+      mapExists: !!map.current,
+      directionsControlExists: !!directionsControl.current,
+      directionsInitialized: directionsInitialized.current,
+      userLocation,
+      clinicLocationsCount: clinicLocations?.length || 0
+    });
+    
     const clinic = clinicLocations.find(c => c._id === clinicId);
     
     if (!clinic) {
       console.error('❌ Clinic not found:', clinicId);
+      console.error('Available clinics:', clinicLocations.map(c => ({ id: c._id, name: c.clinicName })));
+      alert('Clinic not found. Please try again.');
       return;
     }
 
     if (!userLocation) {
+      console.error('❌ User location not available');
       alert('Please enable location services to get directions');
+      return;
+    }
+
+    if (!map.current) {
+      console.error('❌ Map not initialized');
+      alert('Map is not ready. Please try again.');
       return;
     }
 
     if (!directionsControl.current) {
       console.error('❌ Directions control not initialized');
-      alert('Directions service is not available. Please try again.');
+      console.log('🔄 Attempting to initialize directions control...');
+      
+      // Try to initialize directions control if it's missing
+      if (mapLoaded && activedashboard === 'mappingintegration') {
+        initializeDirectionsControl();
+        // Wait a moment for initialization
+        setTimeout(() => {
+          if (directionsControl.current) {
+            console.log('✅ Directions control initialized, retrying...');
+            window.showDirectionsToClinic(clinicId);
+          } else {
+            alert('Directions service is not available. Please try again.');
+          }
+        }, 500);
+      } else {
+        alert('Directions service is not available. Please try again.');
+      }
       return;
     }
 
@@ -2909,7 +3032,7 @@ useEffect(() => {
     // Cleanup
     delete window.showDirectionsToClinic;
   };
-}, [clinicLocations, userLocation]); // Include userLocation as it's used in the function
+}, [clinicLocations, userLocation, mapLoaded, activedashboard, initializeDirectionsControl]); // Include all dependencies
 
 
 
@@ -3594,7 +3717,7 @@ useEffect(() => {
                     {showDirections && (
                       <div 
                         ref={directionsPanelRef} 
-                        className={`absolute top-2.5 left-2.5 w-80 max-h-96 bg-white rounded-xl shadow-xl z-[1000] overflow-hidden transition-transform duration-300 ease-in-out ${
+                        className={` absolute top-2.5 left-2.5 w-80   bg-white rounded-xl shadow-xl z-[1000] overflow-hidden transition-transform duration-300 ease-in-out ${
                           showDirections ? 'translate-x-0' : '-translate-x-full'
                         }`}
                       >
@@ -3611,7 +3734,7 @@ useEffect(() => {
                         </div>
                         
                         {/* Directions Content */}
-                        <div className="max-h-80 overflow-y-auto p-2.5">
+                        <div className="directions-content h-auto max-h-[480px] overflow-y-auto p-2.5">
                           {isLoadingRoute && (
                             <div className="flex items-center justify-center py-8">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -3659,6 +3782,8 @@ useEffect(() => {
                         </div>
                       </div>
                     )}
+
+
 
 
 
