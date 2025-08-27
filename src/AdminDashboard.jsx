@@ -4170,8 +4170,6 @@ useEffect(() => {
                                 key={clinic._id || `clinic-${index}`}
                                 className="p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white"
                                 onClick={() => {
-                                  setSelectedClinicLocation(clinic);
-                                  setShowClinicDetailsDialog(true);
                                   // Center map on clinic
                                   if (map.current && clinic.coordinates?.coordinates) {
                                     map.current.flyTo({
@@ -4179,6 +4177,24 @@ useEffect(() => {
                                       zoom: 16,
                                       duration: 1500
                                     });
+                                    
+                                    // Find the corresponding marker and open its popup
+                                    const clinicId = clinic._id;
+                                    const marker = mapMarkersRef.current.get(clinicId);
+                                    if (marker) {
+                                      // Close any currently open popup
+                                      if (currentPopup.current) {
+                                        currentPopup.current.remove();
+                                      }
+                                      
+                                      // Open the marker's popup after a short delay to allow map animation
+                                      setTimeout(() => {
+                                        const popup = marker.getPopup();
+                                        if (popup) {
+                                          marker.togglePopup();
+                                        }
+                                      }, 800); // Delay to allow flyTo animation to progress
+                                    }
                                   }
                                 }}
                               >
