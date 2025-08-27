@@ -20,12 +20,17 @@ export default {
         'fade-in-down': 'fadeInDown 0.3s ease-out forwards',
         fadeoutUp: 'fadeoutUp 0.3s ease-out forwards',
         fadeInUp: 'fadeInUp 0.5s ease-out forwards',
-        spin: 'spin 1s linear infinite'
+        spin: 'spin 1s linear infinite',
+        'location-pulse': 'locationPulse 2s infinite'
       },
 
 
       fontSize: {
               'fluid': 'clamp(14px, 4vw, 18px)',
+      },
+
+      borderWidth: {
+        '3': '3px'
       },
 
       keyframes: {
@@ -102,6 +107,18 @@ export default {
           '100%': {
             opacity: '1',
             transform: 'translateY(0)'
+          }
+        },
+
+        locationPulse: {
+          '0%': {
+            boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.7)'
+          },
+          '70%': {
+            boxShadow: '0 0 0 10px rgba(16, 185, 129, 0)'
+          },
+          '100%': {
+            boxShadow: '0 0 0 0 rgba(16, 185, 129, 0)'
           }
         }
       

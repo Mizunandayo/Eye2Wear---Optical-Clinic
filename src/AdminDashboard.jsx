@@ -59,456 +59,16 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Add pulse animation CSS for user location
+// Add essential CSS for Mapbox functionality that can't be replaced with Tailwind
 const mapStyles = document.createElement('style');
 mapStyles.textContent = `
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
-  }
-  
-  .clinic-marker {
-    transition: all 0.2s ease-out;
-    will-change: transform;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-  }
-  
-  .clinic-marker:hover {
-    transform: scale(1.1) translateZ(0);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-  }
-  
-  .user-location-marker {
-    animation: pulse 2s infinite;
-    will-change: transform, box-shadow;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-  }
-  
-  .mapboxgl-popup-content {
-    border-radius: 12px;
-    padding: 0;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border: none;
-  }
-  
-  .mapboxgl-popup-close-button {
-    font-size: 18px;
-    padding: 8px;
-    transition: all 0.2s ease;
-  }
-  
-  .mapboxgl-popup-close-button:hover {
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 4px;
-  }
-  
-  .mapboxgl-map {
-    font-family: inherit;
-  }
-  
-  .mapboxgl-canvas-container canvas {
-    will-change: transform;
-    transform: translateZ(0);
-  }
-  
-  .mapboxgl-ctrl-group {
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  
-  /* Ensure only one set of navigation controls is visible - be specific to avoid hiding other controls */
-  /* Hide duplicate zoom buttons specifically, but preserve fullscreen and geolocate controls */
-  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
-  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
-  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
-  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
-  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
-  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out,
-  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-in ~ .mapboxgl-ctrl-zoom-in,
-  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-group .mapboxgl-ctrl-zoom-out ~ .mapboxgl-ctrl-zoom-out {
-    display: none !important;
-  }
-  
-  /* Preserve visibility of fullscreen and geolocate controls */
-  .mapboxgl-ctrl-fullscreen,
-  .mapboxgl-ctrl-geolocate {
-    display: block !important;
-  }
-  
-  /* Ensure fullscreen control is always visible and accessible */
-  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-fullscreen {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    z-index: 1001 !important;
-  }
-  
-  /* Hide any duplicate navigation controls specifically */
-  .mapboxgl-ctrl-top-right .mapboxgl-ctrl-nav:nth-of-type(n+2),
-  .mapboxgl-ctrl-top-left .mapboxgl-ctrl-nav:nth-of-type(n+2),
-  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-nav:nth-of-type(n+2),
-  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-nav:nth-of-type(n+2) {
-    display: none !important;
-  }
-  
-  .mapboxgl-ctrl button {
-    transition: all 0.2s ease;
-    will-change: background-color;
-  }
-  
-  .mapboxgl-ctrl button:hover {
-    background-color: rgba(0,0,0,0.05);
-  }
-  
-  /* Enhanced fullscreen control styling */
-  .mapboxgl-ctrl-fullscreen {
-    position: relative;
-  }
-  
-  .mapboxgl-ctrl-fullscreen button {
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-  
-  .mapboxgl-ctrl-fullscreen button:hover {
-    background-color: #f8f9fa;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transform: translateY(-1px);
-  }
-  
-  .mapboxgl-ctrl-fullscreen button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  
-  /* Fullscreen mode optimizations - ensure complete fullscreen coverage */
-  .mapboxgl-map:-webkit-full-screen {
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    position: fixed !important;
-    z-index: 999999 !important;
-  }
-  
-  .mapboxgl-map:-moz-full-screen {
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    position: fixed !important;
-    z-index: 999999 !important;
-  }
-  
-  .mapboxgl-map:fullscreen {
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    position: fixed !important;
-    z-index: 999999 !important;
-  }
-  
-  /* Ensure fullscreen container takes full screen */
-  #geographicmapcontainer:-webkit-full-screen,
-  #geographicmapcontainer:-moz-full-screen,
-  #geographicmapcontainer:fullscreen {
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    position: fixed !important;
-    z-index: 999999 !important;
-    background: #000 !important;
-  }
-  
-  /* Hide any potential overflow or container constraints in fullscreen */
-  body:-webkit-full-screen,
-  body:-moz-full-screen,
-  body:fullscreen {
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  /* Additional fullscreen fixes for any parent containers */
-  *:-webkit-full-screen,
-  *:-moz-full-screen,
-  *:fullscreen {
-    background: #000 !important;
-  }
-  
-  /* Ensure the map canvas fills the entire fullscreen area */
-  .mapboxgl-map:-webkit-full-screen .mapboxgl-canvas-container,
-  .mapboxgl-map:-moz-full-screen .mapboxgl-canvas-container,
-  .mapboxgl-map:fullscreen .mapboxgl-canvas-container {
-    width: 100vw !important;
-    height: 100vh !important;
-    left: 0 !important;
-    top: 0 !important;
-  }
-  
-  .mapboxgl-map:-webkit-full-screen .mapboxgl-canvas,
-  .mapboxgl-map:-moz-full-screen .mapboxgl-canvas,
-  .mapboxgl-map:fullscreen .mapboxgl-canvas {
-    width: 100vw !important;
-    height: 100vh !important;
-  }
-  
-  /* Force any remaining elements to not create white space in fullscreen */
-  *:-webkit-full-screen *,
-  *:-moz-full-screen *,
-  *:fullscreen * {
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-  }
-  
-  /* Override any flex or grid constraints that might cause white space */
-  .mapboxgl-map:-webkit-full-screen,
-  .mapboxgl-map:-moz-full-screen,
-  .mapboxgl-map:fullscreen {
-    flex: none !important;
-    grid-column: unset !important;
-    grid-row: unset !important;
-    float: none !important;
-    clear: both !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    border: none !important;
-    outline: none !important;
-  }
-  
-  /* Force the container and all parent elements to take full width */
-  #geographicmapcontainer:-webkit-full-screen *,
-  #geographicmapcontainer:-moz-full-screen *,
-  #geographicmapcontainer:fullscreen * {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* Force full width on all fullscreen elements */
-  *:-webkit-full-screen,
-  *:-moz-full-screen,
-  *:fullscreen {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    outline: none !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* Specifically target the mapbox container in fullscreen */
-  .mapboxgl-map:-webkit-full-screen,
-  .mapboxgl-map:-moz-full-screen,
-  .mapboxgl-map:fullscreen {
-    transform: none !important;
-    scale: none !important;
-  }
-  
-  /* Additional aggressive fullscreen fixes */
-  html:-webkit-full-screen,
-  html:-moz-full-screen,
-  html:fullscreen {
-    width: 100vw !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  /* Force viewport meta compliance in fullscreen */
-  @media screen and (-webkit-min-device-pixel-ratio: 0) {
-    *:-webkit-full-screen {
-      width: 100vw !important;
-      height: 100vh !important;
-      max-width: none !important;
-      max-height: none !important;
-    }
-  }
-  
-  /* Ensure no container has overflow constraints in fullscreen */
-  *:-webkit-full-screen,
-  *:-moz-full-screen,
-  *:fullscreen {
-    contain: none !important;
-    isolation: auto !important;
-  }
-  
-  /* Enhanced map controls positioning in fullscreen */
-  .mapboxgl-map:fullscreen .mapboxgl-ctrl-top-right {
-    top: 20px;
-    right: 20px;
-  }
-  
-  .mapboxgl-map:fullscreen .mapboxgl-ctrl-top-left {
-    top: 20px;
-    left: 20px;
-  }
-  
-  .mapboxgl-map:fullscreen .mapboxgl-ctrl-bottom-right {
-    bottom: 20px;
-    right: 20px;
-  }
-  
-  .mapboxgl-map:fullscreen .mapboxgl-ctrl-bottom-left {
-    bottom: 20px;
-    left: 20px;
-  }
-  
-  /* Optimize during map interactions */
-  .mapboxgl-map.mapboxgl-interactive {
-    cursor: grab;
-  }
-  
-  .mapboxgl-map.mapboxgl-interactive:active {
-    cursor: grabbing;
-  }
-  
-  /* GPU acceleration for smooth performance */
-  .mapboxgl-canvas {
-    image-rendering: optimizeSpeed;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-  }
-
-  /* Directions Panel Styles */
-  .directions-panel {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 300px;
-    max-height: 400px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    z-index: 1000;
-    overflow: hidden;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-  }
-
-  .directions-panel.active {
-    transform: translateX(0);
-  }
-
-  .directions-header {
-    background: #2781af;
-    color: white;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .directions-content {
-    max-height: 350px;
-    overflow-y: auto;
-    padding: 10px;
-  }
-
-  .route-info {
-    background: #f8f9fa;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border-left: 4px solid #2781af;
-  }
-
-  .directions-step {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .directions-step:last-child {
-    border-bottom: none;
-  }
-
-  .step-icon {
-    width: 24px;
-    height: 24px;
-    background: #2781af;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
-  .step-text {
-    flex: 1;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-
-  .close-directions {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-  }
-
-  .close-directions:hover {
-    background-color: rgba(255,255,255,0.2);
-  }
-
-  /* Mapbox Directions Control Customization */
+  /* Essential Mapbox functionality CSS */
   .mapboxgl-ctrl-directions {
-    display: none !important; /* Hide the default control */
+    display: none !important;
   }
 
   /* Make waypoints non-draggable and non-interactive */
-  .mapbox-directions-waypoint {
-    pointer-events: none !important;
-    cursor: default !important;
-  }
-
+  .mapbox-directions-waypoint,
   .mapbox-directions-waypoint-0,
   .mapbox-directions-waypoint-1 {
     pointer-events: none !important;
@@ -532,6 +92,46 @@ mapStyles.textContent = `
     line-color: #94a3b8;
     line-width: 3;
     line-opacity: 0.6;
+  }
+
+  /* Essential fullscreen functionality that can't be replaced with Tailwind */
+  .mapboxgl-map:-webkit-full-screen,
+  .mapboxgl-map:-moz-full-screen,
+  .mapboxgl-map:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
+  }
+
+  #geographicmapcontainer:-webkit-full-screen,
+  #geographicmapcontainer:-moz-full-screen,
+  #geographicmapcontainer:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    position: fixed !important;
+    z-index: 999999 !important;
+    background: #000 !important;
+  }
+
+  body:-webkit-full-screen,
+  body:-moz-full-screen,
+  body:fullscreen {
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 `;
 document.head.appendChild(mapStyles);
@@ -2426,6 +2026,12 @@ const getStepIcon = (maneuverType) => {
         style: 'mapbox://styles/mapbox/streets-v11',
         center: [120.4818, 14.6417], // Metro Manila center
         zoom: 10,
+        // Disable rotation and tilting
+        bearing: 0, // Lock rotation to north-up
+        pitch: 0, // Keep map flat (no 3D tilt)
+        maxPitch: 0, // Prevent any tilting
+        dragRotate: false, // Disable rotation via drag
+        touchPitch: false, // Disable pitch on touch devices
         // Essential options only to prevent URL parsing errors
         attributionControl: true,
         logoPosition: 'bottom-right',
@@ -2630,12 +2236,26 @@ const getStepIcon = (maneuverType) => {
           }
         });
         
-        // Force map resize to ensure proper rendering
+        // Force immediate map resize to handle fullscreen dimensions
+        if (map.current) {
+          map.current.resize();
+        }
+        
+        // Force map resize again after a delay to ensure proper rendering
         setTimeout(() => {
           if (map.current) {
             map.current.resize();
+            console.log('🔄 Map resized for fullscreen mode');
           }
         }, 100);
+        
+        // Additional resize after fullscreen transition completes
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('🔄 Map resized again after fullscreen transition');
+          }
+        }, 300);
         
         // No need to add additional controls in fullscreen mode
         // Legend and directions panels are already properly positioned
@@ -2918,7 +2538,7 @@ useEffect(() => {
       } else {
         // Create a new marker
         const markerEl = document.createElement('img');
-        markerEl.className = 'clinic-marker';
+        markerEl.className = 'w-10 h-10 rounded-full transition-all duration-200 ease-out will-change-transform transform-gpu hover:shadow-lg cursor-pointer border-2 border-white shadow-md';
         
         if (clinic.clinicType === 'Ambher Optical') {
           markerEl.src = ambherlogo;
@@ -3037,16 +2657,7 @@ useEffect(() => {
   if (map.current && userLocation) {
     // Add user location marker
     const userMarkerEl = document.createElement('div');
-    userMarkerEl.className = 'user-location-marker';
-    userMarkerEl.style.cssText = `
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: #10B981;
-      border: 3px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      animation: pulse 2s infinite;
-    `;
+    userMarkerEl.className = 'w-5 h-5 rounded-full bg-emerald-500 border-3 border-white shadow-md animate-location-pulse transform-gpu will-change-auto';
 
     new mapboxgl.Marker(userMarkerEl)
       .setLngLat([userLocation.longitude, userLocation.latitude])
@@ -3981,19 +3592,26 @@ useEffect(() => {
 
                     {/* Directions Panel */}
                     {showDirections && (
-                      <div ref={directionsPanelRef} className={`directions-panel ${showDirections ? 'active' : ''}`}>
-                        <div className="directions-header">
+                      <div 
+                        ref={directionsPanelRef} 
+                        className={`absolute top-2.5 left-2.5 w-80 max-h-96 bg-white rounded-xl shadow-xl z-[1000] overflow-hidden transition-transform duration-300 ease-in-out ${
+                          showDirections ? 'translate-x-0' : '-translate-x-full'
+                        }`}
+                      >
+                        {/* Directions Header */}
+                        <div className="bg-[#2781af] text-white p-4 flex justify-between items-center">
                           <h3 className="font-bold">Directions</h3>
                           <button 
                             onClick={clearDirections}
-                            className="close-directions"
+                            className="bg-transparent border-none text-white text-lg cursor-pointer p-1 rounded hover:bg-white/20 transition-colors duration-200"
                             title="Close directions"
                           >
                             <i className="bx bx-x"></i>
                           </button>
                         </div>
                         
-                        <div className="directions-content">
+                        {/* Directions Content */}
+                        <div className="max-h-80 overflow-y-auto p-2.5">
                           {isLoadingRoute && (
                             <div className="flex items-center justify-center py-8">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -4009,7 +3627,7 @@ useEffect(() => {
                           )}
                           
                           {routeInfo && (
-                            <div className="route-info">
+                            <div className="bg-gray-50 p-2.5 mb-2.5 rounded-lg border-l-4 border-[#2781af]">
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
@@ -4021,15 +3639,15 @@ useEffect(() => {
                           )}
                           
                           {directionsSteps.length > 0 && (
-                            <div className="directions-steps">
+                            <div>
                               <h4 className="font-semibold mb-3 text-gray-800">Turn-by-turn directions:</h4>
                               {directionsSteps.map((step, index) => (
-                                <div key={index} className="directions-step">
-                                  <div className="step-icon">
+                                <div key={index} className={`py-2 flex items-center gap-2.5 ${index !== directionsSteps.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                                  <div className="w-6 h-6 bg-[#2781af] rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">
                                     <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
                                   </div>
-                                  <div className="step-text">
-                                    <p dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
+                                  <div className="flex-1">
+                                    <p className="text-sm leading-snug" dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
                                     <p className="text-xs text-gray-500 mt-1">
                                       {(step.distance / 1000).toFixed(1)} km
                                     </p>
