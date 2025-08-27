@@ -8,7 +8,20 @@ export const getAllClinicLocations = async (req, res) => {
   try {
     // Allow optional query parameter to include inactive clinics
     const includeInactive = req.query.includeInactive === 'true';
-    const filter = includeInactive ? {} : { isActive: true };
+    const showDeleted = req.query.showDeleted === 'true';
+    
+    let filter = {};
+    
+    if (showDeleted) {
+      // Show only deleted (inactive) clinics
+      filter = { isActive: false };
+    } else if (includeInactive) {
+      // Show all clinics (active and inactive)
+      filter = {};
+    } else {
+      // Default: show only active clinics
+      filter = { isActive: true };
+    }
     
     const locations = await ClinicLocation.find(filter);
     res.status(200).json({
@@ -256,23 +269,42 @@ export const deleteClinicLocation = async (req, res) => {
   try {
     const { clinicId } = req.params;
     const userId = req.user?.id;
+    const { hardDelete = false } = req.query; // Allow hard delete via query parameter
     
-    const result = await ClinicLocation.findOneAndUpdate(
-      { clinicId },
-      { isActive: false, updatedBy: userId }
-    );
+    if (hardDelete === 'true') {
+      // Permanently delete from database
+      const result = await ClinicLocation.findOneAndDelete({ clinicId });
+      
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'Clinic location not found'
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: 'Clinic location permanently deleted successfully'
+      });
+    } else {
+      // Soft delete (mark as inactive)
+      const result = await ClinicLocation.findOneAndUpdate(
+        { clinicId },
+        { isActive: false, updatedBy: userId }
+      );
 
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: 'Clinic location not found'
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'Clinic location not found'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Clinic location deleted successfully'
       });
     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Clinic location deleted successfully'
-    });
   } catch (error) {
     res.status(500).json({
       success: false,

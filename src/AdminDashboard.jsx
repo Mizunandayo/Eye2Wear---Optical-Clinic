@@ -886,6 +886,29 @@ function AdminDashboard(){
     return false; // Admin can see all data
   };
 
+  // Helper function to get user's allowed clinic type(s)
+  const getUserAllowedClinicTypes = useCallback(() => {
+    if (currentuserloggedin === "Admin") {
+      return ['Ambher Optical', 'Bautista Eye Center']; // Admin can create any type
+    } else if (currentuserloggedin === "Staff") {
+      const userClinic = localStorage.getItem('staffclinic') || staffclinic;
+      return userClinic === "Bautista Eye Center" ? ['Bautista Eye Center'] : ['Ambher Optical'];
+    } else if (currentuserloggedin === "Owner") {
+      return ownerownedclinic === "Bautista Eye Center" ? ['Bautista Eye Center'] : ['Ambher Optical'];
+    }
+    return ['Ambher Optical']; // Default fallback
+  }, [currentuserloggedin, staffclinic, ownerownedclinic]);
+
+  // Helper function to get user's default clinic type
+  const getUserDefaultClinicType = useCallback(() => {
+    if (currentuserloggedin === "Staff") {
+      return localStorage.getItem('staffclinic') || staffclinic || 'Ambher Optical';
+    } else if (currentuserloggedin === "Owner") {
+      return ownerownedclinic || 'Ambher Optical';
+    }
+    return 'Ambher Optical'; // Default for admin and others
+  }, [currentuserloggedin, staffclinic, ownerownedclinic]);
+
 
   const handlelogout = () => {
     if(currentuserloggedin === "Admin") adminlogout();
@@ -1118,6 +1141,14 @@ const [selectedNearbyClinic, setSelectedNearbyClinic] = useState(null);
 // User location states
 const [userLocation, setUserLocation] = useState(null);
 const [loadingUserLocation, setLoadingUserLocation] = useState(false);
+
+// Initialize edit mode data attribute
+useEffect(() => {
+  document.body.setAttribute('data-edit-mode', 'false');
+  return () => {
+    document.body.removeAttribute('data-edit-mode');
+  };
+}, []);
 const [userLocationError, setUserLocationError] = useState(null);
 
 // Mapbox states
@@ -1197,23 +1228,56 @@ const currentPopup = useRef(null); // Track current open popup to close it when 
 
 
 // Load clinic locations
-const fetchClinicLocations = useCallback(async () => {
+const fetchClinicLocations = useCallback(async (includeInactive = false) => {
   try {
     setLoadingClinicLocations(true);
     // Use fallback URL if environment variable is not set
     const baseUrl = apiUrl || 'http://localhost:3000';
-    // Only fetch active clinics by default (don't include inactive/deleted ones)
-    const fetchUrl = `${baseUrl}/api/cliniclocation/clinics`;
-    console.log('Fetching clinic locations from:', fetchUrl);
+    
+    // Build query parameter for including inactive clinics
+    const includeParam = includeInactive ? '?includeInactive=true' : '';
+    
+    // Try multiple endpoints to fetch clinics
+    const possibleUrls = [
+      `${baseUrl}/api/cliniclocation/clinics${includeParam}`,        // Primary endpoint
+      `${baseUrl}/api/cliniclocation/all-clinics${includeParam}`,    // Alternative endpoint
+      `${baseUrl}/api/cliniclocation${includeParam}`                 // Fallback endpoint
+    ];
+    
+    let response;
+    let fetchUrl;
+    
+    // Try each URL until one works
+    for (const url of possibleUrls) {
+      try {
+        fetchUrl = url;
+        console.log('Trying to fetch clinic locations from:', fetchUrl);
+        
+        response = await fetch(fetchUrl, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          break; // Success, exit the loop
+        } else if (response.status === 404 && url !== possibleUrls[possibleUrls.length - 1]) {
+          console.log(`Endpoint ${url} not found, trying next...`);
+          continue; // Try next URL
+        }
+      } catch (error) {
+        console.log(`Error with ${url}:`, error);
+        if (url === possibleUrls[possibleUrls.length - 1]) {
+          throw error; // If it's the last URL, throw the error
+        }
+        continue; // Try next URL
+      }
+    }
+    
     console.log('API URL from env:', apiUrl);
     console.log('Current user token exists:', !!currentusertoken);
-    
-    const response = await fetch(fetchUrl, {
-      headers: {
-        'Authorization': `Bearer ${currentusertoken}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    console.log('Final fetch URL used:', fetchUrl);
 
     console.log('Response status:', response.status);
     console.log('Response headers:', response.headers);
@@ -1223,10 +1287,12 @@ const fetchClinicLocations = useCallback(async () => {
       console.log('Received clinic data:', data);
       
       if (data.success && Array.isArray(data.data)) {
-        console.log('Setting clinic locations:', data.data);
-        setClinicLocations(data.data);
+        // Filter out inactive clinics for display unless specifically requested
+        const filteredClinics = includeInactive ? data.data : data.data.filter(clinic => clinic.isActive !== false);
+        console.log(`Setting clinic locations: ${filteredClinics.length} clinics (includeInactive: ${includeInactive})`);
+        setClinicLocations(filteredClinics);
         setLocationMessage({ 
-          text: `Loaded ${data.data.length} clinic locations from database`, 
+          text: `Loaded ${filteredClinics.length} clinic locations from database`, 
           type: 'success' 
         });
       } else {
@@ -1598,7 +1664,7 @@ const addExternalClinic = useCallback(async (clinicData) => {
 const resetClinicForm = useCallback(() => {
   setClinicFormData({
     clinicName: '',
-    clinicType: currentUserClinic || (staffclinic || ownerownedclinic || 'Ambher Optical'),
+    clinicType: getUserDefaultClinicType(),
     address: {
       street: '',
       city: '',
@@ -1620,7 +1686,7 @@ const resetClinicForm = useCallback(() => {
     },
     services: []
   });
-}, [currentUserClinic, staffclinic, ownerownedclinic]);
+}, [getUserDefaultClinicType]);
 
 // Copy coordinates to clipboard
 const copyCoordinatesToClipboard = useCallback(async () => {
@@ -1768,7 +1834,8 @@ const handleDeleteClinicLocation = useCallback(async () => {
     // Use the clinicId field from the selected clinic, not the MongoDB _id
     const clinicIdToDelete = selectedClinicLocation.clinicId || selectedClinicLocation._id;
     
-    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${clinicIdToDelete}`, {
+    // Use hard delete to permanently remove from database
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${clinicIdToDelete}?hardDelete=true`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${currentusertoken}`,
@@ -1777,10 +1844,10 @@ const handleDeleteClinicLocation = useCallback(async () => {
     });
 
     if (response.ok) {
-      console.log('✅ Clinic deleted successfully from database');
+      console.log('✅ Clinic permanently deleted from database');
       
-      // Refresh the clinic locations to get updated data (removes soft-deleted clinics)
-      await fetchClinicLocations();
+      // Refresh the clinic locations to get updated data (fetch all remaining clinics)
+      await fetchClinicLocations(true); // true = include all clinics (active and inactive)
       
       setLocationMessage({ text: 'Clinic location deleted successfully', type: 'success' });
       setShowDeleteClinicDialog(false);
@@ -2522,13 +2589,28 @@ useEffect(() => {
 
   const handleMapClick = (e) => {
     if (isEditingLocation) {
+      // Check if the click target is a marker by looking for clinic marker data attribute
+      const clickTarget = e.originalEvent?.target;
+      
+      // If clicking on a marker, don't open add dialog
+      if (clickTarget && (
+        clickTarget.hasAttribute('data-clinic-marker') ||
+        clickTarget.tagName === 'IMG' || 
+        clickTarget.closest('.mapboxgl-marker') ||
+        clickTarget.classList.contains('mapboxgl-marker')
+      )) {
+        console.log('🎯 Clicked on clinic marker, ignoring map click for add dialog');
+        return;
+      }
+      
+      console.log('🗺️ Clicked on empty map area, opening add dialog');
       const { lng, lat } = e.lngLat;
       setClinicFormData(prev => ({
         ...prev,
         coordinates: { longitude: lng, latitude: lat }
       }));
       
-      // Show form dialog
+      // Show add form dialog only when clicking on empty map areas
       setShowAddClinicDialog(true);
     }
   };
@@ -2616,39 +2698,43 @@ useEffect(() => {
         return;
       }
 
-      // If marker already exists, keep it and move it to the new set
+      // If marker already exists, update it with new data instead of just reusing
       if (markersOnMap.has(clinicId)) {
         const existingMarker = markersOnMap.get(clinicId);
-        // Optional: Update position if it can change, though full re-render on location change is often fine
+        // Update position if it can change
         existingMarker.setLngLat([longitude, latitude]);
-        newMarkers.set(clinicId, existingMarker);
-        markersOnMap.delete(clinicId); // Mark as processed
-      } else {
-        // Create a new marker
-        const markerEl = document.createElement('img');
-        markerEl.className = 'w-10 h-10 rounded-full transition-all duration-200 ease-out will-change-transform transform-gpu hover:shadow-lg cursor-pointer border-2 border-white shadow-md';
         
-        if (clinic.clinicType === 'Ambher Optical') {
-          markerEl.src = ambherlogo;
-        } else if (clinic.clinicType === 'Bautista Eye Center') {
-          markerEl.src = bautistalogo;
-        } else {
-          // Fallback for any other clinic type, though not expected
-          markerEl.src = defaultprofilepic; 
+        // Update marker styling for edit mode accessibility
+        const markerElement = existingMarker.getElement();
+        if (markerElement) {
+          // Check if user can edit this clinic type for visual feedback
+          const userDefaultClinicType = getUserDefaultClinicType();
+          const isAdminUser = currentuserloggedin === 'Admin';
+          const canEditThisClinic = isAdminUser || clinic.clinicType === userDefaultClinicType;
+          
+          markerElement.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            ${!clinic.isActive ? 'opacity: 0.6;' : ''}
+            ${isEditingLocation ? (canEditThisClinic ? 'transform: scale(1.1); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);' : 'opacity: 0.5; filter: grayscale(50%); cursor: not-allowed;') : ''}
+          `;
+          
+          // Update tooltip
+          if (isEditingLocation) {
+            markerElement.title = canEditThisClinic ? `Click to edit ${clinic.clinicName}` : `Cannot edit ${clinic.clinicType} clinics (Access denied)`;
+          } else {
+            markerElement.title = clinic.isActive ? clinic.clinicName : `${clinic.clinicName} (Inactive)`;
+          }
         }
         
-        markerEl.style.cssText = `
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background-color: white;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        `;
-
-        const popupContent = `
+        // UPDATE: Recreate popup content with current clinic data to reflect status changes
+        const updatedPopupContent = `
           <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
             
             <div class="flex items-center mb-3 pr-6">
@@ -2666,6 +2752,132 @@ useEffect(() => {
             </div>
             
             <div class="space-y-2 text-sm text-gray-600 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                clinic.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }">
+                                <div class="w-2 h-2 rounded-full ${
+                                  clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                                }"></div>
+                                ${clinic.isActive ? 'Active' : 'Inactive'}
+                              </div>
+                            </div>
+              <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
+              ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
+              ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
+            </div>
+
+            <div class="flex w-full h-10 mb-4 gap-1">
+              <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-2xl bg-[#0e80a7] text-xs sm:text-sm"><i class="bx bx-directions"></i> Directions</div>
+              <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-2xl bg-[#dd9a2d] text-xs sm:text-sm"><i class="bx bx-street-view"></i> Street View</div>
+            </div>
+          </div>
+        `;
+
+        // Update the popup content with current clinic data
+        const updatedPopup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false 
+        }).setHTML(updatedPopupContent);
+
+        // Add event listener to track when this popup opens
+        updatedPopup.on('open', () => {
+          // Close the previously open popup if it exists
+          if (currentPopup.current && currentPopup.current !== updatedPopup) {
+            currentPopup.current.remove();
+          }
+          // Set this popup as the current one
+          currentPopup.current = updatedPopup;
+        });
+
+        // Add event listener to clear reference when popup closes
+        updatedPopup.on('close', () => {
+          if (currentPopup.current === updatedPopup) {
+            currentPopup.current = null;
+          }
+        });
+
+        // Set the updated popup on the existing marker
+        existingMarker.setPopup(updatedPopup);
+        
+        newMarkers.set(clinicId, existingMarker);
+        markersOnMap.delete(clinicId); // Mark as processed
+      } else {
+        // Create a new marker
+        const markerEl = document.createElement('img');
+        markerEl.className = `w-10 h-10 rounded-full transition-all duration-200 ease-out will-change-transform transform-gpu hover:shadow-lg cursor-pointer border-2 border-white shadow-md ${isEditingLocation ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`;
+        
+        // Add data attribute to identify as clinic marker
+        markerEl.setAttribute('data-clinic-marker', 'true');
+        markerEl.setAttribute('data-clinic-id', clinicId);
+        
+        if (clinic.clinicType === 'Ambher Optical') {
+          markerEl.src = ambherlogo;
+        } else if (clinic.clinicType === 'Bautista Eye Center') {
+          markerEl.src = bautistalogo;
+        } else {
+          // Fallback for any other clinic type, though not expected
+          markerEl.src = defaultprofilepic; 
+        }
+        
+        // Check if user can edit this clinic type for visual feedback
+        const userDefaultClinicType = getUserDefaultClinicType();
+        const isAdminUser = currentuserloggedin === 'Admin';
+        const canEditThisClinic = isAdminUser || clinic.clinicType === userDefaultClinicType;
+        
+        markerEl.style.cssText = `
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: white;
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          ${!clinic.isActive ? 'opacity: 0.6;' : ''}
+          ${isEditingLocation ? (canEditThisClinic ? 'transform: scale(1.1); ' : 'opacity: 0.8; filter: grayscale(50%); cursor: not-allowed;') : ''}
+        `;
+        
+        // Set tooltip based on edit mode and accessibility
+        if (isEditingLocation) {
+          markerEl.title = canEditThisClinic ? `Click to edit ${clinic.clinicName}` : `Cannot edit ${clinic.clinicType} clinics (Access denied)`;
+        } else {
+          markerEl.title = clinic.isActive ? clinic.clinicName : `${clinic.clinicName} (Inactive)`;
+        }
+
+        const popupContent = `
+          <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
+            
+            <div class="flex items-center mb-3 pr-6">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-10 h-10 rounded-full object-cover"/>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-lg text-[#1f1f1f] ">${clinic.clinicName}</h3>
+                <span class="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                  clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-sky-800'
+                }">
+                  ${clinic.clinicType}
+                </span>
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                clinic.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }">
+                                <div class="w-2 h-2 rounded-full ${
+                                  clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                                }"></div>
+                                ${clinic.isActive ? 'Active' : 'Inactive'}
+                              </div>
+                            </div>
               <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
               ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
               ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
@@ -2706,6 +2918,85 @@ useEffect(() => {
           .setPopup(popup)
           .addTo(map.current);
 
+        // Add click handler for edit mode - populate form with clinic data
+        markerEl.addEventListener('click', (e) => {
+          // Check current edit mode state directly from DOM or a global flag
+          const currentEditMode = document.body.getAttribute('data-edit-mode') === 'true';
+          
+          if (currentEditMode) {
+            e.stopPropagation(); // Prevent map click handler from firing
+            e.preventDefault(); // Prevent any default behavior
+            
+            // Check if user can edit this clinic type
+            const userDefaultClinicType = getUserDefaultClinicType();
+            const isAdminUser = currentuserloggedin === 'Admin';
+            
+            if (!isAdminUser && clinic.clinicType !== userDefaultClinicType) {
+              console.log('🚫 Access denied: User cannot edit', clinic.clinicType, 'clinics');
+              setLocationMessage({
+                text: `Access denied: You can only edit ${userDefaultClinicType} clinic locations`,
+                type: 'error'
+              });
+              return;
+            }
+            
+            console.log('🔧 Edit mode: Clicked marker for clinic:', clinic.clinicName);
+            console.log('🔧 Edit mode: Populating form with clinic data:', clinic);
+            
+            // Populate the form with the clicked clinic's data
+            setClinicFormData({
+              clinicName: clinic.clinicName || '',
+              clinicType: clinic.clinicType || 'Ambher Optical',
+              address: {
+                street: clinic.address?.street || '',
+                city: clinic.address?.city || '',
+                state: clinic.address?.state || 'Bataan',
+                zipCode: clinic.address?.zipCode || '',
+                country: clinic.address?.country || 'Philippines',
+                fullAddress: clinic.address?.fullAddress || ''
+              },
+              coordinates: {
+                longitude: longitude,
+                latitude: latitude
+              },
+              contactInfo: {
+                phone: clinic.contactInfo?.phone || '',
+                email: clinic.contactInfo?.email || '',
+                website: clinic.contactInfo?.website || ''
+              },
+              operatingHours: clinic.operatingHours || {
+                monday: { open: '09:00', close: '18:00', closed: false },
+                tuesday: { open: '09:00', close: '18:00', closed: false },
+                wednesday: { open: '09:00', close: '18:00', closed: false },
+                thursday: { open: '09:00', close: '18:00', closed: false },
+                friday: { open: '09:00', close: '18:00', closed: false },
+                saturday: { open: '09:00', close: '17:00', closed: false },
+                sunday: { open: '10:00', close: '16:00', closed: true }
+              },
+              services: clinic.services || []
+            });
+            
+            // Set the selected clinic for editing
+            setSelectedClinicLocation(clinic);
+            
+            // Close any open popups first
+            if (currentPopup.current) {
+              currentPopup.current.remove();
+              currentPopup.current = null;
+            }
+            
+            // Small delay to ensure state is set before opening dialog
+            setTimeout(() => {
+              // Show the EDIT dialog (not add dialog)
+              setShowEditClinicDialog(true);
+              console.log('✅ Opening EDIT dialog for clinic:', clinic.clinicName);
+            }, 50);
+          } else {
+            // Normal mode - just show popup
+            console.log('📍 Normal mode: Showing popup for clinic:', clinic.clinicName);
+          }
+        }, true); // Use capture phase to ensure it fires before map click
+
 
           
         newMarkers.set(clinicId, newMarker);
@@ -2724,7 +3015,7 @@ useEffect(() => {
 
   console.log(`✅ Map synced. Total markers: ${mapMarkersRef.current.size}`);
 
-}, [mapLoaded, clinicLocations, userLocation]); // Include userLocation since it's used in popup content
+}, [mapLoaded, clinicLocations, userLocation, isEditingLocation, currentuserloggedin, getUserDefaultClinicType]); // Include all dependencies used in marker click handlers
 
 // Global function for adding nearby clinic from popup
 useEffect(() => {
@@ -2881,7 +3172,7 @@ const handleDeleteClinic = async () => {
 // Load clinic locations and user location on component mount
 useEffect(() => {
   if (activedashboard === 'mappingintegration') {
-    fetchClinicLocations();
+    fetchClinicLocations(true); // true = include all clinics (active and inactive)
     getUserLocation();
   }
 }, [activedashboard, fetchClinicLocations, getUserLocation]);
@@ -2893,7 +3184,7 @@ useEffect(() => {
     
     const loadClinicLocationsOnLogin = async () => {
       try {
-        await fetchClinicLocations();
+        await fetchClinicLocations(true); // true = include all clinics (active and inactive)
         console.log('Clinic locations loaded successfully for', currentuserloggedin);
       } catch (clinicError) {
         console.error('Error loading clinic locations on login:', clinicError);
@@ -3587,7 +3878,7 @@ useEffect(() => {
 
 
 
-            {(activedashboard === 'mappingintegration' && !isAdminRole) && (
+     {(activedashboard === 'mappingintegration' && !isAdminRole) && (
               <div id="mappingintegration" className="flex flex-col pl-5 pr-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl">
                 
                 {/* Header Section */}
@@ -3600,58 +3891,41 @@ useEffect(() => {
                     </div>
                   </div>
                   
-                  {/* Action Buttons */}
-                  <div className="flex gap-3">
-                    <div
-                      onClick={getUserLocation}
-                      disabled={loadingUserLocation}
-                      className={`rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out  px-4 py-2 text-white  font-medium flex items-center gap-2 ${
-                        userLocation 
-                          ? userLocation.accuracy <= 20 
-                            ? 'bg-green-500 hover:bg-green-600' 
-                            : userLocation.accuracy <= 50 
-                            ? 'bg-blue-500 hover:bg-blue-600' 
-                            : userLocation.accuracy <= 100 
-                            ? 'bg-yellow-500 hover:bg-yellow-600' 
-                            : 'bg-red-500 hover:bg-red-600'
-                          : 'bg-purple-500 hover:bg-purple-600'
-                      } disabled:opacity-50`}
-                    >
-                      <i className={`bx ${loadingUserLocation ? 'bx-loader-alt bx-spin' : 'bx-current-location'}`}></i>
+           {/* Action Buttons */}
+          <div className="flex gap-3">
+                <div onClick={getUserLocation} disabled={loadingUserLocation} className={`bg-gray-800 rounded-2xl cursor-pointer hover:cursor-pointer transition-all gap-2 duration-300 ease-in-out  px-4 py-2 text-white  font-medium flex items-center  `}>
+                     <i className={`bx ${loadingUserLocation ? 'bx-loader-alt bx-spin' : 'bx-current-location'}`}></i>
+
                       <div className=" select-none   rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out flex flex-col items-start">
-                        <span className="text-sm">
-                          {loadingUserLocation ? 'Finding Location...' : userLocation ? 'Update Location' : 'Get My Location'}
-                        </span>
-                        {userLocation && !loadingUserLocation && (
-                          <span className="text-xs opacity-90">
+                        <span className="text-[15px]">{loadingUserLocation ? 'Locating...' : userLocation ? 'Update Location' : 'Get Location'} </span>
+
+                       {userLocation && !loadingUserLocation && (
+                          <span className="text-[12px] opacity-90">
                             {userLocation.accuracy <= 20 ? 'Excellent' :
                              userLocation.accuracy <= 50 ? 'Good' :
                              userLocation.accuracy <= 100 ? 'Fair' : 'Poor'} 
-                            ({Math.round(userLocation.accuracy)}m)
-                          </span>
-                        )}
+                             ({Math.round(userLocation.accuracy)}m)
+                           </span>
+                       )}
+
                       </div>
                     </div>
+
+                  
                     
                     <div
                       onClick={() => {
-                        resetClinicForm();
-                        setShowAddClinicDialog(true);
-                      }}
-                      className="select-none flex items-center rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out  px-4 py-2 bg-green-500 text-white  hover:bg-green-600 font-medium"
-                    >
-                      <i className="bx bx-plus mr-2"></i>
-                      Add Clinic
-                    </div>
-                    
-                    <div
-                      onClick={() => setIsEditingLocation(!isEditingLocation)}
-                      className={`flex items-center select-none rounded-2xl cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out px-4 py-2  font-medium  ${
-                        isEditingLocation 
-                          ? 'bg-orange-500 text-white hover:bg-orange-600' 
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
+                        const newEditMode = !isEditingLocation;
+                        setIsEditingLocation(newEditMode);
+                        // Set data attribute for marker click handlers to access
+                        document.body.setAttribute('data-edit-mode', newEditMode.toString());
+                        console.log('🔧 Edit mode toggled:', newEditMode);
+                      }} className={`cursor-pointer hover:cursor-pointer transition-all duration-300 ease-in-out px-4 py-2  flex items-center select-none rounded-2xl  font-medium  ${
+                       isEditingLocation 
+                          ? 'bg-[#ebab53] text-white ' 
+                          : 'bg-[#d3710e] text-white '
+                      }`}>
+                      
                       <i className={`bx ${isEditingLocation ? 'bx-x' : 'bx-edit'} mr-2`}></i>
                       {isEditingLocation ? 'Cancel Edit' : 'Edit Mode'}
                     </div>
@@ -3662,175 +3936,185 @@ useEffect(() => {
 
                 {/* Loading States */}
                 {loadingClinicLocations && (
-                  <div className="transition-all duration-300 ease-in-out mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center">
-                      <i className="bx bx-loader-alt bx-spin text-blue-500 mr-2"></i>
-                      <span className="text-blue-700">Loading clinic locations...</span>
+                    <div className="transition-all duration-300 ease-in-out mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center">
+                        <i className="bx bx-loader-alt bx-spin text-blue-500 mr-2"></i>
+                        <span className="text-blue-700">Loading clinic locations...</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                   )}
 
-                {/* Main Content - Map and Sidebar */}
+
+
+
+
+                {/* geomaincontainer */}
                 <div className="transition-all duration-300 ease-in-out gap-4 flex justify-center items-start flex-1 h-[580px]">
                   
-                  {/* Geographic Map Container - 70% width */}
-                  <div id="geographicmapcontainer" className="transition-all duration-300 ease-in-out relative bg-gray-100 rounded-2xl shadow-lg flex flex-col justify-center items-center w-[70%] h-[580px] overflow-hidden">
+
+                  {/* geomaincontainer map  */}
+                  <div id="geographicmapcontainer" className="flex flex-col justify-center items-center transition-all duration-300 ease-in-out relative bg-[#efefef] rounded-2xl shadow-lg  w-[70%] h-[580px] overflow-hidden">
+                   
+                   
                     {/* Mapbox Container */}
                     <div 
                       ref={mapContainer}
                       className="transition-all duration-300 ease-in-out w-full h-full rounded-2xl"
-                      style={{ 
-                        minHeight: '580px',
-                        height: '580px',
-                        transform: 'translateZ(0)',
-                        willChange: 'transform',
-                        backfaceVisibility: 'hidden'
-                      }}
-                    />
+                        style={{ 
+                         minHeight: '580px',
+                         height: '580px',
+                         transform: 'translateZ(0)',
+                         willChange: 'transform',
+                         backfaceVisibility: 'hidden'
+                         }}
+                  />
+
+
                     
-                    {/* Loading State */}
+                    {/* Map loading state */}
                     {!mapLoaded && (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-30">
+                        <div className=" bg-white/80 flex items-center justify-center  absolute z-30 inset-0  ">
                         <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                          <p className="text-gray-600">Loading map...</p>
+                          <div className="mx-auto animate-spin rounded-full h-12 w-12 border-b-2 border-[#096482]  mb-3"></div>
+                          <p className="text-[#1e1e1e]">Loading map...</p>
                         </div>
-                      </div>
-                    )}
+                          </div>
+                      )}
 
-                    {/* Edit Mode Instructions */}
+
+
+                  {/*Edit notice widget*/}
                     {isEditingLocation && mapLoaded && (
-                      <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
-                        <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                          <i className="bx bx-info-circle text-blue-500"></i>
-                          Edit Mode Active
-                        </h4>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          <li>• Click anywhere on map to add new clinic</li>
-                          <li>• Click existing markers for options</li>
-                          <li>• Use controls to navigate</li>
+                       <div className="backdrop-blur-sm absolute top-4 left-4 bg-white/95  rounded-lg p-3 shadow-lg z-20">
+                        <h1 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i className="bx bx-info-circle text-[#08a0d3]"></i>Edit Mode Active</h1>
+                        <ul className="text-[13px] text-[#1c1c1c] space-y-1">
+                          <li>• Click anywhere to add new clinic</li>
+                          <li>• Click clinic markers to edit</li>
+                          <li>• Use controls to move around the map</li>
                         </ul>
-                      </div>
-                    )}
+                        </div>
+                       )}
 
-                    {/* Directions Panel */}
+
+
+                    {/* direction widget */}
                     {showDirections && (
                       <div 
                         ref={directionsPanelRef} 
-                        className={` absolute top-2.5 left-2.5 w-80   bg-white rounded-xl shadow-xl z-[1000] overflow-hidden transition-transform duration-300 ease-in-out ${
-                          showDirections ? 'translate-x-0' : '-translate-x-full'
-                        }`}
-                      >
-                        {/* Directions Header */}
-                        <div className="bg-[#2781af] text-white p-4 flex justify-between items-center">
-                          <h3 className="font-bold">Directions</h3>
-                          <button 
-                            onClick={clearDirections}
-                            className="bg-transparent border-none text-white text-lg cursor-pointer p-1 rounded hover:bg-white/20 transition-colors duration-200"
-                            title="Close directions"
-                          >
+                        className={` absolute top-2.5 left-2.5 w-80   bg-white rounded-xl shadow-xl z-[50] overflow-hidden transition-transform duration-300 ease-in-out ${showDirections ? 'translate-x-0' : '-translate-x-full'}`}>
+                       
+
+
+                        {/* direction header */}
+                        <div className="bg-[#2781af] text-white pr-2 pl-3 flex justify-between items-center">
+                          <h3 className="font-bold">Route Directions</h3>
+                          <div onClick={clearDirections} className="bg-transparent border-none duration-300 text-white text-lg cursor-pointer p-1 rounded transition-all ease-in-out " >
                             <i className="bx bx-x"></i>
-                          </button>
-                        </div>
+                             </div>
+                       </div>
                         
-                        {/* Directions Content */}
+
+
+                        {/* direction routes */}
                         <div className="directions-content h-auto max-h-[480px] overflow-y-auto p-2.5">
                           {isLoadingRoute && (
-                            <div className="flex items-center justify-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                              <span className="ml-3 text-gray-600">Calculating route...</span>
-                            </div>
+                                <div className="flex items-center justify-center py-8">
+                                 <div className="border-[#096482]  animate-spin rounded-full h-8 w-8 border-b-2 "></div>
+                                 <span className="text-[#1e1e1e] ml-3">Loading route...</span>
+                                 </div>
                           )}
+
+
+
                           
                           {!isLoadingRoute && !routeInfo && directionsSteps.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                              <div className="text-[#2f2f2f] text-center py-8 ">
                               <i className="bx bx-map-pin text-4xl mb-2"></i>
-                              <p>Select a destination to get directions</p>
-                            </div>
+                              <p>Select clinic to get directions</p>
+                              </div>
                           )}
                           
+
                           {routeInfo && (
-                            <div className="bg-gray-50 p-2.5 mb-2.5 rounded-lg border-l-4 border-[#2781af]">
+                            <div className="bg-[#f4f4f4] p-2.5 mb-2.5 rounded-lg ">
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
                                   <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
                                 </div>
-                                <i className="bx bx-car text-2xl text-blue-500"></i>
-                              </div>
-                            </div>
+                                <i className="bx bx-car text-[25px] text-[#08a0d3]"></i>
+                                 </div>
+                               </div>
                           )}
                           
+
                           {directionsSteps.length > 0 && (
                             <div>
-                              <h4 className="font-semibold mb-3 text-gray-800">Turn-by-turn directions:</h4>
+                              <h4 className="font-semibold mb-3 text-gray-800">Routes</h4>
                               {directionsSteps.map((step, index) => (
-                                <div key={index} className={`py-2 flex items-center gap-2.5 ${index !== directionsSteps.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                                <div key={index} className={`py-2 flex gap-2.5 items-center  ${index !== directionsSteps.length - 1 ? 'border-b border-[#5959593b]' : ''}`}>
                                   <div className="w-6 h-6 bg-[#2781af] rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">
                                     <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
                                   </div>
                                   <div className="flex-1">
-                                    <p className="text-sm leading-snug" dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {(step.distance / 1000).toFixed(1)} km
-                                    </p>
+                                    <p className="text-[14px] leading-snug" dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
+                                    <p className="text-[11px] text-gray-500 mt-1"> {(step.distance / 1000).toFixed(1)} km  </p>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
+                                  ))}
+                               </div>
+                             )}
+                          </div>
+                         </div>
+                             )}
+ 
 
 
 
 
 
                     {/* Map Legend */}
-                    <div ref={legendControlRef} className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
-                      <h4 className="font-semibold text-gray-800 mb-2">Legend</h4>
-                      <div className="space-y-2 text-sm">
+                 <div ref={legendControlRef} className="absolute bottom-4 right-4 bg-[#ffffff]/95 backdrop-blur-sm rounded-lg p-3 shadow-lg z-20">
+                     <h4 className="text-[#1b1b1b] font-semibold mb-2">Legend</h4>
+                     <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <img src={ambherlogo} className="w-4 h-4 rounded-full"/>
-                          <span>Ambher Optical</span>
+                           <img src={ambherlogo} className="w-4 h-4 rounded-full"/><span>Ambher Optical</span>
                         </div>
                         <div className="flex items-center gap-2">
-                       <img src={bautistalogo} className="w-4 h-4 rounded-full"/>
-                          <span>Bautista Eye Center</span>
+                           <img src={bautistalogo} className="w-4 h-4 rounded-full"/><span>Bautista Eye Center</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow animate-pulse"></div>
-                          <span>Your Location</span>
+                          <div className="w-4 h-4 rounded-full bg-[#39850d] border-1 border-white shadow animate-pulse"></div><span>Your Location</span>
                         </div>
+
                         {userLocation && (
                           <div className="border-t pt-2 mt-2">
-                            <div className="text-xs text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <i className={`bx ${
-                                  userLocation.accuracy <= 20 ? 'bx-check-circle text-green-500' :
-                                  userLocation.accuracy <= 50 ? 'bx-check-circle text-blue-500' :
-                                  userLocation.accuracy <= 100 ? 'bx-error-circle text-yellow-500' :
-                                  'bx-error-circle text-red-500'
-                                }`}></i>
+                             <div className="text-[11px] text-[#1c1c1c]">
+                                 <div className="flex items-center gap-1">
+                                 <i className={`bx ${ userLocation.accuracy <= 20 ? 'bx-check-circle text-[#39850d]' :
+                                                      userLocation.accuracy <= 50 ? 'bx-check-circle text-[#1589b3]' :
+                                                      userLocation.accuracy <= 100 ? 'bx-error-circle text-[#e2c92b]' :
+                                                     'bx-error-circle text-red-500'}`}></i>
+                              
                                 <span>Accuracy: {Math.round(userLocation.accuracy)}m</span>
                               </div>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                           )}
                       </div>
-                    </div>
-                  </div>
+                      </div>
+                      </div>
+
+
+
+
+
 
                   {/* Clinic Locations Container - 30% width */}
                   <div id="cliniclocationscontainer" className="bg-white shadow-lg rounded-2xl flex flex-col w-[30%] h-[580px] overflow-y-auto">
                     {/* Header */}
-                    <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                      <h3 className="font-bold text-gray-800 mb-1 flex items-center">
-                        <i className="bx bx-list-ul mr-2 text-[#184d85]"></i>
-                        Clinic Locations
-                      </h3>
+                    <div className="p-4 border-b border-[#e8e8e8] bg-[#d9f1ff] ">
+                      <h3 className="flex items-center font-bold text-[#2f2f2f] font-albertsans text-[18px] mb-1 "><i className="bx bx-list-ul mr-2 font-bold"></i>  Clinic Locations  </h3>
                       <p className="text-sm text-gray-600">Total: {clinicLocations?.length || 0} clinics</p>
                     </div>
                     
@@ -3858,121 +4142,163 @@ useEffect(() => {
                           </button>
                         </div>
                       ) : (
-                        clinicLocations.map((clinic, index) => (
-                          <div
-                            key={clinic._id || `clinic-${index}`}
-                            className="p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white"
-                            onClick={() => {
-                              setSelectedClinicLocation(clinic);
-                              setShowClinicDetailsDialog(true);
-                              // Center map on clinic
-                              if (map.current && clinic.coordinates?.coordinates) {
-                                map.current.flyTo({
-                                  center: [clinic.coordinates.coordinates[0], clinic.coordinates.coordinates[1]],
-                                  zoom: 16,
-                                  duration: 1500
-                                });
-                              }
-                            }}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">{clinic.clinicName}</h4>
-                              <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                clinic.clinicType === 'Ambher Optical'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : clinic.clinicType === 'Bautista Eye Center'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}>
-                                {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
-                                 clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : 'External'}
-                              </span>
-                            </div>
+                        (() => {
+                          // Filter and sort clinics: user's clinic type first, then others
+                          const userDefaultClinicType = getUserDefaultClinicType();
+                          const isAdminUser = currentuserloggedin === 'Admin';
+                          
+                          const sortedClinics = [...clinicLocations].sort((a, b) => {
+                            // If admin, show all equally
+                            if (isAdminUser) return 0;
                             
-                            <p className="text-xs text-gray-600 mb-2 line-clamp-2">{clinic.address?.fullAddress || 'Address not available'}</p>
+                            // Priority order: user's clinic type first, then others
+                            if (a.clinicType === userDefaultClinicType && b.clinicType !== userDefaultClinicType) {
+                              return -1; // a comes first
+                            }
+                            if (a.clinicType !== userDefaultClinicType && b.clinicType === userDefaultClinicType) {
+                              return 1; // b comes first
+                            }
+                            return 0; // same priority
+                          });
+
+                          return sortedClinics.map((clinic, index) => {
+                            // Check if user can edit this clinic type
+                            const canEditThisClinic = isAdminUser || clinic.clinicType === userDefaultClinicType;
                             
-                            {clinic.contactInfo?.phone && (
-                              <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                <i className="bx bx-phone"></i>
-                                {clinic.contactInfo.phone}
-                              </div>
-                            )}
-                            
-                            {/* Coordinates Display */}
-                            {clinic.coordinates?.coordinates && (
-                              <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                                <i className="bx bx-current-location"></i>
-                                {clinic.coordinates.coordinates[1].toFixed(4)}°, {clinic.coordinates.coordinates[0].toFixed(4)}°
-                              </div>
-                            )}
-                            
-                            {/* Active Status Display */}
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                clinic.isActive 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                <div className={`w-2 h-2 rounded-full ${
-                                  clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
-                                }`}></div>
-                                {clinic.isActive ? 'Active' : 'Inactive'}
-                              </div>
-                            </div>
-                            
-                            <div className="flex gap-1 mt-3">
+                            return (
                               <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                                key={clinic._id || `clinic-${index}`}
+                                className="p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white"
+                                onClick={() => {
                                   setSelectedClinicLocation(clinic);
-                                  setClinicFormData({
-                                    ...clinic,
-                                    address: clinic.address || { fullAddress: '' },
-                                    contactInfo: clinic.contactInfo || { phone: '', email: '' },
-                                    coordinates: clinic.coordinates ? {
-                                      longitude: clinic.coordinates.coordinates[0],
-                                      latitude: clinic.coordinates.coordinates[1]
-                                    } : { longitude: 121.0583, latitude: 14.6091 }
-                                  });
-                                  setShowEditClinicDialog(true);
+                                  setShowClinicDetailsDialog(true);
+                                  // Center map on clinic
+                                  if (map.current && clinic.coordinates?.coordinates) {
+                                    map.current.flyTo({
+                                      center: [clinic.coordinates.coordinates[0], clinic.coordinates.coordinates[1]],
+                                      zoom: 16,
+                                      duration: 1500
+                                    });
+                                  }
                                 }}
-                                className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
                               >
-                                <i className="bx bx-edit"></i>
-                                Edit
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">{clinic.clinicName}</h4>
+                                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                    clinic.clinicType === 'Ambher Optical'
+                                      ? 'bg-green-100 text-green-800'
+                                      : clinic.clinicType === 'Bautista Eye Center'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                    {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
+                                     clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : 'External'}
+                                  </span>
+                                </div>
+                                
+                                <p className="text-xs text-gray-600 mb-2 line-clamp-2">{clinic.address?.fullAddress || 'Address not available'}</p>
+                                
+                                {/* Coordinates Display */}
+                                {clinic.coordinates?.coordinates && (
+                                  <div className="text-xs  mb-2 flex items-center gap-1">
+                                    <i className="bx bx-current-location text-[#b42525]"></i>
+                                    {clinic.coordinates.coordinates[1].toFixed(4)}°, {clinic.coordinates.coordinates[0].toFixed(4)}°
+                                  </div>
+                                )}
+
+                                {clinic.contactInfo?.phone && (
+                                  <div className="text-xs  mb-2 flex items-center gap-1">
+                                    <i className="bx bx-phone text-[#209206]"></i>
+                                    {clinic.contactInfo.phone}
+                                  </div>
+                                )}
+
+                               {clinic.contactInfo?.email && (
+                                  <div className="text-xs  mb-2 flex items-center gap-1">
+                                    <i className="bx bx-envelope text-[#4d9be0]"></i>
+                                    {clinic.contactInfo.email}
+                                  </div>
+                                )}
+                                
+
+                                
+                                {/* Active Status Display */}
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                    clinic.isActive 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                                    }`}></div>
+                                    {clinic.isActive ? 'Active' : 'Inactive'}
+                                  </div>
+                                </div>
+                                
+                                {/* Action Buttons - Only show for authorized clinics or admins */}
+                                {canEditThisClinic && (
+                                  <div className="flex gap-1 mt-3">
+                                    <div
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedClinicLocation(clinic);
+                                        setClinicFormData({
+                                          ...clinic,
+                                          address: clinic.address || { fullAddress: '' },
+                                          contactInfo: clinic.contactInfo || { phone: '', email: '' },
+                                          coordinates: clinic.coordinates ? {
+                                            longitude: clinic.coordinates.coordinates[0],
+                                            latitude: clinic.coordinates.coordinates[1]
+                                          } : { longitude: 121.0583, latitude: 14.6091 }
+                                        });
+                                        setShowEditClinicDialog(true);
+                                      }}
+                                      className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                      <i className="bx bx-edit"></i>
+                                      Edit
+                                    </div>
+                                    <div
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleClinicStatus(clinic);
+                                      }}
+                                      className={`flex-1 px-2 py-1 rounded text-xs transition-colors flex items-center justify-center gap-1 ${
+                                        clinic.isActive 
+                                          ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                                          : 'bg-green-500 text-white hover:bg-green-600'
+                                      }`}
+                                      title={clinic.isActive ? 'Deactivate clinic' : 'Activate clinic'}
+                                    >
+                                      <i className={`bx ${clinic.isActive ? 'bx-pause' : 'bx-play'}`}></i>
+                                      {clinic.isActive ? 'Deactivate' : 'Activate'}
+                                    </div>
+                                    <div
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedClinicLocation(clinic);
+                                        setShowDeleteClinicDialog(true);
+                                      }}
+                                      className="flex-1 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                      <i className="bx bx-trash"></i>
+                                      Delete
+                                    </div>
+                                  </div>
+                                )}
+                                
+
                               </div>
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleClinicStatus(clinic);
-                                }}
-                                className={`flex-1 px-2 py-1 rounded text-xs transition-colors flex items-center justify-center gap-1 ${
-                                  clinic.isActive 
-                                    ? 'bg-orange-500 text-white hover:bg-orange-600' 
-                                    : 'bg-green-500 text-white hover:bg-green-600'
-                                }`}
-                                title={clinic.isActive ? 'Deactivate clinic' : 'Activate clinic'}
-                              >
-                                <i className={`bx ${clinic.isActive ? 'bx-pause' : 'bx-play'}`}></i>
-                                {clinic.isActive ? 'Deactivate' : 'Activate'}
-                              </div>
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedClinicLocation(clinic);
-                                  setShowDeleteClinicDialog(true);
-                                }}
-                                className="flex-1 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors flex items-center justify-center gap-1"
-                              >
-                                <i className="bx bx-trash"></i>
-                                Delete
-                              </div>
-                            </div>
-                          </div>
-                        ))
+                            );
+                          });
+                        })()
                       )}
                     </div>
                   </div>
+
+
+
                 </div>
 
               </div>
@@ -3984,12 +4310,12 @@ useEffect(() => {
             <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-800">Add New Clinic Location</h3>
-                <button
+                <div
                   onClick={() => setShowAddClinicDialog(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="cursor-pointer text-gray-500 hover:text-gray-700"
                 >
-                  <i className="bx bx-x text-2xl"></i>
-                </button>
+                  <i className="bx bx-x text-[20px]"></i>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -4014,14 +4340,21 @@ useEffect(() => {
                       Clinic Type *
                     </label>
                     <select
-                      value={clinicFormData?.clinicType || 'Ambher Optical'}
+                      value={clinicFormData?.clinicType || getUserDefaultClinicType()}
                       onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicType: e.target.value }))}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       required
+                      disabled={getUserAllowedClinicTypes().length === 1}
                     >
-                      <option value="Ambher Optical">Ambher Optical</option>
-                      <option value="Bautista Eye Center">Bautista Eye Center</option>
+                      {getUserAllowedClinicTypes().map(clinicType => (
+                        <option key={clinicType} value={clinicType}>{clinicType}</option>
+                      ))}
                     </select>
+                    {getUserAllowedClinicTypes().length === 1 && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        You can only create clinics for your assigned clinic type: {getUserAllowedClinicTypes()[0]}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -4157,7 +4490,7 @@ useEffect(() => {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-800">Edit Clinic Location</h3>
                 <button
-                  onClick={() => setShowEditClinicDialog(false)}
+                  onClick={() => {setShowEditClinicDialog(false); setClinicFormData({});}}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <i className="bx bx-x text-2xl"></i>
@@ -4186,14 +4519,21 @@ useEffect(() => {
                       Clinic Type *
                     </label>
                     <select
-                      value={clinicFormData?.clinicType || 'Ambher Optical'}
+                      value={clinicFormData?.clinicType || getUserDefaultClinicType()}
                       onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicType: e.target.value }))}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       required
+                      disabled={getUserAllowedClinicTypes().length === 1}
                     >
-                      <option value="Ambher Optical">Ambher Optical</option>
-                      <option value="Bautista Eye Center">Bautista Eye Center</option>
+                      {getUserAllowedClinicTypes().map(clinicType => (
+                        <option key={clinicType} value={clinicType}>{clinicType}</option>
+                      ))}
                     </select>
+                    {getUserAllowedClinicTypes().length === 1 && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        You can only modify clinics for your assigned clinic type: {getUserAllowedClinicTypes()[0]}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -4287,7 +4627,7 @@ useEffect(() => {
 
                 <div className="flex gap-3 pt-4">
                   <button
-                    onClick={() => setShowEditClinicDialog(false)}
+                    onClick={() => {setClinicFormData({}); setShowEditClinicDialog(false)}}
                     className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
                   >
                     Cancel
@@ -4363,26 +4703,26 @@ useEffect(() => {
             <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-800">Clinic Details</h3>
-                <button
+                <div
                   onClick={() => setShowClinicDetailsDialog(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="cursor-pointer hover:cursor-pointer text-gray-500 hover:text-gray-700"
                 >
-                  <i className="bx bx-x text-2xl"></i>
-                </button>
+                  <i className="bx bx-x text-[30px]"></i>
+                </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${
-                    selectedClinicLocation.clinicType === 'Ambher Optical' ? 'bg-blue-500' : 'bg-red-500'
-                  }`}></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{selectedClinicLocation.clinicName}</h4>
-                    <span className="text-sm text-gray-600">{selectedClinicLocation.clinicType}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-2">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={selectedClinicLocation.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo} 
+                      alt={selectedClinicLocation.clinicType}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{selectedClinicLocation.clinicName}</h4>
+                      <span className="text-sm text-gray-600">{selectedClinicLocation.clinicType}</span>
+                    </div>
+                  </div>                <div className="flex items-start gap-2">
                   <i className="bx bx-map-pin text-gray-500 mt-1"></i>
                   <p className="text-gray-700">{selectedClinicLocation.address?.fullAddress}</p>
                 </div>
@@ -4411,35 +4751,51 @@ useEffect(() => {
                 )}
               </div>
               
-              <div className="flex gap-2 mt-6">
-                <button
-                  onClick={() => {
-                    setClinicFormData({
-                      ...selectedClinicLocation,
-                      address: selectedClinicLocation.address || { fullAddress: '' },
-                      contactInfo: selectedClinicLocation.contactInfo || { phone: '', email: '' },
-                      coordinates: selectedClinicLocation.coordinates ? {
-                        longitude: selectedClinicLocation.coordinates.coordinates[0],
-                        latitude: selectedClinicLocation.coordinates.coordinates[1]
-                      } : { longitude: 121.0583, latitude: 14.6091 }
-                    });
-                    setShowClinicDetailsDialog(false);
-                    setShowEditClinicDialog(true);
-                  }}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setShowClinicDetailsDialog(false);
-                    setShowDeleteClinicDialog(true);
-                  }}
-                  className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
+              {/* Action Buttons - Only show for authorized clinics or admins */}
+              {(() => {
+                const userDefaultClinicType = getUserDefaultClinicType();
+                const isAdminUser = currentuserloggedin === 'Admin';
+                const canEditThisClinic = isAdminUser || selectedClinicLocation.clinicType === userDefaultClinicType;
+                
+                return canEditThisClinic ? (
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={() => {
+                        setClinicFormData({
+                          ...selectedClinicLocation,
+                          address: selectedClinicLocation.address || { fullAddress: '' },
+                          contactInfo: selectedClinicLocation.contactInfo || { phone: '', email: '' },
+                          coordinates: selectedClinicLocation.coordinates ? {
+                            longitude: selectedClinicLocation.coordinates.coordinates[0],
+                            latitude: selectedClinicLocation.coordinates.coordinates[1]
+                          } : { longitude: 121.0583, latitude: 14.6091 }
+                        });
+                        setShowClinicDetailsDialog(false);
+                        setShowEditClinicDialog(true);
+                      }}
+                      className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowClinicDetailsDialog(false);
+                        setShowDeleteClinicDialog(true);
+                      }}
+                      className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-6">
+
+                  </div>
+                );
+              })()}
+
+           
+           
             </div>
           </div>
         )}
