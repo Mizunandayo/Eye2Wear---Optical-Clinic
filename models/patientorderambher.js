@@ -36,6 +36,7 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
     patientorderambherproductdescription: {type: String, required: true},
     patientorderambherproductnotes: {type: String},
 
+
     //PAYMENT INFORMATION
     patientorderambhercustomfee: { type: Number, default: 0 }, // Clinic customization fee
     patientorderambheramountpaid: { type: Number, default: 0 }, // Customer total paid amount
@@ -61,6 +62,9 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
     },
     patientorderambherproductchosenpickupdate: String,
     patientorderambherproductchosenpickuptime: String,
+    patientorderambherproductchosenpickupplace: String,
+
+
 
     //AUTHORIZED PERSON
     patientorderambherproducauthorizedname: String,

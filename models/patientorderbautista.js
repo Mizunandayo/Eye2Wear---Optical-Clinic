@@ -60,6 +60,9 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
     },
     patientorderbautistaproductchosenpickupdate: String,
     patientorderbautistaproductchosenpickuptime: String,
+    patientorderbautistaproductchosenpickupplace: String,
+
+    
 
     //AUTHORIZED PERSON
     patientorderbautistaproducauthorizedname: String,

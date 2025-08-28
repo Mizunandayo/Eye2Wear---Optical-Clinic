@@ -1114,6 +1114,21 @@ const handleFullscreenChange = () => {
         </header>
       </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
       <section className="h-full w-full flex justify-center align-center">
         <div className="bg-cover bg-center h-screen flex items-center justify-center" style={{ backgroundImage: `url(${landingbg2})` }}>
           <div className="w-[95%] h-[100%] items-center justify-center pt-[90px] pl-14">

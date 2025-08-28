@@ -797,6 +797,9 @@ useEffect(() => {
                     ? selectedOrderForView.patientorderambherproductnotes 
                     : selectedOrderForView.patientorderbautistaproductnotes;
                   const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
+                  const clinicaddress = isAmbher
+            ? selectedOrderForView.patientorderambherproductchosenpickupplace
+            : selectedOrderForView.patientorderbautistaproductchosenpickupplace;
 
                   return (
                     <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
@@ -954,6 +957,18 @@ useEffect(() => {
                                     <p className="font-semibold font-albertsans text-gray-800">{clinic}</p>
                                   </div>
                                 </div>
+
+                         <div className="flex items-start">
+                          <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-lg mr-3 flex-shrink-0">
+                            <i className="bx bx-map text-red-600 text-lg"></i>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium font-albertsans">Clinic Address</p>
+                            <p className="font-semibold font-albertsans text-gray-800 text-sm leading-relaxed">{clinicaddress}</p>
+                          </div>
+                        </div>
+
+
                                 
                                 <div className="flex items-center">
                                   <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mr-3">
