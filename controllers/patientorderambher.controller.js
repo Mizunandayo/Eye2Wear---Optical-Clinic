@@ -124,18 +124,20 @@ export const createpatientorderambher = async (req, res) => {
                 return res.status(404).json({message: "Order Ambher not found"});
             }
 
+            // Handle status history if status is being updated
             if(updateData.patientorderambherstatus) {
-                if(!orderambher.patientorderambherstatushistory) {
-                    orderambher.patientorderambherstatushistory = [];
+                if(!orderambher.patientorderambherhistory) {
+                    orderambher.patientorderambherhistory = [];
                 }
-                orderambher.patientorderambherstatushistory.push({
+                orderambher.patientorderambherhistory.push({
                     status: updateData.patientorderambherstatus,
                     changedAt: new Date(),
-                    changedBy: updateData.patientorderambherstatushistory.changedBy
+                    changedBy: updateData.changedBy || 'System' // Default to 'System' if not provided
                 });
-
+                
+                // Update the history in the updateData
+                updateData.patientorderambherhistory = orderambher.patientorderambherhistory;
             }
-
 
             const updatedorderambher = await PatientOrderAmbher.findOneAndUpdate(
                 { patientorderambherid: id},

@@ -8,7 +8,7 @@ import useSmartCache from "./hooks/useSmartCache";
 import darklogo from "../src/assets/images/darklogo.png";
 import profileuser from "../src/assets/images/profile-user.png";
 import logout from "../src/assets/images/logout.png";
-
+import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
 
 
 import Rating from '@mui/material/Rating';
@@ -284,8 +284,12 @@ const fetchpatientorders = useCallback(async (forceRefresh = false) => {
         CACHE_DURATIONS.orders,
         forceRefresh
       );
-      setAmbherOrders(data || []);
-      setfilteredambherOrders(data || []); 
+      
+      // Check and automatically update order status for pickup dates that match today
+      const updatedData = await checkAndUpdateOrderStatus(data || [], 'ambher', updateAmbherOrderStatus);
+      
+      setAmbherOrders(updatedData);
+      setfilteredambherOrders(updatedData); 
 
     } else {
       // Smart cached Bautista orders fetching
@@ -295,8 +299,12 @@ const fetchpatientorders = useCallback(async (forceRefresh = false) => {
         CACHE_DURATIONS.orders,
         forceRefresh
       );
-      setBautistaOrders(data || []);
-      setfilteredbautistaOrders(data || []); 
+      
+      // Check and automatically update order status for pickup dates that match today
+      const updatedData = await checkAndUpdateOrderStatus(data || [], 'bautista', updateBautistaOrderStatus);
+      
+      setBautistaOrders(updatedData);
+      setfilteredbautistaOrders(updatedData); 
     }
 
   } catch (error) {
@@ -322,6 +330,31 @@ useEffect(() => {
     }
   }
 }, [realtimeUpdates, patientemail, fetchpatientorders]);
+
+// Periodic status check - every 5 minutes
+useEffect(() => {
+  const statusCheckInterval = setInterval(async () => {
+    console.log('🔄 Checking for orders with pickup dates matching today...');
+    
+    if (activeorderstable === 'ambherorderstable' && ambherOrders.length > 0) {
+      const updatedAmbherOrders = await checkAndUpdateOrderStatus(ambherOrders, 'ambher', updateAmbherOrderStatus);
+      if (JSON.stringify(updatedAmbherOrders) !== JSON.stringify(ambherOrders)) {
+        setAmbherOrders(updatedAmbherOrders);
+        setfilteredambherOrders(updatedAmbherOrders);
+        console.log('✅ Ambher orders updated due to pickup date matching today');
+      }
+    } else if (activeorderstable === 'bautistaorderstable' && bautistaOrders.length > 0) {
+      const updatedBautistaOrders = await checkAndUpdateOrderStatus(bautistaOrders, 'bautista', updateBautistaOrderStatus);
+      if (JSON.stringify(updatedBautistaOrders) !== JSON.stringify(bautistaOrders)) {
+        setBautistaOrders(updatedBautistaOrders);
+        setfilteredbautistaOrders(updatedBautistaOrders);
+        console.log('✅ Bautista orders updated due to pickup date matching today');
+      }
+    }
+  }, 5 * 60 * 1000); // 5 minutes
+
+  return () => clearInterval(statusCheckInterval);
+}, [activeorderstable, ambherOrders, bautistaOrders]);
 
 
 
@@ -643,7 +676,7 @@ useEffect(() => {
                 <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
                 <div className=" pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by status</h1></div>
 
-                {['All', 'Pending', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => {
+                {['All', 'Pending', 'Ready for Pickup', 'Completed'].map(status => {
                     const patientorderedstatusCount = status === 'All'  ? ambherOrders.length : ambherOrders.filter(order => order.patientorderambherstatus === status).length; 
   
                     return (
@@ -701,7 +734,7 @@ useEffect(() => {
                           <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
                 <div className=" pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by status</h1></div>
 
-                {['All', 'Pending', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => {
+                {['All', 'Pending', 'Ready for Pickup', 'Completed'].map(status => {
                     const patientorderedstatusCount = status === 'All'  ? bautistaOrders.length : bautistaOrders.filter(order => order.patientorderbautistastatus === status).length; 
   
                     return (

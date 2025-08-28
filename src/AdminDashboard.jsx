@@ -31,6 +31,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
+import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
 
 
 
@@ -7062,7 +7063,32 @@ const [additionalPayment, setAdditionalPayment] = useState('');
 const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 const [paymentMessage, setPaymentMessage] = useState({ text: '', type: '' });
 
+// Periodic status check - every 5 minutes
+useEffect(() => {
+  const statusCheckInterval = setInterval(async () => {
+    console.log('🔄 Checking for orders with pickup dates matching today...');
+    
+    // Check Ambher orders
+    if (ambherorders.length > 0) {
+      const updatedAmbherOrders = await checkAndUpdateOrderStatus(ambherorders, 'ambher', updateAmbherOrderStatus);
+      if (JSON.stringify(updatedAmbherOrders) !== JSON.stringify(ambherorders)) {
+        setambherOrders(updatedAmbherOrders);
+        console.log('✅ Ambher orders updated due to pickup date changes');
+      }
+    }
+    
+    // Check Bautista orders
+    if (bautistaorders.length > 0) {
+      const updatedBautistaOrders = await checkAndUpdateOrderStatus(bautistaorders, 'bautista', updateBautistaOrderStatus);
+      if (JSON.stringify(updatedBautistaOrders) !== JSON.stringify(bautistaorders)) {
+        setbautistaOrders(updatedBautistaOrders);
+        console.log('✅ Bautista orders updated due to pickup date changes');
+      }
+    }
+  }, 5 * 60 * 1000); // 5 minutes
 
+  return () => clearInterval(statusCheckInterval);
+}, [ambherorders, bautistaorders]);
 
 
 
@@ -7579,7 +7605,7 @@ return () => clearTimeout(delay);
 
 
 
-  const fetchambherOrders = async () => {
+  const fetchambherOrders = useCallback(async () => {
     try {
       setLoadingAmbherOrders(true);
       
@@ -7595,18 +7621,22 @@ return () => clearTimeout(delay);
       }
 
       const data = await response.json();
-      setambherOrders(data);
+      
+      // Check and automatically update order status for pickup dates that match today
+      const updatedData = await checkAndUpdateOrderStatus(data, 'ambher', updateAmbherOrderStatus);
+      
+      setambherOrders(updatedData);
   
     } catch (err) {
         console.log(err);
     } finally {
       setLoadingAmbherOrders(false);
     }
-  };
+  }, [currentusertoken]);
 
 useEffect(() => {
 fetchambherOrders(); 
-}, []);
+}, [fetchambherOrders]);
 
 
 
@@ -7627,7 +7657,7 @@ const filteredambherOrders = ambherorders.filter(order => {
 
 
 
-    const fetchbautistaOrders = async () => {
+    const fetchbautistaOrders = useCallback(async () => {
     try {
       setLoadingBautistaOrders(true);
       
@@ -7643,18 +7673,35 @@ const filteredambherOrders = ambherorders.filter(order => {
       }
 
       const data = await response.json();
-      setbautistaOrders(data);
+      
+      // Check and automatically update order status for pickup dates that match today
+      const updatedData = await checkAndUpdateOrderStatus(data, 'bautista', updateBautistaOrderStatus);
+      
+      setbautistaOrders(updatedData);
   
     } catch (err) {
         console.log(err);
     } finally {
       setLoadingBautistaOrders(false);
     }
-  };
+  }, [currentusertoken]);
 
 useEffect(() => {
 fetchbautistaOrders(); 
-}, []);
+}, [fetchbautistaOrders]);
+
+// Function to immediately refresh orders and update UI
+const refreshOrdersWithStatusCheck = useCallback(async () => {
+  console.log('🔄 Refreshing orders with immediate status check...');
+  
+  try {
+    // Fetch fresh data from API
+    await Promise.all([fetchambherOrders(), fetchbautistaOrders()]);
+    console.log('✅ Orders refreshed with latest status updates');
+  } catch (error) {
+    console.error('❌ Error refreshing orders:', error);
+  }
+}, [fetchambherOrders, fetchbautistaOrders]);
 
 
 
@@ -7740,7 +7787,7 @@ const prevViewOrderImage = () => {
 };
 
 // Function to update pickup date for orders
-const updatePickupDate = async (pickupDate) => {
+const updatePickupDate = useCallback(async (pickupDate) => {
   if (!selectedOrderForView || !pickupDate) return;
   
   try {
@@ -7753,6 +7800,8 @@ const updatePickupDate = async (pickupDate) => {
       ? `${apiUrl}/api/patientorderambher/${orderId}`
       : `${apiUrl}/api/patientorderbautista/${orderId}`;
     
+    console.log(`🔄 Updating pickup date for ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} to ${pickupDate}`);
+    
     const response = await fetch(endpoint, {
       method: 'PUT',
       headers: {
@@ -7760,36 +7809,137 @@ const updatePickupDate = async (pickupDate) => {
         'Authorization': `Bearer ${currentusertoken}`
       },
       body: JSON.stringify({
+        // Update the available for pickup date (this is what determines status)
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
+        // Also update the chosen pickup date for consistency
         patientorderbautistaproductchosenpickupdate: pickupDate,
         patientorderambherproductchosenpickupdate: pickupDate
       })
     });
 
     if (response.ok) {
-      // Update the local state
+      console.log(`✅ Successfully updated pickup date for ${isAmbher ? 'ambher' : 'bautista'} order ${orderId}`);
+      
+      // Update the local state immediately
       setSelectedOrderForView(prev => ({
         ...prev,
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
         patientorderbautistaproductchosenpickupdate: pickupDate,
         patientorderambherproductchosenpickupdate: pickupDate
       }));
       
-      // Refresh the orders list
-      if (isAmbher) {
-        fetchambherOrders();
-      } else {
-        fetchbautistaOrders();
+      // Create updated order object for status checking with the new pickup date
+      const updatedOrder = {
+        ...selectedOrderForView,
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
+        patientorderbautistaproductchosenpickupdate: pickupDate,
+        patientorderambherproductchosenpickupdate: pickupDate
+      };
+      
+      // Immediately check and update status based on new pickup date
+      console.log('� Checking status after pickup date change...');
+      const clinic = isAmbher ? 'ambher' : 'bautista';
+      const updateCallback = isAmbher ? updateAmbherOrderStatus : updateBautistaOrderStatus;
+      
+      const [updatedOrderWithStatus] = await checkAndUpdateOrderStatus([updatedOrder], clinic, updateCallback);
+      
+      // Update the selected order with the new status if it changed
+      if (updatedOrderWithStatus) {
+        setSelectedOrderForView(updatedOrderWithStatus);
+        console.log(`🎯 Order ${orderId} status immediately updated to: ${isAmbher ? updatedOrderWithStatus.patientorderambherstatus : updatedOrderWithStatus.patientorderbautistastatus}`);
       }
+      
+      // Refresh the orders list to show updated status immediately
+      setTimeout(() => {
+        refreshOrdersWithStatusCheck();
+      }, 500);
+      
+      console.log('✅ Pickup date updated and status checked with UI refresh');
+    } else {
+      console.error(`❌ Failed to update pickup date: ${response.status} ${response.statusText}`);
     }
   } catch (error) {
-    console.error('Error updating pickup date:', error);
+    console.error('❌ Error updating pickup date:', error);
   }
-};
+}, [selectedOrderForView, currentusertoken, apiUrl, checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus, refreshOrdersWithStatusCheck]);
 
 const handlePickupDateChange = (e) => {
   const selectedDate = e.target.value;
   setSelectedPickupDate(selectedDate);
   updatePickupDate(selectedDate);
 };
+
+// Function to mark order as complete
+const markOrderAsComplete = useCallback(async () => {
+  if (!selectedOrderForView) return;
+  
+  try {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const orderId = isAmbher 
+      ? selectedOrderForView.patientorderambherid 
+      : selectedOrderForView.patientorderbautistaid;
+    
+    const endpoint = isAmbher 
+      ? `${apiUrl}/api/patientorderambher/${orderId}`
+      : `${apiUrl}/api/patientorderbautista/${orderId}`;
+    
+    console.log(`🔄 Marking ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
+    
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        // Update order status to Completed
+        patientorderambherstatus: 'Completed',
+        patientorderbautistastatus: 'Completed',
+        // Update pickup status to Now (which indicates completed)
+        patientorderambherproductpickupstatus: 'Now',
+        patientorderbautistaproductpickupstatus: 'Now',
+        changedBy: `${adminfirstname} ${adminlastname}` || 'Admin User'
+      })
+    });
+
+    if (response.ok) {
+      const updatedOrder = await response.json();
+      console.log(`✅ Successfully marked ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
+      
+      // Update the local state immediately
+      setSelectedOrderForView(updatedOrder);
+      
+      // Update the orders list to reflect the change
+      if (isAmbher) {
+        setambherOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          )
+        );
+      } else {
+        setbautistaOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          )
+        );
+      }
+      
+      // Refresh orders list to ensure consistency
+      setTimeout(() => {
+        refreshOrdersWithStatusCheck();
+      }, 500);
+      
+      console.log('🎯 Order marked as complete and UI updated');
+    } else {
+      console.error(`❌ Failed to mark order as complete: ${response.status} ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error marking order as complete:', error);
+  }
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders]);
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -16607,7 +16757,7 @@ onError={(e) => {
   <i className="bx bx-filter mr-2 text-[20px]"/>
  <h1 className="text-[15px] mr-8">Filter by status </h1>
  <div className="gap-2 flex">
- {['All', 'Pending', 'Ready for Pickup', 'Completed', 'Cancelled'].map((status) => (
+ {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => (
  <div key={status} onClick={() => setambherFilter(status)}  className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${ambherfilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>{status}</div>
  ))}
  </div>
@@ -17423,7 +17573,7 @@ filteredambherOrders.map((order) => (
   <i className="bx bx-filter mr-2 text-[20px]"/>
  <h1 className="text-[15px] mr-8">Filter by status </h1>
  <div className="gap-2 flex">
- {['All', 'Pending', 'Ready for Pickup', 'Completed', 'Cancelled'].map((status) => (
+ {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => (
  <div key={status} onClick={() => setbautistaFilter(status)}  className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${bautistafilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>{status}</div>
  ))}
  </div>
@@ -18384,7 +18534,7 @@ filteredbautistaOrders.map((order) => (
                     
                     <div className="flex items-center justify-center pt-3">
                       <span className={`${formatorderstatusColor(orderStatus)} px-4 py-2 rounded-full text-sm font-bold font-albertsans`}>
-                        Payment Status: {orderStatus}
+                        Order Status: {orderStatus}
                       </span>
                     </div>
                   </div>
@@ -18466,20 +18616,41 @@ filteredbautistaOrders.map((order) => (
                       <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wide font-medium font-albertsans">Pickup Status</p>
                         <p className="font-semibold font-albertsans text-gray-800">
-                          {pickupStatus === 'Now' 
-                            ? `Completed (${formatorderDates(selectedOrderForView.createdAt)})`
-                            : pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now'
-                              ? "Available for Pickup Date"
-                              : pickupStatus === 'Later' 
-                                ? "To be scheduled"
-                                : pickupStatus
+                          {orderStatus === 'Ready for Pickup' 
+                            ? 'Ready for Pickup'
+                            : pickupStatus === 'Now' 
+                              ? `Completed (${formatorderDates(selectedOrderForView.createdAt)})`
+                              : pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now'
+                                ? "Available for Pickup Date"
+                                : pickupStatus === 'Later' 
+                                  ? "To be scheduled"
+                                  : pickupStatus
                           }
                         </p>
                       </div>
                     </div>
                     
-                    {/* Show date picker only if order is not completed AND payment is fully settled */}
-                    {pickupStatus !== 'Now' && !hasRemainingBalance && (
+                    {/* Show Mark as Complete button when order status is Ready for Pickup */}
+                    {orderStatus === 'Ready for Pickup' && pickupStatus !== 'Now' && !hasRemainingBalance && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center mb-3">
+                          <i className="bx bx-check-circle text-green-600 mr-2"></i>
+                          <p className="text-sm text-green-800 font-albertsans">
+                            <span className="font-medium">Order Ready:</span> This order is ready for pickup and can be marked as complete.
+                          </p>
+                        </div>
+                        <div
+                          onClick={markOrderAsComplete}
+                          className="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors duration-200 flex items-center justify-center font-albertsans"
+                        >
+                          <i className="bx bx-check-double mr-2"></i>
+                          Mark as Complete Order
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show date picker only if order is not Ready for Pickup, not completed AND payment is fully settled */}
+                    {orderStatus !== 'Ready for Pickup' && pickupStatus !== 'Now' && !hasRemainingBalance && (
                       <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div className="flex items-center mb-3">
                           <i className="bx bx-time text-yellow-600 mr-2"></i>

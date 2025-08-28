@@ -122,18 +122,20 @@ export const createpatientorderbautista = async (req, res) => {
                 return res.status(404).json({message: "Bautista Order not found"});
             }
 
+            // Handle status history if status is being updated
             if(updateData.patientorderbautistastatus) {
-                if(!orderbautista.patientorderbautistastatushistory) {
-                    orderbautista.patientorderbautistastatushistory = [];
+                if(!orderbautista.patientorderbautistahistory) {
+                    orderbautista.patientorderbautistahistory = [];
                 }
-                orderbautista.patientorderbautistastatushistory.push({
+                orderbautista.patientorderbautistahistory.push({
                     status: updateData.patientorderbautistastatus,
                     changedAt: new Date(),
-                    changedBy: updateData.patientorderbautistastatushistory.changedBy
+                    changedBy: updateData.changedBy || 'System' // Default to 'System' if not provided
                 });
-
+                
+                // Update the history in the updateData
+                updateData.patientorderbautistahistory = orderbautista.patientorderbautistahistory;
             }
-
 
             const updatedbautistaorder = await PatientOrderBautista.findOneAndUpdate(
                 { patientorderbautistaid: id},
