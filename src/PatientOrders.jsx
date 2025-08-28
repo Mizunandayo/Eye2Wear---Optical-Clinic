@@ -673,7 +673,7 @@ useEffect(() => {
                         <div className="flex justify-between w-full"><h1 className="font-semibold font-albertsans text-[20px] text-[#1f1f1f]">{order.patientorderambherproductname}</h1> <span className={`${formatorderstatusColor(order.patientorderambherstatus)} ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex`}>{order.patientorderambherstatus}</span> </div>
                         <div className=" mt-5 justify-between w-full flex items-center text-[#323232]  font-semibold text-[13px]">
                           <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Date Ordered</p><p className="text-[#303030]  font-semibold text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
-                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Pickup at Ambher Optical</p><p className="text-[#303030]  font-semibold text-[15px]">{order.patientorderambherproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderambherproductpickupstatus === 'Later' ? "To be scheduled" :null}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Pickup at Ambher Optical</p><p className="text-[#303030]  font-semibold text-[15px]">{order.patientorderambherproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderambherproductchosenpickupdate && order.patientorderambherproductchosenpickupdate !== 'Later' && order.patientorderambherproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderambherproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
                           <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-package mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777]  font-medium text-[13px]">Quantity</p><p className="text-[#303030]  font-semibold text-[15px]">x{order.patientorderambherproductquantity}</p></div></div>
                           <div className="flex items-center gap-1"><p className="font-semibold text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777]  font-medium text-[13px]">{Number(order.patientorderambheramountpaid) < Number(order.patientorderambherproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030]  font-semibold text-[15px]">{Number(order.patientorderambheramountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
                         </div>
@@ -728,7 +728,7 @@ useEffect(() => {
                         <div className="flex justify-between w-full"><h1 className="font-semibold font-albertsans text-[20px] text-[#1f1f1f]">{order.patientorderbautistaproductname}</h1> <span className={`${formatorderstatusColor(order.patientorderbautistastatus)} ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex`}>{order.patientorderbautistastatus}</span> </div>
                         <div className=" mt-5 justify-between w-full flex items-center text-[#323232]  font-semibold text-[13px]">
                           <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Date Ordered</p><p className="text-[#303030]  font-semibold text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
-                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Pickup at Bautista Eye Center</p><p className="text-[#303030]  font-semibold text-[15px]">{order.patientorderbautistaproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderbautistaproductpickupstatus === 'Later' ? "To be scheduled" :null}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Pickup at Bautista Eye Center</p><p className="text-[#303030]  font-semibold text-[15px]">{order.patientorderbautistaproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderbautistaproductchosenpickupdate && order.patientorderbautistaproductchosenpickupdate !== 'Later' && order.patientorderbautistaproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderbautistaproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
                           <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-package mt-0.5  font-semibold text-[22px]"/><div><p className="text-[#777777] font-medium text-[13px]">Quantity</p><p className="text-[#303030]  font-semibold text-[15px]">x{order.patientorderbautistaproductquantity}</p></div></div>
                           <div className="flex items-center gap-1"><p className="font-semibold text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777]  font-medium text-[13px]">{Number(order.patientorderbautistaamountpaid) < Number(order.patientorderbautistaproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030]  font-semibold text-[15px]">{Number(order.patientorderbautistaamountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
                         </div>
@@ -793,6 +793,9 @@ useEffect(() => {
                   const pickupStatus = isAmbher 
                     ? selectedOrderForView.patientorderambherproductpickupstatus 
                     : selectedOrderForView.patientorderbautistaproductpickupstatus;
+                  const pickupDate = isAmbher 
+                    ? selectedOrderForView.patientorderambherproductchosenpickupdate 
+                    : selectedOrderForView.patientorderbautistaproductchosenpickupdate;
                   const orderNotes = isAmbher 
                     ? selectedOrderForView.patientorderambherproductnotes 
                     : selectedOrderForView.patientorderbautistaproductnotes;
@@ -986,28 +989,49 @@ useEffect(() => {
                           {/* Pickup Information Card */}
                           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-4">
                             <div className="flex items-center mb-3">
-                              <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg mr-3">
-                                <i className="bx bxs-truck text-orange-600 text-lg"></i>
+                              <div className={`flex items-center justify-center w-10 h-10 rounded-lg mr-3 ${
+                                pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now' && pickupStatus !== 'Now' 
+                                  ? 'bg-green-100' 
+                                  : 'bg-orange-100'
+                              }`}>
+                                <i className={`bx bxs-truck text-lg ${
+                                  pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now' && pickupStatus !== 'Now' 
+                                    ? 'text-green-600' 
+                                    : 'text-orange-600'
+                                }`}></i>
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wide font-medium font-albertsans">Pickup Status</p>
                                 <p className="font-semibold font-albertsans text-gray-800">
                                   {pickupStatus === 'Now' 
                                     ? `Completed (${formatorderDates(selectedOrderForView.createdAt)})`
-                                    : pickupStatus === 'Later' 
-                                      ? "To be scheduled"
-                                      : pickupStatus
+                                    : pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now'
+                                      ? "Available for Pickup Date"
+                                      : pickupStatus === 'Later' 
+                                        ? "To be scheduled"
+                                        : pickupStatus
                                   }
                                 </p>
                               </div>
                             </div>
                             
-                            {pickupStatus === 'Later' && (
+                            {pickupStatus === 'Later' && (!pickupDate || pickupDate === 'Later') && (
                               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <div className="flex items-center">
                                   <i className="bx bx-time text-yellow-600 mr-2"></i>
                                   <p className="text-sm text-yellow-800 font-albertsans">
                                     <span className="font-medium">Pickup scheduling:</span> The {clinic} will set the pickup date and will be displayed here.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {pickupDate && pickupDate !== 'Later' && pickupDate !== 'Now' && pickupStatus !== 'Now' && (
+                              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center">
+                                  <i className="bx bx-calendar-check text-green-600 mr-2"></i>
+                                  <p className="text-sm text-green-800 font-albertsans">
+                                    <span className="font-medium">Available for Pickup:</span> Your order is available for pickup on {formatorderDates(pickupDate)}.
                                   </p>
                                 </div>
                               </div>
