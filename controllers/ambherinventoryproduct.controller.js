@@ -41,6 +41,28 @@ import AmbherInventoryProduct from "../models/ambherinventoryproduct.js";
         }
     };
 
+
+    //Get Single Clinic AmbherInventoryProduct by ID
+    export const getambherinventoryproductbyid = async (req, res) => {
+        try{
+            const { id } = req.params;
+            const ambherinventoryproduct = await AmbherInventoryProduct.findOne({ 
+                ambherinventoryproductid: id 
+            })
+                .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount createdAt')
+                .lean(); // Returns plain JavaScript objects for better performance
+            
+            if (!ambherinventoryproduct) {
+                return res.status(404).json({message: "Ambher Inventory Product not found"});
+            }
+            
+            res.json(ambherinventoryproduct);
+    
+        }catch(error){
+            res.status(500).json({message: error.message});
+        }
+    };
+
      
 
 

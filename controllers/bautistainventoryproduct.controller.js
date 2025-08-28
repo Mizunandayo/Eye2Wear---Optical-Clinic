@@ -41,6 +41,28 @@ import BautistaInventoryProduct from "../models/bautistainventoryproduct.js";
         }
     };
 
+
+    //Get Single Clinic BautistaInventoryProduct by ID
+    export const getbautistainventoryproductbyid = async (req, res) => {
+        try{
+            const { id } = req.params;
+            const bautistainventoryproduct = await BautistaInventoryProduct.findOne({ 
+                bautistainventoryproductid: id 
+            })
+                .select('bautistainventoryproductid bautistainventoryproductcategory bautistainventoryproductname bautistainventoryproductbrand bautistainventoryproductmodelnumber bautistainventoryproductdescription bautistainventoryproductprice bautistainventoryproductquantity bautistainventoryproductimagepreviewimages bautistainventoryproductwishlistcount createdAt')
+                .lean(); // Returns plain JavaScript objects for better performance
+            
+            if (!bautistainventoryproduct) {
+                return res.status(404).json({message: "Bautista Inventory Product not found"});
+            }
+            
+            res.json(bautistainventoryproduct);
+    
+        }catch(error){
+            res.status(500).json({message: error.message});
+        }
+    };
+
      
 
 

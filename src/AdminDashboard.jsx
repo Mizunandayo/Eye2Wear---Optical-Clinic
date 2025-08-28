@@ -7909,6 +7909,145 @@ const markOrderAsComplete = useCallback(async () => {
       const updatedOrder = await response.json();
       console.log(`✅ Successfully marked ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
       
+      // Update the product quantity after completing the order
+      try {
+        const productId = isAmbher 
+          ? selectedOrderForView.patientorderambherproductid 
+          : selectedOrderForView.patientorderbautistaproductid;
+        const quantityOrdered = isAmbher 
+          ? selectedOrderForView.patientorderambherproductquantity 
+          : selectedOrderForView.patientorderbautistaproductquantity;
+        
+        const inventoryEndpoint = isAmbher 
+          ? `${apiUrl}/api/ambherinventoryproduct/${productId}`
+          : `${apiUrl}/api/bautistainventoryproduct/${productId}`;
+        
+        // Get current product data to calculate new quantity
+        const currentProductResponse = await fetch(inventoryEndpoint, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (currentProductResponse.ok) {
+          const currentProduct = await currentProductResponse.json();
+          const currentQuantity = isAmbher 
+            ? currentProduct.ambherinventoryproductquantity 
+            : currentProduct.bautistainventoryproductquantity;
+          const newQuantity = currentQuantity - quantityOrdered;
+          
+          const updateBody = isAmbher 
+            ? { ambherinventoryproductquantity: newQuantity }
+            : { bautistainventoryproductquantity: newQuantity };
+          
+          const updateResponse = await fetch(inventoryEndpoint, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentusertoken}`
+            },
+            body: JSON.stringify(updateBody)
+          });
+
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error('Failed to update product quantity:', errorText);
+          } else {
+            console.log(`✅ Successfully updated inventory quantity: ${currentQuantity} → ${newQuantity}`);
+            
+            // Update local inventory state
+            if (isAmbher) {
+              setambherinventoryproducts(prevProducts => 
+                prevProducts.map(product => product.ambherinventoryproductid === productId
+                  ? { ...product, ambherinventoryproductquantity: newQuantity }
+                  : product
+                )
+              );
+            } else {
+              setbautistainventoryproducts(prevProducts => 
+                prevProducts.map(product => product.bautistainventoryproductid === productId
+                  ? { ...product, bautistainventoryproductquantity: newQuantity }
+                  : product
+                )
+              );
+            }
+            
+            // Refresh sold counts after completing the order
+            try {
+              const soldCountResponse = await fetch(`${apiUrl}/api/${isAmbher ? 'patientorderambher' : 'patientorderbautista'}/${isAmbher ? 'ambher' : 'bautista'}productsoldcount/${productId}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              
+              if (soldCountResponse.ok) {
+                const soldData = await soldCountResponse.json();
+                const newSoldCount = soldData.sold || 0;
+                
+                // Update sold counts state
+                if (isAmbher) {
+                  setambherproductsoldCounts(prevCounts => ({
+                    ...prevCounts,
+                    [productId]: newSoldCount
+                  }));
+                } else {
+                  setbautistaproductsoldCounts(prevCounts => ({
+                    ...prevCounts,
+                    [productId]: newSoldCount
+                  }));
+                }
+                
+                console.log(`✅ Updated sold count for product ${productId}: ${newSoldCount}`);
+              } else {
+                console.warn('Failed to fetch updated sold count');
+              }
+            } catch (soldCountError) {
+              console.error('❌ Failed to update sold count:', soldCountError);
+            }
+          }
+        } else {
+          console.error('Failed to get current product data for inventory update');
+        }
+      } catch (inventoryError) {
+        console.error('❌ Failed to update inventory quantity:', inventoryError);
+      }
+      
+      // Remove the product from patient's wishlist after completing the order
+      try {
+        const customerEmail = isAmbher 
+          ? selectedOrderForView.patientemail 
+          : selectedOrderForView.patientemail;
+        const productId = isAmbher 
+          ? selectedOrderForView.patientorderambherproductid 
+          : selectedOrderForView.patientorderbautistaproductid;
+        const clinicType = isAmbher ? 'ambher' : 'bautista';
+
+        const deletewishlistResponse = await fetch(`${apiUrl}/api/patientwishlistinventoryproduct/admin-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}` 
+          },
+          body: JSON.stringify({
+            email: customerEmail,
+            productId: productId,
+            clinicType: clinicType
+          })
+        });
+
+        if (!deletewishlistResponse.ok) {
+          const errorText = await deletewishlistResponse.text();
+          console.warn('Failed to delete wishlisted item of the user:', errorText);
+        } else {
+          console.log('✅ Wishlisted product from patient wishlist is successfully deleted');
+        }
+
+      } catch (wishlistError) {
+        console.error('❌ Failed to delete the wishlisted product:', wishlistError);
+      }
+      
       // Update the local state immediately
       setSelectedOrderForView(updatedOrder);
       
@@ -7939,7 +8078,7 @@ const markOrderAsComplete = useCallback(async () => {
   } catch (error) {
     console.error('❌ Error marking order as complete:', error);
   }
-}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders]);
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts]);
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -15652,6 +15791,24 @@ Lowest to Highest
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.ambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
   <div className="w-full h-auto ml-2 mt-5 mb-1 "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-red-600' : product.ambherinventoryproductquantity <= 10 ? 'text-yellow-700' : 'text-[#4e4f4f]'}`}>{product.ambherinventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.ambherinventoryproductquantity}${product.ambherinventoryproductquantity <= 10 ? ' (Low)': ''}`)}</h1></div>   
+  
+  {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
+  {product.ambherinventoryproductquantity === 0 && (wishlistCounts[product.ambherinventoryproductid] ?? 0) > 0 && (
+    <div className="w-auto h-auto ml-2 mb-2">
+      <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-r-md">
+        <div className="flex items-center">
+          <i className="bx bx-error text-red-500 text-lg mr-2"></i>
+          <div>
+            <h1 className="font-albertsans font-semibold text-red-700 text-[13px]">URGENT RESTOCK</h1>
+            <p className="font-albertsans font-medium text-red-600 text-[12px]">
+              {wishlistCounts[product.ambherinventoryproductid]} customer(s) waiting
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+  
   <div className="w-full h-auto ml-2 mb-1  flex items-center"> <p className="font-albertsans font-medium  text-[15px] text-[#4e4f4f]">Wishlisted: {wishlistCounts[product.ambherinventoryproductid] ?? 0}  </p></div>
   <div className="w-full h-auto ml-2 mb-3  flex items-center"> <p className="font-albertsans font-medium  text-[15px] text-[#4e4f4f]">Sold: {ambherproductsoldCounts[product.ambherinventoryproductid] ?? 0}  </p></div>
 </div>  
@@ -16314,6 +16471,24 @@ onError={(e) => {
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.bautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
   <div className="w-full h-auto ml-2 mt-2  "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-red-600' : product.bautistainventoryproductquantity <= 10 ? 'text-yellow-700' : 'text-[#4e4f4f]'}`}>{product.bautistainventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.bautistainventoryproductquantity}${product.bautistainventoryproductquantity <= 10 ? ' (Low)': ''}`)}</h1></div>   
+  
+  {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
+  {product.bautistainventoryproductquantity === 0 && (wishlistCounts[product.bautistainventoryproductid] ?? 0) > 0 && (
+    <div className="w-auto h-auto ml-2 mb-2">
+      <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-r-md">
+        <div className="flex items-center">
+          <i className="bx bx-error text-red-500 text-lg mr-2"></i>
+          <div>
+            <h1 className="font-albertsans font-semibold text-red-700 text-[13px]">URGENT RESTOCK</h1>
+            <p className="font-albertsans font-medium text-red-600 text-[12px]">
+              {wishlistCounts[product.bautistainventoryproductid]} customer(s) waiting
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+  
   <div className="w-full h-auto ml-2 mb-1  flex items-center"> <p className="font-albertsans font-medium  text-[15px] text-[#4e4f4f]">Wishlisted: {wishlistCounts[product.bautistainventoryproductid] ?? 0}  </p></div>
   <div className="w-full h-auto ml-2 mb-3  flex items-center"> <p className="font-albertsans font-medium  text-[15px] text-[#4e4f4f]">Sold: {bautistaproductsoldCounts[product.bautistainventoryproductid] ?? 0}  </p></div>
 </div>
@@ -18653,10 +18828,9 @@ filteredbautistaOrders.map((order) => (
                         </div>
                         <div
                           onClick={markOrderAsComplete}
-                          className="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors duration-200 flex items-center justify-center font-albertsans"
+                          className="w-full p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-2xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"
                         >
-                          <i className="bx bx-check-double mr-2"></i>
-                          Mark as Complete Order
+                          <p className="font-bold font-albertsans text-white text-[18px] ml-2">Complete Order</p>
                         </div>
                       </div>
                     )}

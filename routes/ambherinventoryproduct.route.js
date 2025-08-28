@@ -4,6 +4,7 @@ import {
 
     createambherinventoryproduct,
     getallambherinventoryproduct,
+    getambherinventoryproductbyid,
     updateambherinventoryproductbyid,
     deleteambherinventoryproductbyid,
 
@@ -18,6 +19,7 @@ const ambherinventoryproductrouter = express.Router();
 
 
 ambherinventoryproductrouter.get("/", getallambherinventoryproduct);
+ambherinventoryproductrouter.get("/:id", getambherinventoryproductbyid);
 
 ambherinventoryproductrouter.post("/", createambherinventoryproduct);
 ambherinventoryproductrouter.put("/:id", updateambherinventoryproductbyid);
