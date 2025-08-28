@@ -16757,9 +16757,15 @@ onError={(e) => {
   <i className="bx bx-filter mr-2 text-[20px]"/>
  <h1 className="text-[15px] mr-8">Filter by status </h1>
  <div className="gap-2 flex">
- {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => (
- <div key={status} onClick={() => setambherFilter(status)}  className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${ambherfilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>{status}</div>
- ))}
+ {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => {
+   const statusCount = status === 'All' ? ambherorders.length : ambherorders.filter(order => order.patientorderambherstatus === status).length;
+   
+   return (
+     <div key={status} onClick={() => setambherFilter(status)} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${ambherfilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
+       {status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm">{statusCount}</span>
+     </div>
+   );
+ })}
  </div>
  </div>
  <div className="flex justify-end items-center w-auto h-[9%] rounded-2xl mb-2 mt-3"> <div onClick={() => setshowpatientorderambher(true)}  className="w-50 p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center  items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx  bx-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Set Order</p></div> </div>
@@ -17573,9 +17579,15 @@ filteredambherOrders.map((order) => (
   <i className="bx bx-filter mr-2 text-[20px]"/>
  <h1 className="text-[15px] mr-8">Filter by status </h1>
  <div className="gap-2 flex">
- {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => (
- <div key={status} onClick={() => setbautistaFilter(status)}  className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${bautistafilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>{status}</div>
- ))}
+ {['All', 'Pending', 'Ready for Pickup', 'Completed'].map((status) => {
+   const statusCount = status === 'All' ? bautistaorders.length : bautistaorders.filter(order => order.patientorderbautistastatus === status).length;
+   
+   return (
+     <div key={status} onClick={() => setbautistaFilter(status)} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${bautistafilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
+       {status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm">{statusCount}</span>
+     </div>
+   );
+ })}
  </div>
  </div>
  <div className="flex justify-end items-center w-auto h-[9%] rounded-2xl mb-2 mt-3"> <div onClick={() => setshowpatientorderbautista(true)}  className="w-50 p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center  items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx  bx-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Set Order</p></div> </div>
