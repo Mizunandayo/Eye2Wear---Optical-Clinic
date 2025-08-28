@@ -94,6 +94,21 @@ mapStyles.textContent = `
     line-opacity: 0.6;
   }
 
+  /* Always ensure map container and map have full size */
+  #geographicmapcontainer {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 580px !important;
+    position: relative !important;
+    background: #000 !important;
+  }
+  .mapboxgl-map {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 580px !important;
+    position: relative !important;
+  }
+
   /* Essential fullscreen functionality that can't be replaced with Tailwind */
   .mapboxgl-map:-webkit-full-screen,
   .mapboxgl-map:-moz-full-screen,
@@ -1110,6 +1125,41 @@ function AdminDashboard(){
 
 
 //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+  // --- Mapbox Fullscreen Fix ---
+  useEffect(() => {
+    // Wait for map to be initialized
+    if (!window.mapboxgl || !document.getElementById('geographicmapcontainer')) return;
+    const mapContainer = document.getElementById('geographicmapcontainer');
+    // Handler for fullscreenchange
+    const handleFullscreenChange = () => {
+      // Only use map.current.resize(), never map.current.getMap()
+      if (map && map.current && typeof map.current.resize === 'function') {
+        setTimeout(() => {
+          map.current.resize();
+          console.log('🔄 Map resized for fullscreen mode');
+        }, 100);
+      } else {
+        // Fallback: try to find mapboxgl.Map instance from DOM
+        const mapDiv = mapContainer.querySelector('.mapboxgl-map');
+        if (mapDiv && mapDiv._map && typeof mapDiv._map.resize === 'function') {
+          setTimeout(() => {
+            mapDiv._map.resize();
+            console.log('🔄 Map resized for fullscreen mode (fallback)');
+          }, 100);
+        }
+      }
+    };
+    mapContainer.addEventListener('fullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    return () => {
+      mapContainer.removeEventListener('fullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
 //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
 //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
@@ -3327,6 +3377,36 @@ useEffect(() => {
 
 
 
+
+
+
+  useEffect(() => {
+  const mapContainer = document.getElementById('geographicmapcontainer');
+  const handleFullscreenChange = () => {
+    // If not in fullscreen, reset styles and force map resize
+    const isFullscreen = document.fullscreenElement === mapContainer ||
+      document.webkitFullscreenElement === mapContainer ||
+      document.mozFullScreenElement === mapContainer;
+    if (!isFullscreen && mapContainer) {
+      mapContainer.style.width = '';
+      mapContainer.style.height = '';
+      mapContainer.style.position = '';
+      mapContainer.style.zIndex = '';
+      // If using Mapbox GL JS, force map resize
+      if (window.geographicMap && typeof window.geographicMap.resize === 'function') {
+        window.geographicMap.resize();
+      }
+    }
+  };
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  return () => {
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+  };
+}, []);
 
 
 

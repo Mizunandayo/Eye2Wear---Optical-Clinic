@@ -906,6 +906,149 @@ function PatientLandingpage() {
     }
   }, [locationMessage]);
 
+
+
+
+  useEffect(() => {
+  const mapContainer = document.getElementById('geographicmapcontainer');
+// Add fullscreen event listeners for better UX
+const handleFullscreenChange = () => {
+  const isFullscreen = document.fullscreenElement || 
+                      document.webkitFullscreenElement || 
+                      document.mozFullScreenElement;
+  
+  const mapContainer = document.querySelector('#geographicmapcontainer');
+  const mapElement = map.current ? map.current.getContainer() : null;
+  
+  if (isFullscreen) {
+    console.log('🔍 Map entered fullscreen mode');
+
+    
+    if (mapContainer) {
+      // Store original styles for restoration
+      mapContainer.dataset.originalStyles = JSON.stringify({
+        width: mapContainer.style.width,
+        height: mapContainer.style.height,
+        position: mapContainer.style.position,
+        zIndex: mapContainer.style.zIndex
+      });
+      
+      // Apply fullscreen styles
+      Object.assign(mapContainer.style, {
+        width: '100vw',
+        height: '100vh',
+        position: 'fixed',
+        zIndex: '9999',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        margin: '0',
+        padding: '0',
+        border: 'none',
+        borderRadius: '0'
+      });
+    }
+    
+    // Force immediate map resize
+    setTimeout(() => {
+      if (map.current) {
+        map.current.resize();
+        // Additional resize after a short delay
+        setTimeout(() => map.current && map.current.resize(), 100);
+      }
+    }, 50);
+    
+  } else {
+    console.log('🔍 Map exited fullscreen mode');
+
+    
+    if (mapContainer) {
+      // Restore original styles
+      const originalStyles = mapContainer.dataset.originalStyles 
+        ? JSON.parse(mapContainer.dataset.originalStyles)
+        : {};
+      
+      Object.assign(mapContainer.style, {
+        width: originalStyles.width || '100%',
+        height: originalStyles.height || '580px', // CRITICAL: Restore original height
+        position: originalStyles.position || 'relative',
+        zIndex: originalStyles.zIndex || 'auto',
+        top: 'auto',
+        left: 'auto',
+        right: 'auto',
+        bottom: 'auto',
+        margin: '0',
+        padding: '0',
+        border: 'none',
+        borderRadius: '16px'
+      });
+    }
+    
+    // Force map resize with multiple attempts to ensure proper rendering
+    if (map.current) {
+      setTimeout(() => {
+        map.current.resize();
+        setTimeout(() => map.current && map.current.resize(), 100);
+        setTimeout(() => map.current && map.current.resize(), 300);
+      }, 50);
+    }
+  }
+};
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  return () => {
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+  };
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
   return (
     <>
       <div className="bg-white w-[99vw] relative z-10">
