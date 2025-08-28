@@ -202,3 +202,36 @@ export const getambherproductsoldcountbyid = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Update payment for Ambher order
+export const updatePaymentAmbher = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { patientorderambheramountpaid, patientorderambheramountpaidchange } = req.body;
+
+    const order = await PatientOrderAmbher.findOne({ patientorderambherid: id });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Update the payment fields
+    const updatedOrder = await PatientOrderAmbher.findOneAndUpdate(
+      { patientorderambherid: id },
+      {
+        patientorderambheramountpaid: patientorderambheramountpaid,
+        patientorderambheramountpaidchange: patientorderambheramountpaidchange,
+        patientorderambherremainingbalance: order.patientorderambherproducttotal - patientorderambheramountpaid
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment updated successfully",
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error("Error updating payment: ", error);
+    res.status(500).json({ message: error.message });
+  }
+};

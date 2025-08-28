@@ -7058,6 +7058,9 @@ const [selectedOrderForView, setSelectedOrderForView] = useState(null);
 const [showViewOrderModal, setShowViewOrderModal] = useState(false);
 const [viewOrderCurrentImageIndex, setViewOrderCurrentImageIndex] = useState(0);
 const [selectedPickupDate, setSelectedPickupDate] = useState('');
+const [additionalPayment, setAdditionalPayment] = useState('');
+const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+const [paymentMessage, setPaymentMessage] = useState({ text: '', type: '' });
 
 
 
@@ -7793,6 +7796,114 @@ const getMinDate = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   return tomorrow.toISOString().split('T')[0];
+};
+
+// Handle additional payment processing
+const handleAdditionalPayment = async () => {
+  if (!additionalPayment || Number(additionalPayment) <= 0) {
+    setPaymentMessage({ text: 'Please enter a valid payment amount', type: 'error' });
+    return;
+  }
+
+  setIsProcessingPayment(true);
+  setPaymentMessage({ text: '', type: '' });
+
+  try {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const currentAmountPaid = Number(isAmbher 
+      ? selectedOrderForView.patientorderambheramountpaid 
+      : selectedOrderForView.patientorderbautistaamountpaid);
+    const productTotal = Number(isAmbher 
+      ? selectedOrderForView.patientorderambherproducttotal 
+      : selectedOrderForView.patientorderbautistaproducttotal);
+    const additionalAmount = Number(additionalPayment);
+    const newTotalPaid = currentAmountPaid + additionalAmount;
+    const remainingBalance = productTotal - currentAmountPaid;
+    
+    // Calculate change if payment exceeds remaining balance
+    const change = additionalAmount > remainingBalance ? additionalAmount - remainingBalance : 0;
+    const finalAmountPaid = Math.min(newTotalPaid, productTotal);
+    
+    const orderId = isAmbher 
+      ? selectedOrderForView.patientorderambherid 
+      : selectedOrderForView.patientorderbautistaid;
+    
+    const endpoint = isAmbher 
+      ? `${apiUrl}/api/patientorderambher/update-payment/${orderId}`
+      : `${apiUrl}/api/patientorderbautista/update-payment/${orderId}`;
+    
+    const updateData = isAmbher ? {
+      patientorderambheramountpaid: finalAmountPaid,
+      patientorderambheramountpaidchange: change
+    } : {
+      patientorderbautistaamountpaid: finalAmountPaid,
+      patientorderbautistaamountpaidchange: change
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(updateData)
+    });
+
+    if (response.ok) {
+      // Update the selected order view with new payment data
+      const updatedOrder = {
+        ...selectedOrderForView,
+        ...(isAmbher ? {
+          patientorderambheramountpaid: finalAmountPaid,
+          patientorderambheramountpaidchange: change
+        } : {
+          patientorderbautistaamountpaid: finalAmountPaid,
+          patientorderbautistaamountpaidchange: change
+        })
+      };
+      setSelectedOrderForView(updatedOrder);
+      
+      // Refresh the orders list to reflect the updated payment data
+      if (isAmbher) {
+        await fetchambherOrders();
+      } else {
+        await fetchbautistaOrders();
+      }
+      
+      // Clear the additional payment input
+      setAdditionalPayment('');
+      
+      // Show success message
+      if (change > 0) {
+        setPaymentMessage({ 
+          text: `Payment processed successfully. Change: ₱${change.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 
+          type: 'success' 
+        });
+      } else {
+        setPaymentMessage({ text: 'Payment processed successfully', type: 'success' });
+      }
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setPaymentMessage({ text: '', type: '' });
+      }, 3000);
+      
+    } else {
+      throw new Error('Failed to process payment');
+    }
+  } catch (error) {
+    console.error('Error processing payment:', error);
+    setPaymentMessage({ text: 'Failed to process payment. Please try again.', type: 'error' });
+  } finally {
+    setIsProcessingPayment(false);
+  }
+};
+
+const handlePaymentInputChange = (e) => {
+  const value = e.target.value;
+  if (value === '' || (Number(value) >= 0 && !isNaN(Number(value)))) {
+    setAdditionalPayment(value);
+  }
 };
 
 
@@ -18410,11 +18521,81 @@ filteredbautistaOrders.map((order) => (
                             <span className="font-medium">Payment Required:</span> Full payment must be completed before scheduling pickup.
                           </p>
                         </div>
-                        <div className="bg-white p-3 rounded-lg border border-red-200">
-                          <div className="flex justify-between items-center">
+                        
+                        {/* Payment Balance Information */}
+                        <div className="bg-white p-3 rounded-lg border border-red-200 mb-4">
+                          <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-red-700 font-medium font-albertsans">Remaining Balance:</span>
                             <span className="font-bold text-red-700 font-albertsans">₱{(Number(productTotal) - Number(amountPaid)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                           </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600 font-albertsans">Total Amount:</span>
+                            <span className="text-xs text-gray-600 font-albertsans">₱{Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600 font-albertsans">Amount Paid:</span>
+                            <span className="text-xs text-gray-600 font-albertsans">₱{Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                          </div>
+                        </div>
+
+                        {/* Payment Collection Form */}
+                        <div className="bg-white p-4 rounded-lg border border-red-200">
+                          <div className="flex items-center mb-3">
+                            <i className="bx bx-money text-green-600 mr-2"></i>
+                            <h4 className="font-medium text-gray-800 font-albertsans">Collect Additional Payment</h4>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 font-albertsans">
+                              Payment Amount (₱)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={additionalPayment}
+                              onChange={handlePaymentInputChange}
+                              placeholder="Enter payment amount"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm font-albertsans"
+                              disabled={isProcessingPayment}
+                            />
+                            <p className="mt-1 text-xs text-gray-500 font-albertsans">
+                              Remaining balance: ₱{(Number(productTotal) - Number(amountPaid)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </p>
+                          </div>
+
+                          {/* Payment Message */}
+                          {paymentMessage.text && (
+                            <div className={`mb-3 p-3 rounded-lg border ${
+                              paymentMessage.type === 'success' 
+                                ? 'bg-green-50 border-green-200 text-green-800' 
+                                : 'bg-red-50 border-red-200 text-red-800'
+                            }`}>
+                              <div className="flex items-center">
+                                <i className={`bx ${paymentMessage.type === 'success' ? 'bx-check-circle' : 'bx-error-circle'} mr-2`}></i>
+                                <p className="text-sm font-albertsans">{paymentMessage.text}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Process Payment Button */}
+                          <button
+                            onClick={handleAdditionalPayment}
+                            disabled={isProcessingPayment || !additionalPayment || Number(additionalPayment) <= 0}
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium text-sm font-albertsans transition-colors duration-200 flex items-center justify-center"
+                          >
+                            {isProcessingPayment ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-credit-card mr-2"></i>
+                                Process Payment
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     )}

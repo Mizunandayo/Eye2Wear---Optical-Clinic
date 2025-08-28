@@ -7,6 +7,7 @@ import {
      updateorderambherbyid,
      deleteorderambherbyid,
      getambherproductsoldcountbyid,
+     updatePaymentAmbher,
 } from '../controllers/patientorderambher.controller.js';
 
 
@@ -18,6 +19,7 @@ patientorderambherrouter.get('/email/:email', getorderambhersbyemail);
 patientorderambherrouter.get('/:id', getpatientorderambherbyid);
 patientorderambherrouter.get("/ambherproductsoldcount/:productid", getambherproductsoldcountbyid);
 patientorderambherrouter.put('/:id', updateorderambherbyid);
+patientorderambherrouter.put('/update-payment/:id', updatePaymentAmbher);
 patientorderambherrouter.delete('/:id', deleteorderambherbyid);
 
 

@@ -198,3 +198,36 @@ export const getbautistaproductsoldcountbyid = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Update payment for Bautista order
+export const updatePaymentBautista = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { patientorderbautistaamountpaid, patientorderbautistaamountpaidchange } = req.body;
+
+    const order = await PatientOrderBautista.findOne({ patientorderbautistaid: id });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Update the payment fields
+    const updatedOrder = await PatientOrderBautista.findOneAndUpdate(
+      { patientorderbautistaid: id },
+      {
+        patientorderbautistaamountpaid: patientorderbautistaamountpaid,
+        patientorderbautistaamountpaidchange: patientorderbautistaamountpaidchange,
+        patientorderbautistaremainingbalance: order.patientorderbautistaproducttotal - patientorderbautistaamountpaid
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment updated successfully",
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error("Error updating payment: ", error);
+    res.status(500).json({ message: error.message });
+  }
+};
