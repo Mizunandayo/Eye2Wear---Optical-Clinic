@@ -865,6 +865,14 @@ function AdminDashboard(){
     setshowlogoutbtn(!showlogoutbtn);
   }
 
+  // Stock alert visibility states - reset on page reload
+  const [hiddenAmbherOutOfStock, setHiddenAmbherOutOfStock] = useState(false);
+  const [hiddenAmbherCriticalStock, setHiddenAmbherCriticalStock] = useState(false);
+  const [hiddenAmbherLowStock, setHiddenAmbherLowStock] = useState(false);
+  const [hiddenBautistaOutOfStock, setHiddenBautistaOutOfStock] = useState(false);
+  const [hiddenBautistaCriticalStock, setHiddenBautistaCriticalStock] = useState(false);
+  const [hiddenBautistaLowStock, setHiddenBautistaLowStock] = useState(false);
+
 
 
   
@@ -15530,8 +15538,35 @@ className="max-w-full max-h-full"
 
 {(cliniccriticalstockProducts.length > 0 || cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
 <div >
-{cliniccriticalstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2">
+{clinicoutofstockProducts.length > 0 && !hiddenAmbherOutOfStock && (
+<div className=" border-red-600   flexitems-center p-5 w-full h-auto bg-red-100 rounded-2xl border-1 mb-2 relative">
+<div 
+  onClick={() => setHiddenAmbherOutOfStock(true)}
+  className="absolute top-3 right-3 text-red-700 hover:text-red-900 hover:bg-red-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</div>
+<div className="flex items-center">
+<i className="bx bx-error text-red-700 text-2xl"></i>
+<h1 className="ml-1 font-albertsans font-semibold text-red-900 text-[18px]">Out of Stock Alert</h1>
+</div>
+
+<div className="ml-1">
+<p className="font-semibold text-red-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
+</div>
+</div>
+)}
+
+{cliniccriticalstockProducts.length > 0 && !hiddenAmbherCriticalStock && (
+<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2 relative">
+<div 
+  onClick={() => setHiddenAmbherCriticalStock(true)}
+  className="absolute top-3 right-3 text-orange-600 hover:text-orange-800 hover:bg-orange-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</div>
 <div className="flex items-center">
 <i className="bx bx-error text-orange-600 text-2xl"></i>
 <h1 className="ml-1 font-albertsans font-semibold text-orange-800 text-[18px]">Critical Stock Alert</h1>
@@ -15543,28 +15578,22 @@ className="max-w-full max-h-full"
 </div>
 )}
 
-{cliniclowstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-yellow-50 rounded-2xl border-1 border-yellow-400 mb-2">
+{cliniclowstockProducts.length > 0 && !hiddenAmbherLowStock && (
+<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-400 mb-2 relative">
+<div 
+  onClick={() => setHiddenAmbherLowStock(true)}
+  className="absolute top-3 right-3 text-yellow-700 hover:text-yellow-800 hover:bg-yellow-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</div>
 <div className="flex items-center">
 <img src={cautionlowstockalert} className="w-8 h-8"></img>
-<h1 className="ml-1 font-albertsans font-semibold text-yellow-800 text-[18px]">Low Stock Alert</h1>
+<h1 className="ml-1 font-albertsans font-semibold text-yellow-700 text-[18px]">Low Stock Alert</h1>
 </div>
 
 <div className="ml-1">
-<p className="font-semibold text-yellow-800 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention (4-6 in stock).</p>
-</div>
-</div>
-)}
-
-{clinicoutofstockProducts.length > 0 && (
-<div className=" border-red-600   flexitems-center p-5 w-full h-auto bg-red-100 rounded-2xl border-1 mb-2 ">
-<div className="flex items-center">
-<i className="bx bx-error text-red-700 text-2xl"></i>
-<h1 className="ml-1 font-albertsans font-semibold text-yellow-900 text-[18px]">Out of Stock Alert</h1>
-</div>
-
-<div className="ml-1">
-<p className="font-semibold text-orange-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
+<p className="font-semibold text-yellow-700 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention (4-6 in stock).</p>
 </div>
 </div>
 )}</div>
@@ -16244,8 +16273,35 @@ onError={(e) => {
 
 {(cliniccriticalstockProducts.length > 0 || cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
 <div >
-{cliniccriticalstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2">
+{clinicoutofstockProducts.length > 0 && !hiddenBautistaOutOfStock && (
+<div className=" border-red-600   flexitems-center p-5 w-full h-auto bg-red-100 rounded-2xl border-1 mb-2 relative">
+<div 
+  onClick={() => setHiddenBautistaOutOfStock(true)}
+  className="absolute top-3 right-3 text-red-700 hover:text-red-900 hover:bg-red-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</div>
+<div className="flex items-center">
+<i className="bx bx-error text-red-700 text-2xl"></i>
+<h1 className="ml-1 font-albertsans font-semibold text-red-900 text-[18px]">Out of Stock Alert</h1>
+</div>
+
+<div className="ml-1">
+<p className="font-semibold text-red-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
+</div>
+</div>
+)}
+
+{cliniccriticalstockProducts.length > 0 && !hiddenBautistaCriticalStock && (
+<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2 relative">
+<button 
+  onClick={() => setHiddenBautistaCriticalStock(true)}
+  className="absolute top-3 right-3 text-orange-600 hover:text-orange-800 hover:bg-orange-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</button>
 <div className="flex items-center">
 <i className="bx bx-error text-orange-600 text-2xl"></i>
 <h1 className="ml-1 font-albertsans font-semibold text-orange-800 text-[18px]">Critical Stock Alert</h1>
@@ -16257,8 +16313,15 @@ onError={(e) => {
 </div>
 )}
 
-{cliniclowstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-400 mb-2">
+{cliniclowstockProducts.length > 0 && !hiddenBautistaLowStock && (
+<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-400 mb-2 relative">
+<div 
+  onClick={() => setHiddenBautistaLowStock(true)}
+  className="absolute top-3 right-3 text-yellow-700 hover:text-yellow-800 hover:bg-yellow-200 rounded-full p-1 transition-all duration-200"
+  title="Hide alert"
+>
+  <i className="bx bx-x text-lg"></i>
+</div>
 <div className="flex items-center">
 <img src={cautionlowstockalert} className="w-8 h-8"></img>
 <h1 className="ml-1 font-albertsans font-semibold text-yellow-700 text-[18px]">Low Stock Alert</h1>
@@ -16266,19 +16329,6 @@ onError={(e) => {
 
 <div className="ml-1">
 <p className="font-semibold text-yellow-700 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention (4-6 in stock).</p>
-</div>
-</div>
-)}
-
-{clinicoutofstockProducts.length > 0 && (
-<div className=" border-red-600   flexitems-center p-5 w-full h-auto bg-red-100 rounded-2xl border-1 mb-2 ">
-<div className="flex items-center">
-<i className="bx bx-error text-red-700 text-2xl"></i>
-<h1 className="ml-1 font-albertsans font-semibold text-red-900 text-[18px]">Out of Stock Alert</h1>
-</div>
-
-<div className="ml-1">
-<p className="font-semibold text-red-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
 </div>
 </div>
 )}</div>
