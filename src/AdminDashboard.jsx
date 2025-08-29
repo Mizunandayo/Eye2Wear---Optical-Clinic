@@ -9013,7 +9013,7 @@ const [realtimeCoordinates, setRealtimeCoordinates] = useState({
 // Clinic form data state
 const [clinicFormData, setClinicFormData] = useState({
   clinicName: '',
-  clinicType: currentUserClinic || (staffclinic || ownerownedclinic || 'Ambher Optical'),
+  clinicType: 'Ambher Optical', // Will be updated when user data loads
   address: {
     street: '',
     city: '',
@@ -9507,9 +9507,21 @@ const addExternalClinic = useCallback(async (clinicData) => {
 
 // Reset clinic form
 const resetClinicForm = useCallback(() => {
+  // Get the current user's default clinic type
+  const defaultClinicType = (() => {
+    if (currentuserloggedin === "Staff") {
+      return localStorage.getItem('staffclinic') || staffclinic || 'Ambher Optical';
+    } else if (currentuserloggedin === "Owner") {
+      return ownerownedclinic || 'Ambher Optical';
+    }
+    return 'Ambher Optical'; // Default for admin and others
+  })();
+  
+  console.log('🔄 Resetting clinic form with clinic type:', defaultClinicType);
+  
   setClinicFormData({
     clinicName: '',
-    clinicType: getUserDefaultClinicType(),
+    clinicType: defaultClinicType,
     address: {
       street: '',
       city: '',
@@ -9531,7 +9543,7 @@ const resetClinicForm = useCallback(() => {
     },
     services: []
   });
-}, [getUserDefaultClinicType]);
+}, [currentuserloggedin, staffclinic, ownerownedclinic]);
 
 // Copy coordinates to clipboard
 const copyCoordinatesToClipboard = useCallback(async () => {
@@ -9562,6 +9574,12 @@ const handleSaveClinicLocation = useCallback(async () => {
 
   setIsSavingLocation(true);
   try {
+    console.log('💾 Saving clinic location with data:', {
+      clinicName: clinicFormData.clinicName,
+      clinicType: clinicFormData.clinicType,
+      coordinates: clinicFormData.coordinates
+    });
+    
     const response = await fetch(`${apiUrl}/api/cliniclocation/clinics`, {
       method: 'POST',
       headers: {
@@ -10450,8 +10468,14 @@ useEffect(() => {
       
       console.log('🗺️ Clicked on empty map area, opening add dialog');
       const { lng, lat } = e.lngLat;
+      
+      // Ensure clinic type is set to the correct value for the current user
+      const currentClinicType = getUserDefaultClinicType();
+      console.log('🏥 Setting clinic type for new clinic:', currentClinicType);
+      
       setClinicFormData(prev => ({
         ...prev,
+        clinicType: currentClinicType,
         coordinates: { longitude: lng, latitude: lat }
       }));
       
@@ -10467,7 +10491,7 @@ useEffect(() => {
       map.current.off('click', handleMapClick);
     }
   };
-}, [mapLoaded, isEditingLocation]);
+}, [mapLoaded, isEditingLocation, getUserDefaultClinicType]);
 
 // Separate effect for real-time coordinate tracking
 useEffect(() => {
@@ -11053,6 +11077,27 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [locationMessage]);
+
+// Update clinic form data clinic type when user data is loaded
+useEffect(() => {
+  if (userDataLoaded && (currentuserloggedin === 'Staff' || currentuserloggedin === 'Owner')) {
+    const correctClinicType = (() => {
+      if (currentuserloggedin === "Staff") {
+        return localStorage.getItem('staffclinic') || staffclinic || 'Ambher Optical';
+      } else if (currentuserloggedin === "Owner") {
+        return ownerownedclinic || 'Ambher Optical';
+      }
+      return 'Ambher Optical';
+    })();
+    
+    console.log('🏥 Updating clinic form data with correct clinic type:', correctClinicType);
+    
+    setClinicFormData(prev => ({
+      ...prev,
+      clinicType: correctClinicType
+    }));
+  }
+}, [userDataLoaded, currentuserloggedin, staffclinic, ownerownedclinic]);
 
 
 
