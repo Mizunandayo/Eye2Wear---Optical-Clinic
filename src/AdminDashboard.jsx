@@ -16295,13 +16295,13 @@ onError={(e) => {
 
 {cliniccriticalstockProducts.length > 0 && !hiddenBautistaCriticalStock && (
 <div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2 relative">
-<button 
+<div 
   onClick={() => setHiddenBautistaCriticalStock(true)}
   className="absolute top-3 right-3 text-orange-600 hover:text-orange-800 hover:bg-orange-200 rounded-full p-1 transition-all duration-200"
   title="Hide alert"
 >
   <i className="bx bx-x text-lg"></i>
-</button>
+</div>
 <div className="flex items-center">
 <i className="bx bx-error text-orange-600 text-2xl"></i>
 <h1 className="ml-1 font-albertsans font-semibold text-orange-800 text-[18px]">Critical Stock Alert</h1>
