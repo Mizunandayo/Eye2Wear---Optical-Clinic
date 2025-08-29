@@ -6043,7 +6043,7 @@ const finalFilteredAmbherProducts = quantitySortingProducts === 'Outofstock'
 : sortedFilteredAmbherProducts;
 
 const ambherinventoryproductcount = ambherinventoryproducts.filter(
-product => product.ambherinventoryproductquantity <= 10
+product => product.ambherinventoryproductquantity <= 6
 );
 
 
@@ -6501,7 +6501,7 @@ const finalFilteredBautistaProducts = bautistaQuantitySortingProducts === 'Outof
 : sortedFilteredBautistaProducts;
 
 const bautistainventoryproductcount = bautistainventoryproducts.filter(
-product => product.bautistainventoryproductquantity <= 10
+product => product.bautistainventoryproductquantity <= 6
 );
 
 
@@ -6896,28 +6896,39 @@ if (bautistainventoryproducts.length > 0) {
 
 // Add these states near your other state declarations
 const [cliniclowstockProducts, setcliniclowstockProducts] = useState([]);
+const [cliniccriticalstockProducts, setcliniccriticalstockProducts] = useState([]);
 const [clinicoutofstockProducts, setclinicoutofstockProducts] = useState([]);
 
 // Add this useEffect to check stock levels when inventory changes
 useEffect(() => {
 if (activeinventorytable === 'ambherinventorytable') {
-  const lowStock = ambherinventoryproducts.filter(
+  const criticalStock = ambherinventoryproducts.filter(
     product => product.ambherinventoryproductquantity > 0 && 
-              product.ambherinventoryproductquantity <= 10
+              product.ambherinventoryproductquantity <= 3
+  );
+  const lowStock = ambherinventoryproducts.filter(
+    product => product.ambherinventoryproductquantity >= 4 && 
+              product.ambherinventoryproductquantity <= 6
   );
   const outOfStock = ambherinventoryproducts.filter(
     product => product.ambherinventoryproductquantity === 0
   );
+  setcliniccriticalstockProducts(criticalStock);
   setcliniclowstockProducts(lowStock);
   setclinicoutofstockProducts(outOfStock);
 } else if (activeinventorytable === 'bautistainventorytable') {
-  const lowStock = bautistainventoryproducts.filter(
+  const criticalStock = bautistainventoryproducts.filter(
     product => product.bautistainventoryproductquantity > 0 && 
-              product.bautistainventoryproductquantity <= 10
+              product.bautistainventoryproductquantity <= 3
+  );
+  const lowStock = bautistainventoryproducts.filter(
+    product => product.bautistainventoryproductquantity >= 4 && 
+              product.bautistainventoryproductquantity <= 6
   );
   const outOfStock = bautistainventoryproducts.filter(
     product => product.bautistainventoryproductquantity === 0
   );
+  setcliniccriticalstockProducts(criticalStock);
   setcliniclowstockProducts(lowStock);
   setclinicoutofstockProducts(outOfStock);
 }
@@ -15517,17 +15528,30 @@ className="max-w-full max-h-full"
 { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2 animate-fadeInUp border-[#909090] w-[100%] flex-1 min-h-0 rounded-2xl mt-5 flex flex-col" ref={inventoryContainerRef}>
 
 
-{(cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
+{(cliniccriticalstockProducts.length > 0 || cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
 <div >
-{cliniclowstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-600 mb-2">
+{cliniccriticalstockProducts.length > 0 && (
+<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2">
 <div className="flex items-center">
-<img src={cautionlowstockalert} className="w-8 h-8"></img>
-<h1 className="ml-1 font-albertsans font-semibold text-yellow-900 text-[18px]">Low Stock Alert</h1>
+<i className="bx bx-error text-orange-600 text-2xl"></i>
+<h1 className="ml-1 font-albertsans font-semibold text-orange-800 text-[18px]">Critical Stock Alert</h1>
 </div>
 
 <div className="ml-1">
-<p className="font-semibold text-orange-900 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention.</p>
+<p className="font-semibold text-orange-800 text-[14px]">  {cliniccriticalstockProducts.length} Item(s) require immediate attention (3 or less in stock).</p>
+</div>
+</div>
+)}
+
+{cliniclowstockProducts.length > 0 && (
+<div className="flexitems-center p-5 w-full h-auto bg-yellow-50 rounded-2xl border-1 border-yellow-400 mb-2">
+<div className="flex items-center">
+<img src={cautionlowstockalert} className="w-8 h-8"></img>
+<h1 className="ml-1 font-albertsans font-semibold text-yellow-800 text-[18px]">Low Stock Alert</h1>
+</div>
+
+<div className="ml-1">
+<p className="font-semibold text-yellow-800 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention (4-6 in stock).</p>
 </div>
 </div>
 )}
@@ -15764,7 +15788,7 @@ Lowest to Highest
           .sort((a, b) => {
             const aquant = a.ambherinventoryproductquantity || 0;
             const bquant = b.ambherinventoryproductquantity || 0;
-            return aquant <= 10 ? (bquant <= 10 ? 0 : -1) : 1;
+            return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
           });
         const paginatedProducts = getPaginatedData(sortedProducts, 'ambherInventory');
         return paginatedProducts.map((product) => (
@@ -15784,13 +15808,14 @@ Lowest to Highest
   
   
   {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-500"><h1 className="text-white">Out of Stock</h1></div>): 
-   product.ambherinventoryproductquantity <= 10 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-500"><h1 className="text-white">Low Stock</h1></div>): null}
+   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-500"><h1 className="text-white">Critical Stock</h1></div>):
+   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-400"><h1 className="text-white">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.ambherinventoryproductcategory}</h1></div>
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.ambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
-  <div className="w-full h-auto ml-2 mt-5 mb-1 "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-red-600' : product.ambherinventoryproductquantity <= 10 ? 'text-yellow-700' : 'text-[#4e4f4f]'}`}>{product.ambherinventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.ambherinventoryproductquantity}${product.ambherinventoryproductquantity <= 10 ? ' (Low)': ''}`)}</h1></div>   
+  <div className="w-full h-auto ml-2 mt-5 mb-1 "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-red-600' : product.ambherinventoryproductquantity <= 3 ? 'text-orange-600' : product.ambherinventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.ambherinventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.ambherinventoryproductquantity}${product.ambherinventoryproductquantity <= 3 ? ' (Critical)': product.ambherinventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>   
   
   {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
   {product.ambherinventoryproductquantity === 0 && (wishlistCounts[product.ambherinventoryproductid] ?? 0) > 0 && (
@@ -15825,7 +15850,7 @@ Lowest to Highest
       .sort((a, b) => {
         const aquant = a.ambherinventoryproductquantity || 0;
         const bquant = b.ambherinventoryproductquantity || 0;
-        return aquant <= 10 ? (bquant <= 10 ? 0 : -1) : 1;
+        return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
       });
     const totalProducts = sortedProducts.length;
     
@@ -16217,17 +16242,30 @@ onError={(e) => {
 
 { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2 animate-fadeInUp border-[#909090] w-[100%] flex-1 min-h-0 rounded-2xl mt-5 flex flex-col" ref={inventoryContainerRef}>
 
-{(cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
+{(cliniccriticalstockProducts.length > 0 || cliniclowstockProducts.length > 0 || clinicoutofstockProducts.length > 0) && (
 <div >
-{cliniclowstockProducts.length > 0 && (
-<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-600 mb-2">
+{cliniccriticalstockProducts.length > 0 && (
+<div className="flexitems-center p-5 w-full h-auto bg-orange-100 rounded-2xl border-1 border-orange-500 mb-2">
 <div className="flex items-center">
-<img src={cautionlowstockalert} className="w-8 h-8"></img>
-<h1 className="ml-1 font-albertsans font-semibold text-yellow-900 text-[18px]">Low Stock Alert</h1>
+<i className="bx bx-error text-orange-600 text-2xl"></i>
+<h1 className="ml-1 font-albertsans font-semibold text-orange-800 text-[18px]">Critical Stock Alert</h1>
 </div>
 
 <div className="ml-1">
-<p className="font-semibold text-orange-900 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention.</p>
+<p className="font-semibold text-orange-800 text-[14px]">  {cliniccriticalstockProducts.length} Item(s) require immediate attention (3 or less in stock).</p>
+</div>
+</div>
+)}
+
+{cliniclowstockProducts.length > 0 && (
+<div className="flexitems-center p-5 w-full h-auto bg-yellow-100 rounded-2xl border-1 border-yellow-400 mb-2">
+<div className="flex items-center">
+<img src={cautionlowstockalert} className="w-8 h-8"></img>
+<h1 className="ml-1 font-albertsans font-semibold text-yellow-700 text-[18px]">Low Stock Alert</h1>
+</div>
+
+<div className="ml-1">
+<p className="font-semibold text-yellow-700 text-[14px]">  {cliniclowstockProducts.length} Item(s) need attention (4-6 in stock).</p>
 </div>
 </div>
 )}
@@ -16236,11 +16274,11 @@ onError={(e) => {
 <div className=" border-red-600   flexitems-center p-5 w-full h-auto bg-red-100 rounded-2xl border-1 mb-2 ">
 <div className="flex items-center">
 <i className="bx bx-error text-red-700 text-2xl"></i>
-<h1 className="ml-1 font-albertsans font-semibold text-yellow-900 text-[18px]">Out of Stock Alert</h1>
+<h1 className="ml-1 font-albertsans font-semibold text-red-900 text-[18px]">Out of Stock Alert</h1>
 </div>
 
 <div className="ml-1">
-<p className="font-semibold text-orange-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
+<p className="font-semibold text-red-900 text-[14px]"> {clinicoutofstockProducts.length} Item(s) are currently out of stock.</p>
 </div>
 </div>
 )}</div>
@@ -16444,7 +16482,7 @@ onError={(e) => {
           .sort((a, b) => {
             const aquant = a.bautistainventoryproductquantity || 0;
             const bquant = b.bautistainventoryproductquantity || 0;
-            return aquant <= 10 ? (bquant <= 10 ? 0 : -1) : 1;
+            return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
           });
         const paginatedProducts = getPaginatedData(sortedProducts, 'bautistaInventory');
         return paginatedProducts.map((product) => (
@@ -16464,13 +16502,14 @@ onError={(e) => {
   
   
   {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-500"><h1 className="text-white">Out of Stock</h1></div>): 
-   product.bautistainventoryproductquantity <= 10 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-500"><h1 className="text-white">Low Stock</h1></div>): null}
+   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-500"><h1 className="text-white">Critical Stock</h1></div>):
+   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-400"><h1 className="text-white">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.bautistainventoryproductcategory}</h1></div>
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.bautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
-  <div className="w-full h-auto ml-2 mt-2  "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-red-600' : product.bautistainventoryproductquantity <= 10 ? 'text-yellow-700' : 'text-[#4e4f4f]'}`}>{product.bautistainventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.bautistainventoryproductquantity}${product.bautistainventoryproductquantity <= 10 ? ' (Low)': ''}`)}</h1></div>   
+  <div className="w-full h-auto ml-2 mt-2  "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-red-600' : product.bautistainventoryproductquantity <= 3 ? 'text-orange-600' : product.bautistainventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.bautistainventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.bautistainventoryproductquantity}${product.bautistainventoryproductquantity <= 3 ? ' (Critical)': product.bautistainventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>   
   
   {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
   {product.bautistainventoryproductquantity === 0 && (wishlistCounts[product.bautistainventoryproductid] ?? 0) > 0 && (
@@ -16503,7 +16542,7 @@ onError={(e) => {
       .sort((a, b) => {
         const aquant = a.bautistainventoryproductquantity || 0;
         const bquant = b.bautistainventoryproductquantity || 0;
-        return aquant <= 10 ? (bquant <= 10 ? 0 : -1) : 1;
+        return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
       });
     const totalProducts = sortedProducts.length;
     

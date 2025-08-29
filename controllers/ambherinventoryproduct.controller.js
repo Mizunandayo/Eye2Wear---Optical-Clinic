@@ -50,7 +50,7 @@ import AmbherInventoryProduct from "../models/ambherinventoryproduct.js";
                 ambherinventoryproductid: id 
             })
                 .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount createdAt')
-                .lean(); // Returns plain JavaScript objects for better performance
+                .lean();
             
             if (!ambherinventoryproduct) {
                 return res.status(404).json({message: "Ambher Inventory Product not found"});
