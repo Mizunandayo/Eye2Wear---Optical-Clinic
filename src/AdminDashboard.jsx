@@ -6031,18 +6031,59 @@ return categoryMatch;
 
 // Sorting logic for Ambher products
 const sortedFilteredAmbherProducts = [...filteredAmbherProducts].sort((a, b) => {
-if (pricesortingProducts === 'Highesttolowest') {
-  return (b.ambherinventoryproductprice || 0) - (a.ambherinventoryproductprice || 0);
-} else if (pricesortingProducts === 'Lowesttohighest') {
-  return (a.ambherinventoryproductprice || 0) - (b.ambherinventoryproductprice || 0);
-} else if (quantitySortingProducts === 'Highesttolowest') {
-  return (b.ambherinventoryproductquantity || 0) - (a.ambherinventoryproductquantity || 0);
-} else if (quantitySortingProducts === 'Lowesttohighest') {
-  return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
-} else if (quantitySortingProducts === 'Outofstock') {
-  return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
-}
-return 0;
+  // Priority 1: Out of stock WITH urgent restock alert (highest priority)
+  const aOutOfStockWithAlert = (a.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[a.ambherinventoryproductid] ?? 0) > 0;
+  const bOutOfStockWithAlert = (b.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[b.ambherinventoryproductid] ?? 0) > 0;
+  
+  if (aOutOfStockWithAlert && !bOutOfStockWithAlert) return -1;
+  if (!aOutOfStockWithAlert && bOutOfStockWithAlert) return 1;
+  if (aOutOfStockWithAlert && bOutOfStockWithAlert) {
+    // Both have urgent alerts, sort by wishlist count (higher count first)
+    return (wishlistCounts[b.ambherinventoryproductid] ?? 0) - (wishlistCounts[a.ambherinventoryproductid] ?? 0);
+  }
+  
+  // Priority 2: Out of stock WITHOUT urgent restock alert
+  const aOutOfStockNoAlert = (a.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[a.ambherinventoryproductid] ?? 0) === 0;
+  const bOutOfStockNoAlert = (b.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[b.ambherinventoryproductid] ?? 0) === 0;
+  
+  if (aOutOfStockNoAlert && !bOutOfStockNoAlert) return -1;
+  if (!aOutOfStockNoAlert && bOutOfStockNoAlert) return 1;
+  
+  // Priority 3: Critical stock (≤3 items)
+  const aCritical = (a.ambherinventoryproductquantity || 0) > 0 && (a.ambherinventoryproductquantity || 0) <= 3;
+  const bCritical = (b.ambherinventoryproductquantity || 0) > 0 && (b.ambherinventoryproductquantity || 0) <= 3;
+  
+  if (aCritical && !bCritical) return -1;
+  if (!aCritical && bCritical) return 1;
+  if (aCritical && bCritical) {
+    // Both critical, sort by quantity (lower first - more urgent)
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  }
+  
+  // Priority 4: Low stock (4-6 items)
+  const aLowStock = (a.ambherinventoryproductquantity || 0) >= 4 && (a.ambherinventoryproductquantity || 0) <= 6;
+  const bLowStock = (b.ambherinventoryproductquantity || 0) >= 4 && (b.ambherinventoryproductquantity || 0) <= 6;
+  
+  if (aLowStock && !bLowStock) return -1;
+  if (!aLowStock && bLowStock) return 1;
+  if (aLowStock && bLowStock) {
+    // Both low stock, sort by quantity (lower first)
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  }
+  
+  // Priority 5: Regular inventory - apply user-selected sorting
+  if (pricesortingProducts === 'Highesttolowest') {
+    return (b.ambherinventoryproductprice || 0) - (a.ambherinventoryproductprice || 0);
+  } else if (pricesortingProducts === 'Lowesttohighest') {
+    return (a.ambherinventoryproductprice || 0) - (b.ambherinventoryproductprice || 0);
+  } else if (quantitySortingProducts === 'Highesttolowest') {
+    return (b.ambherinventoryproductquantity || 0) - (a.ambherinventoryproductquantity || 0);
+  } else if (quantitySortingProducts === 'Lowesttohighest') {
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  } else {
+    // Default: highest to lowest quantity
+    return (b.ambherinventoryproductquantity || 0) - (a.ambherinventoryproductquantity || 0);
+  }
 });
 
 // Filter out of stock products if needed
@@ -6489,18 +6530,59 @@ return categoryMatch;
 
 // Sorting logic for Bautista products
 const sortedFilteredBautistaProducts = [...filteredBautistaProducts].sort((a, b) => {
-if (bautistaPriceSortingProducts === 'Highesttolowest') {
-  return (b.bautistainventoryproductprice || 0) - (a.bautistainventoryproductprice || 0);
-} else if (bautistaPriceSortingProducts === 'Lowesttohighest') {
-  return (a.bautistainventoryproductprice || 0) - (b.bautistainventoryproductprice || 0);
-} else if (bautistaQuantitySortingProducts === 'Highesttolowest') {
-  return (b.bautistainventoryproductquantity || 0) - (a.bautistainventoryproductquantity || 0);
-} else if (bautistaQuantitySortingProducts === 'Lowesttohighest') {
-  return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
-} else if (bautistaQuantitySortingProducts === 'Outofstock') {
-  return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
-}
-return 0;
+  // Priority 1: Out of stock WITH urgent restock alert (highest priority)
+  const aOutOfStockWithAlert = (a.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[a.bautistainventoryproductid] ?? 0) > 0;
+  const bOutOfStockWithAlert = (b.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[b.bautistainventoryproductid] ?? 0) > 0;
+  
+  if (aOutOfStockWithAlert && !bOutOfStockWithAlert) return -1;
+  if (!aOutOfStockWithAlert && bOutOfStockWithAlert) return 1;
+  if (aOutOfStockWithAlert && bOutOfStockWithAlert) {
+    // Both have urgent alerts, sort by wishlist count (higher count first)
+    return (wishlistCounts[b.bautistainventoryproductid] ?? 0) - (wishlistCounts[a.bautistainventoryproductid] ?? 0);
+  }
+  
+  // Priority 2: Out of stock WITHOUT urgent restock alert
+  const aOutOfStockNoAlert = (a.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[a.bautistainventoryproductid] ?? 0) === 0;
+  const bOutOfStockNoAlert = (b.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[b.bautistainventoryproductid] ?? 0) === 0;
+  
+  if (aOutOfStockNoAlert && !bOutOfStockNoAlert) return -1;
+  if (!aOutOfStockNoAlert && bOutOfStockNoAlert) return 1;
+  
+  // Priority 3: Critical stock (≤3 items)
+  const aCritical = (a.bautistainventoryproductquantity || 0) > 0 && (a.bautistainventoryproductquantity || 0) <= 3;
+  const bCritical = (b.bautistainventoryproductquantity || 0) > 0 && (b.bautistainventoryproductquantity || 0) <= 3;
+  
+  if (aCritical && !bCritical) return -1;
+  if (!aCritical && bCritical) return 1;
+  if (aCritical && bCritical) {
+    // Both critical, sort by quantity (lower first - more urgent)
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  }
+  
+  // Priority 4: Low stock (4-6 items)
+  const aLowStock = (a.bautistainventoryproductquantity || 0) >= 4 && (a.bautistainventoryproductquantity || 0) <= 6;
+  const bLowStock = (b.bautistainventoryproductquantity || 0) >= 4 && (b.bautistainventoryproductquantity || 0) <= 6;
+  
+  if (aLowStock && !bLowStock) return -1;
+  if (!aLowStock && bLowStock) return 1;
+  if (aLowStock && bLowStock) {
+    // Both low stock, sort by quantity (lower first)
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  }
+  
+  // Priority 5: Regular inventory - apply user-selected sorting
+  if (bautistaPriceSortingProducts === 'Highesttolowest') {
+    return (b.bautistainventoryproductprice || 0) - (a.bautistainventoryproductprice || 0);
+  } else if (bautistaPriceSortingProducts === 'Lowesttohighest') {
+    return (a.bautistainventoryproductprice || 0) - (b.bautistainventoryproductprice || 0);
+  } else if (bautistaQuantitySortingProducts === 'Highesttolowest') {
+    return (b.bautistainventoryproductquantity || 0) - (a.bautistainventoryproductquantity || 0);
+  } else if (bautistaQuantitySortingProducts === 'Lowesttohighest') {
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  } else {
+    // Default: highest to lowest quantity
+    return (b.bautistainventoryproductquantity || 0) - (a.bautistainventoryproductquantity || 0);
+  }
 });
 
 // Filter out of stock products if needed
@@ -15858,13 +15940,7 @@ Lowest to Highest
       <div>No Products Found...</div> 
     ):(
       (() => {
-        const sortedProducts = finalFilteredAmbherProducts
-          .sort((a, b) => {
-            const aquant = a.ambherinventoryproductquantity || 0;
-            const bquant = b.ambherinventoryproductquantity || 0;
-            return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
-          });
-        const paginatedProducts = getPaginatedData(sortedProducts, 'ambherInventory');
+        const paginatedProducts = getPaginatedData(finalFilteredAmbherProducts, 'ambherInventory');
         return paginatedProducts.map((product) => (
 <div key={product.ambherinventoryproductid} onClick={() => {setshowaddambherinventoryproductdialog(true);
                                                              setselectedambherproduct(product);
@@ -15920,13 +15996,7 @@ Lowest to Highest
 
   {/* Pagination Component for Ambher Inventory */}
   {(() => {
-    const sortedProducts = finalFilteredAmbherProducts
-      .sort((a, b) => {
-        const aquant = a.ambherinventoryproductquantity || 0;
-        const bquant = b.ambherinventoryproductquantity || 0;
-        return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
-      });
-    const totalProducts = sortedProducts.length;
+    const totalProducts = finalFilteredAmbherProducts.length;
     
     return totalProducts > 0 && (
       <PaginationComponent
@@ -16573,13 +16643,7 @@ onError={(e) => {
       <div>No Products Found...</div> 
     ):(
       (() => {
-        const sortedProducts = finalFilteredBautistaProducts
-          .sort((a, b) => {
-            const aquant = a.bautistainventoryproductquantity || 0;
-            const bquant = b.bautistainventoryproductquantity || 0;
-            return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
-          });
-        const paginatedProducts = getPaginatedData(sortedProducts, 'bautistaInventory');
+        const paginatedProducts = getPaginatedData(finalFilteredBautistaProducts, 'bautistaInventory');
         return paginatedProducts.map((product) => (
 <div key={product.bautistainventoryproductid} onClick={() => {setshowaddbautistainventoryproductdialog(true);
                                                              setselectedbautistaproduct(product);
@@ -16633,13 +16697,7 @@ onError={(e) => {
 
   {/* Pagination Component for Bautista Inventory */}
   {(() => {
-    const sortedProducts = finalFilteredBautistaProducts
-      .sort((a, b) => {
-        const aquant = a.bautistainventoryproductquantity || 0;
-        const bquant = b.bautistainventoryproductquantity || 0;
-        return aquant <= 6 ? (bquant <= 6 ? 0 : -1) : 1;
-      });
-    const totalProducts = sortedProducts.length;
+    const totalProducts = finalFilteredBautistaProducts.length;
     
     return totalProducts > 0 && (
       <PaginationComponent
