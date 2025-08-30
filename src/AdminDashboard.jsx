@@ -6087,9 +6087,22 @@ const sortedFilteredAmbherProducts = [...filteredAmbherProducts].sort((a, b) => 
 });
 
 // Filter out of stock products if needed
-const finalFilteredAmbherProducts = quantitySortingProducts === 'Outofstock' 
-? sortedFilteredAmbherProducts.filter(product => (product.ambherinventoryproductquantity || 0) === 0)
-: sortedFilteredAmbherProducts;
+const finalFilteredAmbherProducts = (() => {
+  if (quantitySortingProducts === 'Outofstock') {
+    return sortedFilteredAmbherProducts.filter(product => (product.ambherinventoryproductquantity || 0) === 0);
+  } else if (quantitySortingProducts === 'LowStock') {
+    return sortedFilteredAmbherProducts.filter(product => {
+      const qty = product.ambherinventoryproductquantity || 0;
+      return qty >= 4 && qty <= 6;
+    });
+  } else if (quantitySortingProducts === 'CriticalStock') {
+    return sortedFilteredAmbherProducts.filter(product => {
+      const qty = product.ambherinventoryproductquantity || 0;
+      return qty >= 1 && qty <= 3;
+    });
+  }
+  return sortedFilteredAmbherProducts;
+})();
 
 const ambherinventoryproductcount = ambherinventoryproducts.filter(
 product => product.ambherinventoryproductquantity <= 6
@@ -6586,9 +6599,22 @@ const sortedFilteredBautistaProducts = [...filteredBautistaProducts].sort((a, b)
 });
 
 // Filter out of stock products if needed
-const finalFilteredBautistaProducts = bautistaQuantitySortingProducts === 'Outofstock' 
-? sortedFilteredBautistaProducts.filter(product => (product.bautistainventoryproductquantity || 0) === 0)
-: sortedFilteredBautistaProducts;
+const finalFilteredBautistaProducts = (() => {
+  if (bautistaQuantitySortingProducts === 'Outofstock') {
+    return sortedFilteredBautistaProducts.filter(product => (product.bautistainventoryproductquantity || 0) === 0);
+  } else if (bautistaQuantitySortingProducts === 'LowStock') {
+    return sortedFilteredBautistaProducts.filter(product => {
+      const qty = product.bautistainventoryproductquantity || 0;
+      return qty >= 4 && qty <= 6;
+    });
+  } else if (bautistaQuantitySortingProducts === 'CriticalStock') {
+    return sortedFilteredBautistaProducts.filter(product => {
+      const qty = product.bautistainventoryproductquantity || 0;
+      return qty >= 1 && qty <= 3;
+    });
+  }
+  return sortedFilteredBautistaProducts;
+})();
 
 const bautistainventoryproductcount = bautistainventoryproducts.filter(
 product => product.bautistainventoryproductquantity <= 6
@@ -15898,6 +15924,9 @@ Lowest to Highest
       Highest to Lowest
     </div>
 
+
+
+
     <div
       onClick={() => setQuantitySortingProducts('Lowesttohighest')}
       className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
@@ -15908,7 +15937,7 @@ Lowest to Highest
       Lowest to Highest
     </div>
 
-    <div
+   <div
       onClick={() => setQuantitySortingProducts('Outofstock')}
       className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
         ${quantitySortingProducts === 'Outofstock'
@@ -15917,6 +15946,30 @@ Lowest to Highest
     >
       Out of Stock
     </div>
+
+
+    <div
+      onClick={() => setQuantitySortingProducts('CriticalStock')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${quantitySortingProducts === 'CriticalStock'
+          ? 'bg-[#2781af] text-white border-[#2781af]'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+    >
+      Critical Stock (1-3)
+    </div>
+    
+
+    <div
+      onClick={() => setQuantitySortingProducts('LowStock')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${quantitySortingProducts === 'LowStock'
+          ? 'bg-[#2781af] text-white border-[#2781af]'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+    >
+      Low Stock (4-6)
+    </div>
+
+
   </div>
 
 
@@ -15957,9 +16010,9 @@ Lowest to Highest
   <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
   
   
-  {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-500"><h1 className="text-white">Out of Stock</h1></div>): 
-   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-500"><h1 className="text-white">Critical Stock</h1></div>):
-   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-400"><h1 className="text-white">Low Stock</h1></div>): null}
+  {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.ambherinventoryproductcategory}</h1></div>
@@ -16620,6 +16673,29 @@ onError={(e) => {
     >
       Out of Stock
     </div>
+
+    <div
+      onClick={() => setBautistaQuantitySortingProducts('CriticalStock')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${bautistaQuantitySortingProducts === 'CriticalStock'
+          ? 'bg-[#2781af] text-white border-[#2781af]'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+    >
+      Critical Stock (1-3)
+    </div>
+
+
+    <div
+      onClick={() => setBautistaQuantitySortingProducts('LowStock')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${bautistaQuantitySortingProducts === 'LowStock'
+          ? 'bg-[#2781af] text-white border-[#2781af]'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+    >
+      Low Stock (4-6)
+    </div>
+
+
   </div>
 
 
@@ -16660,9 +16736,9 @@ onError={(e) => {
   <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
   
   
-  {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-500"><h1 className="text-white">Out of Stock</h1></div>): 
-   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-500"><h1 className="text-white">Critical Stock</h1></div>):
-   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-400"><h1 className="text-white">Low Stock</h1></div>): null}
+  {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.bautistainventoryproductcategory}</h1></div>
