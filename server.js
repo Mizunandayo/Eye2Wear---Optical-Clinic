@@ -23,6 +23,7 @@ import patientorderambherrouter from "./routes/patientorderambher.route.js";
 import patientorderbautistarouter from "./routes/patientorderbautista.route.js";
 import Message from "./models/message.js";
 import messagerouter from "./routes/message.route.js";
+import smsrouter from "./routes/sms.js";
 import { updateConversationParticipants } from "./middleware/conversationMiddleware.js";
 import Conversation from "./models/conversation.js";
 import jwt from 'jsonwebtoken';
@@ -34,6 +35,7 @@ import Owneraccount from "./models/owneraccount.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import DatabaseOptimizer from './utils/databaseOptimization.js';
+import SmsScheduler from './utils/smsScheduler.js';
 import cliniclocationrouter from "./routes/cliniclocation.route.js";
 
 
@@ -148,6 +150,9 @@ app.use("/api/patientorderambher", patientorderambherrouter);
 app.use("/api/patientorderbautista", patientorderbautistarouter);
 //Routes
 app.use("/api/messages", messagerouter);
+
+//SMS Message Routes
+app.use("/api/sms", smsrouter);
 //Routes
 app.use(updateConversationParticipants);
 //Routes
@@ -318,11 +323,15 @@ mongoose
     await DatabaseOptimizer.createOptimalIndexes();
     await DatabaseOptimizer.analyzeSlowQueries();
     
+    // Initialize SMS Scheduler for automated notifications
+    SmsScheduler.init();
+    
     // Start server
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
       console.log("🚀 Server listening on port", PORT);
       console.log("📊 Database performance optimization enabled");
+      console.log("📱 SMS notification system enabled");
     });
   })
   .catch((error) => console.error("❌ Database connection error:", error));

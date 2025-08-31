@@ -1,4 +1,5 @@
 import PatientOrderAmbher from "../models/patientorderambher.js";
+import process from 'process';
 
 
 
@@ -124,6 +125,9 @@ export const createpatientorderambher = async (req, res) => {
                 return res.status(404).json({message: "Order Ambher not found"});
             }
 
+            // Store original status to check for changes
+            const originalStatus = orderambher.patientorderambherstatus;
+
             // Handle status history if status is being updated
             if(updateData.patientorderambherstatus) {
                 if(!orderambher.patientorderambherhistory) {
@@ -144,10 +148,47 @@ export const createpatientorderambher = async (req, res) => {
                 updateData,
                 { new: true}
             );
+
+            // Send SMS notification for order status changes
+            if (updateData.patientorderambherstatus && updateData.patientorderambherstatus !== originalStatus) {
+                try {
+                    // Send SMS notification asynchronously (don't wait for it)
+                    sendOrderStatusSMS(updatedorderambher._id, 'ambher', updateData.patientorderambherstatus);
+                } catch (smsError) {
+                    console.error('Error sending order status SMS:', smsError);
+                    // Don't fail the order update if SMS fails
+                }
+            }
+
             res.status(200).json(updatedorderambher);
         } catch(error){
             console.error("Error updating orderambher: ", error);
             res.status(500).json({message: error.message});
+        }
+    }
+
+    // Helper function to send order status SMS
+    async function sendOrderStatusSMS(orderId, orderType, newStatus) {
+        try {
+            const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/order-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    orderType: orderType,
+                    newStatus: newStatus
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMS API returned ${response.status}`);
+            }
+
+            console.log('Order status SMS sent successfully');
+        } catch (error) {
+            console.error('Failed to send order status SMS:', error);
         }
     }
 

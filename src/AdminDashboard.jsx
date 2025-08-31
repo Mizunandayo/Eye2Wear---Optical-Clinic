@@ -275,6 +275,35 @@ const CardSkeleton = () => (
   </div>
 );
 
+const SmsRowSkeleton = () => (
+  <tr className="animate-pulse hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2">
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-16 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-32 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-6 bg-gray-300 rounded-full w-24 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-40 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-6 bg-gray-300 rounded-full w-16 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
+      <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
+    </td>
+  </tr>
+);
+
 const AppointmentSkeleton = () => (
   <tr className="animate-pulse hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2">
     <td className="py-3 px-6 text-center">
@@ -8876,6 +8905,17 @@ const [smsTypeFilter, setSmsTypeFilter] = useState('all');
 const [currentSmsPage, setCurrentSmsPage] = useState(1);
 const smsMessagesPerPage = 10;
 
+// Promotional SMS Modal States
+const [showPromotionalSmsModal, setShowPromotionalSmsModal] = useState(false);
+const [promotionalSmsSubject, setPromotionalSmsSubject] = useState('');
+const [promotionalSmsMessage, setPromotionalSmsMessage] = useState('');
+const [sendingSms, setSendingSms] = useState(false);
+const [smsToast, setSmsToast] = useState(false);
+const [smsToastMessage, setSmsToastMessage] = useState('');
+const [smsToastClosing, setSmsToastClosing] = useState(false);
+const [smsIsClicked, setSmsIsClicked] = useState(false);
+const [smsProgressWidth, setSmsProgressWidth] = useState('0%');
+
 // SMS Search functionality
 const searchSmsDebounce = (functions, delay) => {
   let debounceTimer;
@@ -8917,7 +8957,7 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
     const smsMessages = await smartFetch(
       'sms_messages',
       async () => {
-        const response = await fetch(`${apiUrl}/sms/messages`, {
+        const response = await fetch(`${apiUrl}/api/sms`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${currentusertoken}`,
@@ -8932,8 +8972,8 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
       forceRefresh
     );
 
-    setSmsMessages(smsMessages.smsMessages || smsMessages || []);
-    setFilteredSmsMessages(smsMessages.smsMessages || smsMessages || []);
+    setSmsMessages(smsMessages.data || smsMessages.smsMessages || smsMessages || []);
+    setFilteredSmsMessages(smsMessages.data || smsMessages.smsMessages || smsMessages || []);
   } catch (error) {
     console.error('Error fetching SMS messages:', error);
     setErrorLoadingSmsMessages(error.message);
@@ -8981,6 +9021,12 @@ const getPaginatedSmsData = () => {
     ? filteredSmsMessages 
     : smsMessages;
   
+  // Ensure dataToDisplay is an array
+  if (!Array.isArray(dataToDisplay)) {
+    console.warn('SMS data is not an array:', dataToDisplay);
+    return [];
+  }
+  
   const startIndex = (currentSmsPage - 1) * smsMessagesPerPage;
   const endIndex = startIndex + smsMessagesPerPage;
   return dataToDisplay.slice(startIndex, endIndex);
@@ -8989,6 +9035,145 @@ const getPaginatedSmsData = () => {
 // Handle SMS page change
 const handleSmsPageChange = (page) => {
   setCurrentSmsPage(page);
+};
+
+// Send Promotional SMS Function
+const sendPromotionalSms = async () => {
+  if (!promotionalSmsSubject.trim() || !promotionalSmsMessage.trim()) {
+    setSmsIsClicked(false);
+    setSmsToastMessage('Please fill in both subject and message fields');
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+    return;
+  }
+
+  try {
+    setSendingSms(true);
+    
+    // Get current clinic from localStorage
+    const currentClinic = localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic');
+    if (!currentClinic) {
+      throw new Error('No clinic information found');
+    }
+
+    // Get current user information from localStorage based on user type
+    let currentUserId;
+    let currentUserName;
+    
+    // Try to get user data from different localStorage keys based on user type
+    if (localStorage.getItem('stafftoken')) {
+      // Staff user
+      currentUserId = localStorage.getItem('staffid');
+      currentUserName = localStorage.getItem('staffname') || 'Staff User';
+    } else if (localStorage.getItem('ownertoken')) {
+      // Owner user  
+      currentUserId = localStorage.getItem('ownerid');
+      currentUserName = localStorage.getItem('ownername') || 'Owner User';
+    } else if (localStorage.getItem('admintoken')) {
+      // Admin user
+      currentUserId = localStorage.getItem('adminid');
+      currentUserName = localStorage.getItem('adminname') || 'Admin User';
+    } else {
+      throw new Error('No valid user session found. Please log in again.');
+    }
+
+    if (!currentUserId) {
+      throw new Error('User ID not found. Please log in again.');
+    }
+
+    const response = await fetch('http://localhost:3000/api/sms/promotional', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('admintoken') || localStorage.getItem('stafftoken') || localStorage.getItem('ownertoken')}`
+      },
+      body: JSON.stringify({
+        subject: promotionalSmsSubject,
+        message: promotionalSmsMessage,
+        senderClinic: currentClinic,
+        senderUserId: currentUserId,
+        senderUserName: currentUserName
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send SMS');
+    }
+
+    // Show success message
+    setSmsIsClicked(true);
+    setSmsToastMessage(`SMS sent successfully to ${result.successCount} recipients${result.failCount > 0 ? ` (${result.failCount} failed)` : ''}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+    // Clear form and close modal
+    setPromotionalSmsSubject('');
+    setPromotionalSmsMessage('');
+    setShowPromotionalSmsModal(false);
+
+    // Refresh SMS messages list
+    await fetchSmsMessagesData(true);
+
+  } catch (error) {
+    console.error('Error sending promotional SMS:', error);
+    setSmsIsClicked(false);
+    setSmsToastMessage(error.message || 'Failed to send promotional SMS');
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  } finally {
+    setSendingSms(false);
+  }
+};
+
+// Handle promotional SMS modal close
+const handleClosePromotionalSmsModal = () => {
+  setShowPromotionalSmsModal(false);
+  setPromotionalSmsSubject('');
+  setPromotionalSmsMessage('');
 };
 
 
@@ -16998,7 +17183,12 @@ filteredbautistaOrders.map((order) => (
 {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
 
  { (activedashboard === 'smsmonitoring' && !isAdminRole) && ( <div id="smsmonitoring" className="flex flex-col pl-5 pr-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl" >
-   <div className="flex items-center"><i className="bx bxs-message text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">SMS Monitoring</h1></div>
+   <div className="flex items-center justify-between mb-4">
+     <div className="flex items-center">
+       <i className="bx bxs-message text-[#184d85] text-[25px] mr-2"/>
+       <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">SMS Monitoring</h1>
+     </div>
+   </div>
               
 
 
@@ -17066,17 +17256,33 @@ filteredbautistaOrders.map((order) => (
             </div>
             </div>
 
-            <div id="sendsmspromotionalbutton" className="ml-1 w-75 h-10 bg-[#4ca22b] transition-all duration-300 ease-in-out hover:scale-105    rounded-2xl cursor-pointer flex justify-center items-center text-white font-semibold gap-2 text-[17px]"><i className="bx bxs-paper-plane"/> <h1>Send Promotional SMS</h1> </div>
+            <div onClick={() => setShowPromotionalSmsModal(true)} id="sendsmspromotionalbutton" className="ml-1 w-75 h-10 bg-[#4ca22b] transition-all duration-300 ease-in-out hover:scale-105    rounded-2xl cursor-pointer flex justify-center items-center text-white font-semibold gap-2 text-[17px]"><i className="bx bxs-paper-plane"/> <h1>Send Promotional SMS</h1> </div>
 
           </div>
         </div>
 
         {/* SMS Messages Table */}
         {loadingSmsMessages ? (
-          <div className="space-y-4 p-4 flex-1">
-            {[...Array(4)].map((_, index) => (
-              <AppointmentSkeleton key={index} />
-            ))}
+          <div className="overflow-hidden bg-white rounded-2xl shadow-md flex-1">
+            <table className="min-w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Message ID</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Recipients</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
+                  <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Delivered At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {[...Array(4)].map((_, index) => (
+                  <SmsRowSkeleton key={index} />
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : errorLoadingSmsMessages ? (
           <div className="rounded-lg p-4 bg-red-50 text-red-600 flex-1 flex items-center justify-center">
@@ -17225,6 +17431,105 @@ filteredbautistaOrders.map((order) => (
     </div>        
               
    </div> )}
+
+   {/* Promotional SMS Modal */}
+   {showPromotionalSmsModal && (
+     <div className="fixed inset-0 bg-[#000000b1] bg-opacity-50 flex items-center justify-center z-50">
+       <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+         <div className="flex items-center justify-between mb-4">
+           <h3 className="text-lg font-semibold text-gray-800">Send Promotional SMS</h3>
+           <div
+             onClick={handleClosePromotionalSmsModal}
+             className="text-gray-400 hover:text-gray-600 cursor-pointer"
+           >
+             <i className="bx bx-x text-[20px] font-semibold"></i>
+           </div>
+         </div>
+         
+         <div className="space-y-4">
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               Subject
+             </label>
+             <input
+               type="text"
+               value={promotionalSmsSubject}
+               onChange={(e) => setPromotionalSmsSubject(e.target.value)}
+               placeholder="Enter SMS subject..."
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+               maxLength={50}
+             />
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsSubject.length}/50 characters</p>
+           </div>
+           
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               Message
+             </label>
+             <textarea
+               value={promotionalSmsMessage}
+               onChange={(e) => setPromotionalSmsMessage(e.target.value)}
+               placeholder="Enter your promotional message..."
+               rows={4}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+               maxLength={1500}
+             />
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsMessage.length}/1500 characters</p>
+           </div> 
+           
+           <div className="bg-blue-50 p-3 rounded-md">
+             <p className="text-sm text-blue-700">
+               <i className="bx bx-info-circle mr-1"></i>
+               This SMS will be sent to all patients in {localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'your clinic'}.
+             </p>
+           </div>
+         </div>
+         
+         <div className="flex gap-3 mt-6">
+           <div
+             onClick={handleClosePromotionalSmsModal}
+             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+             disabled={sendingSms}
+           >
+             Cancel
+           </div>
+           <div
+             onClick={sendPromotionalSms}
+             disabled={sendingSms || !promotionalSmsSubject.trim() || !promotionalSmsMessage.trim()}
+             className="bg-[#4ca22b] cursor-pointer flex-1 px-4 py-2 text-white rounded-md h disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+           >
+             {sendingSms ? (
+               <>
+                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                 Sending...
+               </>
+             ) : (
+               <>
+                 <i className="bx bxs-send text-sm"></i>
+                 Send SMS
+               </>
+             )}
+           </div>
+         </div>
+       </div>
+     </div>
+   )}
+
+   {/* SMS Toast Notification */}
+   {smsToast && (
+     <div className="bottom-4 right-8 z-101 transform fixed">
+       <div key={smsIsClicked ? 'success' : 'error'} className={`${smsToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {smsIsClicked ? (          
+           <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {smsToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${smsIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: smsProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
 
 {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
 {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 

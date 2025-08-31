@@ -1,4 +1,5 @@
     import PatientAppointment from "../models/patientappointment.js";
+    import process from 'process';
 
 
 
@@ -157,6 +158,10 @@
                 return res.status(404).json({message: "Appointment not found"});
             }
 
+            // Store original status to check for changes
+            const originalAmbherStatus = appointment.patientambherappointmentstatus;
+            const originalBautistaStatus = appointment.patientbautistaappointmentstatus;
+
             // Handle Ambher appointment status history
             if(updateData.patientambherappointmentstatus) {
                 if(!appointment.patientambherappointmentstatushistory) {
@@ -181,16 +186,55 @@
                 });
             }
 
-
             const updatedAppointment = await PatientAppointment.findOneAndUpdate(
                 { patientappointmentid: id},
                 updateData,
                 { new: true}
             );
+
+            // Send SMS notification for appointment confirmation
+            const shouldSendSMS = (
+                (updateData.patientambherappointmentstatus === 'Confirmed' && originalAmbherStatus !== 'Confirmed') ||
+                (updateData.patientbautistaappointmentstatus === 'Confirmed' && originalBautistaStatus !== 'Confirmed')
+            );
+
+            if (shouldSendSMS) {
+                try {
+                    // Send SMS notification asynchronously (don't wait for it)
+                    sendAppointmentConfirmationSMS(updatedAppointment._id);
+                } catch (smsError) {
+                    console.error('Error sending appointment confirmation SMS:', smsError);
+                    // Don't fail the appointment update if SMS fails
+                }
+            }
+
             res.status(200).json(updatedAppointment);
         } catch(error){
             console.error("Error updating appointment: ", error);
             res.status(500).json({message: error.message});
+        }
+    }
+
+    // Helper function to send appointment confirmation SMS
+    async function sendAppointmentConfirmationSMS(appointmentId) {
+        try {
+            const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/appointment-reminder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    appointmentId: appointmentId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMS API returned ${response.status}`);
+            }
+
+            console.log('Appointment confirmation SMS sent successfully');
+        } catch (error) {
+            console.error('Failed to send appointment confirmation SMS:', error);
         }
     }
 
