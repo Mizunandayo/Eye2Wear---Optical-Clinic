@@ -329,44 +329,44 @@ else if(user === 'Owner'){
         
 
 
-      <section className="h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center" style={{ backgroundImage: `url(${landingbg2})` }}>
+      <section className="h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center px-4 sm:px-0" style={{ backgroundImage: `url(${landingbg2})` }}>
 
 
 
-      <div>
-        <img src={landinglogodark} className="w-130  mb-10  ml-16"/>
+      <div className="mb-6 sm:mb-10">
+        <img src={landinglogodark} className="w-32 sm:w-130 ml-4 sm:ml-16"/>
       </div>
 
 
 
 
-      <div className="login-container  bg-gradient-to-tl flex x rounded-4xl h-140 w-120 shadow-lg">
+      <div className="login-container bg-gradient-to-tl flex rounded-4xl shadow-lg w-full max-w-sm sm:w-120 sm:h-140 h-fit py-8 sm:py-0">
 
-          <form className="flex flex-col  ml-15 mt-15  w-full mr-15" onSubmit={handleloginsubmit}>
+          <form className="flex flex-col w-full px-6 sm:ml-15 sm:mt-15 sm:mr-15" onSubmit={handleloginsubmit}>
 
-          <h1 className=" font-league text-[#3da9d1] text-[30px] mt-5 ">Sign In</h1>
+          <h1 className="font-league text-[#3da9d1] text-2xl sm:text-[30px] mt-2 sm:mt-5">Sign In</h1>
              {loginnotice.text && (
-              <div className={`message ${loginnotice.type} text-${loginnotice.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
+              <div className={`message ${loginnotice.type} text-${loginnotice.type === 'error' ? 'red' : 'green'}-600 font-bold text-sm sm:text-base`}>
              {loginnotice.text}
           </div>
          )}
-              <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Hi there nice to see you again.</h1>
+              <h1 className="font-albertsans italic text-[#060606] text-base sm:text-[20px]">Hi there nice to see you again.</h1>
 
 
-          <div className="form-group  mt-10">
-            <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor= "loginemail">Email :</label>
-            <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10" placeholder="Enter your email..." type="text" name= "loginemail" id="loginemail" value={logindetails.loginemail} onChange={handleloginchange} required/></div>
+          <div className="form-group mt-6 sm:mt-10">
+            <label className="font-albertsans font-bold italic text-[#595968] text-lg sm:text-[21px] block sm:inline" htmlFor= "loginemail">Email :</label>
+            <input className="bg-gray-200 text-lg sm:text-[20px] text-gray-600 pl-3 rounded-2xl sm:ml-11 h-10 w-full sm:w-auto mt-2 sm:mt-0" placeholder="Enter your email..." type="text" name= "loginemail" id="loginemail" value={logindetails.loginemail} onChange={handleloginchange} required/></div>
 
-          <div className="form-group mt-5">
-            <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="loginpassword">Password : </label>
-            <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl h-10" placeholder="Enter your password..."  type="password" name="loginpassword" id="loginpassword" value={logindetails.loginpassword} onChange={handleloginchange} required min="6"/></div>
+          <div className="form-group mt-4 sm:mt-5">
+            <label className="font-albertsans font-bold italic text-[#595968] text-lg sm:text-[21px] block sm:inline" htmlFor="loginpassword">Password : </label>
+            <input className="bg-gray-200 text-lg sm:text-[20px] text-gray-600 pl-3 rounded-2xl h-10 w-full sm:w-auto mt-2 sm:mt-0" placeholder="Enter your password..."  type="password" name="loginpassword" id="loginpassword" value={logindetails.loginpassword} onChange={handleloginchange} required min="6"/></div>
           
-          <div className=" h-[30px] mt-2 flex justify-end items-center pr-2"><p  onClick={() => setshowforgotpasswordform(true)} className="text-[14px] hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out font-albertsans font-medium text-[#1b5770]">Forgot Password?</p></div>
+          <div className="h-[30px] mt-2 flex justify-end items-center pr-2"><p  onClick={() => setshowforgotpasswordform(true)} className="text-xs sm:text-[14px] hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out font-albertsans font-medium text-[#1b5770]">Forgot Password?</p></div>
 
 
 
 
-            <button type="submit" disabled={islogin} className={`submit-btn mt-12 flex items-center justify-center gap-2 ${islogin ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out`} style={{ backgroundColor: islogin ? "#9ca3af" : "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px" }}> 
+            <button type="submit" disabled={islogin} className={`submit-btn mt-8 sm:mt-12 flex items-center justify-center gap-2 ${islogin ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out text-lg sm:text-[20px] py-2 sm:py-3 px-4 sm:px-5 text-white rounded-2xl`} style={{ backgroundColor: islogin ? "#9ca3af" : "#2b2b44" }}> 
               {islogin ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -379,9 +379,9 @@ else if(user === 'Owner'){
 
 
 
-            <div className=" flex items-center justify-center mt-5">
-              <h1 className="text-[16px] font-semibold text-[#4b4b53]">Don't have an account?</h1>
-              <Link to="/patientregistration"> <div className=" flex justify-center items-center p-3  rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-[18px] text-[#177084]">Sign Up</p></div></Link>
+            <div className="flex items-center justify-center mt-4 sm:mt-5 flex-wrap">
+              <h1 className="text-sm sm:text-[16px] font-semibold text-[#4b4b53]">Don't have an account?</h1>
+              <Link to="/patientregistration"> <div className="flex justify-center items-center p-2 sm:p-3 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-base sm:text-[18px] text-[#177084]">Sign Up</p></div></Link>
             </div>
 
            </form>
@@ -389,14 +389,14 @@ else if(user === 'Owner'){
 
 
         {showforgotpasswordform && (
-                         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+                         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 px-4">
 
-                           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-                           <form className="flex flex-col  w-full h-fit "  onSubmit={forgotpassword}>
+                           <div className="flex flex-col items bg-white rounded-2xl w-full max-w-lg sm:w-[600px] h-fit animate-fadeInUp">
+                           <form className="flex flex-col w-full h-fit"  onSubmit={forgotpassword}>
 
-                              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#125c99]"><i className="ml-3 bx bx-shield-quarter text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#e4e4e4]">Forgot Password</h1></div>
-                              <div className="b flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Please enter your registered email below...</p>
+                              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[60px] sm:h-[70px] bg-[#125c99] px-3"><i className="bx bx-shield-quarter text-2xl sm:text-[28px] font-albertsans font-bold text-[#f1f1f1]"/><h1 className="ml-2 text-lg sm:text-[23px] font-albertsans font-bold text-[#e4e4e4]">Forgot Password</h1></div>
+                              <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
+                                  <div className="px-4 sm:px-5 flex flex-col justify-center h-fit py-4 sm:h-[130px] w-full"><p className="font-albertsans font-medium text-lg sm:text-[20px]">Please enter your registered email below...</p>
       
                                   {forgotpasswordmessage.text && (
                                     <div className={`text-sm ${
@@ -404,22 +404,22 @@ else if(user === 'Owner'){
                                     {forgotpasswordmessage.text}</div>
                                   )}
 
-                                  <div className="form-group  mt-5">
-                                       <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor= "forgotemail">Email :</label>
-                                      <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10" placeholder="Enter your email..." type="email" name= "forgotemail" id="forgotemail" value={forgotpasswordemail} onChange={(e) => setforgotpasswordemail(e.target.value)} required/></div>
+                                  <div className="form-group mt-4 sm:mt-5">
+                                       <label className="font-albertsans font-bold italic text-[#595968] text-lg sm:text-[21px] block sm:inline" htmlFor= "forgotemail">Email :</label>
+                                      <input className="bg-gray-200 text-lg sm:text-[20px] text-gray-600 pl-3 rounded-2xl sm:ml-11 h-10 w-full sm:w-auto mt-2 sm:mt-0" placeholder="Enter your email..." type="email" name= "forgotemail" id="forgotemail" value={forgotpasswordemail} onChange={(e) => setforgotpasswordemail(e.target.value)} required/></div>
                                   </div>        
-                                  <div className=" pr-5 flex justify-end  items-center  h-[80px] w-full">
-                                      <div onClick={() => {setshowforgotpasswordform(false); setforgotpasswordemail(''); setforgotpasswordmessage({text:'', type: ''});}}  className="hover:scale-105 hover:cursor-pointer transition-all duration-300 ease-in-out bg-[#363638] rounded-2xl px-6 py-3 mr-1"><span className="font-albertsans text-white font-medium">Cancel</span></div>
+                                  <div className="px-4 sm:pr-5 flex justify-end items-center h-[60px] sm:h-[80px] w-full gap-2">
+                                      <div onClick={() => {setshowforgotpasswordform(false); setforgotpasswordemail(''); setforgotpasswordmessage({text:'', type: ''});}}  className="hover:scale-105 hover:cursor-pointer transition-all duration-300 ease-in-out bg-[#363638] rounded-2xl px-4 sm:px-6 py-2 sm:py-3"><span className="font-albertsans text-white font-medium text-sm sm:text-base">Cancel</span></div>
                     
 
-                                      <button type="submit" disabled={issendingresetlink} className={`flex items-center justify-center gap-2 ${issendingresetlink ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105 hover:cursor-pointer'} transition-all duration-300 ease-in-out rounded-2xl px-9 py-3 mr-1`} style={{ backgroundColor: issendingresetlink ? "#9ca3af" : "#1b5f83", paddingBottom:"10px", paddingTop:"10px", paddingLeft: "30px" , paddingRight: "30px", borderRadius: "12px"}}> 
+                                      <button type="submit" disabled={issendingresetlink} className={`flex items-center justify-center gap-2 ${issendingresetlink ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105 hover:cursor-pointer'} transition-all duration-300 ease-in-out rounded-2xl px-6 sm:px-9 py-2 sm:py-3`} style={{ backgroundColor: issendingresetlink ? "#9ca3af" : "#1b5f83"}}> 
                                        {issendingresetlink ? (
                                         <>
                                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                        <span className="font-albertsans text-white font-medium">Sending...</span>
+                                        <span className="font-albertsans text-white font-medium text-sm sm:text-base">Sending...</span>
                                         </>
                                        ):(
-                                        <span className="font-albertsans text-white font-medium">Send</span>
+                                        <span className="font-albertsans text-white font-medium text-sm sm:text-base">Send</span>
                                        )}
                                        </button>
 

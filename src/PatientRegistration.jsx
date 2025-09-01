@@ -265,7 +265,7 @@ function PatientRegistration() {
 
 
 
-            <section className="h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center" style={{ backgroundImage: `url(${landingbg2})` }}>
+            <section className="min-h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8" style={{ backgroundImage: `url(${landingbg2})` }}>
       
       
       
@@ -274,75 +274,87 @@ function PatientRegistration() {
       
       
       
-            <div className="justify-center items-center login-container bg-white   bg-gradient-to-tl flex x rounded-4xl h-180 w-290 shadow-lg">
+            <div className="justify-center items-center login-container bg-white bg-gradient-to-tl flex flex-col lg:flex-row rounded-xl sm:rounded-2xl lg:rounded-4xl h-auto lg:h-180 w-full max-w-sm sm:max-w-lg lg:max-w-none lg:w-290 shadow-lg overflow-hidden">
 
 
 
 
-      <div className=" w-full h-full rounded-4xl">
+      <div className="w-full h-full rounded-xl sm:rounded-2xl lg:rounded-4xl py-6 sm:py-8 lg:py-5">
 
 
-      <form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={handlesubmit}>
+      <form className="flex flex-col mx-4 sm:mx-8 lg:ml-15 lg:mr-15 mt-2 w-full lg:w-fullx" onSubmit={handlesubmit}>
       <div className="registration-container">
-       <img src={landinglogodark} className="w-70  mb-10  "/>
-      <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Creation</h1>
+       <img src={landinglogodark} className="w-48 sm:w-60 lg:w-70 mb-4 sm:mb-6 lg:mb-8 mx-auto lg:mx-0"/>
+      <h1 className="font-league text-[#3da9d1] text-[22px] sm:text-[26px] lg:text-[27px] text-center lg:text-left mb-2">Account Creation</h1>
       {message.text && (
-        <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
+        <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold text-center lg:text-left mb-3`}>
           {message.text}
         </div>
       )}
 
-      <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's create your account!</h1>
+      <h1 className="font-albertsans italic text-[#060606] text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mb-6 sm:mb-8 lg:mb-6">Let's create your account!</h1>
 
 
 
 
-      <div className="form-group mt-10  flex">
-      <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-      <div className="flex flex-col">
-      <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="patientemail" id="patientemail" value={formdata.patientemail} onChange={handlechange} required/>
-      {checkemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-      {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-      {emailerror && emailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
+      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
+      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="email">Email :</label>
+      <div className="flex flex-col lg:ml-6 flex-1">
+      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your email..." type="text" name="patientemail" id="patientemail" value={formdata.patientemail} onChange={handlechange} required/>
+      {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+      {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+      {emailerror && emailexist && (<p className= "text-red-500 text-sm mt-1">Email already exist</p>)}
    
       </div>
       </div>
 
 
 
-      <div className="form-group mt-5">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="passwrd">Password : </label>
-      <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10 w-70" placeholder="Enter your password..." type="password" name="patientpassword" id="patientpassword" value={formdata.patientpassword} onChange={handlechange} required min="6"/></div>
+      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
+      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="passwrd">Password :</label>
+      <div className="flex-1 lg:ml-6">
+      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your password..." type="password" name="patientpassword" id="patientpassword" value={formdata.patientpassword} onChange={handlechange} required min="6"/>
+      </div>
+      </div>
 
-      <div className="form-group mt-5">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="lastname">Last Name :</label>
-      <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="patientlastname" id="patientlastname" value={formdata.patientlastname} onChange={handlechange} required/></div>
+      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
+      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="lastname">Last Name :</label>
+      <div className="flex-1 lg:ml-6">
+      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your lastname..." type="text" name="patientlastname" id="patientlastname" value={formdata.patientlastname} onChange={handlechange} required/>
+      </div>
+      </div>
 
-      <div className="form-group mt-5">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="firstname">First Name :</label>
-      <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="patientfirstname" id="patientfirstname" value={formdata.patientfirstname} onChange={handlechange} required/></div>
+      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
+      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="firstname">First Name :</label>
+      <div className="flex-1 lg:ml-6">
+      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your firstname..." type="text" name="patientfirstname" id="patientfirstname" value={formdata.patientfirstname} onChange={handlechange} required/>
+      </div>
+      </div>
 
-      <div className="form-group mt-5">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="middlename">Middle Name :</label>
-      <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="patientmiddlename" id="patientmiddlename" value={formdata.patientmiddlename} onChange={handlechange} required/></div>
+      <div className="form-group mb-6 sm:mb-8 lg:mb-6 flex flex-col lg:flex-row lg:items-center">
+      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="middlename">Middle Name :</label>
+      <div className="flex-1 lg:ml-6">
+      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your middlename..." type="text" name="patientmiddlename" id="patientmiddlename" value={formdata.patientmiddlename} onChange={handlechange} required/>
+      </div>
+      </div>
       
 
      
    
-      <button type="submit" disabled={issubmitting} className={`submit-btn mt-12 w-full flex items-center justify-center gap-2 ${issubmitting ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out`} style={{ backgroundColor: issubmitting ? "#9ca3af" : "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px" }}>
+      <button type="submit" disabled={issubmitting} className={`submit-btn w-full flex items-center justify-center gap-2 ${issubmitting ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out`} style={{ backgroundColor: issubmitting ? "#9ca3af" : "#2b2b44", fontSize: "18px", padding: "12px 20px", color: "white", borderRadius: "20px" }}>
         {issubmitting ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            <span>Registering...</span>
+            <span className="text-[16px] sm:text-[18px] lg:text-[18px]">Registering...</span>
           </>
         ) : (
-          "Register"
+          <span className="text-[16px] sm:text-[18px] lg:text-[18px]">Register</span>
         )}
       </button>
    
-       <div className=" flex items-center justify-center mt-5 ">
-       <h1 className="text-[16px] font-semibold text-[#4b4b53]">Already have an account?</h1>
-       <Link to="/userlogin"> <div className=" flex justify-center items-center p-3  rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-[18px] text-[#177084]">Sign In</p></div></Link>
+       <div className="flex items-center justify-center mt-4 sm:mt-5 gap-1">
+       <h1 className="text-[14px] sm:text-[15px] lg:text-[15px] font-semibold text-[#4b4b53]">Already have an account?</h1>
+       <Link to="/userlogin"> <div className="flex justify-center items-center p-2 sm:p-3 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-[16px] sm:text-[17px] lg:text-[16px] text-[#177084]">Sign In</p></div></Link>
        </div>
 
 
@@ -354,7 +366,7 @@ function PatientRegistration() {
       
       
       
-      <div className="bg-cover bg-center w-full h-full rounded-4xl shadow-lg" style={{ backgroundImage: `url(${regbg})` }}>
+      <div className="bg-cover bg-center w-full h-32 sm:h-48 lg:h-full rounded-b-xl sm:rounded-b-2xl lg:rounded-r-4xl lg:rounded-l-none shadow-lg" style={{ backgroundImage: `url(${regbg})` }}>
 
       </div>
 
