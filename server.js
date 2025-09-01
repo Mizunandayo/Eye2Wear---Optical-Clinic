@@ -41,6 +41,7 @@ import cliniclocationrouter from "./routes/cliniclocation.route.js";
 
 
 
+
 //Loading Dotenv Data
 dotenv.config();
 
@@ -159,6 +160,7 @@ app.use(updateConversationParticipants);
 app.use('/uploads', express.static('uploads'));
 //Routes
 app.use("/api/cliniclocation", cliniclocationrouter);
+
 
 
 

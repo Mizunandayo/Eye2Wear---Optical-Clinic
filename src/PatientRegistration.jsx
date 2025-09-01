@@ -282,7 +282,7 @@ function PatientRegistration() {
       <div className="w-full h-full rounded-xl sm:rounded-2xl lg:rounded-4xl py-6 sm:py-8 lg:py-5">
 
 
-      <form className="flex flex-col mx-4 sm:mx-8 lg:ml-15 lg:mr-15 mt-2 w-full lg:w-fullx" onSubmit={handlesubmit}>
+      <form className="flex flex-col mx-4 sm:mx-8 lg:ml-15 lg:mr-15 mt-2 w-full lg:w-120" onSubmit={handlesubmit}>
       <div className="registration-container">
        <img src={landinglogodark} className="w-48 sm:w-60 lg:w-70 mb-4 sm:mb-6 lg:mb-8 mx-auto lg:mx-0"/>
       <h1 className="font-league text-[#3da9d1] text-[22px] sm:text-[26px] lg:text-[27px] text-center lg:text-left mb-2">Account Creation</h1>

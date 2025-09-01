@@ -1209,11 +1209,11 @@ const handleFullscreenChange = () => {
           </a>
 
           {/* Mobile Menu Button */}
-          <button className="xl:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <div className="xl:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <div className="w-6 h-0.5 bg-black"></div>
             <div className="w-6 h-0.5 bg-black"></div>
             <div className="w-6 h-0.5 bg-black"></div>
-          </button>
+          </div>
 
           {/* Desktop Navigation */}
           <ul className="hidden xl:flex items-center gap-12 font-semibold text-base">

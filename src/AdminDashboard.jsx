@@ -32,6 +32,9 @@ import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 
@@ -1037,7 +1040,7 @@ function AdminDashboard(){
     };
 
     loadUser();
-  }, [currentuserloggedin, userDataLoaded]); // Removed fetchClinicLocations to avoid hoisting issues
+  }, [currentuserloggedin, userDataLoaded, fetchadmindetails, fetchownerdetails, fetchstaffdetails]); // Include all dependencies
 
 
 
@@ -9042,6 +9045,435 @@ try {
 
 
 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
+//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES
+
+  // Reports and Analytics State
+  const [reportsData, setReportsData] = useState({
+    appointments: [],
+    ambherOrders: [],
+    bautistaOrders: [],
+    loading: true,
+    error: null
+  });
+  
+  const [reportsFilter, setReportsFilter] = useState({
+    dateRange: 'thisMonth', // thisWeek, thisMonth, thisYear, custom
+    startDate: '',
+    endDate: '',
+    reportType: 'overview' // overview, appointments, sales, revenue
+  });
+
+  const [chartsData, setChartsData] = useState({
+    appointmentsByMonth: [],
+    salesByCategory: [],
+    revenueByMonth: [],
+    orderStatusDistribution: [],
+    topProducts: [],
+    patientVisits: []
+  });
+
+  // Get current user clinic from localStorage
+  const getCurrentUserClinic = () => {
+    const staffClinic = localStorage.getItem('staffclinic');
+    const ownerClinic = localStorage.getItem('ownerclinic');
+    return staffClinic || ownerClinic || '';
+  };
+
+  // Fetch Reports Data
+  const fetchReportsData = useCallback(async () => {
+    console.log('🔄 fetchReportsData called');
+    setReportsData(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      const userClinic = getCurrentUserClinic();
+      console.log('👤 User clinic:', userClinic);
+      let appointmentsResponse, ambherOrdersResponse, bautistaOrdersResponse;
+
+      // Fetch appointments - using correct endpoint with proxy
+      console.log('📞 Fetching appointments...');
+      appointmentsResponse = await axios.get('/api/patientappointments/appointments');
+      console.log('📞 Appointments response:', appointmentsResponse.data?.length || 0, 'items');
+      
+      // Filter appointments by clinic based on appointment ID fields
+      let appointmentsData = appointmentsResponse.data;
+      if (userClinic === 'Ambher Optical') {
+        appointmentsData = appointmentsData.filter(appointment => 
+          appointment.patientambherappointmentid !== undefined && appointment.patientambherappointmentid !== null
+        );
+      } else if (userClinic === 'Bautista Eye Center') {
+        appointmentsData = appointmentsData.filter(appointment => 
+          appointment.patientbautistaappointmentid !== undefined && appointment.patientbautistaappointmentid !== null
+        );
+      }
+
+      // Fetch orders based on clinic
+      console.log('📦 Fetching orders...');
+      if (userClinic === 'Ambher Optical') {
+        ambherOrdersResponse = await axios.get('/api/patientorderambher/');
+        bautistaOrdersResponse = { data: [] };
+        console.log('📦 Ambher orders:', ambherOrdersResponse.data?.length || 0, 'items');
+      } else if (userClinic === 'Bautista Eye Center') {
+        bautistaOrdersResponse = await axios.get('/api/patientorderbautista/');
+        ambherOrdersResponse = { data: [] };
+        console.log('📦 Bautista orders:', bautistaOrdersResponse.data?.length || 0, 'items');
+      } else {
+        // If admin or no specific clinic, fetch both
+        ambherOrdersResponse = await axios.get('/api/patientorderambher/');
+        bautistaOrdersResponse = await axios.get('/api/patientorderbautista/');
+        console.log('📦 Ambher orders:', ambherOrdersResponse.data?.length || 0, 'items');
+        console.log('📦 Bautista orders:', bautistaOrdersResponse.data?.length || 0, 'items');
+      }
+
+      console.log('✅ About to set reports data...');
+      setReportsData({
+        appointments: appointmentsData,
+        ambherOrders: ambherOrdersResponse.data,
+        bautistaOrders: bautistaOrdersResponse.data,
+        loading: false,
+        error: null
+      });
+      
+      console.log('Reports data set successfully:', {
+        appointmentsCount: appointmentsData?.length || 0,
+        ambherOrdersCount: ambherOrdersResponse.data?.length || 0,
+        bautistaOrdersCount: bautistaOrdersResponse.data?.length || 0,
+        totalDataLength: (appointmentsData?.length || 0) + (ambherOrdersResponse.data?.length || 0) + (bautistaOrdersResponse.data?.length || 0)
+      });
+
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+      setReportsData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Failed to fetch reports data'
+      }));
+    }
+  }, []);
+
+  // Process data for charts
+  const processChartsData = useCallback(() => {
+    console.log('processChartsData called with reportsData:', reportsData);
+    const { appointments, ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    
+    console.log('Data to process:', {
+      appointmentsCount: appointments?.length || 0,
+      ambherOrdersCount: ambherOrders?.length || 0,
+      bautistaOrdersCount: bautistaOrders?.length || 0,
+      allOrdersCount: allOrders.length
+    });
+
+    // Filter data based on date range
+    const filterByDate = (data, dateField) => {
+      const now = new Date();
+      let startDate, endDate;
+
+      switch (reportsFilter.dateRange) {
+        case 'thisWeek':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 6);
+          break;
+        case 'thisMonth':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          break;
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          endDate = new Date(now.getFullYear(), 11, 31);
+          break;
+        case 'custom':
+          startDate = new Date(reportsFilter.startDate);
+          endDate = new Date(reportsFilter.endDate);
+          break;
+        default:
+          return data;
+      }
+
+      return data.filter(item => {
+        const itemDate = new Date(item[dateField]);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    };
+
+    // Process appointments by month
+    const filteredAppointments = filterByDate(appointments, 'createdAt');
+    const appointmentsByMonth = processMonthlyData(filteredAppointments, 'createdAt');
+
+    // Process sales by category
+    const filteredOrders = filterByDate(allOrders, 'createdAt');
+    const salesByCategory = processCategoryData(filteredOrders);
+
+    // Process revenue by month
+    const revenueByMonth = processRevenueData(filteredOrders);
+
+    // Process order status distribution
+    const orderStatusDistribution = processStatusData(filteredOrders);
+
+    // Process top products
+    const topProducts = processTopProducts(filteredOrders);
+
+    // Process patient visits
+    const patientVisits = processPatientVisits(filteredAppointments);
+
+    const processedChartsData = {
+      appointmentsByMonth,
+      salesByCategory,
+      revenueByMonth,
+      orderStatusDistribution,
+      topProducts,
+      patientVisits
+    };
+    
+    console.log('Processed charts data:', processedChartsData);
+    console.log('Setting charts data...');
+    
+    setChartsData(processedChartsData);
+    
+    console.log('Charts data set successfully');
+  }, [reportsData, reportsFilter]);
+
+  // Helper functions for data processing
+  const processMonthlyData = (data, dateField) => {
+    console.log('📊 processMonthlyData called with:', data?.length || 0, 'items');
+    const months = {};
+    data.forEach(item => {
+      const date = new Date(item[dateField]);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months[monthKey] = (months[monthKey] || 0) + 1;
+    });
+
+    const result = Object.entries(months).map(([month, count]) => ({
+      month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      count
+    })).sort((a, b) => new Date(a.month) - new Date(b.month));
+    
+    console.log('📊 processMonthlyData result:', result);
+    return result;
+  };
+
+  const processCategoryData = (orders) => {
+    console.log('📊 processCategoryData called with:', orders?.length || 0, 'orders');
+    const categories = {};
+    orders.forEach(order => {
+      const category = order.patientorderambherproductcategory || order.patientorderbautistaproductcategory || 'Other';
+      const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
+      categories[category] = (categories[category] || 0) + quantity;
+    });
+
+    const result = Object.entries(categories).map(([category, quantity]) => ({
+      category,
+      quantity,
+      value: quantity
+    }));
+    
+    console.log('📊 processCategoryData result:', result);
+    return result;
+  };
+
+  const processRevenueData = (orders) => {
+    const revenue = {};
+    orders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0;
+      revenue[monthKey] = (revenue[monthKey] || 0) + total;
+    });
+
+    return Object.entries(revenue).map(([month, total]) => ({
+      month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      revenue: total
+    })).sort((a, b) => new Date(a.month) - new Date(b.month));
+  };
+
+  const processStatusData = (orders) => {
+    const statuses = {};
+    orders.forEach(order => {
+      const status = order.patientorderambherstatus || order.patientorderbautistastatus || 'Unknown';
+      statuses[status] = (statuses[status] || 0) + 1;
+    });
+
+    return Object.entries(statuses).map(([status, count]) => ({
+      status,
+      count,
+      value: count
+    }));
+  };
+
+  const processTopProducts = (orders) => {
+    const products = {};
+    orders.forEach(order => {
+      const productName = order.patientorderambherproductname || order.patientorderbautistaproductname || 'Unknown';
+      const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
+      products[productName] = (products[productName] || 0) + quantity;
+    });
+
+    return Object.entries(products)
+      .map(([product, quantity]) => ({ product, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  };
+
+  const processPatientVisits = (appointments) => {
+    const visits = {};
+    appointments.forEach(appointment => {
+      const date = new Date(appointment.createdAt);
+      const dayKey = date.toLocaleDateString();
+      visits[dayKey] = (visits[dayKey] || 0) + 1;
+    });
+
+    return Object.entries(visits).map(([date, visits]) => ({
+      date,
+      visits
+    })).sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  // Export functions
+  const exportToPDF = async () => {
+    try {
+      // Use jsPDF to generate PDF instead of print window
+      const userClinic = getCurrentUserClinic();
+      const currentDate = new Date().toLocaleDateString();
+      const metrics = calculateMetrics();
+      
+      const pdf = new jsPDF();
+      
+      // Title
+      pdf.setFontSize(20);
+      pdf.text(`${userClinic} - Sales Report`, 20, 30);
+      
+      // Date and period
+      pdf.setFontSize(12);
+      pdf.text(`Generated on: ${currentDate}`, 20, 45);
+      pdf.text(`Report Period: ${reportsFilter.dateRange}`, 20, 55);
+      
+      // Summary section
+      pdf.setFontSize(16);
+      pdf.text('Summary', 20, 75);
+      
+      pdf.setFontSize(12);
+      pdf.text(`Total Orders: ${metrics.totalOrders}`, 20, 90);
+      pdf.text(`Total Revenue: ₱${metrics.totalRevenue.toLocaleString()}`, 20, 100);
+      pdf.text(`Total Appointments: ${metrics.totalAppointments}`, 20, 110);
+      
+      // Save PDF
+      pdf.save(`${userClinic.replace(/\s+/g, '_')}_Sales_Report_${currentDate.replace(/\//g, '-')}.pdf`);
+      
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert('Error exporting to PDF. Please try again.');
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      const userClinic = getCurrentUserClinic();
+      const currentDate = new Date().toLocaleDateString();
+      const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+      
+      // Create CSV content
+      let csvContent = `${userClinic} - Sales Report\n`;
+      csvContent += `Generated on: ${currentDate}\n`;
+      csvContent += `Report Period: ${reportsFilter.dateRange}\n\n`;
+      
+      csvContent += `Summary\n`;
+      csvContent += `Total Orders,${allOrders.length}\n`;
+      csvContent += `Total Revenue,₱${calculateTotalRevenue().toLocaleString()}\n`;
+      csvContent += `Total Appointments,${reportsData.appointments.length}\n\n`;
+      
+      csvContent += `Order ID,Patient Name,Product,Category,Status,Quantity,Price,Total,Date\n`;
+      
+      allOrders.forEach(order => {
+        const orderId = order.patientorderambherid || order.patientorderbautistaid;
+        const patientName = `${order.patientfirstname} ${order.patientlastname}`;
+        const productName = order.patientorderambherproductname || order.patientorderbautistaproductname;
+        const category = order.patientorderambherproductcategory || order.patientorderbautistaproductcategory;
+        const status = order.patientorderambherstatus || order.patientorderbautistastatus;
+        const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity;
+        const price = order.patientorderambherproductprice || order.patientorderbautistaproductprice;
+        const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal;
+        const date = new Date(order.createdAt).toLocaleDateString();
+        
+        csvContent += `${orderId},"${patientName}","${productName}","${category}","${status}",${quantity},₱${price},₱${total},"${date}"\n`;
+      });
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${userClinic.replace(/\s+/g, '_')}_Sales_Report_${currentDate.replace(/\//g, '-')}.csv`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Error exporting to Excel');
+    }
+  };
+
+  const calculateTotalRevenue = () => {
+    const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+    return allOrders.reduce((total, order) => {
+      return total + (order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0);
+    }, 0);
+  };
+
+  const calculateMetrics = () => {
+    const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+    const completedOrders = allOrders.filter(order => 
+      (order.patientorderambherstatus === 'Completed') || 
+      (order.patientorderbautistastatus === 'Completed')
+    );
+    
+    // Calculate completed appointments based on clinic-specific status fields
+    const completedAppointments = reportsData.appointments.filter(apt => 
+      apt.patientambherappointmentstatus === 'Completed' || 
+      apt.patientbautistaappointmentstatus === 'Completed'
+    );
+    
+    return {
+      totalOrders: allOrders.length,
+      completedOrders: completedOrders.length,
+      totalRevenue: calculateTotalRevenue(),
+      totalAppointments: reportsData.appointments.length,
+      completedAppointments: completedAppointments.length
+    };
+  };
+
+  // Chart colors
+  const CHART_COLORS = [
+    '#184d85', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd',
+    '#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'
+  ];
+
+  // Effects
+  useEffect(() => {
+    console.log('🔍 useEffect triggered - activedashboard:', activedashboard);
+    if (activedashboard === 'reportsandanalytics') {
+      console.log('✅ Condition met, calling fetchReportsData');
+      fetchReportsData();
+    } else {
+      console.log('❌ Condition not met, not calling fetchReportsData');
+    }
+  }, [activedashboard, fetchReportsData]);
+
+  useEffect(() => {
+    if (!reportsData.loading) {
+      console.log('Processing charts data - loading finished, data:', {
+        appointments: reportsData.appointments?.length || 0,
+        ambherOrders: reportsData.ambherOrders?.length || 0,
+        bautistaOrders: reportsData.bautistaOrders?.length || 0
+      });
+      processChartsData();
+    }
+  }, [reportsData, processChartsData]);
+
 
 
 
@@ -9356,6 +9788,24 @@ const handleClosePromotionalSmsModal = () => {
   setPromotionalSmsSubject('');
   setPromotionalSmsMessage('');
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -12140,7 +12590,7 @@ useEffect(() => {
               <div className="group relative" onClick={() => showdashboard('medicalrecords')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='medicalrecords' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-data  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='medicalrecords' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Medical Records</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Medical Records</span>)}  </div></div>
               <div className="group relative" onClick={() => showdashboard('inventorymanagement')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='inventorymanagement' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-package   p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='inventorymanagement' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={` text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Inventory Management</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Inventory Management</span>)}  </div></div>
               <div className="group relative" onClick={() => showdashboard('billingsandorders')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='billingsandorders' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-receipt   p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='billingsandorders' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Billing & Orders</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Billing & Orders</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('reportingandanalytics')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='reportingandanalytics' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-report  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='reportingandanalytics' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Reporting & Analytics</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Reporting & Analytics</span>)}  </div></div>
+              <div className="group relative" onClick={() => showdashboard('reportsandanalytics')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='reportsandanalytics' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-report  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='reportsandanalytics' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Reports & Analytics</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Reports & Analytics</span>)}  </div></div>
               <div className="group relative" onClick={() => showdashboard('smsmonitoring')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='smsmonitoring' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-message  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='smsmonitoring' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>SMS Monitoring</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">SMS Monitoring</span>)}  </div></div>
               <div className="group relative" onClick={() => showdashboard('mappingintegration')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='mappingintegration' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bx-street-view p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='mappingintegration' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Mapping Integration</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Mapping Integration</span>)}  </div></div>
 
@@ -19723,10 +20173,359 @@ filteredbautistaOrders.map((order) => (
 
 
 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
+{/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 
 
-          
-              { (activedashboard === 'reportingandanalytics' && !isAdminRole) && ( <div id="reportingandanalytics" className="border-2 border-red-500 w-[100%] h-[100%] rounded-2xl" >  asdasd5 </div> )}
+ { (activedashboard === 'reportsandanalytics' && !isAdminRole) && ( 
+   <div id="reportsandanalytics" className="flex flex-col pl-5 pr-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl">  
+
+     <div className="flex items-center justify-between mb-6">
+       <div className="flex items-center">
+         <i className="bx bxs-report text-[#184d85] text-[25px] mr-2"/>
+         <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">Reports and Analytics</h1>
+       </div>
+       
+       {/* Export Buttons */}
+       <div className="flex space-x-3">
+         <button
+           onClick={exportToPDF}
+           className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-albertsans"
+         >
+           <i className="bx bxs-file-pdf mr-2"></i>
+           Export PDF
+         </button>
+         <button
+           onClick={exportToExcel}
+           className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-albertsans"
+         >
+           <i className="bx bxs-file mr-2"></i>
+           Export Excel
+         </button>
+       </div>
+     </div>
+
+     {/* Filter Controls */}
+     <div className="bg-gray-50 rounded-xl p-4 mb-6">
+       <div className="flex flex-wrap items-center gap-4">
+         <div className="flex items-center space-x-2">
+           <label className="text-sm font-medium text-gray-700 font-albertsans">Date Range:</label>
+           <select
+             value={reportsFilter.dateRange}
+             onChange={(e) => setReportsFilter(prev => ({ ...prev, dateRange: e.target.value }))}
+             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+           >
+             <option value="thisWeek">This Week</option>
+             <option value="thisMonth">This Month</option>
+             <option value="thisYear">This Year</option>
+             <option value="custom">Custom Range</option>
+           </select>
+         </div>
+         
+         {reportsFilter.dateRange === 'custom' && (
+           <>
+             <div className="flex items-center space-x-2">
+               <label className="text-sm font-medium text-gray-700 font-albertsans">From:</label>
+               <input
+                 type="date"
+                 value={reportsFilter.startDate}
+                 onChange={(e) => setReportsFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+               />
+             </div>
+             <div className="flex items-center space-x-2">
+               <label className="text-sm font-medium text-gray-700 font-albertsans">To:</label>
+               <input
+                 type="date"
+                 value={reportsFilter.endDate}
+                 onChange={(e) => setReportsFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+               />
+             </div>
+           </>
+         )}
+         
+         <div className="ml-auto text-sm text-gray-600 font-albertsans">
+           Clinic: <span className="font-semibold text-[#184d85]">{getCurrentUserClinic() || 'All Clinics'}</span>
+         </div>
+       </div>
+     </div>
+
+     {reportsData.loading ? (
+       <div className="flex items-center justify-center h-64">
+         <div className="flex flex-col items-center">
+           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#184d85]"></div>
+           <p className="mt-4 text-gray-600 font-albertsans">Loading reports data...</p>
+         </div>
+       </div>
+     ) : reportsData.error ? (
+       <div className="text-center py-8">
+         <i className="bx bx-error text-red-500 text-4xl mb-4"></i>
+         <p className="text-red-600 font-albertsans">{reportsData.error}</p>
+         <button
+           onClick={fetchReportsData}
+           className="mt-4 px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-700 transition-colors font-albertsans"
+         >
+           Retry
+         </button>
+       </div>
+     ) : (
+       <>
+         {/* Summary Cards */}
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+             <div className="flex items-center justify-between">
+               <div>
+                 <p className="text-blue-100 text-sm font-albertsans">Total Orders</p>
+                 <p className="text-3xl font-bold font-albertsans">{calculateMetrics().totalOrders}</p>
+               </div>
+               <i className="bx bx-shopping-bag text-3xl text-blue-200"></i>
+             </div>
+           </div>
+           
+           <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+             <div className="flex items-center justify-between">
+               <div>
+                 <p className="text-green-100 text-sm font-albertsans">Total Revenue</p>
+                 <p className="text-3xl font-bold font-albertsans">₱{calculateMetrics().totalRevenue.toLocaleString()}</p>
+               </div>
+               <i className="bx bx-money text-3xl text-green-200"></i>
+             </div>
+           </div>
+           
+           <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+             <div className="flex items-center justify-between">
+               <div>
+                 <p className="text-purple-100 text-sm font-albertsans">Appointments</p>
+                 <p className="text-3xl font-bold font-albertsans">{calculateMetrics().totalAppointments}</p>
+               </div>
+               <i className="bx bx-calendar text-3xl text-purple-200"></i>
+             </div>
+           </div>
+           
+           <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
+             <div className="flex items-center justify-between">
+               <div>
+                 <p className="text-orange-100 text-sm font-albertsans">Completed Orders</p>
+                 <p className="text-3xl font-bold font-albertsans">{calculateMetrics().completedOrders}</p>
+               </div>
+               <i className="bx bx-check-circle text-3xl text-orange-200"></i>
+             </div>
+           </div>
+         </div>
+
+         {/* Charts Section */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+           {/* Debug chartsData */}
+           {console.log('Current chartsData state:', chartsData)}
+           
+           {/* Appointments by Month */}
+           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Appointments by Month</h3>
+             {chartsData?.appointmentsByMonth?.length > 0 ? (
+               <ResponsiveContainer width="100%" height={300}>
+                 <BarChart data={chartsData.appointmentsByMonth}>
+                   <CartesianGrid strokeDasharray="3 3" />
+                   <XAxis dataKey="month" />
+                   <YAxis />
+                   <Tooltip />
+                   <Bar dataKey="count" fill="#184d85" radius={[4, 4, 0, 0]} />
+                 </BarChart>
+               </ResponsiveContainer>
+             ) : (
+               <div className="flex items-center justify-center h-[300px] text-gray-500">
+                 No appointment data available
+               </div>
+             )}
+           </div>
+
+           {/* Revenue by Month */}
+           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Revenue by Month</h3>
+             {chartsData?.revenueByMonth?.length > 0 ? (
+               <ResponsiveContainer width="100%" height={300}>
+                 <AreaChart data={chartsData.revenueByMonth}>
+                   <CartesianGrid strokeDasharray="3 3" />
+                   <XAxis dataKey="month" />
+                   <YAxis />
+                   <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Revenue']} />
+                   <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                 </AreaChart>
+               </ResponsiveContainer>
+             ) : (
+               <div className="flex items-center justify-center h-[300px] text-gray-500">
+                 No revenue data available
+               </div>
+             )}
+           </div>
+         </div>
+
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+           {/* Sales by Category */}
+           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Sales by Category</h3>
+             {chartsData?.salesByCategory?.length > 0 ? (
+               <ResponsiveContainer width="100%" height={300}>
+                 <PieChart>
+                   <Pie
+                     data={chartsData.salesByCategory}
+                     cx="50%"
+                     cy="50%"
+                     outerRadius={100}
+                     fill="#8884d8"
+                     dataKey="value"
+                     label={({ category, value }) => `${category}: ${value}`}
+                   >
+                     {chartsData.salesByCategory.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                     ))}
+                   </Pie>
+                   <Tooltip />
+                 </PieChart>
+               </ResponsiveContainer>
+             ) : (
+               <div className="flex items-center justify-center h-[300px] text-gray-500">
+                 No sales category data available
+               </div>
+             )}
+           </div>
+
+           {/* Order Status Distribution */}
+           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Order Status Distribution</h3>
+             {chartsData?.orderStatusDistribution?.length > 0 ? (
+               <ResponsiveContainer width="100%" height={300}>
+                 <PieChart>
+                   <Pie
+                     data={chartsData.orderStatusDistribution}
+                     cx="50%"
+                     cy="50%"
+                     outerRadius={100}
+                     fill="#8884d8"
+                     dataKey="value"
+                     label={({ status, value }) => `${status}: ${value}`}
+                   >
+                     {chartsData.orderStatusDistribution.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                     ))}
+                   </Pie>
+                   <Tooltip />
+                 </PieChart>
+               </ResponsiveContainer>
+             ) : (
+               <div className="flex items-center justify-center h-[300px] text-gray-500">
+                 No order status data available
+               </div>
+             )}
+           </div>
+         </div>
+
+         {/* Top Products */}
+         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+           <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Top Products</h3>
+           {chartsData?.topProducts?.length > 0 ? (
+             <ResponsiveContainer width="100%" height={400}>
+               <BarChart data={chartsData.topProducts} layout="horizontal">
+                 <CartesianGrid strokeDasharray="3 3" />
+                 <XAxis type="number" />
+                 <YAxis dataKey="product" type="category" width={150} />
+                 <Tooltip />
+                 <Bar dataKey="quantity" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+               </BarChart>
+             </ResponsiveContainer>
+           ) : (
+             <div className="flex items-center justify-center h-[400px] text-gray-500">
+               No product data available
+             </div>
+           )}
+         </div>
+
+         {/* Recent Orders Table */}
+         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+           <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Recent Orders</h3>
+           <div className="overflow-x-auto">
+             <table className="w-full text-sm text-gray-600">
+               <thead>
+                 <tr className="border-b">
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Order ID</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Patient</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Product</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Status</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Total</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Date</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {[...reportsData.ambherOrders, ...reportsData.bautistaOrders]
+                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                   .slice(0, 10)
+                   .map((order, index) => (
+                     <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                       <td className="py-3 px-4 font-albertsans">
+                         #{order.patientorderambherid || order.patientorderbautistaid}
+                       </td>
+                       <td className="py-3 px-4 font-albertsans">
+                         {order.patientfirstname} {order.patientlastname}
+                       </td>
+                       <td className="py-3 px-4 font-albertsans">
+                         {order.patientorderambherproductname || order.patientorderbautistaproductname}
+                       </td>
+                       <td className="py-3 px-4">
+                         <span className={`px-2 py-1 rounded-full text-xs font-semibold font-albertsans ${
+                           (order.patientorderambherstatus === 'Completed' || order.patientorderbautistastatus === 'Completed')
+                             ? 'bg-green-100 text-green-800'
+                             : (order.patientorderambherstatus === 'Pending' || order.patientorderbautistastatus === 'Pending')
+                             ? 'bg-yellow-100 text-yellow-800'
+                             : (order.patientorderambherstatus === 'Ready for Pickup' || order.patientorderbautistastatus === 'Ready for Pickup')
+                             ? 'bg-blue-100 text-blue-800'
+                             : 'bg-red-100 text-red-800'
+                         }`}>
+                           {order.patientorderambherstatus || order.patientorderbautistastatus}
+                         </span>
+                       </td>
+                       <td className="py-3 px-4 font-semibold text-green-600 font-albertsans">
+                         ₱{(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}
+                       </td>
+                       <td className="py-3 px-4 font-albertsans">
+                         {new Date(order.createdAt).toLocaleDateString()}
+                       </td>
+                     </tr>
+                   ))}
+               </tbody>
+             </table>
+           </div>
+         </div>
+       </>
+     )}
+       
+   </div> 
+ )}
+
+
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+{/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
