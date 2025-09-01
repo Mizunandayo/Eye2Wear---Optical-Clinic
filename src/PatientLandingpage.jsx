@@ -191,10 +191,14 @@ mapStyles.textContent = `
   #geographicmapcontainer {
     height: 100% !important;
     min-height: 580px;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .mapboxgl-map {
     width: 100% !important;
     height: 100% !important;
+    flex: 1 !important;
+    min-height: 580px !important;
   }
 `;
 document.head.appendChild(mapStyles);
@@ -228,6 +232,7 @@ function PatientLandingpage() {
   const [loadingClinicLocations, setLoadingClinicLocations] = useState(true);
   const [selectedClinicLocation, setSelectedClinicLocation] = useState(null);
   const [locationMessage, setLocationMessage] = useState({ text: '', type: '' });
+  const [clinicFilter, setClinicFilter] = useState('all'); // 'all', 'ambher', 'bautista'
 
   const [userLocation, setUserLocation] = useState(null);
   const [loadingUserLocation, setLoadingUserLocation] = useState(false);
@@ -252,6 +257,85 @@ function PatientLandingpage() {
   
   const legendControlRef = useRef(null);
   const directionsPanelRef = useRef(null);
+
+  // Utility function to calculate distance between two coordinates
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in kilometers
+  }, []);
+
+  // Function to get filtered and sorted clinics
+  const getFilteredAndSortedClinics = useCallback(() => {
+    let filtered = clinicLocations;
+
+    // Apply filter
+    if (clinicFilter === 'ambher') {
+      filtered = filtered.filter(clinic => clinic.clinicType === 'Ambher Optical');
+    } else if (clinicFilter === 'bautista') {
+      filtered = filtered.filter(clinic => clinic.clinicType === 'Bautista Eye Center');
+    }
+
+    // Sort by distance if user location is available
+    if (userLocation && userLocation.latitude && userLocation.longitude) {
+      filtered = filtered.map(clinic => {
+        if (clinic.coordinates?.coordinates) {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            clinic.coordinates.coordinates[1],
+            clinic.coordinates.coordinates[0]
+          );
+          return { ...clinic, distance };
+        }
+        return { ...clinic, distance: Infinity };
+      }).sort((a, b) => a.distance - b.distance);
+    }
+
+    return filtered;
+  }, [clinicLocations, clinicFilter, userLocation, calculateDistance]);
+
+  const filteredClinics = getFilteredAndSortedClinics();
+
+  // Function to update marker visibility based on current filter
+  const updateMarkerVisibility = useCallback(() => {
+    if (!map.current || !mapMarkersRef.current) return;
+
+    mapMarkersRef.current.forEach((marker, clinicId) => {
+      // Find the clinic data for this marker
+      const clinic = clinicLocations.find(c => c._id === clinicId);
+      if (!clinic) return;
+
+      const markerElement = marker.getElement();
+      let shouldShow = true;
+
+      // Determine if marker should be visible based on filter
+      if (clinicFilter === 'ambher') {
+        shouldShow = clinic.clinicType === 'Ambher Optical';
+      } else if (clinicFilter === 'bautista') {
+        shouldShow = clinic.clinicType === 'Bautista Eye Center';
+      }
+      // For 'all' filter, all markers should be visible
+
+      if (shouldShow) {
+        markerElement.style.display = 'block';
+        markerElement.style.opacity = clinic.isActive ? '1' : '0.6';
+      } else {
+        markerElement.style.display = 'none';
+      }
+    });
+  }, [clinicLocations, clinicFilter]);
+
+  // Update marker visibility whenever filter changes
+  useEffect(() => {
+    updateMarkerVisibility();
+  }, [clinicFilter, updateMarkerVisibility]);
 
   const fetchClinicLocations = useCallback(async () => {
     try {
@@ -552,7 +636,7 @@ function PatientLandingpage() {
       map.current.addControl(geolocate);
 
       const fullscreenControl = new mapboxgl.FullscreenControl({
-        container: document.querySelector('#geographicmapcontainer')
+        container: mapContainer.current.parentElement
       });
       map.current.addControl(fullscreenControl, 'top-right');
       console.log('Fullscreen control added');
@@ -560,6 +644,22 @@ function PatientLandingpage() {
       map.current.on('load', () => {
         setMapLoaded(true);
         isInitializingMap.current = false;
+        
+        // Force map resize to fill container properly
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('Map resized after load');
+          }
+        }, 100);
+        
+        // Additional resize attempts to ensure proper rendering
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('Map resized again for safety');
+          }
+        }, 500);
       });
 
     } catch (error) {
@@ -726,7 +826,10 @@ function PatientLandingpage() {
     });
 
     mapMarkersRef.current = newMarkers;
-  }, [mapLoaded, clinicLocations, userLocation]);
+    
+    // Update marker visibility based on current filter after markers are created
+    setTimeout(() => updateMarkerVisibility(), 100);
+  }, [mapLoaded, clinicLocations, userLocation, updateMarkerVisibility]);
 
   useEffect(() => {
     if (!map.current || !mapLoaded || !userLocation) return;
@@ -1005,6 +1108,53 @@ const handleFullscreenChange = () => {
   };
 }, []);
 
+  // Add window resize listener to ensure map always fills container
+  useEffect(() => {
+    const handleResize = () => {
+      if (map.current && mapLoaded) {
+        // Delay resize to allow container to finish resizing
+        setTimeout(() => {
+          map.current.resize();
+          console.log('Map resized on window resize');
+        }, 100);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Also trigger resize on component mount
+    if (mapLoaded) {
+      handleResize();
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mapLoaded]);
+
+  // Force map resize when container visibility changes
+  useEffect(() => {
+    if (mapLoaded && map.current) {
+      const observer = new ResizeObserver(() => {
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('Map resized on container size change');
+          }
+        }, 50);
+      });
+
+      const container = document.getElementById('geographicmapcontainer');
+      if (container) {
+        observer.observe(container);
+      }
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [mapLoaded]);
+
 
 
 
@@ -1275,7 +1425,7 @@ const handleFullscreenChange = () => {
           )}
 
           <div className="transition-all duration-300 ease-in-out gap-4 flex justify-center items-start flex-1 min-h-[580px]">
-            <div id="geographicmapcontainer" className="flex flex-col justify-center items-center transition-all duration-300 ease-in-out relative bg-[#efefef] rounded-2xl shadow-lg w-full h-full overflow-hidden" style={{ minHeight: '580px' }}>
+            <div id="geographicmapcontainer" className="transition-all duration-300 ease-in-out relative bg-[#efefef] rounded-2xl shadow-lg w-full h-full overflow-hidden" style={{ minHeight: '580px', height: '580px' }}>
               <div
                 ref={mapContainer}
                 className="transition-all duration-300 ease-in-out w-full h-full rounded-2xl"
@@ -1283,6 +1433,8 @@ const handleFullscreenChange = () => {
                   transform: 'translateZ(0)',
                   willChange: 'transform',
                   backfaceVisibility: 'hidden',
+                  height: '100%',
+                  minHeight: '580px'
                 }}
               />
               {!mapLoaded && (
@@ -1385,7 +1537,44 @@ const handleFullscreenChange = () => {
                   <i className="bx bx-list-ul mr-2 font-bold"></i>
                   Clinic Locations
                 </h3>
-                <p className="text-sm text-gray-600">Total: {clinicLocations?.length || 0} clinics</p>
+                <p className="text-sm text-gray-600">Total: {filteredClinics?.length || 0} clinics</p>
+                
+                {/* Filter Buttons */}
+                <div className="flex gap-2 mt-3">
+                  <div
+                    onClick={() => setClinicFilter('all')}
+                    className={`cursor-pointer font-albertsans font-semibold flex items-center ease-in-out gap-1.5 px-4 py-2 rounded-full text-xs  transition-all duration-200 ${
+                      clinicFilter === 'all'
+                        ? 'bg-[#1a88d0] text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <i className="bx bx-buildings text-sm"></i>
+                    All
+                  </div>
+                  <div
+                    onClick={() => setClinicFilter('ambher')}
+                    className={`cursor-pointer font-albertsans font-semibold flex items-center gap-1.5 px-4 py-2 rounded-full text-xs ease-in-out transition-all duration-200 ${
+                      clinicFilter === 'ambher'
+                        ? 'bg-[#4fa63d] text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <img src={ambherlogo} className="w-3.5 h-3.5 rounded-full"/>
+                    Ambher
+                  </div>
+                  <div
+                    onClick={() => setClinicFilter('bautista')}
+                    className={`cursor-pointer font-albertsans font-semibold flex items-center gap-1.5 px-4 py-2 rounded-full text-xs ease-in-out transition-all duration-200 ${
+                      clinicFilter === 'bautista'
+                        ? 'bg-[#1f539b] text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <img src={bautistalogo} className="w-3.5 h-3.5 rounded-full"/>
+                    Bautista
+                  </div>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {loadingClinicLocations ? (
@@ -1393,13 +1582,17 @@ const handleFullscreenChange = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
                     <p>Loading clinic locations...</p>
                   </div>
-                ) : !clinicLocations || clinicLocations.length === 0 ? (
+                ) : !filteredClinics || filteredClinics.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <div className="text-4xl mb-2">🏥</div>
-                    <p className="font-medium">No clinics found</p>
+                    <p className="font-medium">
+                      {clinicFilter === 'all' ? 'No clinics found' : 
+                       clinicFilter === 'ambher' ? 'No Ambher clinics found' :
+                       'No Bautista clinics found'}
+                    </p>
                   </div>
                 ) : (
-                  clinicLocations.map((clinic, index) => (
+                  filteredClinics.map((clinic, index) => (
                     <div
                       key={clinic._id || `clinic-${index}`}
                       className="p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white"
@@ -1428,16 +1621,26 @@ const handleFullscreenChange = () => {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">{clinic.clinicName}</h4>
-                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          clinic.clinicType === 'Ambher Optical'
-                            ? 'bg-green-100 text-green-800'
-                            : clinic.clinicType === 'Bautista Eye Center'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
-                           clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : 'External'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {clinic.distance !== undefined && clinic.distance !== Infinity && (
+                            <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
+                              {clinic.distance < 1 
+                                ? `${Math.round(clinic.distance * 1000)}m`
+                                : `${clinic.distance.toFixed(1)}km`
+                              }
+                            </span>
+                          )}
+                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                            clinic.clinicType === 'Ambher Optical'
+                              ? 'bg-green-100 text-green-800'
+                              : clinic.clinicType === 'Bautista Eye Center'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
+                             clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : 'External'}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">{clinic.address?.fullAddress || 'Address not available'}</p>
                       {clinic.coordinates?.coordinates && (
@@ -1469,6 +1672,12 @@ const handleFullscreenChange = () => {
                           }`}></div>
                           {clinic.isActive ? 'Active' : 'Inactive'}
                         </div>
+                        {index === 0 && userLocation && clinic.distance !== undefined && clinic.distance !== Infinity && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i className="bx bx-navigation text-xs"></i>
+                            Nearest
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))
