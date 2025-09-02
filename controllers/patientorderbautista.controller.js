@@ -26,7 +26,19 @@ export const createpatientorderbautista = async (req, res) => {
         });
  }
 
-        const neworder = new PatientOrderBautista(req.body);
+        // Process the request body to handle "Now" pickup date
+        const orderData = { ...req.body };
+        
+        // If pickup date is "Now", replace it with current date in YYYY-MM-DD format
+        if (orderData.patientorderbautistaproductchosenpickupdate === "Now") {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            orderData.patientorderbautistaproductchosenpickupdate = `${year}-${month}-${day}`;
+        }
+
+        const neworder = new PatientOrderBautista(orderData);
         const savedorder = await neworder.save();
 
         res.status(201).json({
@@ -116,7 +128,16 @@ export const createpatientorderbautista = async (req, res) => {
     export const updateorderbautistabyid = async (req,res) => {
         try{
             const { id } = req.params;
-            const updateData = req.body;
+            const updateData = { ...req.body };
+
+            // If pickup date is being updated and is "Now", replace it with current date
+            if (updateData.patientorderbautistaproductchosenpickupdate === "Now") {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                updateData.patientorderbautistaproductchosenpickupdate = `${year}-${month}-${day}`;
+            }
 
             const orderbautista = await PatientOrderBautista.findOne({patientorderbautistaid: id});
             if(!orderbautista) {

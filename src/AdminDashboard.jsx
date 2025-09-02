@@ -32,7 +32,7 @@ import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -488,11 +488,12 @@ const SmsRowSkeleton = () => (
   </tr>
 );
 
-// Interactive Area Chart Component for Completed Appointments
-const InteractiveAppointmentChart = ({ appointmentsData }) => {
+// Interactive Bar Chart Component for Completed Appointments
+const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
   const [timeRange, setTimeRange] = React.useState("90d");
+  const [activeChart, setActiveChart] = React.useState("ambher");
 
-  // Filter data based on selected time range
+  // Filter data based on selected time range and generate complete date range
   const filteredData = React.useMemo(() => {
     if (!appointmentsData || appointmentsData.length === 0) return [];
     
@@ -510,11 +511,40 @@ const InteractiveAppointmentChart = ({ appointmentsData }) => {
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - daysToSubtract);
     
-    return appointmentsData.filter(item => {
+    // Generate complete date range
+    const dateRange = [];
+    const currentDate = new Date(startDate);
+    const endDate = new Date(now);
+    
+    while (currentDate <= endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      dateRange.push(dateString);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Create a map of existing data for quick lookup
+    const dataMap = appointmentsData.reduce((acc, item) => {
       const itemDate = new Date(item.date);
-      return itemDate >= startDate;
+      if (itemDate >= startDate && itemDate <= endDate) {
+        const dateString = itemDate.toISOString().split('T')[0];
+        acc[dateString] = item;
+      }
+      return acc;
+    }, {});
+    
+    // Generate complete dataset with zero values for missing dates
+    // Apply clinic-specific filtering based on user permissions
+    return dateRange.map(dateString => {
+      const existingData = dataMap[dateString];
+      return {
+        date: dateString,
+        ambher: (isAmbherOnlyUser() || currentuserloggedin === "Admin") ? (existingData?.ambher || 0) : 0,
+        bautista: (isBautistaOnlyUser() || currentuserloggedin === "Admin") ? (existingData?.bautista || 0) : 0,
+        total: ((isAmbherOnlyUser() || currentuserloggedin === "Admin") ? (existingData?.ambher || 0) : 0) + 
+               ((isBautistaOnlyUser() || currentuserloggedin === "Admin") ? (existingData?.bautista || 0) : 0)
+      };
     });
-  }, [appointmentsData, timeRange]);
+  }, [appointmentsData, timeRange, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
 
   // Calculate totals for the filtered period
   const totals = React.useMemo(() => {
@@ -527,64 +557,434 @@ const InteractiveAppointmentChart = ({ appointmentsData }) => {
     }), { ambher: 0, bautista: 0, total: 0 });
   }, [filteredData]);
 
+  // Dynamic color theme based on user clinic
+  const getChartColors = () => {
+    if (isAmbherOnlyUser()) {
+      return {
+        ambher: "#66944C", // Primary green
+        bautista: "#8ba888" // Secondary green
+      };
+    } else if (isBautistaOnlyUser()) {
+      return {
+        ambher: "#3b82f6", // Secondary blue
+        bautista: "#1e3a8a" // Navy blue
+      };
+    } else {
+      return {
+        ambher: "#66944C", // Primary green for Ambher
+        bautista: "#1e3a8a" // Navy for Bautista
+      };
+    }
+  };
+
+  const chartColors = getChartColors();
+
+  // Determine available chart options based on user permissions
+  const availableCharts = React.useMemo(() => {
+    const charts = [];
+    if (isAmbherOnlyUser() || currentuserloggedin === "Admin") {
+      charts.push({ key: "ambher", label: "Ambher Completed", color: chartColors.ambher });
+    }
+    if (isBautistaOnlyUser() || currentuserloggedin === "Admin") {
+      charts.push({ key: "bautista", label: "Bautista Completed", color: chartColors.bautista });
+    }
+    return charts;
+  }, [isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin, chartColors]);
+
+  // Set default active chart based on available options
+  React.useEffect(() => {
+    if (availableCharts.length > 0 && !availableCharts.find(chart => chart.key === activeChart)) {
+      setActiveChart(availableCharts[0].key);
+    }
+  }, [availableCharts, activeChart]);
+
+  return (
+    <div className="bg-gradient-to-b from-white to-white border border-gray-200 rounded-xl shadow-sm">
+      {/* Header with Interactive Buttons */}
+      <div className="flex flex-col items-stretch border-b sm:flex-row">
+        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3">
+          <h3 className="text-xl font-bold text-gray-800 font-albertsans">Completed Appointments Trend</h3>
+          <p className="text-sm text-gray-600 font-albertsans">
+            Interactive view of completed appointments over time
+          </p>
+        </div>
+        
+        {/* Interactive Chart Selector */}
+        <div className="flex">
+          {availableCharts.map((chart) => (
+            <button
+              key={chart.key}
+              onClick={() => setActiveChart(chart.key)}
+              className={`relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left transition-colors ${
+                activeChart === chart.key 
+                  ? 'bg-gray-50 border-l-2' 
+                  : 'hover:bg-gray-25'
+              } sm:border-t-0 sm:border-l sm:px-8 sm:py-6`}
+              style={{ 
+                borderLeftColor: activeChart === chart.key ? chart.color : undefined,
+                backgroundColor: activeChart === chart.key ? `${chart.color}10` : undefined 
+              }}
+            >
+              <span className="text-xs text-gray-500 font-albertsans">
+                {chart.label}
+              </span>
+              <span className="text-lg leading-none font-bold sm:text-2xl font-albertsans">
+                {totals[chart.key].toLocaleString()}
+              </span>
+            </button>
+          ))}
+        </div>
+        
+        {/* Time Range Selector */}
+        <div className="flex items-center px-6 py-4 border-t sm:border-t-0 sm:border-l">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="w-full sm:w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            aria-label="Select time range"
+          >
+            <option value="365d">Last Year</option>
+            <option value="90d">Last 3 months</option>
+            <option value="30d">Last 30 days</option>
+            <option value="7d">Last 7 days</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Chart Content */}
+      <div className="px-2 pt-4 sm:px-6 sm:pt-6 pb-6">
+        {filteredData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={filteredData}
+              margin={{ left: 12, right: 12, top: 10, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="date"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  if (timeRange === "365d") {
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "2-digit",
+                    });
+                  }
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }}
+              />
+              <YAxis 
+                domain={[0, 'dataMax']}
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                cursor={false}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                        <p className="font-semibold text-gray-800 font-albertsans mb-2">
+                          {new Date(label).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric"
+                          })}
+                        </p>
+                        <p className="font-albertsans text-sm" style={{ color: chartColors[activeChart] }}>
+                          {availableCharts.find(chart => chart.key === activeChart)?.label}: {payload[0]?.value}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar 
+                dataKey={activeChart} 
+                fill={chartColors[activeChart]}
+                radius={8}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="text-center">
+              <i className="bx bx-bar-chart-alt-2 text-4xl mb-2"></i>
+              <p className="font-albertsans">No completed appointment data available for the selected period</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Interactive Revenue Chart Component
+const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
+  const [timeRange, setTimeRange] = React.useState("90d");
+  const [dataFilter, setDataFilter] = React.useState("all"); // all, appointments, orders
+
+  // Filter and process data based on selected time range and data filter
+  const filteredData = React.useMemo(() => {
+    const now = new Date();
+    let daysToSubtract = 90;
+    let endDate = new Date(now);
+    
+    if (timeRange === "30d") {
+      daysToSubtract = 30;
+    } else if (timeRange === "7d") {
+      daysToSubtract = 7;
+    } else if (timeRange === "365d") {
+      // For Last Year, include the full current month and go back 12 complete months
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
+      daysToSubtract = 365;
+    }
+    
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    
+    // Always use daily data from raw orders and appointments for consistency
+    // This ensures data is available for all time ranges
+    const dailyRevenue = {};
+    
+    // Initialize all dates in range with 0 revenue
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      dailyRevenue[dateStr] = { 
+        date: dateStr, 
+        ordersRevenue: 0, 
+        appointmentsRevenue: 0,
+        totalRevenue: 0
+      };
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Process raw orders to calculate daily revenue
+    if (rawOrderData && rawOrderData.length > 0) {
+      rawOrderData.forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        if (orderDate >= startDate && orderDate <= endDate) {
+          // Only include completed orders
+          const isCompleted = order.patientorderambherstatus === 'Completed' || 
+                             order.patientorderbautistastatus === 'Completed';
+          
+          if (isCompleted) {
+            // Apply clinic filtering
+            let includeOrder = false;
+            if (currentuserloggedin === "Admin") {
+              includeOrder = true;
+            } else if (isAmbherOnlyUser && isAmbherOnlyUser()) {
+              includeOrder = order.patientorderambherproducttotal > 0;
+            } else if (isBautistaOnlyUser && isBautistaOnlyUser()) {
+              includeOrder = order.patientorderbautistaproducttotal > 0;
+            }
+            
+            if (includeOrder) {
+              const dateStr = orderDate.toISOString().split('T')[0];
+              const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0;
+              if (dailyRevenue[dateStr]) {
+                dailyRevenue[dateStr].ordersRevenue += total;
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Process raw appointments to calculate daily revenue
+    if (rawAppointmentData && rawAppointmentData.length > 0) {
+      rawAppointmentData.forEach(appointment => {
+        const appointmentDate = new Date(appointment.createdAt || appointment.patientambherappointmentdate || appointment.patientbautistaappointmentdate);
+        if (appointmentDate >= startDate && appointmentDate <= endDate) {
+          // Only include completed appointments
+          const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
+          const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
+          
+          if (isAmbherCompleted || isBautistaCompleted) {
+            // Apply clinic filtering
+            let includeAppointment = false;
+            if (currentuserloggedin === "Admin") {
+              includeAppointment = true;
+            } else if (isAmbherOnlyUser && isAmbherOnlyUser()) {
+              includeAppointment = appointment.patientambherappointmentdate;
+            } else if (isBautistaOnlyUser && isBautistaOnlyUser()) {
+              includeAppointment = appointment.patientbautistaappointmentdate;
+            }
+            
+            if (includeAppointment) {
+              const dateStr = appointmentDate.toISOString().split('T')[0];
+              const ambherPayment = isAmbherCompleted ? (appointment.patientambherappointmentpaymentotal || 0) : 0;
+              const bautistaPayment = isBautistaCompleted ? (appointment.patientbautistaappointmentpaymentotal || 0) : 0;
+              const total = ambherPayment + bautistaPayment;
+              
+              if (dailyRevenue[dateStr]) {
+                dailyRevenue[dateStr].appointmentsRevenue += total;
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Calculate total revenue and apply data filter
+    Object.values(dailyRevenue).forEach(item => {
+      if (dataFilter === "appointments") {
+        item.totalRevenue = item.appointmentsRevenue;
+      } else if (dataFilter === "orders") {
+        item.totalRevenue = item.ordersRevenue;
+      } else {
+        item.totalRevenue = item.ordersRevenue + item.appointmentsRevenue;
+      }
+    });
+    
+    return Object.values(dailyRevenue).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [rawOrderData, rawAppointmentData, timeRange, dataFilter, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
+
+  // Calculate total revenue for the filtered period
+  const totalRevenue = React.useMemo(() => {
+    if (!filteredData || filteredData.length === 0) return { total: 0, orders: 0, appointments: 0 };
+    
+    const totals = filteredData.reduce((acc, item) => {
+      acc.total += (item.totalRevenue || 0);
+      acc.orders += (item.ordersRevenue || 0);
+      acc.appointments += (item.appointmentsRevenue || 0);
+      return acc;
+    }, { total: 0, orders: 0, appointments: 0 });
+    
+    return totals;
+  }, [filteredData]);
+
+  // Dynamic title based on selected time range and data filter
+  const getChartTitle = () => {
+    const filterText = dataFilter === "appointments" ? "Appointments " : 
+                      dataFilter === "orders" ? "Orders " : "";
+    
+    switch (timeRange) {
+      case "7d":
+        return `${filterText}Revenue Last 7 Days`;
+      case "30d":
+        return `${filterText}Revenue Last 30 Days`;
+      case "90d":
+        return `${filterText}Revenue Last 3 Months`;
+      case "365d":
+        return `${filterText}Revenue Last Year`;
+      default:
+        return `${filterText}Revenue Last 3 Months`;
+    }
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
       {/* Header with Controls */}
       <div className="flex items-center gap-2 border-b py-5 px-6 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <h3 className="text-xl font-bold text-gray-800 font-albertsans">Completed Appointments Trend - Interactive</h3>
+          <h3 className="text-xl font-bold text-gray-800 font-albertsans">{getChartTitle()}</h3>
           <p className="text-sm text-gray-600 font-albertsans">
-            Showing completed appointment trends for the selected period
+            Showing revenue trends for the selected period
           </p>
           {/* Summary for selected period */}
           {filteredData.length > 0 && (
             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 font-albertsans">
-              <span>Total: <strong className="text-gray-700">{totals.total}</strong></span>
-              <span>Ambher: <strong className="text-[#184d85]">{totals.ambher}</strong></span>
-              <span>Bautista: <strong className="text-[#10b981]">{totals.bautista}</strong></span>
+              {dataFilter === "all" ? (
+                <>
+                  <span>Total Revenue: <strong className="text-gray-700">₱{totalRevenue.total.toLocaleString()}</strong></span>
+                  <span>Orders: <strong className="text-green-600">₱{totalRevenue.orders.toLocaleString()}</strong></span>
+                  <span>Appointments: <strong className="text-blue-600">₱{totalRevenue.appointments.toLocaleString()}</strong></span>
+                </>
+              ) : dataFilter === "orders" ? (
+                <span>Orders Revenue: <strong className="text-green-600">₱{totalRevenue.orders.toLocaleString()}</strong></span>
+              ) : (
+                <span>Appointments Revenue: <strong className="text-blue-600">₱{totalRevenue.appointments.toLocaleString()}</strong></span>
+              )}
+              <span>{timeRange === "7d" || timeRange === "30d" ? "Days" : "Months"}: <strong className="text-gray-700">{filteredData.length}</strong></span>
             </div>
           )}
         </div>
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className="hidden w-[160px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans sm:ml-auto sm:flex"
-          aria-label="Select time range"
-        >
-          <option value="365d">Last Year</option>
-          <option value="90d">Last 3 months</option>
-          <option value="30d">Last 30 days</option>
-          <option value="7d">Last 7 days</option>
-        </select>
+        
+        <div className="flex items-center gap-3">
+          {/* Data Filter */}
+          <select
+            value={dataFilter}
+            onChange={(e) => setDataFilter(e.target.value)}
+            className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            aria-label="Select data type"
+          >
+            <option value="all">All</option>
+            <option value="appointments">Appointments</option>
+            <option value="orders">Orders</option>
+          </select>
+          
+          {/* Time Range Filter */}
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="w-[160px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            aria-label="Select time range"
+          >
+            <option value="365d">Last Year</option>
+            <option value="90d">Last 3 months</option>
+            <option value="30d">Last 30 days</option>
+            <option value="7d">Last 7 days</option>
+          </select>
+        </div>
       </div>
       
       {/* Chart Content */}
       <div className="px-2 pt-4 sm:px-6 sm:pt-6 pb-6">
         {filteredData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={filteredData}>
+            <AreaChart 
+              data={filteredData}
+              margin={{ top: 10, right: 30, left: 0, bottom: timeRange === "30d" ? 25 : 0 }}
+            >
               <defs>
-                <linearGradient id="fillAmbher" x1="0" y1="0" x2="0" y2="1">
+                {/* Orders gradient (Green) */}
+                <linearGradient id="fillOrders" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
-                    stopColor="#184d85"
+                    stopColor="#66944C"
                     stopOpacity={0.8}
                   />
                   <stop
                     offset="95%"
-                    stopColor="#184d85"
+                    stopColor="#66944C"
                     stopOpacity={0.1}
                   />
                 </linearGradient>
-                <linearGradient id="fillBautista" x1="0" y1="0" x2="0" y2="1">
+                {/* Appointments gradient (Blue) */}
+                <linearGradient id="fillAppointments" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
-                    stopColor="#10b981"
+                    stopColor="#206ba3"
                     stopOpacity={0.8}
                   />
                   <stop
                     offset="95%"
-                    stopColor="#10b981"
+                    stopColor="#206ba3"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+                {/* Total revenue gradient (Purple) */}
+                <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="#8b5cf6"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="#8b5cf6"
                     stopOpacity={0.1}
                   />
                 </linearGradient>
@@ -595,32 +995,72 @@ const InteractiveAppointmentChart = ({ appointmentsData }) => {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
+                minTickGap={timeRange === "30d" ? 80 : timeRange === "365d" || timeRange === "90d" ? 120 : 32}
+                angle={0}
+                textAnchor="middle"
+                height={30}
                 tickFormatter={(value) => {
                   const date = new Date(value);
-                  return date.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
+                  if (timeRange === "7d") {
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  } else if (timeRange === "30d") {
+                    // For 30 days, show Jul 16 format
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  } else if (timeRange === "90d") {
+                    // For 90 days, show month and day but less frequently
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  } else if (timeRange === "365d") {
+                    // For 365 days, show month and year
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "2-digit",
+                    });
+                  }
+                  return value;
                 }}
+                interval={
+                  timeRange === "7d" ? 0 :
+                  timeRange === "30d" ? Math.ceil(filteredData.length / 8) :
+                  timeRange === "90d" ? Math.ceil(filteredData.length / 10) :
+                  timeRange === "365d" ? Math.ceil(filteredData.length / 12) :
+                  "preserveStart"
+                }
               />
-              <YAxis />
+              <YAxis 
+                domain={[0, 'dataMax']}
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `₱${value.toLocaleString()}`}
+              />
               <Tooltip
                 cursor={false}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
                       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                        <p className="font-semibold text-gray-800 font-albertsans">
-                          {new Date(label).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric"
-                          })}
+                        <p className="font-semibold text-gray-800 font-albertsans mb-2">
+                          {timeRange === "7d" || timeRange === "30d" || timeRange === "365d"
+                            ? new Date(label).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric"
+                              })
+                            : label
+                          }
                         </p>
                         {payload.map((entry, index) => (
-                          <p key={index} style={{ color: entry.color }} className="font-albertsans">
-                            {entry.name}: {entry.value}
+                          <p key={index} style={{ color: entry.color }} className="font-albertsans text-sm">
+                            {entry.name}: ₱{entry.value?.toLocaleString()}
                           </p>
                         ))}
                       </div>
@@ -629,32 +1069,56 @@ const InteractiveAppointmentChart = ({ appointmentsData }) => {
                   return null;
                 }}
               />
-              <Area
-                dataKey="bautista"
-                type="natural"
-                fill="url(#fillBautista)"
-                stroke="#10b981"
-                strokeWidth={2}
-                stackId="a"
-                name="Bautista Completed"
-              />
-              <Area
-                dataKey="ambher"
-                type="natural"
-                fill="url(#fillAmbher)"
-                stroke="#184d85"
-                strokeWidth={2}
-                stackId="a"
-                name="Ambher Completed"
-              />
-              <Legend />
+              
+              {/* Conditional rendering based on data filter */}
+              {dataFilter === "all" ? (
+                <>
+                  {/* Show both orders and appointments */}
+                  <Area
+                    dataKey="ordersRevenue"
+                    type="monotone"
+                    fill="url(#fillOrders)"
+                    stroke="#66944C"
+                    strokeWidth={2}
+                    name="Orders Revenue"
+                    stackId="1"
+                  />
+                  <Area
+                    dataKey="appointmentsRevenue"
+                    type="monotone"
+                    fill="url(#fillAppointments)"
+                    stroke="#206ba3"
+                    strokeWidth={2}
+                    name="Appointments Revenue"
+                    stackId="1"
+                  />
+                </>
+              ) : dataFilter === "orders" ? (
+                <Area
+                  dataKey="ordersRevenue"
+                  type="monotone"
+                  fill="url(#fillOrders)"
+                  stroke="#66944C"
+                  strokeWidth={2}
+                  name="Orders Revenue"
+                />
+              ) : (
+                <Area
+                  dataKey="appointmentsRevenue"
+                  type="monotone"
+                  fill="url(#fillAppointments)"
+                  stroke="#206ba3"
+                  strokeWidth={2}
+                  name="Appointments Revenue"
+                />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-[300px] text-gray-500">
             <div className="text-center">
-              <i className="bx bx-calendar-check text-4xl mb-2"></i>
-              <p className="font-albertsans">No completed appointment data available for the selected period</p>
+              <i className="bx bx-trending-up text-4xl mb-2"></i>
+              <p className="font-albertsans">No revenue data available for the selected period</p>
             </div>
           </div>
         )}
@@ -1092,6 +1556,22 @@ function AdminDashboard(){
   const [ownerownedclinic,setownerownedclinic] = useState('');
   const [staffclinic, setStaffClinic] = useState('');
   const [currentUserClinic, setCurrentUserClinic] = useState('');
+
+  // Reports and Analytics State - Optimized
+  const [reportsData, setReportsData] = useState({
+    appointments: [],
+    ambherOrders: [],
+    bautistaOrders: [],
+    loading: true,
+    error: null
+  });
+  
+  const [reportsFilter, setReportsFilter] = useState({
+    dateRange: 'thisMonth', // thisWeek, thisMonth, thisYear, custom
+    startDate: '',
+    endDate: '',
+    reportType: 'overview' // overview, appointments, sales, revenue
+  });
 
   // Memoize these to prevent recalculation on every render
   const currentusertoken = useMemo(() => 
@@ -7434,8 +7914,8 @@ const [orderambherinventoryproductbrand , setorderambherinventoryproductbrand ] 
 const [orderambherinventoryproductmodelnumber, setorderambherinventoryproductmodelnumber ] = useState("");
 const [orderambherinventoryproductdescription , setorderambherinventoryproductdescription ] = useState("");
 const [orderambherinventoryproductnotes , setorderambherinventoryproductnotes ] = useState("");
-const [orderambherinventoryproductprice , setorderambherinventoryproductprice ] = useState( );
-const [orderambherinventoryproductquantity , setorderambherinventoryproductquantity ] = useState( );
+const [orderambherinventoryproductprice , setorderambherinventoryproductprice ] = useState("");
+const [orderambherinventoryproductquantity , setorderambherinventoryproductquantity ] = useState("");
 const [orderambherinventoryproductimagepreviewimages , setorderambherinventoryproductimagepreviewimages ] = useState([]);
 const [orderambhercurrentimageindex, setorderambhercurrentimageindex] = useState(0);
 const [orderambherEmail, setorderambherEmail] = useState('');
@@ -9204,45 +9684,6 @@ try {
 }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
-//REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES
-
-  // Reports and Analytics State - Optimized
-  const [reportsData, setReportsData] = useState({
-    appointments: [],
-    ambherOrders: [],
-    bautistaOrders: [],
-    loading: true,
-    error: null
-  });
-  
-  const [reportsFilter, setReportsFilter] = useState({
-    dateRange: 'thisMonth', // thisWeek, thisMonth, thisYear, custom
-    startDate: '',
-    endDate: '',
-    reportType: 'overview' // overview, appointments, sales, revenue
-  });
-
   // Note: chartsData is now handled by processedChartsData and filteredChartsData useMemo hooks
 
   // Get current user clinic from localStorage
@@ -9530,7 +9971,24 @@ try {
         return;
       }
       
-      const date = new Date(appointment.createdAt);
+      let appointmentDate = null;
+      let clinic = null;
+      
+      // Use the appointment date from the completed clinic
+      if (isAmbherCompleted && appointment.patientambherappointmentdate) {
+        appointmentDate = appointment.patientambherappointmentdate;
+        clinic = 'ambher';
+      } else if (isBautistaCompleted && appointment.patientbautistaappointmentdate) {
+        appointmentDate = appointment.patientbautistaappointmentdate;
+        clinic = 'bautista';
+      }
+      
+      // Skip if no valid appointment date found
+      if (!appointmentDate) {
+        return;
+      }
+      
+      const date = new Date(appointmentDate);
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
       
       if (!dailyData[dateKey]) {
@@ -9543,11 +10001,10 @@ try {
       }
       
       // Count completed appointments by clinic
-      if (isAmbherCompleted && (appointment.patientambherappointmentdate || appointment.patientambherappointmenttime)) {
+      if (clinic === 'ambher') {
         dailyData[dateKey].ambher += 1;
         dailyData[dateKey].total += 1;
-      }
-      if (isBautistaCompleted && (appointment.patientbautistaappointmentdate || appointment.patientbautistaappointmenttime)) {
+      } else if (clinic === 'bautista') {
         dailyData[dateKey].bautista += 1;
         dailyData[dateKey].total += 1;
       }
@@ -9586,7 +10043,6 @@ try {
     if (!appointments.length && !allOrders.length) {
       console.log('⚡ No data to process, returning empty charts');
       return {
-        appointmentsByMonth: [],
         salesByCategory: [],
         revenueByMonth: [],
         orderStatusDistribution: [],
@@ -9597,7 +10053,6 @@ try {
 
     // Process all chart data in parallel using optimized functions
     const result = {
-      appointmentsByMonth: processMonthlyData(appointments, 'createdAt'),
       salesByCategory: processCategoryData(allOrders),
       revenueByMonth: processRevenueData(allOrders),
       orderStatusDistribution: processStatusData(allOrders),
@@ -9611,13 +10066,13 @@ try {
     console.log('📈 Processed charts result:', result);
     
     return result;
-  }, [reportsData, processMonthlyData, processCategoryData, processRevenueData, processStatusData, processTopProducts, processPatientVisits, processDailyAppointmentData]); // Added dependencies
+  }, [reportsData, processCategoryData, processRevenueData, processStatusData, processTopProducts, processPatientVisits, processDailyAppointmentData]); // Added dependencies
 
   // Apply date filters to processed data (much faster than reprocessing)
   const filteredChartsData = useMemo(() => {
     const startTime = performance.now();
     
-    if (!processedChartsData.appointmentsByMonth.length && !processedChartsData.salesByCategory.length) {
+    if (!processedChartsData.salesByCategory.length) {
       return processedChartsData;
     }
 
@@ -9719,15 +10174,27 @@ try {
     const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
     const currentUserClinic = getCurrentUserClinic();
     
-    // Calculate order revenue
+    // Calculate order revenue - ONLY FROM COMPLETED ORDERS
     const orderRevenue = allOrders.reduce((total, order) => {
+      // Only include completed orders
+      const isCompleted = (order.patientorderambherstatus === 'Completed') || 
+                         (order.patientorderbautistastatus === 'Completed');
+      
+      if (!isCompleted) return total;
+      
       return total + (order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0);
     }, 0);
     
-    // Calculate appointment payment revenue based on user's clinic
+    // Calculate appointment payment revenue - ONLY FROM COMPLETED APPOINTMENTS
     const appointmentRevenue = reportsData.appointments.reduce((total, appointment) => {
-      const ambherPayment = appointment.patientambherappointmentpaymentotal || 0;
-      const bautistaPayment = appointment.patientbautistaappointmentpaymentotal || 0;
+      // Only include completed appointments
+      const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
+      const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
+      
+      if (!isAmbherCompleted && !isBautistaCompleted) return total;
+      
+      const ambherPayment = isAmbherCompleted ? (appointment.patientambherappointmentpaymentotal || 0) : 0;
+      const bautistaPayment = isBautistaCompleted ? (appointment.patientbautistaappointmentpaymentotal || 0) : 0;
       
       // More flexible clinic name matching
       if (currentUserClinic && currentUserClinic.toLowerCase().includes('ambher')) {
@@ -20545,7 +21012,7 @@ filteredbautistaOrders.map((order) => (
        <>
          {/* Summary Cards */}
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+           <div className="bg-sky-700 text-white rounded-xl p-6 shadow-lg">
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-blue-100 text-sm font-albertsans">Total Orders</p>
@@ -20555,7 +21022,7 @@ filteredbautistaOrders.map((order) => (
              </div>
            </div>
            
-           <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+           <div className="bg-[#44624a] text-white rounded-xl p-6 shadow-lg">
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-green-100 text-sm font-albertsans">Total Revenue</p>
@@ -20565,7 +21032,7 @@ filteredbautistaOrders.map((order) => (
              </div>
            </div>
            
-           <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+           <div className="bg-[#626c92] text-white rounded-xl p-6 shadow-lg">
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-purple-100 text-sm font-albertsans">Appointments</p>
@@ -20575,7 +21042,7 @@ filteredbautistaOrders.map((order) => (
              </div>
            </div>
            
-           <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
+           <div className="bg-[#e59400] text-white rounded-xl p-6 shadow-lg">
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-orange-100 text-sm font-albertsans">Completed Orders</p>
@@ -20585,86 +21052,130 @@ filteredbautistaOrders.map((order) => (
              </div>
            </div>
          </div>
+         
+         {/* Charts Section - Optimized with Memoized Data */}
+         <div className="mb-8">
+
+           
+           {/* Revenue by Month */}
+           <InteractiveRevenueChart 
+             revenueData={filteredChartsData?.revenueByMonth || []} 
+             rawOrderData={[...reportsData.ambherOrders, ...reportsData.bautistaOrders]}
+             rawAppointmentData={reportsData.appointments || []}
+             isAmbherOnlyUser={isAmbherOnlyUser}
+             isBautistaOnlyUser={isBautistaOnlyUser}
+             currentuserloggedin={currentuserloggedin}
+           />
+         </div>
+
 
          {/* Interactive Appointment Trends Chart */}
          <div className="mb-8">
-           <InteractiveAppointmentChart appointmentsData={filteredChartsData?.dailyAppointments || []} />
+           <InteractiveAppointmentChart 
+             appointmentsData={filteredChartsData?.dailyAppointments || []} 
+             isAmbherOnlyUser={isAmbherOnlyUser}
+             isBautistaOnlyUser={isBautistaOnlyUser}
+             currentuserloggedin={currentuserloggedin}
+           />
          </div>
 
-         {/* Charts Section - Optimized with Memoized Data */}
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-           {/* Debug chartsData */}
-           {console.log('Current filteredChartsData state:', filteredChartsData)}
-           
-           {/* Appointments by Month */}
-           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Appointments by Month</h3>
-             {filteredChartsData?.appointmentsByMonth?.length > 0 ? (
-               <ResponsiveContainer width="100%" height={300}>
-                 <BarChart data={filteredChartsData.appointmentsByMonth}>
-                   <CartesianGrid strokeDasharray="3 3" />
-                   <XAxis dataKey="month" />
-                   <YAxis />
-                   <Tooltip />
-                   <Bar dataKey="count" fill="#184d85" radius={[4, 4, 0, 0]} />
-                 </BarChart>
-               </ResponsiveContainer>
-             ) : (
-               <div className="flex items-center justify-center h-[300px] text-gray-500">
-                 No appointment data available
-               </div>
-             )}
-           </div>
-
-           {/* Revenue by Month */}
-           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Revenue by Month</h3>
-             {filteredChartsData?.revenueByMonth?.length > 0 ? (
-               <ResponsiveContainer width="100%" height={300}>
-                 <AreaChart data={filteredChartsData.revenueByMonth}>
-                   <CartesianGrid strokeDasharray="3 3" />
-                   <XAxis dataKey="month" />
-                   <YAxis />
-                   <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Revenue']} />
-                   <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
-                 </AreaChart>
-               </ResponsiveContainer>
-             ) : (
-               <div className="flex items-center justify-center h-[300px] text-gray-500">
-                 No revenue data available
-               </div>
-             )}
-           </div>
-         </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-           {/* Sales by Category */}
+           {/* Sales by Category - Radar Chart */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Sales by Category</h3>
-             {filteredChartsData?.salesByCategory?.length > 0 ? (
-               <ResponsiveContainer width="100%" height={300}>
-                 <PieChart>
-                   <Pie
-                     data={filteredChartsData.salesByCategory}
-                     cx="50%"
-                     cy="50%"
-                     outerRadius={100}
-                     fill="#8884d8"
-                     dataKey="value"
-                     label={({ category, value }) => `${category}: ${value}`}
-                   >
-                     {filteredChartsData.salesByCategory.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                     ))}
-                   </Pie>
-                   <Tooltip />
-                 </PieChart>
-               </ResponsiveContainer>
-             ) : (
+             <div className="items-center mb-4">
+               <h3 className="text-xl font-bold text-gray-800 font-albertsans">Sales by Category</h3>
+               <p className="text-sm text-gray-600 font-albertsans">
+                 Product category distribution overview
+               </p>
+             </div>
+             {filteredChartsData?.salesByCategory?.length > 0 ? (() => {
+               // Dynamic color theme based on user clinic
+               const getChartColor = () => {
+                 if (isAmbherOnlyUser()) {
+                   return "#DC2626"; // Red for Ambher Optical
+                 } else if (isBautistaOnlyUser()) {
+                   return "#DC2626"; // Red for Bautista Eye Center
+                 } else {
+                   return "#DC2626"; // Red for Admin
+                 }
+               };
+               
+               const chartColor = getChartColor();
+               
+               return (
+                 <div className="pb-0">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <RadarChart data={filteredChartsData.salesByCategory}>
+                       <Tooltip 
+                         cursor={false}
+                         content={({ active, payload }) => {
+                           if (active && payload && payload.length) {
+                             return (
+                               <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                                 <p className="font-semibold text-gray-800 font-albertsans">
+                                   {payload[0].payload.category}
+                                 </p>
+                                 <p className="text-sm text-gray-600 font-albertsans">
+                                   Quantity: {payload[0].value}
+                                 </p>
+                               </div>
+                             );
+                           }
+                           return null;
+                         }}
+                       />
+                       <PolarAngleAxis dataKey="category" className="text-sm font-albertsans" />
+                       <PolarGrid />
+                       <Radar
+                         dataKey="quantity"
+                         fill={chartColor}
+                         fillOpacity={0.6}
+                         stroke={chartColor}
+                         strokeWidth={2}
+                         dot={{
+                           r: 4,
+                           fillOpacity: 1,
+                           fill: chartColor
+                         }}
+                       />
+                     </RadarChart>
+                   </ResponsiveContainer>
+                 </div>
+               );
+             })() : (
                <div className="flex items-center justify-center h-[300px] text-gray-500">
-                 No sales category data available
+                 <div className="text-center">
+                   <i className="bx bx-pie-chart-alt-2 text-4xl mb-2"></i>
+                   <p className="font-albertsans">No sales category data available</p>
+                 </div>
                </div>
              )}
+             {filteredChartsData?.salesByCategory?.length > 0 && (() => {
+               const getClinicInfo = () => {
+                 if (isAmbherOnlyUser()) {
+                   return { name: "Ambher Optical", icon: "bx-leaf", color: "text-green-600" };
+                 } else if (isBautistaOnlyUser()) {
+                   return { name: "Bautista Eye Center", icon: "bx-buildings", color: "text-blue-900" };
+                 } else {
+                   return { name: "All Clinics", icon: "bx-trending-up", color: "text-blue-600" };
+                 }
+               };
+               
+               const clinicInfo = getClinicInfo();
+               
+               return (
+                 <div className="flex-col gap-2 text-sm mt-4 pt-4 border-t border-gray-200">
+                   <div className="flex items-center gap-2 leading-none font-medium text-gray-700 font-albertsans">
+                     <i className={`bx ${clinicInfo.icon} text-lg ${clinicInfo.color}`}></i>
+                     Category distribution - {clinicInfo.name}
+                   </div>
+                   <div className="text-gray-500 flex items-center gap-2 leading-none font-albertsans text-xs mt-1">
+                     Based on current product orders
+                   </div>
+                 </div>
+               );
+             })()}
            </div>
 
            {/* Order Status Distribution */}
@@ -20682,9 +21193,25 @@ filteredbautistaOrders.map((order) => (
                      dataKey="value"
                      label={({ status, value }) => `${status}: ${value}`}
                    >
-                     {filteredChartsData.orderStatusDistribution.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                     ))}
+                     {filteredChartsData.orderStatusDistribution.map((entry, index) => {
+                       // Map status to corresponding colors
+                       const getStatusColor = (status) => {
+                         switch (status.toLowerCase()) {
+                           case 'pending':
+                             return '#ffae19'; // Orange
+                           case 'ready for pickup':
+                             return '#3D85C6'; // Purple
+                           case 'completed':
+                             return '#6aa84f'; // Dark Green
+                           default:
+                             return CHART_COLORS[index % CHART_COLORS.length];
+                         }
+                       };
+                       
+                       return (
+                         <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} />
+                       );
+                     })}
                    </Pie>
                    <Tooltip />
                  </PieChart>

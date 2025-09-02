@@ -26,7 +26,19 @@ export const createpatientorderambher = async (req, res) => {
         });
  }
 
-        const neworder = new PatientOrderAmbher(req.body);
+        // Process the request body to handle "Now" pickup date
+        const orderData = { ...req.body };
+        
+        // If pickup date is "Now", replace it with current date in YYYY-MM-DD format
+        if (orderData.patientorderambherproductchosenpickupdate === "Now") {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            orderData.patientorderambherproductchosenpickupdate = `${year}-${month}-${day}`;
+        }
+
+        const neworder = new PatientOrderAmbher(orderData);
         const savedorder = await neworder.save();
 
         res.status(201).json({
@@ -118,7 +130,16 @@ export const createpatientorderambher = async (req, res) => {
     export const updateorderambherbyid = async (req,res) => {
         try{
             const { id } = req.params;
-            const updateData = req.body;
+            const updateData = { ...req.body };
+
+            // If pickup date is being updated and is "Now", replace it with current date
+            if (updateData.patientorderambherproductchosenpickupdate === "Now") {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                updateData.patientorderambherproductchosenpickupdate = `${year}-${month}-${day}`;
+            }
 
             const orderambher = await PatientOrderAmbher.findOne({patientorderambherid: id});
             if(!orderambher) {
