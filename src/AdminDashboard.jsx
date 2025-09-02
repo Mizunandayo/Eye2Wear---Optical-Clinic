@@ -1741,7 +1741,8 @@ const TopProductsChart = ({ data }) => {
 
 function AdminDashboard(){
 
-  const apiUrl = import.meta.env.VITE_API_URL;
+  // Use environment variable or fallback to relative URLs for production
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Memoize the user type to prevent JSON.parse on every render
   const loggedinusertype = useMemo(() => {
@@ -1822,6 +1823,10 @@ function AdminDashboard(){
   const [orderStatusFilter, setOrderStatusFilter] = useState('thisMonth');
   const [salesCategoryYear, setSalesCategoryYear] = useState(new Date().getFullYear());
   const [orderStatusYear, setOrderStatusYear] = useState(new Date().getFullYear());
+
+  // Recent Orders Pagination State
+  const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
+  const RECENT_ORDERS_PER_PAGE = 10;
 
   // Helper function to get date range based on filter
   const getDateRangeForFilter = useCallback((filterValue, selectedYear = null) => {
@@ -10070,7 +10075,7 @@ try {
         smartFetch(
           appointmentsCacheKey,
           async () => {
-            const response = await fetch('http://localhost:3000/api/patientappointments/appointments', {
+            const response = await fetch('/api/patientappointments/appointments', {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -10091,7 +10096,7 @@ try {
           smartFetch(
             ambherOrdersCacheKey,
             async () => {
-              const response = await fetch('http://localhost:3000/api/patientorderambher/', {
+              const response = await fetch('/api/patientorderambher/', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -10109,7 +10114,7 @@ try {
           smartFetch(
             bautistaOrdersCacheKey,
             async () => {
-              const response = await fetch('http://localhost:3000/api/patientorderbautista/', {
+              const response = await fetch('/api/patientorderbautista/', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -10126,7 +10131,7 @@ try {
           smartFetch(
             ambherOrdersCacheKey,
             async () => {
-              const response = await fetch('http://localhost:3000/api/patientorderambher/', {
+              const response = await fetch('/api/patientorderambher/', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -10139,7 +10144,7 @@ try {
           smartFetch(
             bautistaOrdersCacheKey,
             async () => {
-              const response = await fetch('http://localhost:3000/api/patientorderbautista/', {
+              const response = await fetch('/api/patientorderbautista/', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -10458,6 +10463,23 @@ try {
     
     return filtered;
   }, [processedChartsData, applyDateFiltersToChartsData]);
+
+  // Paginated Recent Orders
+  const paginatedRecentOrders = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    const startIndex = (recentOrdersCurrentPage - 1) * RECENT_ORDERS_PER_PAGE;
+    const endIndex = startIndex + RECENT_ORDERS_PER_PAGE;
+    
+    return {
+      orders: allOrders.slice(startIndex, endIndex),
+      totalOrders: allOrders.length,
+      totalPages: Math.ceil(allOrders.length / RECENT_ORDERS_PER_PAGE),
+      currentPage: recentOrdersCurrentPage
+    };
+  }, [reportsData, recentOrdersCurrentPage, RECENT_ORDERS_PER_PAGE]);
 
   // Separate filtered data for each chart with independent filters
   const filteredSalesByCategory = useMemo(() => {
@@ -10886,7 +10908,7 @@ const sendPromotionalSms = async () => {
       throw new Error('User ID not found. Please log in again.');
     }
 
-    const response = await fetch('http://localhost:3000/api/sms/promotional', {
+    const response = await fetch('/api/sms/promotional', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11189,7 +11211,7 @@ const fetchClinicLocations = useCallback(async (includeInactive = false) => {
   try {
     setLoadingClinicLocations(true);
     // Use fallback URL if environment variable is not set
-    const baseUrl = apiUrl || 'http://localhost:3000';
+    const baseUrl = apiUrl || '';
     
     // Build query parameter for including inactive clinics
     const includeParam = includeInactive ? '?includeInactive=true' : '';
@@ -21743,9 +21765,14 @@ filteredbautistaOrders.map((order) => (
 
          {/* Recent Orders Table */}
          <div className="mt-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-           <div className="flex items-center gap-2 mb-4">
-             <BarChart3 className="h-5 w-5 text-[#184d85]" />
-             <h3 className="text-xl font-bold text-gray-800 font-albertsans">Recent Orders</h3>
+           <div className="flex items-center justify-between mb-4">
+             <div className="flex items-center gap-2">
+               <BarChart3 className="h-5 w-5 text-[#184d85]" />
+               <h3 className="text-xl font-bold text-gray-800 font-albertsans">Recent Orders</h3>
+             </div>
+             <div className="text-sm text-gray-600 font-albertsans">
+               Showing {paginatedRecentOrders.orders.length} of {paginatedRecentOrders.totalOrders} orders
+             </div>
            </div>
            <div className="overflow-x-auto">
              <table className="w-full text-sm text-gray-600">
@@ -21760,44 +21787,95 @@ filteredbautistaOrders.map((order) => (
                  </tr>
                </thead>
                <tbody>
-                 {[...reportsData.ambherOrders, ...reportsData.bautistaOrders]
-                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                   .slice(0, 10)
-                   .map((order, index) => (
-                     <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                       <td className="py-3 px-4 font-albertsans">
-                         #{order.patientorderambherid || order.patientorderbautistaid}
-                       </td>
-                       <td className="py-3 px-4 font-albertsans">
-                         {order.patientfirstname} {order.patientlastname}
-                       </td>
-                       <td className="py-3 px-4 font-albertsans">
-                         {order.patientorderambherproductname || order.patientorderbautistaproductname}
-                       </td>
-                       <td className="py-3 px-4">
-                         <span className={`px-2 py-1 rounded-full text-xs font-semibold font-albertsans ${
-                           (order.patientorderambherstatus === 'Completed' || order.patientorderbautistastatus === 'Completed')
-                             ? 'bg-green-100 text-green-800'
-                             : (order.patientorderambherstatus === 'Pending' || order.patientorderbautistastatus === 'Pending')
-                             ? 'bg-yellow-100 text-yellow-800'
-                             : (order.patientorderambherstatus === 'Ready for Pickup' || order.patientorderbautistastatus === 'Ready for Pickup')
-                             ? 'bg-blue-100 text-blue-800'
-                             : 'bg-red-100 text-red-800'
-                         }`}>
-                           {order.patientorderambherstatus || order.patientorderbautistastatus}
-                         </span>
-                       </td>
-                       <td className="py-3 px-4 font-semibold text-green-600 font-albertsans">
-                         ₱{(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}
-                       </td>
-                       <td className="py-3 px-4 font-albertsans">
-                         {new Date(order.createdAt).toLocaleDateString()}
-                       </td>
-                     </tr>
-                   ))}
+                 {paginatedRecentOrders.orders.map((order, index) => (
+                   <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                     <td className="py-3 px-4 font-albertsans">
+                       #{order.patientorderambherid || order.patientorderbautistaid}
+                     </td>
+                     <td className="py-3 px-4 font-albertsans">
+                       {order.patientfirstname} {order.patientlastname}
+                     </td>
+                     <td className="py-3 px-4 font-albertsans">
+                       {order.patientorderambherproductname || order.patientorderbautistaproductname}
+                     </td>
+                     <td className="py-3 px-4">
+                       <span className={`px-2 py-1 rounded-full text-xs font-semibold font-albertsans ${
+                         (order.patientorderambherstatus === 'Completed' || order.patientorderbautistastatus === 'Completed')
+                           ? 'bg-green-100 text-green-800'
+                           : (order.patientorderambherstatus === 'Pending' || order.patientorderbautistastatus === 'Pending')
+                           ? 'bg-yellow-100 text-yellow-800'
+                           : (order.patientorderambherstatus === 'Ready for Pickup' || order.patientorderbautistastatus === 'Ready for Pickup')
+                           ? 'bg-blue-100 text-blue-800'
+                           : 'bg-red-100 text-red-800'
+                       }`}>
+                         {order.patientorderambherstatus || order.patientorderbautistastatus}
+                       </span>
+                     </td>
+                     <td className="py-3 px-4 font-semibold text-green-600 font-albertsans">
+                       ₱{(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}
+                     </td>
+                     <td className="py-3 px-4 font-albertsans">
+                       {new Date(order.createdAt).toLocaleDateString()}
+                     </td>
+                   </tr>
+                 ))}
                </tbody>
              </table>
            </div>
+           
+           {/* Pagination Controls */}
+           {paginatedRecentOrders.totalPages > 1 && (
+             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+               <div className="text-sm text-gray-600 font-albertsans">
+                 Page {paginatedRecentOrders.currentPage} of {paginatedRecentOrders.totalPages}
+               </div>
+               <div className="flex items-center gap-2">
+                 <div
+                   onClick={() => setRecentOrdersCurrentPage(prev => Math.max(1, prev - 1))}
+                   disabled={paginatedRecentOrders.currentPage === 1}
+                   className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                 >
+                   Previous
+                 </div>
+                 
+                 {/* Page Numbers */}
+                 <div className="cursor-pointer flex items-center gap-1">
+                   {Array.from({ length: paginatedRecentOrders.totalPages }, (_, i) => i + 1)
+                     .filter(page => {
+                       const current = paginatedRecentOrders.currentPage;
+                       return page === 1 || page === paginatedRecentOrders.totalPages || 
+                              (page >= current - 1 && page <= current + 1);
+                     })
+                     .map((page, index, array) => {
+                       const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+                       return (
+                         <React.Fragment key={page}>
+                           {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                           <div
+                             onClick={() => setRecentOrdersCurrentPage(page)}
+                             className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                               page === paginatedRecentOrders.currentPage
+                                 ? 'bg-[#184d85] text-white'
+                                 : 'bg-white border border-gray-300 hover:bg-gray-50'
+                             }`}
+                           >
+                             {page}
+                           </div>
+                         </React.Fragment>
+                       );
+                     })}
+                 </div>
+                 
+                 <div
+                   onClick={() => setRecentOrdersCurrentPage(prev => Math.min(paginatedRecentOrders.totalPages, prev + 1))}
+                   disabled={paginatedRecentOrders.currentPage === paginatedRecentOrders.totalPages}
+                   className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                 >
+                   Next
+                 </div>
+               </div>
+             </div>
+           )}
          </div>
        </>
      )}
