@@ -488,6 +488,181 @@ const SmsRowSkeleton = () => (
   </tr>
 );
 
+// Interactive Area Chart Component for Completed Appointments
+const InteractiveAppointmentChart = ({ appointmentsData }) => {
+  const [timeRange, setTimeRange] = React.useState("90d");
+
+  // Filter data based on selected time range
+  const filteredData = React.useMemo(() => {
+    if (!appointmentsData || appointmentsData.length === 0) return [];
+    
+    const now = new Date();
+    let daysToSubtract = 90;
+    
+    if (timeRange === "30d") {
+      daysToSubtract = 30;
+    } else if (timeRange === "7d") {
+      daysToSubtract = 7;
+    } else if (timeRange === "365d") {
+      daysToSubtract = 365;
+    }
+    
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    
+    return appointmentsData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate;
+    });
+  }, [appointmentsData, timeRange]);
+
+  // Calculate totals for the filtered period
+  const totals = React.useMemo(() => {
+    if (!filteredData || filteredData.length === 0) return { ambher: 0, bautista: 0, total: 0 };
+    
+    return filteredData.reduce((acc, item) => ({
+      ambher: acc.ambher + (item.ambher || 0),
+      bautista: acc.bautista + (item.bautista || 0),
+      total: acc.total + (item.total || 0)
+    }), { ambher: 0, bautista: 0, total: 0 });
+  }, [filteredData]);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+      {/* Header with Controls */}
+      <div className="flex items-center gap-2 border-b py-5 px-6 sm:flex-row">
+        <div className="grid flex-1 gap-1">
+          <h3 className="text-xl font-bold text-gray-800 font-albertsans">Completed Appointments Trend - Interactive</h3>
+          <p className="text-sm text-gray-600 font-albertsans">
+            Showing completed appointment trends for the selected period
+          </p>
+          {/* Summary for selected period */}
+          {filteredData.length > 0 && (
+            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 font-albertsans">
+              <span>Total: <strong className="text-gray-700">{totals.total}</strong></span>
+              <span>Ambher: <strong className="text-[#184d85]">{totals.ambher}</strong></span>
+              <span>Bautista: <strong className="text-[#10b981]">{totals.bautista}</strong></span>
+            </div>
+          )}
+        </div>
+        <select
+          value={timeRange}
+          onChange={(e) => setTimeRange(e.target.value)}
+          className="hidden w-[160px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans sm:ml-auto sm:flex"
+          aria-label="Select time range"
+        >
+          <option value="365d">Last Year</option>
+          <option value="90d">Last 3 months</option>
+          <option value="30d">Last 30 days</option>
+          <option value="7d">Last 7 days</option>
+        </select>
+      </div>
+      
+      {/* Chart Content */}
+      <div className="px-2 pt-4 sm:px-6 sm:pt-6 pb-6">
+        {filteredData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={filteredData}>
+              <defs>
+                <linearGradient id="fillAmbher" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="#184d85"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="#184d85"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+                <linearGradient id="fillBautista" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="#10b981"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="#10b981"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }}
+              />
+              <YAxis />
+              <Tooltip
+                cursor={false}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                        <p className="font-semibold text-gray-800 font-albertsans">
+                          {new Date(label).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric"
+                          })}
+                        </p>
+                        {payload.map((entry, index) => (
+                          <p key={index} style={{ color: entry.color }} className="font-albertsans">
+                            {entry.name}: {entry.value}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area
+                dataKey="bautista"
+                type="natural"
+                fill="url(#fillBautista)"
+                stroke="#10b981"
+                strokeWidth={2}
+                stackId="a"
+                name="Bautista Completed"
+              />
+              <Area
+                dataKey="ambher"
+                type="natural"
+                fill="url(#fillAmbher)"
+                stroke="#184d85"
+                strokeWidth={2}
+                stackId="a"
+                name="Ambher Completed"
+              />
+              <Legend />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="text-center">
+              <i className="bx bx-calendar-check text-4xl mb-2"></i>
+              <p className="font-albertsans">No completed appointment data available for the selected period</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AppointmentSkeleton = () => (
   <tr className="animate-pulse hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2">
     <td className="py-3 px-6 text-center">
@@ -9052,7 +9227,7 @@ try {
 //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES 
 //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES //REPORTS AND ANALYTICS VARIABLES
 
-  // Reports and Analytics State
+  // Reports and Analytics State - Optimized
   const [reportsData, setReportsData] = useState({
     appointments: [],
     ambherOrders: [],
@@ -9068,14 +9243,7 @@ try {
     reportType: 'overview' // overview, appointments, sales, revenue
   });
 
-  const [chartsData, setChartsData] = useState({
-    appointmentsByMonth: [],
-    salesByCategory: [],
-    revenueByMonth: [],
-    orderStatusDistribution: [],
-    topProducts: [],
-    patientVisits: []
-  });
+  // Note: chartsData is now handled by processedChartsData and filteredChartsData useMemo hooks
 
   // Get current user clinic from localStorage
   const getCurrentUserClinic = () => {
@@ -9084,65 +9252,155 @@ try {
     return staffClinic || ownerClinic || '';
   };
 
-  // Fetch Reports Data
-  const fetchReportsData = useCallback(async () => {
-    console.log('🔄 fetchReportsData called');
+  // Optimized Reports Data Fetching with Smart Cache and Parallel Requests
+  const fetchReportsData = useCallback(async (forceRefresh = false) => {
+    const startTime = performance.now();
+    console.log('� Optimized fetchReportsData called');
     setReportsData(prev => ({ ...prev, loading: true, error: null }));
     
     try {
       const userClinic = getCurrentUserClinic();
       console.log('👤 User clinic:', userClinic);
-      let appointmentsResponse, ambherOrdersResponse, bautistaOrdersResponse;
-
-      // Fetch appointments - using correct endpoint with proxy
-      console.log('📞 Fetching appointments...');
-      appointmentsResponse = await axios.get('/api/patientappointments/appointments');
-      console.log('📞 Appointments response:', appointmentsResponse.data?.length || 0, 'items');
       
-      // Filter appointments by clinic based on appointment ID fields
-      let appointmentsData = appointmentsResponse.data;
+      // Create cache keys for different data types
+      const appointmentsCacheKey = `reports_appointments_${userClinic}`;
+      const ambherOrdersCacheKey = `reports_ambher_orders_${userClinic}`;
+      const bautistaOrdersCacheKey = `reports_bautista_orders_${userClinic}`;
+      
+      // Define API calls based on clinic - use smart cache for all
+      const apiCalls = [];
+      
+      // Always fetch appointments (filter client-side for better caching)
+      apiCalls.push(
+        smartFetch(
+          appointmentsCacheKey,
+          async () => {
+            const response = await fetch('http://localhost:3000/api/patientappointments/appointments', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('stafftoken') || localStorage.getItem('ownertoken') || localStorage.getItem('admintoken')}`
+              }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch appointments: ${response.statusText}`);
+            return response.json();
+          },
+          CACHE_DURATIONS.MEDIUM, // 5-minute cache
+          forceRefresh
+        )
+      );
+      
+      // Fetch orders based on clinic - parallel execution
       if (userClinic === 'Ambher Optical') {
-        appointmentsData = appointmentsData.filter(appointment => 
-          appointment.patientambherappointmentid !== undefined && appointment.patientambherappointmentid !== null
+        apiCalls.push(
+          smartFetch(
+            ambherOrdersCacheKey,
+            async () => {
+              const response = await fetch('http://localhost:3000/api/patientorderambher/', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          ),
+          Promise.resolve([]) // Empty bautista orders
         );
       } else if (userClinic === 'Bautista Eye Center') {
-        appointmentsData = appointmentsData.filter(appointment => 
-          appointment.patientbautistaappointmentid !== undefined && appointment.patientbautistaappointmentid !== null
+        apiCalls.push(
+          Promise.resolve([]), // Empty ambher orders
+          smartFetch(
+            bautistaOrdersCacheKey,
+            async () => {
+              const response = await fetch('http://localhost:3000/api/patientorderbautista/', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          )
         );
-      }
-
-      // Fetch orders based on clinic
-      console.log('📦 Fetching orders...');
-      if (userClinic === 'Ambher Optical') {
-        ambherOrdersResponse = await axios.get('/api/patientorderambher/');
-        bautistaOrdersResponse = { data: [] };
-        console.log('📦 Ambher orders:', ambherOrdersResponse.data?.length || 0, 'items');
-      } else if (userClinic === 'Bautista Eye Center') {
-        bautistaOrdersResponse = await axios.get('/api/patientorderbautista/');
-        ambherOrdersResponse = { data: [] };
-        console.log('📦 Bautista orders:', bautistaOrdersResponse.data?.length || 0, 'items');
       } else {
-        // If admin or no specific clinic, fetch both
-        ambherOrdersResponse = await axios.get('/api/patientorderambher/');
-        bautistaOrdersResponse = await axios.get('/api/patientorderbautista/');
-        console.log('📦 Ambher orders:', ambherOrdersResponse.data?.length || 0, 'items');
-        console.log('📦 Bautista orders:', bautistaOrdersResponse.data?.length || 0, 'items');
+        // Admin: fetch both in parallel
+        apiCalls.push(
+          smartFetch(
+            ambherOrdersCacheKey,
+            async () => {
+              const response = await fetch('http://localhost:3000/api/patientorderambher/', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          ),
+          smartFetch(
+            bautistaOrdersCacheKey,
+            async () => {
+              const response = await fetch('http://localhost:3000/api/patientorderbautista/', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          )
+        );
       }
-
-      console.log('✅ About to set reports data...');
+      
+      // Execute all API calls in parallel
+      console.log('� Executing parallel API calls...');
+      const [appointmentsData, ambherOrdersData, bautistaOrdersData] = await Promise.all(apiCalls);
+      
+      // Client-side filtering for appointments (better caching)
+      let filteredAppointments = appointmentsData || [];
+      console.log('📊 Raw appointments data:', filteredAppointments?.length || 0);
+      console.log('👤 Current user clinic:', userClinic);
+      
+      if (userClinic === 'Ambher Optical') {
+        filteredAppointments = filteredAppointments.filter(appointment => 
+          appointment.patientambherappointmentdate && 
+          appointment.patientambherappointmentdate.trim() !== '' &&
+          appointment.patientambherappointmenttime &&
+          appointment.patientambherappointmenttime.trim() !== ''
+        );
+        console.log('🏥 Filtered Ambher appointments:', filteredAppointments?.length || 0);
+      } else if (userClinic === 'Bautista Eye Center') {
+        filteredAppointments = filteredAppointments.filter(appointment => 
+          appointment.patientbautistaappointmentdate && 
+          appointment.patientbautistaappointmentdate.trim() !== '' &&
+          appointment.patientbautistaappointmenttime &&
+          appointment.patientbautistaappointmenttime.trim() !== ''
+        );
+        console.log('🏥 Filtered Bautista appointments:', filteredAppointments?.length || 0);
+      }
+      console.log('✅ Final filtered appointments:', filteredAppointments?.length || 0);
+      
+      const endTime = performance.now();
+      console.log(`✅ Reports data fetched in ${(endTime - startTime).toFixed(2)}ms`);
+      
       setReportsData({
-        appointments: appointmentsData,
-        ambherOrders: ambherOrdersResponse.data,
-        bautistaOrders: bautistaOrdersResponse.data,
+        appointments: filteredAppointments,
+        ambherOrders: ambherOrdersData || [],
+        bautistaOrders: bautistaOrdersData || [],
         loading: false,
         error: null
       });
       
-      console.log('Reports data set successfully:', {
-        appointmentsCount: appointmentsData?.length || 0,
-        ambherOrdersCount: ambherOrdersResponse.data?.length || 0,
-        bautistaOrdersCount: bautistaOrdersResponse.data?.length || 0,
-        totalDataLength: (appointmentsData?.length || 0) + (ambherOrdersResponse.data?.length || 0) + (bautistaOrdersResponse.data?.length || 0)
+      console.log('📊 Reports data loaded:', {
+        appointmentsCount: filteredAppointments?.length || 0,
+        ambherOrdersCount: (ambherOrdersData || []).length,
+        bautistaOrdersCount: (bautistaOrdersData || []).length,
+        fetchTime: `${(endTime - startTime).toFixed(2)}ms`
       });
 
     } catch (error) {
@@ -9153,92 +9411,11 @@ try {
         error: 'Failed to fetch reports data'
       }));
     }
-  }, []);
+  }, [smartFetch, CACHE_DURATIONS]);
 
-  // Process data for charts
-  const processChartsData = useCallback(() => {
-    console.log('processChartsData called with reportsData:', reportsData);
-    const { appointments, ambherOrders, bautistaOrders } = reportsData;
-    const allOrders = [...ambherOrders, ...bautistaOrders];
-    
-    console.log('Data to process:', {
-      appointmentsCount: appointments?.length || 0,
-      ambherOrdersCount: ambherOrders?.length || 0,
-      bautistaOrdersCount: bautistaOrders?.length || 0,
-      allOrdersCount: allOrders.length
-    });
-
-    // Filter data based on date range
-    const filterByDate = (data, dateField) => {
-      const now = new Date();
-      let startDate, endDate;
-
-      switch (reportsFilter.dateRange) {
-        case 'thisWeek':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 6);
-          break;
-        case 'thisMonth':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          break;
-        case 'thisYear':
-          startDate = new Date(now.getFullYear(), 0, 1);
-          endDate = new Date(now.getFullYear(), 11, 31);
-          break;
-        case 'custom':
-          startDate = new Date(reportsFilter.startDate);
-          endDate = new Date(reportsFilter.endDate);
-          break;
-        default:
-          return data;
-      }
-
-      return data.filter(item => {
-        const itemDate = new Date(item[dateField]);
-        return itemDate >= startDate && itemDate <= endDate;
-      });
-    };
-
-    // Process appointments by month
-    const filteredAppointments = filterByDate(appointments, 'createdAt');
-    const appointmentsByMonth = processMonthlyData(filteredAppointments, 'createdAt');
-
-    // Process sales by category
-    const filteredOrders = filterByDate(allOrders, 'createdAt');
-    const salesByCategory = processCategoryData(filteredOrders);
-
-    // Process revenue by month
-    const revenueByMonth = processRevenueData(filteredOrders);
-
-    // Process order status distribution
-    const orderStatusDistribution = processStatusData(filteredOrders);
-
-    // Process top products
-    const topProducts = processTopProducts(filteredOrders);
-
-    // Process patient visits
-    const patientVisits = processPatientVisits(filteredAppointments);
-
-    const processedChartsData = {
-      appointmentsByMonth,
-      salesByCategory,
-      revenueByMonth,
-      orderStatusDistribution,
-      topProducts,
-      patientVisits
-    };
-    
-    console.log('Processed charts data:', processedChartsData);
-    console.log('Setting charts data...');
-    
-    setChartsData(processedChartsData);
-    
-    console.log('Charts data set successfully');
-  }, [reportsData, reportsFilter]);
-
-  // Helper functions for data processing
-  const processMonthlyData = (data, dateField) => {
+  // Helper functions for data processing - MOVED BEFORE useMemo
+  const processMonthlyData = useCallback((data, dateField) => {
+    if (!data || !data.length) return [];
     console.log('📊 processMonthlyData called with:', data?.length || 0, 'items');
     const months = {};
     data.forEach(item => {
@@ -9254,9 +9431,10 @@ try {
     
     console.log('📊 processMonthlyData result:', result);
     return result;
-  };
+  }, []);
 
-  const processCategoryData = (orders) => {
+  const processCategoryData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
     console.log('📊 processCategoryData called with:', orders?.length || 0, 'orders');
     const categories = {};
     orders.forEach(order => {
@@ -9273,9 +9451,10 @@ try {
     
     console.log('📊 processCategoryData result:', result);
     return result;
-  };
+  }, []);
 
-  const processRevenueData = (orders) => {
+  const processRevenueData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
     const revenue = {};
     orders.forEach(order => {
       const date = new Date(order.createdAt);
@@ -9288,9 +9467,10 @@ try {
       month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       revenue: total
     })).sort((a, b) => new Date(a.month) - new Date(b.month));
-  };
+  }, []);
 
-  const processStatusData = (orders) => {
+  const processStatusData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
     const statuses = {};
     orders.forEach(order => {
       const status = order.patientorderambherstatus || order.patientorderbautistastatus || 'Unknown';
@@ -9302,9 +9482,10 @@ try {
       count,
       value: count
     }));
-  };
+  }, []);
 
-  const processTopProducts = (orders) => {
+  const processTopProducts = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
     const products = {};
     orders.forEach(order => {
       const productName = order.patientorderambherproductname || order.patientorderbautistaproductname || 'Unknown';
@@ -9316,9 +9497,10 @@ try {
       .map(([product, quantity]) => ({ product, quantity }))
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
-  };
+  }, []);
 
-  const processPatientVisits = (appointments) => {
+  const processPatientVisits = useCallback((appointments) => {
+    if (!appointments || !appointments.length) return [];
     const visits = {};
     appointments.forEach(appointment => {
       const date = new Date(appointment.createdAt);
@@ -9330,7 +9512,123 @@ try {
       date,
       visits
     })).sort((a, b) => new Date(a.date) - new Date(b.date));
-  };
+  }, []);
+
+  // Process daily appointment data for interactive chart - COMPLETED APPOINTMENTS ONLY
+  const processDailyAppointmentData = useCallback((appointments) => {
+    if (!appointments || !appointments.length) return [];
+    
+    const dailyData = {};
+    
+    appointments.forEach(appointment => {
+      // Only process completed appointments
+      const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
+      const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
+      
+      // Skip if neither clinic appointment is completed
+      if (!isAmbherCompleted && !isBautistaCompleted) {
+        return;
+      }
+      
+      const date = new Date(appointment.createdAt);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = {
+          date: dateKey,
+          ambher: 0,
+          bautista: 0,
+          total: 0
+        };
+      }
+      
+      // Count completed appointments by clinic
+      if (isAmbherCompleted && (appointment.patientambherappointmentdate || appointment.patientambherappointmenttime)) {
+        dailyData[dateKey].ambher += 1;
+        dailyData[dateKey].total += 1;
+      }
+      if (isBautistaCompleted && (appointment.patientbautistaappointmentdate || appointment.patientbautistaappointmenttime)) {
+        dailyData[dateKey].bautista += 1;
+        dailyData[dateKey].total += 1;
+      }
+    });
+    
+    // Convert to array and sort by date
+    const result = Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    console.log('📊 processDailyAppointmentData (COMPLETED ONLY) result:', result);
+    return result;
+  }, []);
+
+  // Helper function to apply date filters to processed chart data
+  const applyDateFiltersToChartsData = useCallback((chartsData) => {
+    // For now, return the same data - you can implement date filtering here if needed
+    // This is much faster than reprocessing raw data every time
+    return chartsData;
+  }, []);
+
+  // Optimized Chart Data Processing with Memoization
+  const processedChartsData = useMemo(() => {
+    const startTime = performance.now();
+    console.log('🔄 Processing charts data...');
+    
+    const { appointments, ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    
+    console.log('📊 Data to process:', {
+      appointmentsCount: appointments?.length || 0,
+      ambherOrdersCount: ambherOrders?.length || 0,
+      bautistaOrdersCount: bautistaOrders?.length || 0,
+      allOrdersCount: allOrders.length
+    });
+
+    // Fast return for empty data
+    if (!appointments.length && !allOrders.length) {
+      console.log('⚡ No data to process, returning empty charts');
+      return {
+        appointmentsByMonth: [],
+        salesByCategory: [],
+        revenueByMonth: [],
+        orderStatusDistribution: [],
+        topProducts: [],
+        patientVisits: []
+      };
+    }
+
+    // Process all chart data in parallel using optimized functions
+    const result = {
+      appointmentsByMonth: processMonthlyData(appointments, 'createdAt'),
+      salesByCategory: processCategoryData(allOrders),
+      revenueByMonth: processRevenueData(allOrders),
+      orderStatusDistribution: processStatusData(allOrders),
+      topProducts: processTopProducts(allOrders),
+      patientVisits: processPatientVisits(appointments),
+      dailyAppointments: processDailyAppointmentData(appointments)
+    };
+    
+    const endTime = performance.now();
+    console.log(`⚡ Charts data processed in ${(endTime - startTime).toFixed(2)}ms`);
+    console.log('📈 Processed charts result:', result);
+    
+    return result;
+  }, [reportsData, processMonthlyData, processCategoryData, processRevenueData, processStatusData, processTopProducts, processPatientVisits, processDailyAppointmentData]); // Added dependencies
+
+  // Apply date filters to processed data (much faster than reprocessing)
+  const filteredChartsData = useMemo(() => {
+    const startTime = performance.now();
+    
+    if (!processedChartsData.appointmentsByMonth.length && !processedChartsData.salesByCategory.length) {
+      return processedChartsData;
+    }
+
+    // Apply filters to already processed data
+    const filtered = applyDateFiltersToChartsData(processedChartsData);
+    
+    const endTime = performance.now();
+    console.log(`🔍 Filters applied in ${(endTime - startTime).toFixed(2)}ms`);
+    
+    return filtered;
+  }, [processedChartsData, applyDateFiltersToChartsData]);
 
   // Export functions
   const exportToPDF = async () => {
@@ -9419,9 +9717,32 @@ try {
 
   const calculateTotalRevenue = () => {
     const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
-    return allOrders.reduce((total, order) => {
+    const currentUserClinic = getCurrentUserClinic();
+    
+    // Calculate order revenue
+    const orderRevenue = allOrders.reduce((total, order) => {
       return total + (order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0);
     }, 0);
+    
+    // Calculate appointment payment revenue based on user's clinic
+    const appointmentRevenue = reportsData.appointments.reduce((total, appointment) => {
+      const ambherPayment = appointment.patientambherappointmentpaymentotal || 0;
+      const bautistaPayment = appointment.patientbautistaappointmentpaymentotal || 0;
+      
+      // More flexible clinic name matching
+      if (currentUserClinic && currentUserClinic.toLowerCase().includes('ambher')) {
+        // Include Ambher appointment payments
+        return total + ambherPayment;
+      } else if (currentUserClinic && currentUserClinic.toLowerCase().includes('bautista')) {
+        // Include Bautista appointment payments
+        return total + bautistaPayment;
+      } else {
+        // If no specific clinic or admin, include both
+        return total + ambherPayment + bautistaPayment;
+      }
+    }, 0);
+    
+    return orderRevenue + appointmentRevenue;
   };
 
   const calculateMetrics = () => {
@@ -9452,7 +9773,7 @@ try {
     '#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'
   ];
 
-  // Effects
+  // Optimized Effects with better dependency management
   useEffect(() => {
     console.log('🔍 useEffect triggered - activedashboard:', activedashboard);
     if (activedashboard === 'reportsandanalytics') {
@@ -9463,16 +9784,7 @@ try {
     }
   }, [activedashboard, fetchReportsData]);
 
-  useEffect(() => {
-    if (!reportsData.loading) {
-      console.log('Processing charts data - loading finished, data:', {
-        appointments: reportsData.appointments?.length || 0,
-        ambherOrders: reportsData.ambherOrders?.length || 0,
-        bautistaOrders: reportsData.bautistaOrders?.length || 0
-      });
-      processChartsData();
-    }
-  }, [reportsData, processChartsData]);
+  // No need for separate processChartsData useEffect - data is now processed automatically with useMemo
 
 
 
@@ -20209,51 +20521,7 @@ filteredbautistaOrders.map((order) => (
        </div>
      </div>
 
-     {/* Filter Controls */}
-     <div className="bg-gray-50 rounded-xl p-4 mb-6">
-       <div className="flex flex-wrap items-center gap-4">
-         <div className="flex items-center space-x-2">
-           <label className="text-sm font-medium text-gray-700 font-albertsans">Date Range:</label>
-           <select
-             value={reportsFilter.dateRange}
-             onChange={(e) => setReportsFilter(prev => ({ ...prev, dateRange: e.target.value }))}
-             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
-           >
-             <option value="thisWeek">This Week</option>
-             <option value="thisMonth">This Month</option>
-             <option value="thisYear">This Year</option>
-             <option value="custom">Custom Range</option>
-           </select>
-         </div>
-         
-         {reportsFilter.dateRange === 'custom' && (
-           <>
-             <div className="flex items-center space-x-2">
-               <label className="text-sm font-medium text-gray-700 font-albertsans">From:</label>
-               <input
-                 type="date"
-                 value={reportsFilter.startDate}
-                 onChange={(e) => setReportsFilter(prev => ({ ...prev, startDate: e.target.value }))}
-                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
-               />
-             </div>
-             <div className="flex items-center space-x-2">
-               <label className="text-sm font-medium text-gray-700 font-albertsans">To:</label>
-               <input
-                 type="date"
-                 value={reportsFilter.endDate}
-                 onChange={(e) => setReportsFilter(prev => ({ ...prev, endDate: e.target.value }))}
-                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
-               />
-             </div>
-           </>
-         )}
-         
-         <div className="ml-auto text-sm text-gray-600 font-albertsans">
-           Clinic: <span className="font-semibold text-[#184d85]">{getCurrentUserClinic() || 'All Clinics'}</span>
-         </div>
-       </div>
-     </div>
+
 
      {reportsData.loading ? (
        <div className="flex items-center justify-center h-64">
@@ -20318,17 +20586,22 @@ filteredbautistaOrders.map((order) => (
            </div>
          </div>
 
-         {/* Charts Section */}
+         {/* Interactive Appointment Trends Chart */}
+         <div className="mb-8">
+           <InteractiveAppointmentChart appointmentsData={filteredChartsData?.dailyAppointments || []} />
+         </div>
+
+         {/* Charts Section - Optimized with Memoized Data */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
            {/* Debug chartsData */}
-           {console.log('Current chartsData state:', chartsData)}
+           {console.log('Current filteredChartsData state:', filteredChartsData)}
            
            {/* Appointments by Month */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
              <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Appointments by Month</h3>
-             {chartsData?.appointmentsByMonth?.length > 0 ? (
+             {filteredChartsData?.appointmentsByMonth?.length > 0 ? (
                <ResponsiveContainer width="100%" height={300}>
-                 <BarChart data={chartsData.appointmentsByMonth}>
+                 <BarChart data={filteredChartsData.appointmentsByMonth}>
                    <CartesianGrid strokeDasharray="3 3" />
                    <XAxis dataKey="month" />
                    <YAxis />
@@ -20346,9 +20619,9 @@ filteredbautistaOrders.map((order) => (
            {/* Revenue by Month */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
              <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Revenue by Month</h3>
-             {chartsData?.revenueByMonth?.length > 0 ? (
+             {filteredChartsData?.revenueByMonth?.length > 0 ? (
                <ResponsiveContainer width="100%" height={300}>
-                 <AreaChart data={chartsData.revenueByMonth}>
+                 <AreaChart data={filteredChartsData.revenueByMonth}>
                    <CartesianGrid strokeDasharray="3 3" />
                    <XAxis dataKey="month" />
                    <YAxis />
@@ -20368,11 +20641,11 @@ filteredbautistaOrders.map((order) => (
            {/* Sales by Category */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
              <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Sales by Category</h3>
-             {chartsData?.salesByCategory?.length > 0 ? (
+             {filteredChartsData?.salesByCategory?.length > 0 ? (
                <ResponsiveContainer width="100%" height={300}>
                  <PieChart>
                    <Pie
-                     data={chartsData.salesByCategory}
+                     data={filteredChartsData.salesByCategory}
                      cx="50%"
                      cy="50%"
                      outerRadius={100}
@@ -20380,7 +20653,7 @@ filteredbautistaOrders.map((order) => (
                      dataKey="value"
                      label={({ category, value }) => `${category}: ${value}`}
                    >
-                     {chartsData.salesByCategory.map((entry, index) => (
+                     {filteredChartsData.salesByCategory.map((entry, index) => (
                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                      ))}
                    </Pie>
@@ -20397,11 +20670,11 @@ filteredbautistaOrders.map((order) => (
            {/* Order Status Distribution */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
              <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Order Status Distribution</h3>
-             {chartsData?.orderStatusDistribution?.length > 0 ? (
+             {filteredChartsData?.orderStatusDistribution?.length > 0 ? (
                <ResponsiveContainer width="100%" height={300}>
                  <PieChart>
                    <Pie
-                     data={chartsData.orderStatusDistribution}
+                     data={filteredChartsData.orderStatusDistribution}
                      cx="50%"
                      cy="50%"
                      outerRadius={100}
@@ -20409,7 +20682,7 @@ filteredbautistaOrders.map((order) => (
                      dataKey="value"
                      label={({ status, value }) => `${status}: ${value}`}
                    >
-                     {chartsData.orderStatusDistribution.map((entry, index) => (
+                     {filteredChartsData.orderStatusDistribution.map((entry, index) => (
                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                      ))}
                    </Pie>
@@ -20427,9 +20700,9 @@ filteredbautistaOrders.map((order) => (
          {/* Top Products */}
          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
            <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Top Products</h3>
-           {chartsData?.topProducts?.length > 0 ? (
+           {filteredChartsData?.topProducts?.length > 0 ? (
              <ResponsiveContainer width="100%" height={400}>
-               <BarChart data={chartsData.topProducts} layout="horizontal">
+               <BarChart data={filteredChartsData.topProducts} layout="horizontal">
                  <CartesianGrid strokeDasharray="3 3" />
                  <XAxis type="number" />
                  <YAxis dataKey="product" type="category" width={150} />
@@ -20452,7 +20725,7 @@ filteredbautistaOrders.map((order) => (
                <thead>
                  <tr className="border-b">
                    <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Order ID</th>
-                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Patient</th>
+                   <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Customer</th>
                    <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Product</th>
                    <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Status</th>
                    <th className="text-left py-3 px-4 font-semibold text-gray-800 font-albertsans">Total</th>

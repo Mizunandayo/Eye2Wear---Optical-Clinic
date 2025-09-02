@@ -1628,12 +1628,12 @@ useEffect(() => {
         </div>
         <h3 className="text-lg font-semibold text-gray-600 font-albertsans mb-2">No Appointments Found</h3>
         <p className="text-gray-500 font-albertsans mb-4">You don't have any scheduled appointments yet.</p>
-        <button 
+        <div 
           onClick={() => showappointmenttable('bookappointment')}
           className="bg-[#2781af] hover:bg-[#1f6591] text-white font-albertsans font-semibold py-2 px-6 rounded-2xl transition-all duration-200"
         >
           Book New Appointment
-        </button>
+        </div>
       </div>
     </div>
     
