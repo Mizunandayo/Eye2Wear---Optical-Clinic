@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState,useRef, useEffect, useCallback, useMemo } from "react";
 import { Link} from "react-router-dom";
 import landinglogo from "../src/assets/images/landinglogo.png";
@@ -32,9 +34,23 @@ import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "./components/ui/chart";
 
 
 
@@ -492,29 +508,51 @@ const SmsRowSkeleton = () => (
 const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
   const [timeRange, setTimeRange] = React.useState("90d");
   const [activeChart, setActiveChart] = React.useState("ambher");
+  const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
+
+  // Function to extract available years from appointment data
+  const getAvailableYearsFromAppointments = React.useCallback(() => {
+    if (!appointmentsData || appointmentsData.length === 0) return [new Date().getFullYear()];
+    
+    const years = new Set();
+    appointmentsData.forEach(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      if (!isNaN(appointmentDate.getTime())) {
+        years.add(appointmentDate.getFullYear());
+      }
+    });
+    
+    return Array.from(years).sort((a, b) => b - a); // Sort in descending order (newest first)
+  }, [appointmentsData]);
 
   // Filter data based on selected time range and generate complete date range
   const filteredData = React.useMemo(() => {
     if (!appointmentsData || appointmentsData.length === 0) return [];
     
     const now = new Date();
-    let daysToSubtract = 90;
+    let startDate, endDate;
     
     if (timeRange === "30d") {
-      daysToSubtract = 30;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+      endDate = new Date(now);
     } else if (timeRange === "7d") {
-      daysToSubtract = 7;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 7);
+      endDate = new Date(now);
     } else if (timeRange === "365d") {
-      daysToSubtract = 365;
+      // For Last Year, use the selected year
+      startDate = new Date(selectedYear, 0, 1);
+      endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+    } else { // 90d
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 90);
+      endDate = new Date(now);
     }
-    
-    const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
     
     // Generate complete date range
     const dateRange = [];
     const currentDate = new Date(startDate);
-    const endDate = new Date(now);
     
     while (currentDate <= endDate) {
       const dateString = currentDate.toISOString().split('T')[0];
@@ -544,7 +582,7 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
                ((isBautistaOnlyUser() || currentuserloggedin === "Admin") ? (existingData?.bautista || 0) : 0)
       };
     });
-  }, [appointmentsData, timeRange, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
+  }, [appointmentsData, timeRange, selectedYear, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
 
   // Calculate totals for the filtered period
   const totals = React.useMemo(() => {
@@ -636,7 +674,7 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
         </div>
         
         {/* Time Range Selector */}
-        <div className="flex items-center px-6 py-4 border-t sm:border-t-0 sm:border-l">
+        <div className="flex items-center gap-2 px-6 py-4 border-t sm:border-t-0 sm:border-l">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -648,6 +686,18 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
             <option value="30d">Last 30 days</option>
             <option value="7d">Last 7 days</option>
           </select>
+          {timeRange === "365d" && (
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              aria-label="Select year for appointments"
+            >
+              {getAvailableYearsFromAppointments().map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -733,25 +783,57 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
 const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
   const [timeRange, setTimeRange] = React.useState("90d");
   const [dataFilter, setDataFilter] = React.useState("all"); // all, appointments, orders
+  const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
+
+  // Function to extract available years from order and appointment data
+  const getAvailableYearsFromRevenue = React.useCallback(() => {
+    const years = new Set();
+    
+    // Add years from order data
+    if (rawOrderData && rawOrderData.length > 0) {
+      rawOrderData.forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        if (!isNaN(orderDate.getTime())) {
+          years.add(orderDate.getFullYear());
+        }
+      });
+    }
+    
+    // Add years from appointment data
+    if (rawAppointmentData && rawAppointmentData.length > 0) {
+      rawAppointmentData.forEach(appointment => {
+        const appointmentDate = new Date(appointment.patientappointmentcreateddate || appointment.createdAt);
+        if (!isNaN(appointmentDate.getTime())) {
+          years.add(appointmentDate.getFullYear());
+        }
+      });
+    }
+    
+    return Array.from(years).sort((a, b) => b - a); // Sort in descending order (newest first)
+  }, [rawOrderData, rawAppointmentData]);
 
   // Filter and process data based on selected time range and data filter
   const filteredData = React.useMemo(() => {
     const now = new Date();
-    let daysToSubtract = 90;
-    let endDate = new Date(now);
+    let startDate, endDate;
     
     if (timeRange === "30d") {
-      daysToSubtract = 30;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+      endDate = new Date(now);
     } else if (timeRange === "7d") {
-      daysToSubtract = 7;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 7);
+      endDate = new Date(now);
     } else if (timeRange === "365d") {
-      // For Last Year, include the full current month and go back 12 complete months
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
-      daysToSubtract = 365;
+      // For Last Year, use the selected year
+      startDate = new Date(selectedYear, 0, 1);
+      endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+    } else { // 90d
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 90);
+      endDate = new Date(now);
     }
-    
-    const startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
     
     // Always use daily data from raw orders and appointments for consistency
     // This ensures data is available for all time ranges
@@ -849,7 +931,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
     });
     
     return Object.values(dailyRevenue).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [rawOrderData, rawAppointmentData, timeRange, dataFilter, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
+  }, [rawOrderData, rawAppointmentData, timeRange, selectedYear, dataFilter, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin]);
 
   // Calculate total revenue for the filtered period
   const totalRevenue = React.useMemo(() => {
@@ -889,7 +971,10 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
       {/* Header with Controls */}
       <div className="flex items-center gap-2 border-b py-5 px-6 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <h3 className="text-xl font-bold text-gray-800 font-albertsans">{getChartTitle()}</h3>
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-[#184d85]" />
+            <h3 className="text-xl font-bold text-gray-800 font-albertsans">{getChartTitle()}</h3>
+          </div>
           <p className="text-sm text-gray-600 font-albertsans">
             Showing revenue trends for the selected period
           </p>
@@ -937,6 +1022,20 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
             <option value="30d">Last 30 days</option>
             <option value="7d">Last 7 days</option>
           </select>
+          
+          {/* Year Selector - appears when Last Year is selected */}
+          {timeRange === "365d" && (
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              aria-label="Select year for revenue"
+            >
+              {getAvailableYearsFromRevenue().map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
       
@@ -1488,6 +1587,151 @@ const MedicalRecordImageViewer = ({ record, loadMedicalRecordImage, onImageClick
 
 
 
+// TopProductsChart component using the new chart design
+const TopProductsChart = ({ data }) => {
+  // Transform the data to match the expected format
+  const chartData = data?.map((item, index) => ({
+    product: item.product,
+    quantity: item.quantity,
+    fill: `var(--chart-${(index % 5) + 1})`
+  })) || [];
+
+  const chartConfig = {
+    quantity: {
+      label: "Quantity",
+    },
+    ...chartData.reduce((config, item, index) => {
+      config[item.product.toLowerCase().replace(/\s+/g, '')] = {
+        label: item.product,
+        color: `var(--chart-${(index % 5) + 1})`,
+      };
+      return config;
+    }, {})
+  };
+
+  const totalQuantity = chartData.reduce((sum, item) => sum + item.quantity, 0);
+  const topProduct = chartData[0];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-[#184d85]" />
+            <span className="text-xl font-bold text-gray-800 font-albertsans">Top Products</span>
+          </div>
+        </CardTitle>
+        <CardDescription><span className="text-sm text-gray-500 font-albertsans">Most ordered products by quantity</span></CardDescription>
+      </CardHeader>
+      <CardContent>
+        {chartData.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              layout="vertical"
+              margin={{
+                left: 20,
+                right: 50,
+                top: 10,
+                bottom: 10,
+              }}
+              barCategoryGap="20%"
+            >
+              <CartesianGrid 
+                horizontal={false}
+                vertical={true}
+                stroke="#555555"
+                strokeDasharray="3 3"
+                strokeOpacity={1}
+              />
+              <YAxis
+                dataKey="product"
+                type="category"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                width={90}
+                tickFormatter={(value) => {
+                  // Truncate long product names
+                  if (value.length > 15) {
+                    return value.substring(0, 15) + '...';
+                  }
+                  return value;
+                }}
+              />
+              <XAxis 
+                dataKey="quantity" 
+                type="number" 
+                hide 
+                domain={[0, 'dataMax + 10']}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                        <p className="font-semibold text-gray-800 mb-1">
+                          {data.product}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Quantity: <span className="font-medium text-gray-800">{data.quantity}</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar 
+                dataKey="quantity" 
+                layout="vertical" 
+                radius={[0, 4, 4, 0]}
+                maxBarSize={40}
+              >
+                <LabelList 
+                  dataKey="quantity" 
+                  position="right" 
+                  style={{
+                    fill: '#374151',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}
+                  offset={8}
+                />
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="text-center">
+              <i className="bx bx-bar-chart-alt text-4xl mb-2 opacity-50"></i>
+              <p className="font-albertsans">No product data available</p>
+              <p className="text-sm text-gray-400 font-albertsans mt-1">
+                Orders will appear here once placed
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className=" flex-col items-start gap-2 text-sm">
+        <div className=" flex gap-2 leading-none font-medium">
+          {topProduct && (
+            <>
+              {topProduct.product} leads with {topProduct.quantity} orders <TrendingUp className=" h-4 w-4" />
+            </>
+          )}
+        </div>
+        <div className="text-muted-foreground leading-none">
+          Total products ordered: {totalQuantity}
+        </div>
+      </CardFooter>
+    </Card>
+  );
+};
+
 
 
 
@@ -1572,6 +1816,77 @@ function AdminDashboard(){
     endDate: '',
     reportType: 'overview' // overview, appointments, sales, revenue
   });
+
+  // Separate filters for Sales by Category and Order Status Distribution charts
+  const [salesCategoryFilter, setSalesCategoryFilter] = useState('thisMonth');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('thisMonth');
+  const [salesCategoryYear, setSalesCategoryYear] = useState(new Date().getFullYear());
+  const [orderStatusYear, setOrderStatusYear] = useState(new Date().getFullYear());
+
+  // Helper function to get date range based on filter
+  const getDateRangeForFilter = useCallback((filterValue, selectedYear = null) => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    
+    switch (filterValue) {
+      case 'thisWeek': {
+        const startOfWeek = new Date(startOfDay);
+        startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+        return { start: startOfWeek, end: endOfDay };
+      }
+      case 'thisMonth': {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { start: startOfMonth, end: endOfDay };
+      }
+      case 'thisYear': {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        return { start: startOfYear, end: endOfDay };
+      }
+      case 'lastMonth': {
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        return { start: startOfLastMonth, end: endOfLastMonth };
+      }
+      case 'last3Months': {
+        const start3MonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+        return { start: start3MonthsAgo, end: endOfDay };
+      }
+      case 'lastYear': {
+        const year = selectedYear || now.getFullYear() - 1;
+        const startOfSelectedYear = new Date(year, 0, 1);
+        const endOfSelectedYear = new Date(year, 11, 31, 23, 59, 59);
+        return { start: startOfSelectedYear, end: endOfSelectedYear };
+      }
+      default:
+        return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: endOfDay };
+    }
+  }, []);
+
+  // Function to extract available years from order data
+  const getAvailableYears = useCallback(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    
+    const years = new Set();
+    allOrders.forEach(order => {
+      const orderDate = new Date(order.createdAt || order.patientorderambhercreateddate || order.patientorderbautistacreateddate);
+      if (!isNaN(orderDate.getTime())) {
+        years.add(orderDate.getFullYear());
+      }
+    });
+    
+    return Array.from(years).sort((a, b) => b - a); // Sort in descending order (newest first)
+  }, [reportsData]);
+
+  // Filter function for order data based on date range
+  const filterOrdersByDateRange = useCallback((orders, filterValue, selectedYear = null) => {
+    const { start, end } = getDateRangeForFilter(filterValue, selectedYear);
+    return orders.filter(order => {
+      const orderDate = new Date(order.createdAt || order.patientorderambhercreateddate || order.patientorderbautistacreateddate);
+      return orderDate >= start && orderDate <= end;
+    });
+  }, [getDateRangeForFilter]);
 
   // Memoize these to prevent recalculation on every render
   const currentusertoken = useMemo(() => 
@@ -7858,6 +8173,16 @@ const [loadingAmbherOrders, setLoadingAmbherOrders] = useState(true);
 const [loadingBautistaOrders, setLoadingBautistaOrders] = useState(true);
 const [searchambherTerm, setambherSearchTerm] = useState('');
 const [searchbautistaTerm, setbautistaSearchTerm] = useState('');
+
+// Performance optimizations
+const [ordersCache, setOrdersCache] = useState(new Map());
+const [lastFetchTime, setLastFetchTime] = useState(0);
+const CACHE_DURATION = 30000; // 30 seconds cache
+
+// Pagination for performance
+const [ambherCurrentPage, setAmbherCurrentPage] = useState(1);
+const [bautistaCurrentPage, setBautistaCurrentPage] = useState(1);
+const ORDERS_PER_PAGE = 50; // Limit rows per page for performance
 const [searchpatientorderambherTerm, setsearchpatientorderambherTerm] = useState('');
 const [searchpatientorderbautistaTerm, setsearchpatientorderbautistaTerm] = useState('');
 const [showpatientorderambher, setshowpatientorderambher] = useState(false);
@@ -8420,114 +8745,143 @@ return () => clearTimeout(delay);
 
 
 
-  const fetchambherOrders = useCallback(async () => {
+  // Optimized fetch function with caching and parallel requests
+  const fetchAllOrdersOptimized = useCallback(async (forceRefresh = false) => {
+    const now = Date.now();
+    const cacheKey = `orders_${currentusertoken}`;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && ordersCache.has(cacheKey) && (now - lastFetchTime) < CACHE_DURATION) {
+      const cachedData = ordersCache.get(cacheKey);
+      setambherOrders(cachedData.ambher || []);
+      setbautistaOrders(cachedData.bautista || []);
+      setLoadingAmbherOrders(false);
+      setLoadingBautistaOrders(false);
+      return;
+    }
+
     try {
       setLoadingAmbherOrders(true);
-      
-      const response = await fetch(`/api/patientorderambher`, {
-        headers: {
-          'Authorization': `Bearer ${currentusertoken}`
-         
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Check and automatically update order status for pickup dates that match today
-      const updatedData = await checkAndUpdateOrderStatus(data, 'ambher', updateAmbherOrderStatus);
-      
-      setambherOrders(updatedData);
-  
-    } catch (err) {
-        console.log(err);
-    } finally {
-      setLoadingAmbherOrders(false);
-    }
-  }, [currentusertoken]);
-
-useEffect(() => {
-fetchambherOrders(); 
-}, [fetchambherOrders]);
-
-
-
-
-const filteredambherOrders = ambherorders.filter(order => {
-  const matchesFilter = ambherfilter === 'All' || order.patientorderambherstatus === ambherfilter;
-  const matchesSearch = order.patientorderambherproductname.toLowerCase().includes(searchambherTerm.toLowerCase()) ||
-                       order.patientfirstname.toLowerCase().includes(searchambherTerm.toLowerCase()) ||
-                       order.patientlastname.toLowerCase().includes(searchambherTerm.toLowerCase());
-  return matchesFilter && matchesSearch;
-});
-
-
-
-
-
-
-
-
-
-    const fetchbautistaOrders = useCallback(async () => {
-    try {
       setLoadingBautistaOrders(true);
       
-      const response = await fetch(`/api/patientorderbautista`, {
-        headers: {
-          'Authorization': `Bearer ${currentusertoken}`
-         
-        }
-      });
+      // Parallel API calls for maximum speed
+      const [ambherResponse, bautistaResponse] = await Promise.all([
+        fetch(`/api/patientorderambher`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`,
+            'Cache-Control': 'no-cache'
+          }
+        }),
+        fetch(`/api/patientorderbautista`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`,
+            'Cache-Control': 'no-cache'
+          }
+        })
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!ambherResponse.ok || !bautistaResponse.ok) {
+        throw new Error('Failed to fetch orders');
       }
 
-      const data = await response.json();
+      // Parallel JSON parsing
+      const [ambherData, bautistaData] = await Promise.all([
+        ambherResponse.json(),
+        bautistaResponse.json()
+      ]);
+
+      // Only run status check if absolutely necessary (skip during initial load for speed)
+      const processedAmbherData = forceRefresh ? 
+        await checkAndUpdateOrderStatus(ambherData, 'ambher', updateAmbherOrderStatus) : 
+        ambherData;
       
-      // Check and automatically update order status for pickup dates that match today
-      const updatedData = await checkAndUpdateOrderStatus(data, 'bautista', updateBautistaOrderStatus);
-      
-      setbautistaOrders(updatedData);
-  
+      const processedBautistaData = forceRefresh ? 
+        await checkAndUpdateOrderStatus(bautistaData, 'bautista', updateBautistaOrderStatus) : 
+        bautistaData;
+
+      // Update state
+      setambherOrders(processedAmbherData);
+      setbautistaOrders(processedBautistaData);
+
+      // Update cache
+      const newCache = new Map(ordersCache);
+      newCache.set(cacheKey, {
+        ambher: processedAmbherData,
+        bautista: processedBautistaData
+      });
+      setOrdersCache(newCache);
+      setLastFetchTime(now);
+
     } catch (err) {
-        console.log(err);
+      console.error('Error fetching orders:', err);
     } finally {
+      setLoadingAmbherOrders(false);
       setLoadingBautistaOrders(false);
     }
-  }, [currentusertoken]);
+  }, [currentusertoken, ordersCache, lastFetchTime, setOrdersCache, setLastFetchTime]);
+
+  // Separate functions for backward compatibility
+  const fetchambherOrders = useCallback(async () => {
+    await fetchAllOrdersOptimized();
+  }, [fetchAllOrdersOptimized]);
+
+  const fetchbautistaOrders = useCallback(async () => {
+    await fetchAllOrdersOptimized();
+  }, [fetchAllOrdersOptimized]);
 
 useEffect(() => {
-fetchbautistaOrders(); 
-}, [fetchbautistaOrders]);
+  // Initial load - fetch without status check for speed
+  fetchAllOrdersOptimized(false); 
+}, [fetchAllOrdersOptimized]);
 
-// Function to immediately refresh orders and update UI
+// Optimized filtering with useMemo for performance
+const filteredambherOrders = useMemo(() => {
+  return ambherorders.filter(order => {
+    const matchesFilter = ambherfilter === 'All' || order.patientorderambherstatus === ambherfilter;
+    const searchTerm = searchambherTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      order.patientorderambherproductname.toLowerCase().includes(searchTerm) ||
+      order.patientfirstname.toLowerCase().includes(searchTerm) ||
+      order.patientlastname.toLowerCase().includes(searchTerm);
+    return matchesFilter && matchesSearch;
+  });
+}, [ambherorders, ambherfilter, searchambherTerm]);
+
+const filteredbautistaOrders = useMemo(() => {
+  return bautistaorders.filter(order => {
+    const matchesFilter = bautistafilter === 'All' || order.patientorderbautistastatus === bautistafilter;
+    const searchTerm = searchbautistaTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      order.patientorderbautistaproductname.toLowerCase().includes(searchTerm) ||
+      order.patientfirstname.toLowerCase().includes(searchTerm) ||
+      order.patientlastname.toLowerCase().includes(searchTerm);
+    return matchesFilter && matchesSearch;
+  });
+}, [bautistaorders, bautistafilter, searchbautistaTerm]);
+
+// Paginated data for performance
+const paginatedAmbherOrders = useMemo(() => {
+  const startIndex = (ambherCurrentPage - 1) * ORDERS_PER_PAGE;
+  return filteredambherOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+}, [filteredambherOrders, ambherCurrentPage, ORDERS_PER_PAGE]);
+
+const paginatedBautistaOrders = useMemo(() => {
+  const startIndex = (bautistaCurrentPage - 1) * ORDERS_PER_PAGE;
+  return filteredbautistaOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+}, [filteredbautistaOrders, bautistaCurrentPage, ORDERS_PER_PAGE]);
+
+// Optimized refresh function with cache invalidation
 const refreshOrdersWithStatusCheck = useCallback(async () => {
   console.log('🔄 Refreshing orders with immediate status check...');
   
   try {
-    // Fetch fresh data from API
-    await Promise.all([fetchambherOrders(), fetchbautistaOrders()]);
+    // Force refresh bypasses cache and includes status check
+    await fetchAllOrdersOptimized(true);
     console.log('✅ Orders refreshed with latest status updates');
   } catch (error) {
     console.error('❌ Error refreshing orders:', error);
   }
-}, [fetchambherOrders, fetchbautistaOrders]);
-
-
-
-const filteredbautistaOrders = bautistaorders.filter(order => {
-  const matchesFilter = bautistafilter === 'All' || order.patientorderbautistastatus === bautistafilter;
-  const matchesSearch = order.patientorderbautistaproductname.toLowerCase().includes(searchbautistaTerm.toLowerCase()) ||
-                       order.patientfirstname.toLowerCase().includes(searchbautistaTerm.toLowerCase()) ||
-                       order.patientlastname.toLowerCase().includes(searchbautistaTerm.toLowerCase());
-  return matchesFilter && matchesSearch;
-});
-
+}, [fetchAllOrdersOptimized]);
 
 
 const formatorderDates = (formattednewdate) => {
@@ -9877,8 +10231,18 @@ try {
   const processCategoryData = useCallback((orders) => {
     if (!orders || !orders.length) return [];
     console.log('📊 processCategoryData called with:', orders?.length || 0, 'orders');
+    
+    // Filter only completed orders
+    const completedOrders = orders.filter(order => {
+      const ambherStatus = order.patientorderambherstatus?.toLowerCase();
+      const bautistaStatus = order.patientorderbautistastatus?.toLowerCase();
+      return ambherStatus === 'completed' || bautistaStatus === 'completed';
+    });
+    
+    if (!completedOrders.length) return [];
+    
     const categories = {};
-    orders.forEach(order => {
+    completedOrders.forEach(order => {
       const category = order.patientorderambherproductcategory || order.patientorderbautistaproductcategory || 'Other';
       const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
       categories[category] = (categories[category] || 0) + quantity;
@@ -9927,8 +10291,18 @@ try {
 
   const processTopProducts = useCallback((orders) => {
     if (!orders || !orders.length) return [];
+    
+    // Filter only completed orders
+    const completedOrders = orders.filter(order => {
+      const ambherStatus = order.patientorderambherstatus?.toLowerCase();
+      const bautistaStatus = order.patientorderbautistastatus?.toLowerCase();
+      return ambherStatus === 'completed' || bautistaStatus === 'completed';
+    });
+    
+    if (!completedOrders.length) return [];
+    
     const products = {};
-    orders.forEach(order => {
+    completedOrders.forEach(order => {
       const productName = order.patientorderambherproductname || order.patientorderbautistaproductname || 'Unknown';
       const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
       products[productName] = (products[productName] || 0) + quantity;
@@ -10084,6 +10458,31 @@ try {
     
     return filtered;
   }, [processedChartsData, applyDateFiltersToChartsData]);
+
+  // Separate filtered data for each chart with independent filters
+  const filteredSalesByCategory = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, salesCategoryFilter, salesCategoryYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
+    }
+    
+    return processCategoryData(filteredOrders);
+  }, [reportsData, salesCategoryFilter, salesCategoryYear, filterOrdersByDateRange, processCategoryData]);
+
+  const filteredOrderStatusDistribution = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, orderStatusFilter, orderStatusYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
+    }
+    
+    return processStatusData(filteredOrders);
+  }, [reportsData, orderStatusFilter, orderStatusYear, filterOrdersByDateRange, processStatusData]);
 
   // Export functions
   const exportToPDF = async () => {
@@ -21083,13 +21482,45 @@ filteredbautistaOrders.map((order) => (
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
            {/* Sales by Category - Radar Chart */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-             <div className="items-center mb-4">
-               <h3 className="text-xl font-bold text-gray-800 font-albertsans">Sales by Category</h3>
-               <p className="text-sm text-gray-600 font-albertsans">
-                 Product category distribution overview
-               </p>
+             <div className="flex items-center justify-between mb-4">
+               <div>
+                 <div className="flex items-center gap-2">
+                   <PieChartIcon className="h-5 w-5 text-[#184d85]" />
+                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">Sales by Category</h3>
+                 </div>
+                 <p className="text-sm text-gray-600 font-albertsans">
+                   Product category distribution overview
+                 </p>
+               </div>
+               <div className="flex items-center gap-2">
+                 <select
+                   value={salesCategoryFilter}
+                   onChange={(e) => setSalesCategoryFilter(e.target.value)}
+                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                   aria-label="Select date range for sales by category"
+                 >
+                   <option value="thisWeek">This Week</option>
+                   <option value="thisMonth">This Month</option>
+                   <option value="thisYear">This Year</option>
+                   <option value="lastMonth">Last Month</option>
+                   <option value="last3Months">Last 3 Months</option>
+                   <option value="lastYear">Last Year</option>
+                 </select>
+                 {salesCategoryFilter === 'lastYear' && (
+                   <select
+                     value={salesCategoryYear}
+                     onChange={(e) => setSalesCategoryYear(parseInt(e.target.value))}
+                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                     aria-label="Select year for sales by category"
+                   >
+                     {getAvailableYears().map(year => (
+                       <option key={year} value={year}>{year}</option>
+                     ))}
+                   </select>
+                 )}
+               </div>
              </div>
-             {filteredChartsData?.salesByCategory?.length > 0 ? (() => {
+             {filteredSalesByCategory?.length > 0 ? (() => {
                // Dynamic color theme based on user clinic
                const getChartColor = () => {
                  if (isAmbherOnlyUser()) {
@@ -21106,7 +21537,7 @@ filteredbautistaOrders.map((order) => (
                return (
                  <div className="pb-0">
                    <ResponsiveContainer width="100%" height={300}>
-                     <RadarChart data={filteredChartsData.salesByCategory}>
+                     <RadarChart data={filteredSalesByCategory}>
                        <Tooltip 
                          cursor={false}
                          content={({ active, payload }) => {
@@ -21148,10 +21579,18 @@ filteredbautistaOrders.map((order) => (
                  <div className="text-center">
                    <i className="bx bx-pie-chart-alt-2 text-4xl mb-2"></i>
                    <p className="font-albertsans">No sales category data available</p>
+                   <p className="text-sm text-gray-400 font-albertsans mt-1">
+                     for {salesCategoryFilter === 'thisWeek' ? 'this week' : 
+                          salesCategoryFilter === 'thisMonth' ? 'this month' :
+                          salesCategoryFilter === 'thisYear' ? 'this year' :
+                          salesCategoryFilter === 'lastMonth' ? 'last month' :
+                          salesCategoryFilter === 'last3Months' ? 'last 3 months' :
+                          salesCategoryFilter === 'lastYear' ? `year ${salesCategoryYear}` : 'selected period'}
+                   </p>
                  </div>
                </div>
              )}
-             {filteredChartsData?.salesByCategory?.length > 0 && (() => {
+             {filteredSalesByCategory?.length > 0 && (() => {
                const getClinicInfo = () => {
                  if (isAmbherOnlyUser()) {
                    return { name: "Ambher Optical", icon: "bx-leaf", color: "text-green-600" };
@@ -21180,73 +21619,134 @@ filteredbautistaOrders.map((order) => (
 
            {/* Order Status Distribution */}
            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-             <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Order Status Distribution</h3>
-             {filteredChartsData?.orderStatusDistribution?.length > 0 ? (
-               <ResponsiveContainer width="100%" height={300}>
-                 <PieChart>
-                   <Pie
-                     data={filteredChartsData.orderStatusDistribution}
-                     cx="50%"
-                     cy="50%"
-                     outerRadius={100}
-                     fill="#8884d8"
-                     dataKey="value"
-                     label={({ status, value }) => `${status}: ${value}`}
+             <div className="flex items-center justify-between mb-4">
+               <div>
+                 <div className="flex items-center gap-2">
+                   <Target className="h-5 w-5 text-[#184d85]" />
+                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">Order Status Distribution</h3>
+                 </div>
+                 <p className="text-sm text-gray-600 font-albertsans">
+                   Order status distribution overview
+                 </p>
+               </div>
+               <div className="flex items-center gap-2">
+                 <select
+                   value={orderStatusFilter}
+                   onChange={(e) => setOrderStatusFilter(e.target.value)}
+                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                   aria-label="Select date range for order status"
+                 >
+                   <option value="thisWeek">This Week</option>
+                   <option value="thisMonth">This Month</option>
+                   <option value="thisYear">This Year</option>
+                   <option value="lastMonth">Last Month</option>
+                   <option value="last3Months">Last 3 Months</option>
+                   <option value="lastYear">Last Year</option>
+                 </select>
+                 {orderStatusFilter === 'lastYear' && (
+                   <select
+                     value={orderStatusYear}
+                     onChange={(e) => setOrderStatusYear(parseInt(e.target.value))}
+                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                     aria-label="Select year for order status"
                    >
-                     {filteredChartsData.orderStatusDistribution.map((entry, index) => {
-                       // Map status to corresponding colors
-                       const getStatusColor = (status) => {
-                         switch (status.toLowerCase()) {
-                           case 'pending':
-                             return '#ffae19'; // Orange
-                           case 'ready for pickup':
-                             return '#3D85C6'; // Purple
-                           case 'completed':
-                             return '#6aa84f'; // Dark Green
-                           default:
-                             return CHART_COLORS[index % CHART_COLORS.length];
-                         }
-                       };
-                       
-                       return (
-                         <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} />
-                       );
-                     })}
-                   </Pie>
-                   <Tooltip />
-                 </PieChart>
-               </ResponsiveContainer>
+                     {getAvailableYears().map(year => (
+                       <option key={year} value={year}>{year}</option>
+                     ))}
+                   </select>
+                 )}
+               </div>
+             </div>
+             {filteredOrderStatusDistribution?.length > 0 ? (
+               <div className="pb-0">
+                 <ResponsiveContainer width="100%" height={300}>
+                   <PieChart>
+                     <Pie
+                       data={filteredOrderStatusDistribution}
+                       cx="50%"
+                       cy="50%"
+                       outerRadius={100}
+                       fill="#8884d8"
+                       dataKey="value"
+                       label={({ status, value }) => `${status}: ${value}`}
+                     >
+                       {filteredOrderStatusDistribution.map((entry, index) => {
+                         // Map status to corresponding colors
+                         const getStatusColor = (status) => {
+                           switch (status.toLowerCase()) {
+                             case 'pending':
+                               return '#ffae19'; // Orange
+                             case 'ready for pickup':
+                               return '#3D85C6'; // Purple
+                             case 'completed':
+                               return '#6aa84f'; // Dark Green
+                             default:
+                               return CHART_COLORS[index % CHART_COLORS.length];
+                           }
+                         };
+                         
+                         return (
+                           <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} />
+                         );
+                       })}
+                     </Pie>
+                     <Tooltip />
+                   </PieChart>
+                 </ResponsiveContainer>
+               </div>
              ) : (
                <div className="flex items-center justify-center h-[300px] text-gray-500">
-                 No order status data available
+                 <div className="text-center">
+                   <i className="bx bx-pie-chart-alt-2 text-4xl mb-2"></i>
+                   <p className="font-albertsans">No order status data available</p>
+                   <p className="text-sm text-gray-400 font-albertsans mt-1">
+                     for {orderStatusFilter === 'thisWeek' ? 'this week' : 
+                          orderStatusFilter === 'thisMonth' ? 'this month' :
+                          orderStatusFilter === 'thisYear' ? 'this year' :
+                          orderStatusFilter === 'lastMonth' ? 'last month' :
+                          orderStatusFilter === 'last3Months' ? 'last 3 months' :
+                          orderStatusFilter === 'lastYear' ? `year ${orderStatusYear}` : 'selected period'}
+                   </p>
+                 </div>
                </div>
              )}
+             {filteredOrderStatusDistribution?.length > 0 && (() => {
+               const getClinicInfo = () => {
+                 if (isAmbherOnlyUser()) {
+                   return { name: "Ambher Optical", icon: "bx-leaf", color: "text-green-600" };
+                 } else if (isBautistaOnlyUser()) {
+                   return { name: "Bautista Eye Center", icon: "bx-buildings", color: "text-blue-900" };
+                 } else {
+                   return { name: "All Clinics", icon: "bx-trending-up", color: "text-blue-600" };
+                 }
+               };
+               
+               const clinicInfo = getClinicInfo();
+               
+               return (
+                 <div className="flex-col gap-2 text-sm mt-4 pt-4 border-t border-gray-200">
+                   <div className="flex items-center gap-2 leading-none font-medium text-gray-700 font-albertsans">
+                     <i className={`bx ${clinicInfo.icon} text-lg ${clinicInfo.color}`}></i>
+                     Order status distribution - {clinicInfo.name}
+                   </div>
+                   <div className="text-gray-500 flex items-center gap-2 leading-none font-albertsans text-xs mt-1">
+                     Based on current order status
+                   </div>
+                 </div>
+               );
+             })()}
            </div>
          </div>
 
          {/* Top Products */}
-         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
-           <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Top Products</h3>
-           {filteredChartsData?.topProducts?.length > 0 ? (
-             <ResponsiveContainer width="100%" height={400}>
-               <BarChart data={filteredChartsData.topProducts} layout="horizontal">
-                 <CartesianGrid strokeDasharray="3 3" />
-                 <XAxis type="number" />
-                 <YAxis dataKey="product" type="category" width={150} />
-                 <Tooltip />
-                 <Bar dataKey="quantity" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-               </BarChart>
-             </ResponsiveContainer>
-           ) : (
-             <div className="flex items-center justify-center h-[400px] text-gray-500">
-               No product data available
-             </div>
-           )}
-         </div>
+         <TopProductsChart data={filteredChartsData?.topProducts} />
 
          {/* Recent Orders Table */}
-         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-           <h3 className="text-xl font-bold text-gray-800 mb-4 font-albertsans">Recent Orders</h3>
+         <div className="mt-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+           <div className="flex items-center gap-2 mb-4">
+             <BarChart3 className="h-5 w-5 text-[#184d85]" />
+             <h3 className="text-xl font-bold text-gray-800 font-albertsans">Recent Orders</h3>
+           </div>
            <div className="overflow-x-auto">
              <table className="w-full text-sm text-gray-600">
                <thead>
