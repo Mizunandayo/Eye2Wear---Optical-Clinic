@@ -37,7 +37,7 @@ import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrder
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar } from "lucide-react";
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar, RefreshCw } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -21390,7 +21390,7 @@ filteredbautistaOrders.map((order) => (
          <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">Reports and Analytics</h1>
        </div>
        
-       {/* Export Buttons */}
+       {/* Export and Refresh Buttons */}
        <div className="flex space-x-3">
          <button
            onClick={exportToPDF}
@@ -21400,11 +21400,12 @@ filteredbautistaOrders.map((order) => (
            Export PDF
          </button>
          <button
-           onClick={exportToExcel}
-           className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-albertsans"
+           onClick={() => fetchReportsData(true)}
+           disabled={reportsData.loading}
+           className="flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
          >
-           <i className="bx bxs-file mr-2"></i>
-           Export Excel
+           <RefreshCw className={`w-4 h-4 mr-2 ${reportsData.loading ? 'animate-spin' : ''}`} />
+           {reportsData.loading ? 'Refreshing...' : 'Refresh'}
          </button>
        </div>
      </div>
