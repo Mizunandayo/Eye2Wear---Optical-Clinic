@@ -37,7 +37,7 @@ import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrder
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar, RefreshCw } from "lucide-react";
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar, RefreshCw, Download } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10509,37 +10509,146 @@ try {
   // Export functions
   const exportToPDF = async () => {
     try {
-      // Use jsPDF to generate PDF instead of print window
       const userClinic = getCurrentUserClinic();
       const currentDate = new Date().toLocaleDateString();
-      const metrics = calculateMetrics();
       
-      const pdf = new jsPDF();
-      
-      // Title
-      pdf.setFontSize(20);
-      pdf.text(`${userClinic} - Sales Report`, 20, 30);
-      
-      // Date and period
-      pdf.setFontSize(12);
-      pdf.text(`Generated on: ${currentDate}`, 20, 45);
-      pdf.text(`Report Period: ${reportsFilter.dateRange}`, 20, 55);
-      
-      // Summary section
-      pdf.setFontSize(16);
-      pdf.text('Summary', 20, 75);
-      
-      pdf.setFontSize(12);
-      pdf.text(`Total Orders: ${metrics.totalOrders}`, 20, 90);
-      pdf.text(`Total Revenue: ₱${metrics.totalRevenue.toLocaleString()}`, 20, 100);
-      pdf.text(`Total Appointments: ${metrics.totalAppointments}`, 20, 110);
-      
-      // Save PDF
-      pdf.save(`${userClinic.replace(/\s+/g, '_')}_Sales_Report_${currentDate.replace(/\//g, '-')}.pdf`);
-      
+      // Show loading state
+      const loadingElement = document.createElement('div');
+      loadingElement.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+          <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+            <div style="margin-bottom: 10px;">Generating PDF...</div>
+            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #184d85; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+          </div>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `;
+      document.body.appendChild(loadingElement);
+
+      // Get the reports container
+      const reportsContainer = document.getElementById('reportsandanalytics');
+      if (!reportsContainer) {
+        throw new Error('Reports container not found');
+      }
+
+      // Create a clone to modify for PDF
+      const clonedContainer = reportsContainer.cloneNode(true);
+      clonedContainer.style.width = '210mm'; // A4 width
+      clonedContainer.style.background = 'white';
+      clonedContainer.style.padding = '20px';
+      clonedContainer.style.boxShadow = 'none';
+      clonedContainer.style.border = 'none';
+      clonedContainer.style.borderRadius = '0';
+
+      // Remove interactive elements from the clone
+      const buttonsToRemove = clonedContainer.querySelectorAll('button');
+      buttonsToRemove.forEach(button => {
+        if (button.textContent.includes('Export PDF') || button.textContent.includes('Refresh')) {
+          button.remove();
+        }
+      });
+
+      // Add a header with title and generation info
+      const header = document.createElement('div');
+      header.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #184d85; padding-bottom: 20px;">
+          <h1 style="color: #184d85; font-size: 28px; margin: 0; font-family: 'Albert Sans', sans-serif;">${userClinic} - Reports & Analytics</h1>
+          <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Generated on: ${currentDate}</p>
+        </div>
+      `;
+      clonedContainer.insertBefore(header, clonedContainer.firstChild);
+
+      // Temporarily add the clone to the document for rendering
+      clonedContainer.style.position = 'absolute';
+      clonedContainer.style.left = '-9999px';
+      clonedContainer.style.top = '0';
+      document.body.appendChild(clonedContainer);
+
+      // Wait for charts to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Configure html2canvas options for better quality
+      const canvas = await html2canvas(clonedContainer, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: clonedContainer.scrollWidth,
+        height: clonedContainer.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: clonedContainer.scrollWidth,
+        windowHeight: clonedContainer.scrollHeight
+      });
+
+      // Remove the cloned element
+      document.body.removeChild(clonedContainer);
+
+      // Create PDF
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add the first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if content exceeds one page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Save the PDF
+      const fileName = `${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`;
+      pdf.save(fileName);
+
+      // Remove loading state
+      document.body.removeChild(loadingElement);
+
+      // Show success message
+      const successElement = document.createElement('div');
+      successElement.innerHTML = `
+        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 20px; border-radius: 10px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          ✅ PDF exported successfully!
+        </div>
+      `;
+      document.body.appendChild(successElement);
+      setTimeout(() => {
+        document.body.removeChild(successElement);
+      }, 3000);
+
     } catch (error) {
       console.error('Error exporting to PDF:', error);
-      alert('Error exporting to PDF. Please try again.');
+      
+      // Remove loading state if it exists
+      const loadingElement = document.querySelector('[style*="position: fixed"][style*="background: rgba(0,0,0,0.5)"]');
+      if (loadingElement) {
+        document.body.removeChild(loadingElement);
+      }
+      
+      // Show error message
+      const errorElement = document.createElement('div');
+      errorElement.innerHTML = `
+        <div style="position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 10px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          ❌ Error exporting PDF. Please try again.
+        </div>
+      `;
+      document.body.appendChild(errorElement);
+      setTimeout(() => {
+        document.body.removeChild(errorElement);
+      }, 3000);
     }
   };
 
@@ -21396,7 +21505,7 @@ filteredbautistaOrders.map((order) => (
            onClick={exportToPDF}
            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-albertsans"
          >
-           <i className="bx bxs-file-pdf mr-2"></i>
+           <Download className="w-4 h-4 mr-2" />
            Export PDF
          </button>
          <button
