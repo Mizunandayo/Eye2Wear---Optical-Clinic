@@ -10508,12 +10508,15 @@ try {
 
   // Export functions
   const exportToPDF = async () => {
+    let loadingElement = null;
+    let clonedContainer = null;
+    
     try {
       const userClinic = getCurrentUserClinic();
       const currentDate = new Date().toLocaleDateString();
       
       // Show loading state
-      const loadingElement = document.createElement('div');
+      loadingElement = document.createElement('div');
       loadingElement.innerHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
           <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
@@ -10537,7 +10540,7 @@ try {
       }
 
       // Create a clone to modify for PDF
-      const clonedContainer = reportsContainer.cloneNode(true);
+      clonedContainer = reportsContainer.cloneNode(true);
       clonedContainer.style.width = '210mm'; // A4 width
       clonedContainer.style.background = 'white';
       clonedContainer.style.padding = '20px';
@@ -10553,6 +10556,46 @@ try {
         }
       });
 
+      // Convert oklch colors to regular hex colors to avoid html2canvas issues
+      const convertColors = (element) => {
+        const allElements = element.querySelectorAll('*');
+        allElements.forEach(el => {
+          const computedStyle = window.getComputedStyle(el);
+          
+          // Convert background colors
+          if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+            el.style.backgroundColor = '#184d85'; // Default to brand color
+          }
+          
+          // Convert text colors
+          if (computedStyle.color && computedStyle.color.includes('oklch')) {
+            el.style.color = '#374151'; // Default to gray
+          }
+          
+          // Convert border colors
+          if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
+            el.style.borderColor = '#d1d5db'; // Default to light gray
+          }
+          
+          // Handle specific problematic classes
+          if (el.className) {
+            // Replace Tailwind oklch colors with standard colors
+            if (el.className.includes('bg-blue')) {
+              el.style.backgroundColor = '#184d85';
+            }
+            if (el.className.includes('text-blue')) {
+              el.style.color = '#184d85';
+            }
+            if (el.className.includes('border-blue')) {
+              el.style.borderColor = '#184d85';
+            }
+          }
+        });
+      };
+
+      // Apply color conversion
+      convertColors(clonedContainer);
+
       // Add a header with title and generation info
       const header = document.createElement('div');
       header.innerHTML = `
@@ -10567,14 +10610,15 @@ try {
       clonedContainer.style.position = 'absolute';
       clonedContainer.style.left = '-9999px';
       clonedContainer.style.top = '0';
+      clonedContainer.style.zIndex = '-1';
       document.body.appendChild(clonedContainer);
 
       // Wait for charts to render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Configure html2canvas options for better quality
+      // Configure html2canvas options for better compatibility
       const canvas = await html2canvas(clonedContainer, {
-        scale: 2, // Higher scale for better quality
+        scale: 1.5, // Reduced scale to avoid memory issues
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -10583,11 +10627,20 @@ try {
         scrollX: 0,
         scrollY: 0,
         windowWidth: clonedContainer.scrollWidth,
-        windowHeight: clonedContainer.scrollHeight
+        windowHeight: clonedContainer.scrollHeight,
+        ignoreElements: (element) => {
+          // Ignore elements that might cause issues
+          return element.tagName === 'SCRIPT' || 
+                 element.tagName === 'STYLE' ||
+                 (element.style && element.style.display === 'none');
+        }
       });
 
-      // Remove the cloned element
-      document.body.removeChild(clonedContainer);
+      // Remove the cloned element safely
+      if (clonedContainer && clonedContainer.parentNode) {
+        document.body.removeChild(clonedContainer);
+        clonedContainer = null;
+      }
 
       // Create PDF
       const imgWidth = 210; // A4 width in mm
@@ -10614,8 +10667,11 @@ try {
       const fileName = `${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`;
       pdf.save(fileName);
 
-      // Remove loading state
-      document.body.removeChild(loadingElement);
+      // Remove loading state safely
+      if (loadingElement && loadingElement.parentNode) {
+        document.body.removeChild(loadingElement);
+        loadingElement = null;
+      }
 
       // Show success message
       const successElement = document.createElement('div');
@@ -10626,16 +10682,30 @@ try {
       `;
       document.body.appendChild(successElement);
       setTimeout(() => {
-        document.body.removeChild(successElement);
+        if (successElement && successElement.parentNode) {
+          document.body.removeChild(successElement);
+        }
       }, 3000);
 
     } catch (error) {
       console.error('Error exporting to PDF:', error);
       
+      // Clean up cloned container
+      if (clonedContainer && clonedContainer.parentNode) {
+        try {
+          document.body.removeChild(clonedContainer);
+        } catch (removeError) {
+          console.warn('Could not remove cloned container:', removeError);
+        }
+      }
+      
       // Remove loading state if it exists
-      const loadingElement = document.querySelector('[style*="position: fixed"][style*="background: rgba(0,0,0,0.5)"]');
-      if (loadingElement) {
-        document.body.removeChild(loadingElement);
+      if (loadingElement && loadingElement.parentNode) {
+        try {
+          document.body.removeChild(loadingElement);
+        } catch (removeError) {
+          console.warn('Could not remove loading element:', removeError);
+        }
       }
       
       // Show error message
@@ -10647,7 +10717,9 @@ try {
       `;
       document.body.appendChild(errorElement);
       setTimeout(() => {
-        document.body.removeChild(errorElement);
+        if (errorElement && errorElement.parentNode) {
+          document.body.removeChild(errorElement);
+        }
       }, 3000);
     }
   };
