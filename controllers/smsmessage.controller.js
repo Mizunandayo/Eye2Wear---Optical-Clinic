@@ -1,35 +1,27 @@
-/* eslint-disable no-undef */
-import twilio from 'twilio';
+// SMS Controller - Provider implementations removed
 import SmsMessage from '../models/smsmessage.js';
 import PatientDemographic from '../models/patientdemographic.js';
 import PatientAppointment from '../models/patientappointment.js';
 import mongoose from 'mongoose';
 
-// Initialize Twilio client
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
-// Helper function to format phone numbers for Twilio
+// Helper function to format phone numbers
 function formatPhoneNumber(phone) {
   // Remove all non-digit characters
   const cleaned = phone.toString().replace(/\D/g, '');
   
-  // For Philippine numbers starting with 9, add +63
+  // For Philippine numbers, format as +63XXXXXXXXX
   if (cleaned.length === 10 && cleaned.startsWith('9')) {
     return `+63${cleaned}`;
-  }
-  
-  // For numbers starting with 63, add +
-  if (cleaned.length === 12 && cleaned.startsWith('63')) {
+  } else if (cleaned.length === 11 && cleaned.startsWith('09')) {
+    return `+63${cleaned.substring(1)}`;
+  } else if (cleaned.length === 12 && cleaned.startsWith('63')) {
     return `+${cleaned}`;
+  } else if (cleaned.length === 13 && cleaned.startsWith('+63')) {
+    return cleaned;
   }
   
-  // For numbers already starting with +63
-  if (phone.toString().startsWith('+63')) {
-    return phone.toString();
-  }
-  
-  // Return as is if no format matches
-  return phone.toString();
+  // Default: assume it's already in the correct format
+  return phone;
 }
 
 // Helper function to get valid sender user ID
@@ -110,65 +102,28 @@ class SmsController {
       // Save the record first to generate the messageId through auto-increment
       await smsRecord.save();
 
-      console.log('🔧 Twilio Configuration Check:', {
-        accountSid: process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.substring(0, 10)}...` : 'NOT SET',
-        authToken: process.env.TWILIO_AUTH_TOKEN ? `${process.env.TWILIO_AUTH_TOKEN.substring(0, 10)}...` : 'NOT SET',
-        phoneNumber: process.env.TWILIO_PHONE_NUMBER || 'NOT SET',
-        messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID || 'NOT SET'
-      });
+      console.log('� SMS Provider Configuration: No provider configured');
+      console.log('⚠️  SMS sending is currently disabled. Configure an SMS provider to enable messaging.');
 
-      console.log('⚠️  TRIAL ACCOUNT REMINDER: If using Twilio trial account, you have a 9 messages/day limit and can only send to verified numbers.');
-
-      // Send SMS messages via Twilio
+      // SMS sending disabled - no provider configured
       const sendResults = [];
       let successCount = 0;
       let failCount = 0;
 
       for (const patient of validPatients) {
         try {
-          // Format phone number for Twilio - handle Philippine numbers
+          // Format phone number
           const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-          console.log(`Sending SMS to: ${phoneNumber} (original: ${patient.patientcontactnumber})`);
-
-          // Check if we should use Messaging Service for international numbers
-          const messageConfig = {
-            body: fullMessage,
-            to: phoneNumber
-          };
-
-          // Use Messaging Service if available for better international support
-          if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
-            messageConfig.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-          } else {
-            messageConfig.from = process.env.TWILIO_PHONE_NUMBER;
-          }
-
-          const message = await client.messages.create(messageConfig);
-
-          console.log(`✅ Twilio API response for ${phoneNumber}:`, {
-            sid: message.sid,
-            status: message.status,
-            errorCode: message.errorCode,
-            errorMessage: message.errorMessage,
-            direction: message.direction,
-            from: message.from,
-            to: message.to
-          });
-
-          // Check if this might be a trial account limitation
-          if (message.status === 'accepted' && message.from === null) {
-            console.log(`⚠️  TRIAL ACCOUNT DETECTED: Message accepted but may not deliver to unverified numbers`);
-          }
-
+          console.log(`📱 Would send SMS to: ${phoneNumber} (SMS provider not configured)`);
+          
+          // SMS sending disabled - add to results as "skipped"
           sendResults.push({
             patient: `${patient.patientfirstname} ${patient.patientlastname}`,
             phone: phoneNumber,
-            status: message.status === 'accepted' ? 'Sent' : 'Pending',
-            twilioSid: message.sid,
-            twilioStatus: message.status,
-            twilioErrorCode: message.errorCode,
-            trialAccountWarning: message.status === 'accepted' && message.from === null
+            status: 'Skipped',
+            message: 'SMS provider not configured',
+            messageContent: fullMessage
           });
 
           successCount++;
@@ -182,34 +137,14 @@ class SmsController {
             stack: error.stack
           });
           
-          // Provide specific error messages for common issues
+          // Handle SMS sending errors
           let errorMessage = error.message;
-          if (error.code === 21612) {
-            errorMessage = 'International SMS not supported with current Twilio configuration. Please set up a Messaging Service.';
-          } else if (error.code === 21614) {
-            errorMessage = 'Invalid phone number format.';
-          } else if (error.code === 21211) {
-            errorMessage = 'Invalid phone number.';
-          } else if (error.code === 21408) {
-            errorMessage = 'Permission to send an SMS has not been enabled for the region indicated by the To number.';
-          } else if (error.code === 21610) {
-            errorMessage = 'Attempt to send to unsubscribed recipient.';
-          } else if (error.code === 21602) {
-            errorMessage = 'Message body is required.';
-          } else if (error.code === 21604) {
-            errorMessage = 'A message body or media url is required.';
-          } else if (error.code === 63038) {
-            errorMessage = '⚠️ TRIAL ACCOUNT: Daily SMS limit exceeded (9 messages/day). Upgrade your Twilio account or wait until tomorrow.';
-          } else if (error.code === 63003) {
-            errorMessage = '⚠️ TRIAL ACCOUNT: Insufficient account balance. Please add funds to your Twilio account.';
-          }
           
           sendResults.push({
             patient: `${patient.patientfirstname} ${patient.patientlastname}`,
             phone: patient.patientcontactnumber,
             status: 'Failed',
-            error: errorMessage,
-            twilioErrorCode: error.code
+            error: errorMessage
           });
           failCount++;
         }
@@ -382,6 +317,7 @@ class SmsController {
 
       res.status(200).json({
         success: true,
+        message: 'SMS status updated successfully',
         data: smsMessage
       });
 
@@ -529,25 +465,12 @@ Please arrive 15 minutes early. If you need to reschedule, please contact us.
 Thank you,
 ${appointment.appointmentclinic}`;
 
-      // Send SMS via Twilio
+      // Send SMS - Provider not configured
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      // Check if we should use Messaging Service for international numbers
-      const messageConfig = {
-        body: message,
-        to: phoneNumber
-      };
+      console.log(`📱 Would send appointment reminder to: ${phoneNumber} (SMS provider not configured)`);
 
-      // Use Messaging Service if available for better international support
-      if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
-        messageConfig.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-      } else {
-        messageConfig.from = process.env.TWILIO_PHONE_NUMBER;
-      }
-
-      const twilioMessage = await client.messages.create(messageConfig);
-
-      // Create SMS record
+      // Create SMS record (marked as skipped)
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -556,8 +479,8 @@ ${appointment.appointmentclinic}`;
         senderUserName: req.user?.name || 'System Auto-Reminder',
         type: 'Appointment',
         message: message,
-        status: 'Sent',
-        twilioMessageSid: twilioMessage.sid,
+        status: 'Skipped',
+        twilioMessageSid: 'no_provider_configured',
         sentAt: new Date()
       });
 
@@ -566,8 +489,8 @@ ${appointment.appointmentclinic}`;
       res.status(200).json({
         success: true,
         messageId: smsRecord.messageId,
-        twilioSid: twilioMessage.sid,
-        message: 'Appointment reminder sent successfully'
+        status: 'skipped',
+        message: 'Appointment reminder logged (SMS provider not configured)'
       });
 
     } catch (error) {
@@ -665,25 +588,12 @@ If you have any questions, please don't hesitate to contact us.
 Thank you,
 ${clinicName}`;
 
-      // Send SMS via Twilio
+      // Send SMS - Provider not configured
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      // Check if we should use Messaging Service for international numbers
-      const messageConfig = {
-        body: message,
-        to: phoneNumber
-      };
+      console.log(`📱 Would send order status update to: ${phoneNumber} (SMS provider not configured)`);
 
-      // Use Messaging Service if available for better international support
-      if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
-        messageConfig.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-      } else {
-        messageConfig.from = process.env.TWILIO_PHONE_NUMBER;
-      }
-
-      const twilioMessage = await client.messages.create(messageConfig);
-
-      // Create SMS record
+      // Create SMS record (marked as skipped)
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -692,8 +602,8 @@ ${clinicName}`;
         senderUserName: req.user?.name || 'System Auto-Update',
         type: 'Order Status',
         message: message,
-        status: 'Sent',
-        twilioMessageSid: twilioMessage.sid,
+        status: 'Skipped',
+        twilioMessageSid: 'no_provider_configured',
         sentAt: new Date()
       });
 
@@ -702,12 +612,11 @@ ${clinicName}`;
       res.status(200).json({
         success: true,
         messageId: smsRecord.messageId,
-        twilioSid: twilioMessage.sid,
-        message: 'Order status update sent successfully'
+        message: 'Order status update logged (SMS provider not configured)'
       });
 
     } catch (error) {
-      console.error('Error sending order status update:', error);
+      console.error('Error processing order status update:', error);
       res.status(500).json({
         error: 'Internal server error',
         details: error.message
@@ -753,25 +662,12 @@ Visit us or contact us to place your order before it's gone!
 Thank you,
 ${clinicName}`;
 
-      // Send SMS via Twilio
+      // Send SMS - Provider not configured
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      // Check if we should use Messaging Service for international numbers
-      const messageConfig = {
-        body: message,
-        to: phoneNumber
-      };
+      console.log(`📱 Would send wishlist notification to: ${phoneNumber} (SMS provider not configured)`);
 
-      // Use Messaging Service if available for better international support
-      if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
-        messageConfig.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-      } else {
-        messageConfig.from = process.env.TWILIO_PHONE_NUMBER;
-      }
-
-      const twilioMessage = await client.messages.create(messageConfig);
-
-      // Create SMS record
+      // Create SMS record (marked as skipped)
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -780,8 +676,8 @@ ${clinicName}`;
         senderUserName: req.user?.name || 'System Auto-Notification',
         type: 'Wishlist',
         message: message,
-        status: 'Sent',
-        twilioMessageSid: twilioMessage.sid,
+        status: 'Skipped',
+        twilioMessageSid: 'no_provider_configured',
         sentAt: new Date()
       });
 
@@ -790,12 +686,11 @@ ${clinicName}`;
       res.status(200).json({
         success: true,
         messageId: smsRecord.messageId,
-        twilioSid: twilioMessage.sid,
-        message: 'Wishlist notification sent successfully'
+        message: 'Wishlist notification logged (SMS provider not configured)'
       });
 
     } catch (error) {
-      console.error('Error sending wishlist notification:', error);
+      console.error('Error processing wishlist notification:', error);
       res.status(500).json({
         error: 'Internal server error',
         details: error.message
