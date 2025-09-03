@@ -10508,349 +10508,81 @@ try {
 
   // Export functions
   const exportToPDF = async () => {
-    let loadingElement = null;
-    let clonedContainer = null;
-    
     try {
       const userClinic = getCurrentUserClinic();
       const currentDate = new Date().toLocaleDateString();
+      const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
       
-      // Show loading state
-      loadingElement = document.createElement('div');
-      loadingElement.innerHTML = `
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-          <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
-            <div style="margin-bottom: 10px;">Generating PDF...</div>
-            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #184d85; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-          </div>
-        </div>
-        <style>
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      `;
-      document.body.appendChild(loadingElement);
-
-      // Get the reports container
-      const reportsContainer = document.getElementById('reportsandanalytics');
-      if (!reportsContainer) {
-        throw new Error('Reports container not found');
-      }
-
-      // Create a clone to modify for PDF
-      clonedContainer = reportsContainer.cloneNode(true);
-      clonedContainer.style.width = '210mm'; // A4 width
-      clonedContainer.style.background = 'white';
-      clonedContainer.style.padding = '20px';
-      clonedContainer.style.boxShadow = 'none';
-      clonedContainer.style.border = 'none';
-      clonedContainer.style.borderRadius = '0';
-
-      // Remove interactive elements from the clone
-      const buttonsToRemove = clonedContainer.querySelectorAll('button');
-      buttonsToRemove.forEach(button => {
-        if (button.textContent.includes('Export PDF') || button.textContent.includes('Refresh')) {
-          button.remove();
+      const pdf = new jsPDF();
+      
+      // Title
+      pdf.setFontSize(20);
+      pdf.text(`${userClinic} - Reports & Analytics`, 20, 30);
+      
+      // Date and period
+      pdf.setFontSize(12);
+      pdf.text(`Generated on: ${currentDate}`, 20, 45);
+      
+      // Summary section
+      pdf.setFontSize(16);
+      pdf.text('Summary', 20, 65);
+      
+      pdf.setFontSize(12);
+      pdf.text(`Total Orders: ${allOrders.length}`, 20, 80);
+      pdf.text(`Total Revenue: ₱${calculateTotalRevenue().toLocaleString()}`, 20, 90);
+      pdf.text(`Total Appointments: ${reportsData.appointments.length}`, 20, 100);
+      
+      // Recent Orders section
+      pdf.setFontSize(16);
+      pdf.text('Recent Orders', 20, 120);
+      
+      pdf.setFontSize(10);
+      let yPosition = 135;
+      
+      // Headers
+      pdf.text('Order ID', 20, yPosition);
+      pdf.text('Customer', 60, yPosition);
+      pdf.text('Product', 100, yPosition);
+      pdf.text('Status', 140, yPosition);
+      pdf.text('Total', 170, yPosition);
+      
+      yPosition += 10;
+      
+      // Recent orders data (first 10)
+      const recentOrders = allOrders
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 10);
+      
+      recentOrders.forEach(order => {
+        if (yPosition > 280) { // Check if we need a new page
+          pdf.addPage();
+          yPosition = 20;
         }
-      });
-
-      // Convert oklch colors to regular hex colors to avoid html2canvas issues
-      const convertColors = (element) => {
-        const allElements = element.querySelectorAll('*');
-        allElements.forEach(el => {
-          try {
-            const computedStyle = window.getComputedStyle(el);
-            
-            // Force safe background colors
-            if (computedStyle.backgroundColor) {
-              if (computedStyle.backgroundColor.includes('oklch') || 
-                  computedStyle.backgroundColor.includes('rgb(') && computedStyle.backgroundColor.includes('from')) {
-                el.style.setProperty('background-color', '#ffffff', 'important');
-              }
-            }
-            
-            // Force safe text colors
-            if (computedStyle.color) {
-              if (computedStyle.color.includes('oklch') || 
-                  computedStyle.color.includes('rgb(') && computedStyle.color.includes('from')) {
-                el.style.setProperty('color', '#374151', 'important');
-              }
-            }
-            
-            // Force safe border colors
-            if (computedStyle.borderColor) {
-              if (computedStyle.borderColor.includes('oklch') || 
-                  computedStyle.borderColor.includes('rgb(') && computedStyle.borderColor.includes('from')) {
-                el.style.setProperty('border-color', '#d1d5db', 'important');
-              }
-            }
-            
-            // Handle specific CSS classes with problematic colors
-            if (el.className) {
-              const classNames = typeof el.className === 'string' ? el.className : el.className.toString();
-              
-              // Override specific Tailwind classes that might use oklch
-              if (classNames.includes('bg-')) {
-                if (classNames.includes('bg-blue') || classNames.includes('bg-primary')) {
-                  el.style.setProperty('background-color', '#184d85', 'important');
-                } else if (classNames.includes('bg-red')) {
-                  el.style.setProperty('background-color', '#dc2626', 'important');
-                } else if (classNames.includes('bg-green')) {
-                  el.style.setProperty('background-color', '#16a34a', 'important');
-                } else if (classNames.includes('bg-yellow')) {
-                  el.style.setProperty('background-color', '#eab308', 'important');
-                } else if (classNames.includes('bg-gray')) {
-                  el.style.setProperty('background-color', '#6b7280', 'important');
-                } else if (classNames.includes('bg-white')) {
-                  el.style.setProperty('background-color', '#ffffff', 'important');
-                }
-              }
-              
-              if (classNames.includes('text-')) {
-                if (classNames.includes('text-blue') || classNames.includes('text-primary')) {
-                  el.style.setProperty('color', '#184d85', 'important');
-                } else if (classNames.includes('text-red')) {
-                  el.style.setProperty('color', '#dc2626', 'important');
-                } else if (classNames.includes('text-green')) {
-                  el.style.setProperty('color', '#16a34a', 'important');
-                } else if (classNames.includes('text-yellow')) {
-                  el.style.setProperty('color', '#eab308', 'important');
-                } else if (classNames.includes('text-gray')) {
-                  el.style.setProperty('color', '#6b7280', 'important');
-                } else if (classNames.includes('text-white')) {
-                  el.style.setProperty('color', '#ffffff', 'important');
-                } else if (classNames.includes('text-black')) {
-                  el.style.setProperty('color', '#000000', 'important');
-                }
-              }
-              
-              if (classNames.includes('border-')) {
-                if (classNames.includes('border-blue') || classNames.includes('border-primary')) {
-                  el.style.setProperty('border-color', '#184d85', 'important');
-                } else if (classNames.includes('border-gray')) {
-                  el.style.setProperty('border-color', '#d1d5db', 'important');
-                }
-              }
-            }
-            
-            // Override any CSS custom properties that might contain oklch
-            const cssText = el.style.cssText;
-            if (cssText && cssText.includes('oklch')) {
-              // Clear all styles and apply safe defaults
-              el.style.cssText = '';
-              el.style.setProperty('color', '#374151', 'important');
-              el.style.setProperty('background-color', 'transparent', 'important');
-              el.style.setProperty('border-color', '#d1d5db', 'important');
-            }
-            
-          } catch (error) {
-            // If there's any error processing an element, apply safe defaults
-            console.warn('Error processing element for PDF:', error);
-            el.style.setProperty('color', '#374151', 'important');
-            el.style.setProperty('background-color', 'transparent', 'important');
-            el.style.setProperty('border-color', '#d1d5db', 'important');
-          }
-        });
         
-        // Also add a global style override to the cloned container
-        const styleOverride = document.createElement('style');
-        styleOverride.textContent = `
-          * {
-            color: #374151 !important;
-            background-color: transparent !important;
-            border-color: #d1d5db !important;
-          }
-          .bg-blue-600, .bg-blue-500, .bg-primary {
-            background-color: #184d85 !important;
-          }
-          .bg-red-600, .bg-red-500 {
-            background-color: #dc2626 !important;
-          }
-          .bg-green-600, .bg-green-500 {
-            background-color: #16a34a !important;
-          }
-          .bg-white {
-            background-color: #ffffff !important;
-          }
-          .text-blue-600, .text-blue-500, .text-primary {
-            color: #184d85 !important;
-          }
-          .text-white {
-            color: #ffffff !important;
-          }
-          .text-gray-600, .text-gray-500 {
-            color: #6b7280 !important;
-          }
-          .text-black {
-            color: #000000 !important;
-          }
-        `;
-        element.appendChild(styleOverride);
-      };
-
-      // Apply color conversion
-      convertColors(clonedContainer);
-
-      // Add a header with title and generation info
-      const header = document.createElement('div');
-      header.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #184d85; padding-bottom: 20px;">
-          <h1 style="color: #184d85; font-size: 28px; margin: 0; font-family: 'Albert Sans', sans-serif;">${userClinic} - Reports & Analytics</h1>
-          <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Generated on: ${currentDate}</p>
-        </div>
-      `;
-      clonedContainer.insertBefore(header, clonedContainer.firstChild);
-
-      // Temporarily add the clone to the document for rendering
-      clonedContainer.style.position = 'absolute';
-      clonedContainer.style.left = '-9999px';
-      clonedContainer.style.top = '0';
-      clonedContainer.style.zIndex = '-1';
-      document.body.appendChild(clonedContainer);
-
-      // Wait for charts to render
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Configure html2canvas options for better compatibility
-      const canvas = await html2canvas(clonedContainer, {
-        scale: 1, // Further reduced scale to avoid issues
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: clonedContainer.scrollWidth,
-        height: clonedContainer.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: clonedContainer.scrollWidth,
-        windowHeight: clonedContainer.scrollHeight,
-        ignoreElements: (element) => {
-          // Ignore elements that might cause issues
-          try {
-            const computedStyle = window.getComputedStyle(element);
-            // Skip elements with problematic color functions
-            if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
-              return true;
-            }
-            if (computedStyle.color && computedStyle.color.includes('oklch')) {
-              return true;
-            }
-            if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
-              return true;
-            }
-          } catch (e) {
-            // If we can't read the style, skip the element
-            return true;
-          }
-          
-          return element.tagName === 'SCRIPT' || 
-                 element.tagName === 'STYLE' ||
-                 (element.style && element.style.display === 'none');
-        },
-        onclone: (clonedDoc) => {
-          // Additional processing on the cloned document
-          const clonedElements = clonedDoc.querySelectorAll('*');
-          clonedElements.forEach(el => {
-            try {
-              // Force override any remaining problematic styles
-              if (el.style) {
-                el.style.removeProperty('--tw-bg-opacity');
-                el.style.removeProperty('--tw-text-opacity');
-                el.style.removeProperty('--tw-border-opacity');
-              }
-            } catch (e) {
-              // Ignore errors
-            }
-          });
-        }
+        const orderId = order.patientorderambherid || order.patientorderbautistaid;
+        const customerName = `${order.patientfirstname} ${order.patientlastname}`;
+        const productName = (order.patientorderambherproductname || order.patientorderbautistaproductname || '').substring(0, 20);
+        const status = order.patientorderambherstatus || order.patientorderbautistastatus;
+        const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0;
+        
+        pdf.text(`${orderId}`, 20, yPosition);
+        pdf.text(customerName.substring(0, 15), 60, yPosition);
+        pdf.text(productName, 100, yPosition);
+        pdf.text(status.substring(0, 10), 140, yPosition);
+        pdf.text(`₱${total.toLocaleString()}`, 170, yPosition);
+        
+        yPosition += 8;
       });
-
-      // Remove the cloned element safely
-      if (clonedContainer && clonedContainer.parentNode) {
-        document.body.removeChild(clonedContainer);
-        clonedContainer = null;
-      }
-
-      // Create PDF
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add the first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if content exceeds one page
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Save the PDF
-      const fileName = `${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`;
-      pdf.save(fileName);
-
-      // Remove loading state safely
-      if (loadingElement && loadingElement.parentNode) {
-        document.body.removeChild(loadingElement);
-        loadingElement = null;
-      }
-
+      
+      // Save PDF
+      pdf.save(`${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`);
+      
       // Show success message
-      const successElement = document.createElement('div');
-      successElement.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 20px; border-radius: 10px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-          ✅ PDF exported successfully!
-        </div>
-      `;
-      document.body.appendChild(successElement);
-      setTimeout(() => {
-        if (successElement && successElement.parentNode) {
-          document.body.removeChild(successElement);
-        }
-      }, 3000);
-
+      alert('PDF exported successfully!');
+      
     } catch (error) {
       console.error('Error exporting to PDF:', error);
-      
-      // Clean up cloned container
-      if (clonedContainer && clonedContainer.parentNode) {
-        try {
-          document.body.removeChild(clonedContainer);
-        } catch (removeError) {
-          console.warn('Could not remove cloned container:', removeError);
-        }
-      }
-      
-      // Remove loading state if it exists
-      if (loadingElement && loadingElement.parentNode) {
-        try {
-          document.body.removeChild(loadingElement);
-        } catch (removeError) {
-          console.warn('Could not remove loading element:', removeError);
-        }
-      }
-      
-      // Show error message
-      const errorElement = document.createElement('div');
-      errorElement.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 10px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-          ❌ Error exporting PDF. Please try again.
-        </div>
-      `;
-      document.body.appendChild(errorElement);
-      setTimeout(() => {
-        if (errorElement && errorElement.parentNode) {
-          document.body.removeChild(errorElement);
-        }
-      }, 3000);
+      alert('Error exporting to PDF. Please try again.');
     }
   };
 
