@@ -10579,14 +10579,17 @@ try {
           
           // Handle specific problematic classes
           if (el.className) {
+            // Convert className to string if it's a DOMTokenList
+            const classNames = typeof el.className === 'string' ? el.className : el.className.toString();
+            
             // Replace Tailwind oklch colors with standard colors
-            if (el.className.includes('bg-blue')) {
+            if (classNames.includes('bg-blue')) {
               el.style.backgroundColor = '#184d85';
             }
-            if (el.className.includes('text-blue')) {
+            if (classNames.includes('text-blue')) {
               el.style.color = '#184d85';
             }
-            if (el.className.includes('border-blue')) {
+            if (classNames.includes('border-blue')) {
               el.style.borderColor = '#184d85';
             }
           }
