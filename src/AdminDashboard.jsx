@@ -10560,40 +10560,134 @@ try {
       const convertColors = (element) => {
         const allElements = element.querySelectorAll('*');
         allElements.forEach(el => {
-          const computedStyle = window.getComputedStyle(el);
-          
-          // Convert background colors
-          if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
-            el.style.backgroundColor = '#184d85'; // Default to brand color
-          }
-          
-          // Convert text colors
-          if (computedStyle.color && computedStyle.color.includes('oklch')) {
-            el.style.color = '#374151'; // Default to gray
-          }
-          
-          // Convert border colors
-          if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
-            el.style.borderColor = '#d1d5db'; // Default to light gray
-          }
-          
-          // Handle specific problematic classes
-          if (el.className) {
-            // Convert className to string if it's a DOMTokenList
-            const classNames = typeof el.className === 'string' ? el.className : el.className.toString();
+          try {
+            const computedStyle = window.getComputedStyle(el);
             
-            // Replace Tailwind oklch colors with standard colors
-            if (classNames.includes('bg-blue')) {
-              el.style.backgroundColor = '#184d85';
+            // Force safe background colors
+            if (computedStyle.backgroundColor) {
+              if (computedStyle.backgroundColor.includes('oklch') || 
+                  computedStyle.backgroundColor.includes('rgb(') && computedStyle.backgroundColor.includes('from')) {
+                el.style.setProperty('background-color', '#ffffff', 'important');
+              }
             }
-            if (classNames.includes('text-blue')) {
-              el.style.color = '#184d85';
+            
+            // Force safe text colors
+            if (computedStyle.color) {
+              if (computedStyle.color.includes('oklch') || 
+                  computedStyle.color.includes('rgb(') && computedStyle.color.includes('from')) {
+                el.style.setProperty('color', '#374151', 'important');
+              }
             }
-            if (classNames.includes('border-blue')) {
-              el.style.borderColor = '#184d85';
+            
+            // Force safe border colors
+            if (computedStyle.borderColor) {
+              if (computedStyle.borderColor.includes('oklch') || 
+                  computedStyle.borderColor.includes('rgb(') && computedStyle.borderColor.includes('from')) {
+                el.style.setProperty('border-color', '#d1d5db', 'important');
+              }
             }
+            
+            // Handle specific CSS classes with problematic colors
+            if (el.className) {
+              const classNames = typeof el.className === 'string' ? el.className : el.className.toString();
+              
+              // Override specific Tailwind classes that might use oklch
+              if (classNames.includes('bg-')) {
+                if (classNames.includes('bg-blue') || classNames.includes('bg-primary')) {
+                  el.style.setProperty('background-color', '#184d85', 'important');
+                } else if (classNames.includes('bg-red')) {
+                  el.style.setProperty('background-color', '#dc2626', 'important');
+                } else if (classNames.includes('bg-green')) {
+                  el.style.setProperty('background-color', '#16a34a', 'important');
+                } else if (classNames.includes('bg-yellow')) {
+                  el.style.setProperty('background-color', '#eab308', 'important');
+                } else if (classNames.includes('bg-gray')) {
+                  el.style.setProperty('background-color', '#6b7280', 'important');
+                } else if (classNames.includes('bg-white')) {
+                  el.style.setProperty('background-color', '#ffffff', 'important');
+                }
+              }
+              
+              if (classNames.includes('text-')) {
+                if (classNames.includes('text-blue') || classNames.includes('text-primary')) {
+                  el.style.setProperty('color', '#184d85', 'important');
+                } else if (classNames.includes('text-red')) {
+                  el.style.setProperty('color', '#dc2626', 'important');
+                } else if (classNames.includes('text-green')) {
+                  el.style.setProperty('color', '#16a34a', 'important');
+                } else if (classNames.includes('text-yellow')) {
+                  el.style.setProperty('color', '#eab308', 'important');
+                } else if (classNames.includes('text-gray')) {
+                  el.style.setProperty('color', '#6b7280', 'important');
+                } else if (classNames.includes('text-white')) {
+                  el.style.setProperty('color', '#ffffff', 'important');
+                } else if (classNames.includes('text-black')) {
+                  el.style.setProperty('color', '#000000', 'important');
+                }
+              }
+              
+              if (classNames.includes('border-')) {
+                if (classNames.includes('border-blue') || classNames.includes('border-primary')) {
+                  el.style.setProperty('border-color', '#184d85', 'important');
+                } else if (classNames.includes('border-gray')) {
+                  el.style.setProperty('border-color', '#d1d5db', 'important');
+                }
+              }
+            }
+            
+            // Override any CSS custom properties that might contain oklch
+            const cssText = el.style.cssText;
+            if (cssText && cssText.includes('oklch')) {
+              // Clear all styles and apply safe defaults
+              el.style.cssText = '';
+              el.style.setProperty('color', '#374151', 'important');
+              el.style.setProperty('background-color', 'transparent', 'important');
+              el.style.setProperty('border-color', '#d1d5db', 'important');
+            }
+            
+          } catch (error) {
+            // If there's any error processing an element, apply safe defaults
+            console.warn('Error processing element for PDF:', error);
+            el.style.setProperty('color', '#374151', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+            el.style.setProperty('border-color', '#d1d5db', 'important');
           }
         });
+        
+        // Also add a global style override to the cloned container
+        const styleOverride = document.createElement('style');
+        styleOverride.textContent = `
+          * {
+            color: #374151 !important;
+            background-color: transparent !important;
+            border-color: #d1d5db !important;
+          }
+          .bg-blue-600, .bg-blue-500, .bg-primary {
+            background-color: #184d85 !important;
+          }
+          .bg-red-600, .bg-red-500 {
+            background-color: #dc2626 !important;
+          }
+          .bg-green-600, .bg-green-500 {
+            background-color: #16a34a !important;
+          }
+          .bg-white {
+            background-color: #ffffff !important;
+          }
+          .text-blue-600, .text-blue-500, .text-primary {
+            color: #184d85 !important;
+          }
+          .text-white {
+            color: #ffffff !important;
+          }
+          .text-gray-600, .text-gray-500 {
+            color: #6b7280 !important;
+          }
+          .text-black {
+            color: #000000 !important;
+          }
+        `;
+        element.appendChild(styleOverride);
       };
 
       // Apply color conversion
@@ -10621,7 +10715,7 @@ try {
 
       // Configure html2canvas options for better compatibility
       const canvas = await html2canvas(clonedContainer, {
-        scale: 1.5, // Reduced scale to avoid memory issues
+        scale: 1, // Further reduced scale to avoid issues
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -10633,9 +10727,42 @@ try {
         windowHeight: clonedContainer.scrollHeight,
         ignoreElements: (element) => {
           // Ignore elements that might cause issues
+          try {
+            const computedStyle = window.getComputedStyle(element);
+            // Skip elements with problematic color functions
+            if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+              return true;
+            }
+            if (computedStyle.color && computedStyle.color.includes('oklch')) {
+              return true;
+            }
+            if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
+              return true;
+            }
+          } catch (e) {
+            // If we can't read the style, skip the element
+            return true;
+          }
+          
           return element.tagName === 'SCRIPT' || 
                  element.tagName === 'STYLE' ||
                  (element.style && element.style.display === 'none');
+        },
+        onclone: (clonedDoc) => {
+          // Additional processing on the cloned document
+          const clonedElements = clonedDoc.querySelectorAll('*');
+          clonedElements.forEach(el => {
+            try {
+              // Force override any remaining problematic styles
+              if (el.style) {
+                el.style.removeProperty('--tw-bg-opacity');
+                el.style.removeProperty('--tw-text-opacity');
+                el.style.removeProperty('--tw-border-opacity');
+              }
+            } catch (e) {
+              // Ignore errors
+            }
+          });
         }
       });
 
