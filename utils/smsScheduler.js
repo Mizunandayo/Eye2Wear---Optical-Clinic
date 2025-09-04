@@ -168,8 +168,16 @@ ${clinicName}`;
         phoneNumber = phoneNumber.startsWith('63') ? phoneNumber : `63${phoneNumber}`;
       }
 
-      // Send SMS via iProg
-      const smsResult = await iprogClient.sendSMS(phoneNumber, message);
+      // Send SMS via iProg using bulk endpoint for consistency
+      const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+      
+      // Extract single result from bulk response
+      const smsResult = {
+        success: bulkSmsResult.success,
+        messageId: bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : null,
+        error: bulkSmsResult.error,
+        provider: 'iProg-Bulk'
+      };
 
       // Create SMS record
       const smsRecord = new SmsMessage({

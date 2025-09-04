@@ -1176,7 +1176,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
               {/* Conditional rendering based on data filter */}
               {dataFilter === "all" ? (
                 <>
-                  {/* Show both orders and appointments */}
+                  {/* Show both orders and appointments as separate lines (not stacked) */}
                   <Area
                     dataKey="ordersRevenue"
                     type="monotone"
@@ -1184,7 +1184,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
                     stroke="#66944C"
                     strokeWidth={2}
                     name="Orders Revenue"
-                    stackId="1"
+                    fillOpacity={0.6}
                   />
                   <Area
                     dataKey="appointmentsRevenue"
@@ -1193,7 +1193,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
                     stroke="#206ba3"
                     strokeWidth={2}
                     name="Appointments Revenue"
-                    stackId="1"
+                    fillOpacity={0.6}
                   />
                 </>
               ) : dataFilter === "orders" ? (
@@ -8336,6 +8336,7 @@ const [ambherproductsoldCount, setambherproductsoldCount] = useState(0);
 const [ambherproductsoldCounts, setambherproductsoldCounts] = useState(0);
 const [isSubmittingAmbherCompleteOrder, setIsSubmittingAmbherCompleteOrder] = useState(false);
 const [isSubmittingAmbherPendingOrder, setIsSubmittingAmbherPendingOrder] = useState(false);
+const [isMarkingOrderComplete, setIsMarkingOrderComplete] = useState(false);
 
 
 //Order Bautista
@@ -9127,74 +9128,37 @@ const handlePickupDateChange = (e) => {
   updatePickupDate(selectedDate);
 };
 
-// Function to send order completion SMS
-const sendOrderCompletionSMS = useCallback(async (orderData) => {
-  try {
-    // Extract order details
-    const isAmbher = orderData.patientorderambherid;
-    const customerName = isAmbher 
-      ? `${orderData.patientfirstname} ${orderData.patientlastname}`
-      : `${orderData.patientfirstname} ${orderData.patientlastname}`;
-    const customerPhone = orderData.patientcontactnumber;
+// SMS functionality integrated directly into markOrderAsComplete function
+// Previous sendOrderCompletionSMS function removed to prevent duplication
 
-    // Skip SMS if customer phone is not available
-    if (!customerPhone) {
-      console.warn('⚠️ Customer phone number not available for SMS notification');
-      return;
-    }
 
-    // Send SMS via order status API
-    const response = await fetch(`${apiUrl}/api/sms/order-status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentusertoken}`
-      },
-      body: JSON.stringify({
-        orderId: orderData._id, // Use MongoDB _id instead of custom ID
-        orderType: isAmbher ? 'ambher' : 'bautista',
-        newStatus: 'Completed'
-      })
-    });
 
-    const result = await response.json();
 
-    if (response.ok) {
-      console.log('✅ Order completion SMS sent successfully:', result);
-      
-      // Show success toast notification
-      setSmsToastMessage(`Order completion SMS sent to ${customerName}`);
-      setSmsToast(true);
-      setSmsToastClosing(false);
-      
-      // Start progress animation
-      setSmsProgressWidth('0%');
-      setTimeout(() => setSmsProgressWidth('100%'), 100);
-      
-      // Auto-hide toast after 4 seconds
-      setTimeout(() => {
-        setSmsToastClosing(true);
-        setTimeout(() => {
-          setSmsToast(false);
-          setSmsToastClosing(false);
-          setSmsProgressWidth('0%');
-        }, 3000);
-      }, 4000);
-      
-    } else {
-      console.error('❌ Failed to send order completion SMS:', result);
-    }
 
-  } catch (error) {
-    console.error('❌ Error sending order completion SMS:', error);
-  }
-}, [apiUrl, currentusertoken, setSmsToast, setSmsToastMessage, setSmsToastClosing, setSmsProgressWidth]);
+
+
+
+
 
 // Function to mark order as complete
 const markOrderAsComplete = useCallback(async () => {
-  if (!selectedOrderForView) return;
+  // Multi-layer protection against duplicate submissions
+  if (!selectedOrderForView || isMarkingOrderComplete) {
+    console.warn('⚠️ Mark order as complete already in progress, ignoring duplicate click');
+    return;
+  }
+
+  // Additional timestamp-based protection
+  const now = Date.now();
+  const lastSubmissionTime = window.lastMarkCompleteTime || 0;
+  if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+    console.warn('⚠️ Mark complete clicked too soon after last attempt, ignoring duplicate click');
+    return;
+  }
+  window.lastMarkCompleteTime = now;
   
   try {
+    setIsMarkingOrderComplete(true);
     const isAmbher = selectedOrderForView.patientorderambherid;
     const orderId = isAmbher 
       ? selectedOrderForView.patientorderambherid 
@@ -9213,19 +9177,25 @@ const markOrderAsComplete = useCallback(async () => {
         'Authorization': `Bearer ${currentusertoken}`
       },
       body: JSON.stringify({
-        // Update order status to Completed
-        patientorderambherstatus: 'Completed',
-        patientorderbautistastatus: 'Completed',
-        // Update pickup status to Now (which indicates completed)
-        patientorderambherproductpickupstatus: 'Now',
-        patientorderbautistaproductpickupstatus: 'Now',
-        changedBy: `${adminfirstname} ${adminlastname}` || 'Admin User'
+        // Update order status to Completed based on order type
+        ...(isAmbher ? {
+          patientorderambherstatus: 'Completed',
+          patientorderambherproductpickupstatus: 'Now'
+        } : {
+          patientorderbautistastatus: 'Completed',
+          patientorderbautistaproductpickupstatus: 'Now'
+        }),
+        changedBy: (adminfirstname && adminlastname) ? `${adminfirstname} ${adminlastname}` : 'Admin User'
       })
     });
 
     if (response.ok) {
       const updatedOrder = await response.json();
       console.log(`✅ Successfully marked ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
+      
+      // SMS notification will be handled automatically by the backend controller
+      // when the order status is updated to "Completed"
+      console.log('📱 SMS notification will be sent automatically by backend controller');
       
       // Update the product quantity after completing the order
       try {
@@ -9389,13 +9359,8 @@ const markOrderAsComplete = useCallback(async () => {
         refreshOrdersWithStatusCheck();
       }, 500);
       
-      // Send SMS notification to customer about order completion
-      try {
-        await sendOrderCompletionSMS(selectedOrderForView);
-      } catch (smsError) {
-        console.warn('⚠️ SMS notification failed but order was still completed:', smsError);
-        // Don't let SMS failure affect the order completion success
-      }
+      // Note: SMS notification is already sent above in the main try block
+      // No need for additional SMS call here
       
       console.log('🎯 Order marked as complete and UI updated');
     } else {
@@ -9403,8 +9368,12 @@ const markOrderAsComplete = useCallback(async () => {
     }
   } catch (error) {
     console.error('❌ Error marking order as complete:', error);
+  } finally {
+    // Always reset the loading state to allow future clicks
+    setIsMarkingOrderComplete(false);
+    console.log('🔄 Reset isMarkingOrderComplete to false');
   }
-}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, sendOrderCompletionSMS]);
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, isMarkingOrderComplete]);
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -9594,6 +9563,28 @@ const handlePaymentInputChange = (e) => {
 //AMBHER OPTICAL ORDER PRODUCT
 const submitpatientorderambher = async (e) => {
 e.preventDefault();
+
+// PROTECTION: Don't submit new orders if we're marking an existing order as complete
+if (isMarkingOrderComplete) {
+  console.warn('⚠️ Blocking Ambher order submission during order completion process');
+  return;
+}
+
+// Multi-layer protection against duplicate submissions
+if (isSubmittingAmbherCompleteOrder) {
+  console.warn('⚠️ Order submission already in progress (state check), ignoring duplicate click');
+  return;
+}
+
+// Additional timestamp-based protection
+const now = Date.now();
+const lastSubmissionTime = window.lastAmbherSubmissionTime || 0;
+if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+  console.warn('⚠️ Order submission too soon after last attempt, ignoring duplicate click');
+  return;
+}
+window.lastAmbherSubmissionTime = now;
+
 setIsSubmittingAmbherCompleteOrder(true);
 
 try {
@@ -9742,6 +9733,10 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
   try {
     // Use the order status SMS with the new order ID
     if (result && result._id) {
+      console.log('📱 Attempting to send SMS for order:', result._id);
+      console.log('🌐 API URL:', apiUrl);
+      console.log('🔑 Token available:', !!currentusertoken);
+      
       const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
         method: 'POST',
         headers: {
@@ -9755,11 +9750,16 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         })
       });
 
-      if (smsResponse.ok) {
+      console.log('📡 SMS Response status:', smsResponse.status);
+      const smsResponseData = await smsResponse.json();
+      console.log('📡 SMS Response data:', smsResponseData);
+
+      // Check both HTTP status AND the success field in response body
+      if (smsResponse.ok && smsResponseData.success) {
         console.log('✅ Order completion SMS sent successfully');
         
         // Show success toast notification
-        setSmsToastMessage(`Order confirmation SMS sent to ${orderambherfirstName} ${orderambherlastName}`);
+        setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderambherfirstName} ${orderambherlastName}`);
         setSmsToast(true);
         setSmsToastClosing(false);
         
@@ -9778,7 +9778,39 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         }, 4000);
       } else {
         console.warn('⚠️ SMS notification failed but order was still created');
+        console.warn('SMS Error details:', smsResponseData);
+        
+        // Show informative error message based on the error type
+        let errorMessage = 'SMS notification failed';
+        if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
+          errorMessage = `⚠️ Order created but SMS failed: No phone number for ${orderambherfirstName} ${orderambherlastName}`;
+        } else if (smsResponseData.message) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.message}`;
+        } else if (smsResponseData.error) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.error}`;
+        }
+        
+        // Show warning toast
+        setSmsToastMessage(errorMessage);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds (longer for error messages)
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 6000);
       }
+    } else {
+      console.warn('⚠️ No order ID returned, cannot send SMS');
     }
   } catch (smsError) {
     console.warn('⚠️ SMS notification failed but order was still created:', smsError);
@@ -9822,6 +9854,28 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
 //BAUTISTA ORDER PRODUCT
 const submitpatientorderbautista = async (e) => {
 e.preventDefault();
+
+// PROTECTION: Don't submit new orders if we're marking an existing order as complete
+if (isMarkingOrderComplete) {
+  console.warn('⚠️ Blocking Bautista order submission during order completion process');
+  return;
+}
+
+// Multi-layer protection against duplicate submissions
+if (isSubmittingBautistaCompleteOrder) {
+  console.warn('⚠️ Bautista order submission already in progress (state check), ignoring duplicate click');
+  return;
+}
+
+// Additional timestamp-based protection
+const now = Date.now();
+const lastSubmissionTime = window.lastBautistaSubmissionTime || 0;
+if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+  console.warn('⚠️ Bautista order submission too soon after last attempt, ignoring duplicate click');
+  return;
+}
+window.lastBautistaSubmissionTime = now;
+
 setIsSubmittingBautistaCompleteOrder(true);
 
 try {
@@ -9970,6 +10024,10 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
   try {
     // Use the order status SMS with the new order ID
     if (result && result._id) {
+      console.log('📱 Attempting to send SMS for Bautista order:', result._id);
+      console.log('🌐 API URL:', apiUrl);
+      console.log('🔑 Token available:', !!currentusertoken);
+      
       const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
         method: 'POST',
         headers: {
@@ -9983,11 +10041,16 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         })
       });
 
-      if (smsResponse.ok) {
+      console.log('📡 SMS Response status:', smsResponse.status);
+      const smsResponseData = await smsResponse.json();
+      console.log('📡 SMS Response data:', smsResponseData);
+
+      // Check both HTTP status AND the success field in response body
+      if (smsResponse.ok && smsResponseData.success) {
         console.log('✅ Order completion SMS sent successfully');
         
         // Show success toast notification
-        setSmsToastMessage(`Order confirmation SMS sent to ${orderbautistafirstName} ${orderbautistalastName}`);
+        setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderbautistafirstName} ${orderbautistalastName}`);
         setSmsToast(true);
         setSmsToastClosing(false);
         
@@ -10006,7 +10069,39 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         }, 4000);
       } else {
         console.warn('⚠️ SMS notification failed but order was still created');
+        console.warn('SMS Error details:', smsResponseData);
+        
+        // Show informative error message based on the error type
+        let errorMessage = 'SMS notification failed';
+        if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
+          errorMessage = `⚠️ Order created but SMS failed: No phone number for ${orderbautistafirstName} ${orderbautistalastName}`;
+        } else if (smsResponseData.message) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.message}`;
+        } else if (smsResponseData.error) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.error}`;
+        }
+        
+        // Show warning toast
+        setSmsToastMessage(errorMessage);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds (longer for error messages)
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 6000);
       }
+    } else {
+      console.warn('⚠️ No order ID returned, cannot send SMS');
     }
   } catch (smsError) {
     console.warn('⚠️ SMS notification failed but order was still created:', smsError);
@@ -22372,7 +22467,7 @@ filteredbautistaOrders.map((order) => (
            
            {/* Pagination Controls */}
            {paginatedRecentOrders.totalPages > 1 && (
-             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+             <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
                <div className="text-sm text-gray-600 font-albertsans">
                  Page {paginatedRecentOrders.currentPage} of {paginatedRecentOrders.totalPages}
                </div>

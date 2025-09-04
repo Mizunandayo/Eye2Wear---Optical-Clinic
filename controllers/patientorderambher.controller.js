@@ -1,4 +1,7 @@
-import PatientOrderAmbher from "../models/patientorderambher.js";
+// SMS cooldown tracking to prevent duplicates
+let lastSmsTime = 0;
+
+import PatientOrderAmbher from '../models/patientorderambher.js';
 import process from 'process';
 
 
@@ -173,8 +176,18 @@ export const createpatientorderambher = async (req, res) => {
             // Send SMS notification for order status changes
             if (updateData.patientorderambherstatus && updateData.patientorderambherstatus !== originalStatus) {
                 try {
+                    console.log(`📱 Sending SMS for status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
+                    
+                    // Add delay to prevent duplicate SMS calls
+                    const now = Date.now();
+                    if (now - lastSmsTime < 5000) { // 5 second cooldown
+                        console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
+                        return res.status(200).json(updatedorderambher);
+                    }
+                    lastSmsTime = now;
+                    
                     // Send SMS notification asynchronously (don't wait for it)
-                    sendOrderStatusSMS(updatedorderambher._id, 'ambher', updateData.patientorderambherstatus);
+                    sendOrderStatusSMS(updatedorderambher.patientorderambherid, 'ambher', updateData.patientorderambherstatus);
                 } catch (smsError) {
                     console.error('Error sending order status SMS:', smsError);
                     // Don't fail the order update if SMS fails

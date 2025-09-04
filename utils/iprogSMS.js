@@ -12,7 +12,7 @@ class iPragSMS {
   }
 
   /**
-   * Send SMS using iProg SMS API
+   * Send single SMS using iProg SMS API (for order status updates)
    * @param {string} phoneNumber - Recipient's phone number  
    * @param {string} message - Message content
    * @param {number} smsProvider - SMS Provider (0 or 1), default: 0
@@ -35,9 +35,9 @@ class iPragSMS {
         sms_provider: smsProvider
       };
 
-      console.log(`📱 Sending SMS via iProg to: ${formattedPhone}`);
+      console.log(`📱 Sending single SMS via iProg to: ${formattedPhone}`);
       
-      // Send SMS request
+      // Send SMS request using single SMS endpoint
       const response = await axios.post(`${this.baseUrl}/sms_messages`, payload, {
         headers: {
           'Content-Type': 'application/json'
@@ -46,7 +46,7 @@ class iPragSMS {
       });
 
       if (response.data.status === 200) {
-        console.log(`✅ SMS sent successfully via iProg: ${response.data.message_id}`);
+        console.log(`✅ Single SMS sent successfully via iProg: ${response.data.message_id}`);
         return {
           success: true,
           messageId: response.data.message_id,
@@ -59,7 +59,77 @@ class iPragSMS {
       }
 
     } catch (error) {
-      console.error('❌ iProg SMS sending failed:', error.message);
+      console.error('❌ iProg single SMS sending failed:', error.message);
+      
+      return {
+        success: false,
+        error: error.message,
+        status: 'Failed',
+        provider: 'iProg'
+      };
+    }
+  }
+
+  /**
+   * Send bulk SMS using iProg SMS API (for promotional messages)
+   * @param {Array<string>} phoneNumbers - Array of recipient phone numbers
+   * @param {string} message - Message content
+   * @param {number} smsProvider - SMS Provider (0 or 1), default: 0
+   * @returns {Promise<Object>} Bulk SMS sending result
+   */
+  async sendBulkSMS(phoneNumbers, message, smsProvider = 0) {
+    try {
+      if (!this.apiToken) {
+        throw new Error('iProg API token not configured');
+      }
+
+      if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+        throw new Error('Phone numbers array is required and cannot be empty');
+      }
+
+      // Format all phone numbers for Philippines
+      const formattedPhones = phoneNumbers.map(phone => this.formatPhoneNumber(phone));
+      
+      // Join phone numbers with comma for bulk SMS
+      const phoneNumbersString = formattedPhones.join(',');
+      
+      // Prepare request payload for bulk SMS
+      const payload = {
+        api_token: this.apiToken,
+        phone_number: phoneNumbersString,
+        message: message,
+        sms_provider: smsProvider
+      };
+
+      console.log(`📱 Sending bulk SMS via iProg to ${formattedPhones.length} recipients`);
+      
+      // Send bulk SMS request using bulk endpoint
+      const response = await axios.post(`${this.baseUrl}/sms_messages/send_bulk`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000 // 60 second timeout for bulk
+      });
+
+      if (response.data.status === 200) {
+        // Parse message IDs from comma-separated string
+        const messageIds = response.data.message_ids ? response.data.message_ids.split(',') : [];
+        
+        console.log(`✅ Bulk SMS sent successfully via iProg: ${messageIds.length} messages queued`);
+        return {
+          success: true,
+          messageIds: messageIds,
+          totalSent: messageIds.length,
+          status: 'Sent',
+          provider: 'iProg',
+          response: response.data
+        };
+      } else {
+        throw new Error(`iProg API returned status ${response.data.status}: ${response.data.message}`);
+      }
+
+    } catch (error) {
+      console.error('❌ iProg bulk SMS sending failed:', error.message);
       
       return {
         success: false,
@@ -152,6 +222,65 @@ class iPragSMS {
   }
 
   /**
+   * Check SMS delivery status using iProg API
+   * @param {string} messageId - iProg message ID to check
+   * @returns {Promise<Object>} SMS status result
+   */
+  async checkSmsStatus(messageId) {
+    try {
+      if (!this.apiToken) {
+        throw new Error('iProg API token not configured');
+      }
+
+      if (!messageId) {
+        throw new Error('Message ID is required');
+      }
+
+      console.log(`📱 Checking SMS status for message ID: ${messageId}`);
+
+      // Check SMS status using GET endpoint with query parameters
+      const response = await axios.get(`${this.baseUrl}/sms_messages/status`, {
+        params: {
+          api_token: this.apiToken,
+          message_id: messageId
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      if (response.data.status === 200) {
+        const messageStatus = response.data.message_status;
+        console.log(`✅ SMS status retrieved: ${messageStatus} for message ${messageId}`);
+        
+        return {
+          success: true,
+          messageId: messageId,
+          status: messageStatus,
+          isDelivered: messageStatus === 'delivered',
+          isPending: messageStatus === 'pending',
+          isFailed: messageStatus === 'failed',
+          provider: 'iProg',
+          response: response.data
+        };
+      } else {
+        throw new Error(`iProg API returned status ${response.data.status}: ${response.data.message || 'Unknown error'}`);
+      }
+
+    } catch (error) {
+      console.error(`❌ Failed to check SMS status for ${messageId}:`, error.message);
+      
+      return {
+        success: false,
+        messageId: messageId,
+        error: error.message,
+        provider: 'iProg'
+      };
+    }
+  }
+
+  /**
    * Get SMS provider status and configuration
    * @returns {Object} Provider status information
    */
@@ -160,11 +289,19 @@ class iPragSMS {
       provider: 'iProg SMS',
       configured: !!this.apiToken,
       baseUrl: this.baseUrl,
+      endpoints: {
+        singleSMS: `${this.baseUrl}/sms_messages`,
+        bulkSMS: `${this.baseUrl}/sms_messages/send_bulk`,
+        statusCheck: `${this.baseUrl}/sms_messages/status`
+      },
       features: [
         'Philippines SMS delivery',
+        'Single SMS sending for order status updates',
+        'Bulk SMS sending for promotional messages',
+        'SMS delivery status checking',
         'Multiple SMS providers (0 or 1)',
         'Queue-based message processing',
-        'Message tracking with ID'
+        'Message tracking with unique IDs'
       ]
     };
   }
