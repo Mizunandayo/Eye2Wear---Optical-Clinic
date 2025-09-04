@@ -1,8 +1,12 @@
-// SMS Controller - Provider implementations removed
+// SMS Controller - iProg SMS Provider Implementation
 import SmsMessage from '../models/smsmessage.js';
 import PatientDemographic from '../models/patientdemographic.js';
 import PatientAppointment from '../models/patientappointment.js';
 import mongoose from 'mongoose';
+import iPragSMS from '../utils/iprogSMS.js';
+
+// Initialize iProg SMS client
+const iprogClient = new iPragSMS();
 
 // Helper function to format phone numbers
 function formatPhoneNumber(phone) {
@@ -96,16 +100,18 @@ class SmsController {
         type: 'Promotional',
         message: fullMessage,
         promotionSubject: subject,
-        status: 'Pending'
+        status: 'Pending',
+        smsProvider: 'iProg'
       });
 
       // Save the record first to generate the messageId through auto-increment
       await smsRecord.save();
 
-      console.log('� SMS Provider Configuration: No provider configured');
-      console.log('⚠️  SMS sending is currently disabled. Configure an SMS provider to enable messaging.');
+      // Check iProg SMS configuration
+      const providerInfo = iprogClient.getProviderInfo();
+      console.log('📱 SMS Provider Configuration:', providerInfo);
 
-      // SMS sending disabled - no provider configured
+      // Send SMS via iProg
       const sendResults = [];
       let successCount = 0;
       let failCount = 0;
@@ -115,18 +121,30 @@ class SmsController {
           // Format phone number
           const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-          console.log(`📱 Would send SMS to: ${phoneNumber} (SMS provider not configured)`);
+          // Send SMS via iProg
+          const smsResult = await iprogClient.sendSMS(phoneNumber, fullMessage);
           
-          // SMS sending disabled - add to results as "skipped"
-          sendResults.push({
-            patient: `${patient.patientfirstname} ${patient.patientlastname}`,
-            phone: phoneNumber,
-            status: 'Skipped',
-            message: 'SMS provider not configured',
-            messageContent: fullMessage
-          });
-
-          successCount++;
+          if (smsResult.success) {
+            sendResults.push({
+              patient: `${patient.patientfirstname} ${patient.patientlastname}`,
+              phone: phoneNumber,
+              status: 'Sent',
+              messageId: smsResult.messageId,
+              provider: 'iProg',
+              messageContent: fullMessage
+            });
+            successCount++;
+          } else {
+            sendResults.push({
+              patient: `${patient.patientfirstname} ${patient.patientlastname}`,
+              phone: phoneNumber,
+              status: 'Failed',
+              error: smsResult.error,
+              provider: 'iProg',
+              messageContent: fullMessage
+            });
+            failCount++;
+          }
         } catch (error) {
           console.error(`❌ Failed to send SMS to ${patient.patientcontactnumber}:`, {
             error: error.message,
@@ -465,12 +483,12 @@ Please arrive 15 minutes early. If you need to reschedule, please contact us.
 Thank you,
 ${appointment.appointmentclinic}`;
 
-      // Send SMS - Provider not configured
+      // Send SMS via iProg
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      console.log(`📱 Would send appointment reminder to: ${phoneNumber} (SMS provider not configured)`);
+      const smsResult = await iprogClient.sendSMS(phoneNumber, message);
 
-      // Create SMS record (marked as skipped)
+      // Create SMS record
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -479,18 +497,23 @@ ${appointment.appointmentclinic}`;
         senderUserName: req.user?.name || 'System Auto-Reminder',
         type: 'Appointment',
         message: message,
-        status: 'Skipped',
-        twilioMessageSid: 'no_provider_configured',
-        sentAt: new Date()
+        status: smsResult.success ? 'Sent' : 'Failed',
+        iprogMessageId: smsResult.messageId,
+        smsProvider: 'iProg',
+        errorMessage: smsResult.success ? null : smsResult.error,
+        sentAt: smsResult.success ? new Date() : null
       });
 
       await smsRecord.save();
 
       res.status(200).json({
-        success: true,
+        success: smsResult.success,
         messageId: smsRecord.messageId,
-        status: 'skipped',
-        message: 'Appointment reminder logged (SMS provider not configured)'
+        iprogMessageId: smsResult.messageId,
+        status: smsResult.success ? 'sent' : 'failed',
+        message: smsResult.success 
+          ? 'Appointment reminder sent successfully via iProg'
+          : `Failed to send appointment reminder: ${smsResult.error}`
       });
 
     } catch (error) {
@@ -588,12 +611,12 @@ If you have any questions, please don't hesitate to contact us.
 Thank you,
 ${clinicName}`;
 
-      // Send SMS - Provider not configured
+      // Send SMS via iProg
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      console.log(`📱 Would send order status update to: ${phoneNumber} (SMS provider not configured)`);
+      const smsResult = await iprogClient.sendSMS(phoneNumber, message);
 
-      // Create SMS record (marked as skipped)
+      // Create SMS record
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -602,17 +625,22 @@ ${clinicName}`;
         senderUserName: req.user?.name || 'System Auto-Update',
         type: 'Order Status',
         message: message,
-        status: 'Skipped',
-        twilioMessageSid: 'no_provider_configured',
-        sentAt: new Date()
+        status: smsResult.success ? 'Sent' : 'Failed',
+        iprogMessageId: smsResult.messageId,
+        smsProvider: 'iProg',
+        errorMessage: smsResult.success ? null : smsResult.error,
+        sentAt: smsResult.success ? new Date() : null
       });
 
       await smsRecord.save();
 
       res.status(200).json({
-        success: true,
+        success: smsResult.success,
         messageId: smsRecord.messageId,
-        message: 'Order status update logged (SMS provider not configured)'
+        iprogMessageId: smsResult.messageId,
+        message: smsResult.success 
+          ? 'Order status update sent successfully via iProg'
+          : `Failed to send order status update: ${smsResult.error}`
       });
 
     } catch (error) {
@@ -662,12 +690,12 @@ Visit us or contact us to place your order before it's gone!
 Thank you,
 ${clinicName}`;
 
-      // Send SMS - Provider not configured
+      // Send SMS via iProg
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      console.log(`📱 Would send wishlist notification to: ${phoneNumber} (SMS provider not configured)`);
+      const smsResult = await iprogClient.sendSMS(phoneNumber, message);
 
-      // Create SMS record (marked as skipped)
+      // Create SMS record
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         recipientPhones: [phoneNumber],
@@ -676,17 +704,22 @@ ${clinicName}`;
         senderUserName: req.user?.name || 'System Auto-Notification',
         type: 'Wishlist',
         message: message,
-        status: 'Skipped',
-        twilioMessageSid: 'no_provider_configured',
-        sentAt: new Date()
+        status: smsResult.success ? 'Sent' : 'Failed',
+        iprogMessageId: smsResult.messageId,
+        smsProvider: 'iProg',
+        errorMessage: smsResult.success ? null : smsResult.error,
+        sentAt: smsResult.success ? new Date() : null
       });
 
       await smsRecord.save();
 
       res.status(200).json({
-        success: true,
+        success: smsResult.success,
         messageId: smsRecord.messageId,
-        message: 'Wishlist notification logged (SMS provider not configured)'
+        iprogMessageId: smsResult.messageId,
+        message: smsResult.success 
+          ? 'Wishlist notification sent successfully via iProg'
+          : `Failed to send wishlist notification: ${smsResult.error}`
       });
 
     } catch (error) {

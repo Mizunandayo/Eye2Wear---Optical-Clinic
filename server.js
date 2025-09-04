@@ -24,6 +24,7 @@ import patientorderbautistarouter from "./routes/patientorderbautista.route.js";
 import Message from "./models/message.js";
 import messagerouter from "./routes/message.route.js";
 import smsrouter from "./routes/sms.js";
+import SmsScheduler from "./utils/smsScheduler.js";
 import { updateConversationParticipants } from "./middleware/conversationMiddleware.js";
 import Conversation from "./models/conversation.js";
 import jwt from 'jsonwebtoken';
@@ -35,7 +36,7 @@ import Owneraccount from "./models/owneraccount.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import DatabaseOptimizer from './utils/databaseOptimization.js';
-import SmsScheduler from './utils/smsScheduler.js';
+
 import cliniclocationrouter from "./routes/cliniclocation.route.js";
 
 
@@ -325,7 +326,7 @@ mongoose
     await DatabaseOptimizer.createOptimalIndexes();
     await DatabaseOptimizer.analyzeSlowQueries();
     
-    // Initialize SMS Scheduler for automated notifications
+    // Initialize SMS Scheduler
     SmsScheduler.init();
     
     // Start server

@@ -485,6 +485,9 @@ const SmsRowSkeleton = () => (
       <div className="h-4 bg-gray-300 rounded w-32 mx-auto"></div>
     </td>
     <td className="py-3 px-6 text-center">
+      <div className="h-6 bg-gray-300 rounded-full w-12 mx-auto"></div>
+    </td>
+    <td className="py-3 px-6 text-center">
       <div className="h-6 bg-gray-300 rounded-full w-24 mx-auto"></div>
     </td>
     <td className="py-3 px-6 text-center">
@@ -1791,6 +1794,13 @@ function AdminDashboard(){
   const [hiddenBautistaCriticalStock, setHiddenBautistaCriticalStock] = useState(false);
   const [hiddenBautistaLowStock, setHiddenBautistaLowStock] = useState(false);
 
+  // SMS Toast States
+  const [smsToast, setSmsToast] = useState(false);
+  const [smsToastMessage, setSmsToastMessage] = useState('');
+  const [smsToastClosing, setSmsToastClosing] = useState(false);
+  const [smsProgressWidth, setSmsProgressWidth] = useState('0%');
+  const [smsIsClicked, setSmsIsClicked] = useState(false);
+
 
 
   
@@ -1963,6 +1973,9 @@ function AdminDashboard(){
   // Track if user data has been loaded to prevent infinite re-renders
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   
+  // Track if reports data has been loaded once to prevent refetching
+  const [reportsDataLoadedOnce, setReportsDataLoadedOnce] = useState(false);
+  
   // Load user data once on component mount - avoiding auth function dependencies
   useEffect(() => {
     if (userDataLoaded || !currentuserloggedin) return;
@@ -2016,11 +2029,15 @@ function AdminDashboard(){
     };
 
     loadUser();
-  }, [currentuserloggedin, userDataLoaded, fetchadmindetails, fetchownerdetails, fetchstaffdetails]); // Include all dependencies
+  }, [currentuserloggedin, userDataLoaded, fetchadmindetails, fetchownerdetails, fetchstaffdetails]); // Remove fetchReportsData from dependencies
 
-
-
-
+  // Separate useEffect to handle reports data loading after user is authenticated
+  useEffect(() => {
+    if (userDataLoaded && !reportsDataLoadedOnce && currentuserloggedin) {
+      console.log('🚀 User authenticated - reports will be loaded on first visit to reports section');
+      setReportsDataLoadedOnce(true);
+    }
+  }, [userDataLoaded, reportsDataLoadedOnce, currentuserloggedin]);
 
 
 
@@ -2879,7 +2896,17 @@ useEffect(() => {
         throw new Error("Failed to fetch staff accounts");
       }
 
-      const staffdata = await fetchresponse.json();
+      let staffdata = await fetchresponse.json();
+      
+      // Apply clinic filtering (except for Admin)
+      if (currentuserloggedin !== "Admin") {
+        if (isAmbherOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Ambher Optical");
+        } else if (isBautistaOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Bautista Eye Center");
+        }
+      }
+      
       setstaffs(staffdata);
     
     }catch(error){
@@ -3515,7 +3542,17 @@ const staffhandlechange = (e) => {
           throw new Error("Failed to fetch owner accounts");
         }
 
-        const ownerdata = await fetchresponse.json();
+        let ownerdata = await fetchresponse.json();
+        
+        // Apply clinic filtering (except for Admin)
+        if (currentuserloggedin !== "Admin") {
+          if (isAmbherOnlyUser()) {
+            ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Ambher Optical");
+          } else if (isBautistaOnlyUser()) {
+            ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Bautista Eye Center");
+          }
+        }
+        
         setowners(ownerdata);
       
       }catch(error){
@@ -6600,6 +6637,12 @@ return () => {
 //Fetching Ambher Inventory Categories
 useEffect(() => {
 const fetchambhercategories = async () => {
+  // Skip fetching if user is Bautista-only (except for Admin)
+  if (isBautistaOnlyUser() && currentuserloggedin !== "Admin") {
+    setloadingambherinventorycategorylist(false);
+    return;
+  }
+  
   try{
     const response = await fetch(`/api/ambherinventorycategory`);
     if(!response.ok) throw new Error("Failed to fetch Ambher Inevntory Categories");
@@ -6829,6 +6872,12 @@ return () => {
 //Fetching Bautista Inventory Categories
 useEffect(() => {
 const fetchbautistacategories = async () => {
+  // Skip fetching if user is Ambher-only (except for Admin)
+  if (isAmbherOnlyUser() && currentuserloggedin !== "Admin") {
+    setloadingbautistainventorycategorylist(false);
+    return;
+  }
+  
   try{
     const response = await fetch(`/api/bautistainventorycategory`);
     if(!response.ok) throw new Error("Failed to fetch Bautista Inevntory Categories");
@@ -7268,6 +7317,12 @@ setselectedambherproduct(null);
 //FETCHING PRODUCTS
 
 const fetchambherproducts = async () => {
+  // Skip fetching if user is Bautista-only (except for Admin)
+  if (isBautistaOnlyUser() && currentuserloggedin !== "Admin") {
+    setambherloadingproducts(false);
+    return;
+  }
+  
   try{
     const response = await fetch(`/api/ambherinventoryproduct`, {
       headers:{
@@ -7801,6 +7856,12 @@ if (bautistainventoryproducts.length > 0) {
         //FETCHING PRODUCTS
         
           const fetchbautistaproducts = async () => {
+            // Skip fetching if user is Ambher-only (except for Admin)
+            if (isAmbherOnlyUser() && currentuserloggedin !== "Admin") {
+              setbautistaloadingproducts(false);
+              return;
+            }
+            
             try{
               const response = await fetch(`/api/bautistainventoryproduct`, {
                 headers:{
@@ -8770,21 +8831,40 @@ return () => clearTimeout(delay);
       setLoadingAmbherOrders(true);
       setLoadingBautistaOrders(true);
       
-      // Parallel API calls for maximum speed
-      const [ambherResponse, bautistaResponse] = await Promise.all([
-        fetch(`/api/patientorderambher`, {
-          headers: {
-            'Authorization': `Bearer ${currentusertoken}`,
-            'Cache-Control': 'no-cache'
-          }
-        }),
-        fetch(`/api/patientorderbautista`, {
-          headers: {
-            'Authorization': `Bearer ${currentusertoken}`,
-            'Cache-Control': 'no-cache'
-          }
-        })
-      ]);
+      // Check clinic filtering - only fetch relevant data unless Admin
+      const shouldFetchAmbher = !isBautistaOnlyUser() || currentuserloggedin === "Admin";
+      const shouldFetchBautista = !isAmbherOnlyUser() || currentuserloggedin === "Admin";
+      
+      // Parallel API calls for maximum speed - only fetch what's needed
+      const apiCalls = [];
+      
+      if (shouldFetchAmbher) {
+        apiCalls.push(
+          fetch(`/api/patientorderambher`, {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Cache-Control': 'no-cache'
+            }
+          })
+        );
+      } else {
+        apiCalls.push(Promise.resolve({ ok: true, json: () => Promise.resolve([]) }));
+      }
+      
+      if (shouldFetchBautista) {
+        apiCalls.push(
+          fetch(`/api/patientorderbautista`, {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Cache-Control': 'no-cache'
+            }
+          })
+        );
+      } else {
+        apiCalls.push(Promise.resolve({ ok: true, json: () => Promise.resolve([]) }));
+      }
+      
+      const [ambherResponse, bautistaResponse] = await Promise.all(apiCalls);
 
       if (!ambherResponse.ok || !bautistaResponse.ok) {
         throw new Error('Failed to fetch orders');
@@ -9047,6 +9127,69 @@ const handlePickupDateChange = (e) => {
   updatePickupDate(selectedDate);
 };
 
+// Function to send order completion SMS
+const sendOrderCompletionSMS = useCallback(async (orderData) => {
+  try {
+    // Extract order details
+    const isAmbher = orderData.patientorderambherid;
+    const customerName = isAmbher 
+      ? `${orderData.patientfirstname} ${orderData.patientlastname}`
+      : `${orderData.patientfirstname} ${orderData.patientlastname}`;
+    const customerPhone = orderData.patientcontactnumber;
+
+    // Skip SMS if customer phone is not available
+    if (!customerPhone) {
+      console.warn('⚠️ Customer phone number not available for SMS notification');
+      return;
+    }
+
+    // Send SMS via order status API
+    const response = await fetch(`${apiUrl}/api/sms/order-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        orderId: orderData._id, // Use MongoDB _id instead of custom ID
+        orderType: isAmbher ? 'ambher' : 'bautista',
+        newStatus: 'Completed'
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log('✅ Order completion SMS sent successfully:', result);
+      
+      // Show success toast notification
+      setSmsToastMessage(`Order completion SMS sent to ${customerName}`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
+      
+    } else {
+      console.error('❌ Failed to send order completion SMS:', result);
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending order completion SMS:', error);
+  }
+}, [apiUrl, currentusertoken, setSmsToast, setSmsToastMessage, setSmsToastClosing, setSmsProgressWidth]);
+
 // Function to mark order as complete
 const markOrderAsComplete = useCallback(async () => {
   if (!selectedOrderForView) return;
@@ -9246,6 +9389,14 @@ const markOrderAsComplete = useCallback(async () => {
         refreshOrdersWithStatusCheck();
       }, 500);
       
+      // Send SMS notification to customer about order completion
+      try {
+        await sendOrderCompletionSMS(selectedOrderForView);
+      } catch (smsError) {
+        console.warn('⚠️ SMS notification failed but order was still completed:', smsError);
+        // Don't let SMS failure affect the order completion success
+      }
+      
       console.log('🎯 Order marked as complete and UI updated');
     } else {
       console.error(`❌ Failed to mark order as complete: ${response.status} ${response.statusText}`);
@@ -9253,7 +9404,7 @@ const markOrderAsComplete = useCallback(async () => {
   } catch (error) {
     console.error('❌ Error marking order as complete:', error);
   }
-}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts]);
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, sendOrderCompletionSMS]);
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -9586,6 +9737,54 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
 
   // Handle success
   const result = await response.json();
+  
+  // Send SMS notification to customer about new order
+  try {
+    // Use the order status SMS with the new order ID
+    if (result && result._id) {
+      const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: JSON.stringify({
+          orderId: result._id,
+          orderType: 'ambher',
+          newStatus: 'Completed'
+        })
+      });
+
+      if (smsResponse.ok) {
+        console.log('✅ Order completion SMS sent successfully');
+        
+        // Show success toast notification
+        setSmsToastMessage(`Order confirmation SMS sent to ${orderambherfirstName} ${orderambherlastName}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 4 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 4000);
+      } else {
+        console.warn('⚠️ SMS notification failed but order was still created');
+      }
+    }
+  } catch (smsError) {
+    console.warn('⚠️ SMS notification failed but order was still created:', smsError);
+    // Don't let SMS failure affect the order creation success
+  }
+  
   setpatientorderambherproductisClicked(true);
   setpatientorderambherproductToastMessage("Order Submitted Successfully!");
   setpatientorderambherproductToast(true);
@@ -9766,6 +9965,54 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
 
   // Handle success
   const result = await response.json();
+  
+  // Send SMS notification to customer about new order
+  try {
+    // Use the order status SMS with the new order ID
+    if (result && result._id) {
+      const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: JSON.stringify({
+          orderId: result._id,
+          orderType: 'bautista',
+          newStatus: 'Completed'
+        })
+      });
+
+      if (smsResponse.ok) {
+        console.log('✅ Order completion SMS sent successfully');
+        
+        // Show success toast notification
+        setSmsToastMessage(`Order confirmation SMS sent to ${orderbautistafirstName} ${orderbautistalastName}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 4 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 4000);
+      } else {
+        console.warn('⚠️ SMS notification failed but order was still created');
+      }
+    }
+  } catch (smsError) {
+    console.warn('⚠️ SMS notification failed but order was still created:', smsError);
+    // Don't let SMS failure affect the order creation success
+  }
+  
   setpatientorderbautistaproductisClicked(true);
   setpatientorderbautistaproductToastMessage("Order Submitted Successfully!");
   setpatientorderbautistaproductToast(true);
@@ -10213,6 +10460,13 @@ try {
       }));
     }
   }, [smartFetch, CACHE_DURATIONS]);
+
+  // Refresh reports data function - clears cache and reloads data
+  const refreshReportsData = useCallback(async () => {
+    console.log('🔄 Manual refresh of reports data triggered');
+    await fetchReportsData(true); // Force refresh bypassing cache
+    console.log('✅ Manual refresh completed');
+  }, [fetchReportsData]);
 
   // Helper functions for data processing - MOVED BEFORE useMemo
   const processMonthlyData = useCallback((data, dateField) => {
@@ -10955,12 +11209,19 @@ try {
   useEffect(() => {
     console.log('🔍 useEffect triggered - activedashboard:', activedashboard);
     if (activedashboard === 'reportsandanalytics') {
-      console.log('✅ Condition met, calling fetchReportsData');
-      fetchReportsData();
+      console.log('📊 Reports section accessed');
+      
+      // Only fetch if data is empty (first time) or if not loaded yet
+      if (!reportsData.appointments.length && !reportsData.ambherOrders.length && !reportsData.bautistaOrders.length) {
+        console.log('✅ Fetching reports data (empty data detected)');
+        fetchReportsData();
+      } else {
+        console.log('✅ Using cached reports data - no refetch needed');
+      }
     } else {
-      console.log('❌ Condition not met, not calling fetchReportsData');
+      console.log('❌ Not in reports section, no data fetch needed');
     }
-  }, [activedashboard, fetchReportsData]);
+  }, [activedashboard, reportsData.appointments.length, reportsData.ambherOrders.length, reportsData.bautistaOrders.length, fetchReportsData]);
 
   // No need for separate processChartsData useEffect - data is now processed automatically with useMemo
 
@@ -11013,11 +11274,6 @@ const [showPromotionalSmsModal, setShowPromotionalSmsModal] = useState(false);
 const [promotionalSmsSubject, setPromotionalSmsSubject] = useState('');
 const [promotionalSmsMessage, setPromotionalSmsMessage] = useState('');
 const [sendingSms, setSendingSms] = useState(false);
-const [smsToast, setSmsToast] = useState(false);
-const [smsToastMessage, setSmsToastMessage] = useState('');
-const [smsToastClosing, setSmsToastClosing] = useState(false);
-const [smsIsClicked, setSmsIsClicked] = useState(false);
-const [smsProgressWidth, setSmsProgressWidth] = useState('0%');
 
 // SMS Search functionality
 const searchSmsDebounce = (functions, delay) => {
@@ -21690,7 +21946,7 @@ filteredbautistaOrders.map((order) => (
            Export PDF
          </button>
          <button
-           onClick={() => fetchReportsData(true)}
+           onClick={refreshReportsData}
            disabled={reportsData.loading}
            className="flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
          >
@@ -22295,12 +22551,12 @@ filteredbautistaOrders.map((order) => (
                 <tr>
                   <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Message ID</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Recipients</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Count</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
-                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
-                  <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Delivered At</th>
+                  <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -22339,12 +22595,12 @@ filteredbautistaOrders.map((order) => (
                   <tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
                     <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Message ID</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Recipients</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Count</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Sender Clinic</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
-                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
-                    <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Delivered At</th>
+                    <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
                   </tr>
                 </thead>
 
@@ -22370,6 +22626,19 @@ filteredbautistaOrders.map((order) => (
                               <span className="text-[15px]">{sms.recipients}</span>
                             )}
                           </div>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          {sms.type === 'Promotional' ? (
+                            <div className="flex flex-col items-center">
+                              <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm font-semibold">
+                                {sms.recipientPhones ? sms.recipientPhones.length : 0}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-1">recipients</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
                         </td>
 
                         <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
@@ -22422,9 +22691,6 @@ filteredbautistaOrders.map((order) => (
                           {formatSmsDate(sms.sentAt)}
                         </td>
 
-                        <td className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">
-                          {formatSmsDate(sms.deliveredAt)}
-                        </td>
                       </tr>
                     ));
                   })()}

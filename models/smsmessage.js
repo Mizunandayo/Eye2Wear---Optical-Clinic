@@ -45,11 +45,19 @@ const smsMessageSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['Pending', 'Sent', 'Delivered', 'Failed'],
+    enum: ['Pending', 'Sent', 'Delivered', 'Failed', 'Skipped'],
     default: 'Pending'
   },
   twilioMessageSid: {
     type: String
+  },
+  iprogMessageId: {
+    type: String
+  },
+  smsProvider: {
+    type: String,
+    enum: ['Twilio', 'iProg', 'Manual', 'System'],
+    default: 'iProg'
   },
   errorMessage: {
     type: String
