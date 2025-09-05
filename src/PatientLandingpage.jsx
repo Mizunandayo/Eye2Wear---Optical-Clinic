@@ -251,6 +251,7 @@ function PatientLandingpage() {
   const [routeInfo, setRouteInfo] = useState(null);
   const [directionsSteps, setDirectionsSteps] = useState([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [activeRouteClinicId, setActiveRouteClinicId] = useState(null);
   const directionsControl = useRef(null);
   const isInitializingMap = useRef(false);
   const directionsInitialized = useRef(false);
@@ -518,6 +519,11 @@ function PatientLandingpage() {
     setRouteInfo(null);
     setDirectionsSteps([]);
     setIsLoadingRoute(false);
+    setActiveRouteClinicId(null);
+  }, []);
+
+  const hideDirectionsModal = useCallback(() => {
+    setShowDirections(false);
   }, []);
 
   const getStepIcon = (maneuverType) => {
@@ -616,12 +622,7 @@ function PatientLandingpage() {
         }
       });
       
-      geolocate.on('geolocate', (e) => {
-        const accuracy = e.coords.accuracy;
-        const accuracyLevel = accuracy <= 20 ? 'excellent' : accuracy <= 50 ? 'good' : accuracy <= 100 ? 'fair' : 'poor';
-        const accuracyColor = accuracy <= 20 ? 'success' : accuracy <= 50 ? 'success' : accuracy <= 100 ? 'warning' : 'error';
-
-        
+      geolocate.on('geolocate', (e) => {        
         setUserLocation({
           latitude: e.coords.latitude,
           longitude: e.coords.longitude,
@@ -956,6 +957,7 @@ function PatientLandingpage() {
       setShowDirections(true);
       setRouteInfo(null);
       setDirectionsSteps([]);
+      setActiveRouteClinicId(clinicId);
 
       try {
         directionsControl.current.removeRoutes();
@@ -1014,7 +1016,6 @@ function PatientLandingpage() {
 
 
   useEffect(() => {
-  const mapContainer = document.getElementById('geographicmapcontainer');
 // Add fullscreen event listeners for better UX
 const handleFullscreenChange = () => {
   const isFullscreen = document.fullscreenElement || 
@@ -1022,7 +1023,6 @@ const handleFullscreenChange = () => {
                       document.mozFullScreenElement;
   
   const mapContainer = document.querySelector('#geographicmapcontainer');
-  const mapElement = map.current ? map.current.getContainer() : null;
   
   if (isFullscreen) {
     console.log('🔍 Map entered fullscreen mode');
@@ -1484,7 +1484,7 @@ const handleFullscreenChange = () => {
                 >
                   <div className="bg-[#2781af] text-white pr-2 pl-3 flex justify-between items-center">
                     <h3 className="font-bold">Route Directions</h3>
-                    <div onClick={clearDirections} className="bg-transparent border-none duration-300 text-white text-lg cursor-pointer p-1 rounded transition-all ease-in-out">
+                    <div onClick={hideDirectionsModal} className="bg-transparent border-none duration-300 text-white text-lg cursor-pointer p-1 rounded transition-all ease-in-out">
                       <i className="bx bx-x"></i>
                     </div>
                   </div>
@@ -1508,7 +1508,16 @@ const handleFullscreenChange = () => {
                             <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
                             <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
                           </div>
-                          <i className="bx bx-car text-[25px] text-[#08a0d3]"></i>
+                          <div className="flex items-center gap-2">
+                            <i className="bx bx-car text-[25px] text-[#08a0d3]"></i>
+                            <div 
+                              onClick={clearDirections}
+                              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors duration-200"
+                              title="Clear route"
+                            >
+                              <i className="bx bx-trash"></i>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1531,6 +1540,24 @@ const handleFullscreenChange = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Show directions panel toggle button when directions are hidden but route exists */}
+              {!showDirections && routeInfo && activeRouteClinicId && (
+                <div
+                  onClick={() => setShowDirections(true)}
+                  className="cursor-pointer absolute top-2.5 left-2.5 bg-[#2781af] hover:bg-[#1f6b94] text-white px-3 py-2 rounded-lg shadow-lg z-[50] transition-colors duration-200 flex items-center gap-2"
+                  title="Show route directions"
+                >
+                  <i className="bx bx-navigation"></i>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Route Info</span>
+                    <span className="text-xs opacity-90">
+                      {clinicLocations.find(c => c._id === activeRouteClinicId)?.clinicName || 'Clinic'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
               <div ref={legendControlRef} className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 bg-[#ffffff]/95 backdrop-blur-sm rounded-lg p-2 sm:p-3 shadow-lg z-20">
                 <h4 className="text-[#1b1b1b] font-semibold mb-1 sm:mb-2 text-xs sm:text-sm">Legend</h4>
                 <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
@@ -1630,7 +1657,9 @@ const handleFullscreenChange = () => {
                   filteredClinics.map((clinic, index) => (
                     <div
                       key={clinic._id || `clinic-${index}`}
-                      className="p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white"
+                      className={`p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white ${
+                        activeRouteClinicId === clinic._id ? 'border-blue-500 bg-blue-50' : ''
+                      }`}
                       onClick={() => {
                         if (map.current && clinic.coordinates?.coordinates) {
                           map.current.flyTo({
@@ -1713,7 +1742,15 @@ const handleFullscreenChange = () => {
                             Nearest
                           </div>
                         )}
+                        {activeRouteClinicId === clinic._id && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <i className="bx bx-route text-xs"></i>
+                            Route Active
+                          </div>
+                        )}
                       </div>
+                      
+
                     </div>
                   ))
                 )}

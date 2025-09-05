@@ -10856,329 +10856,337 @@ try {
     return processStatusData(filteredOrders);
   }, [reportsData, orderStatusFilter, orderStatusYear, filterOrdersByDateRange, processStatusData]);
 
-  // Export functions
+  // Enhanced PDF export function with html2canvas for complete layout capture
   const exportToPDF = async () => {
     try {
+      console.log('🚀 Starting enhanced PDF export...');
       const userClinic = getCurrentUserClinic();
       const currentDate = new Date().toLocaleDateString();
-      const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
       
-      // Create PDF with A4 size
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Show loading indicator
+      const loadingToast = document.createElement('div');
+      loadingToast.innerHTML = `
+        <div style="position: fixed; top: 20px; right: 20px; background: #184d85; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 20px; height: 20px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span>Capturing dashboard layout...</span>
+          </div>
+        </div>
+        <style>
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+      `;
+      document.body.appendChild(loadingToast);
+
+      // Get the Reports and Analytics container
+      const reportsContainer = document.getElementById('reportsandanalytics');
+      if (!reportsContainer) {
+        throw new Error('Reports and Analytics container not found');
+      }
+
+      // Temporarily adjust styles for better PDF capture and fix color compatibility
+      const originalStyles = new Map();
+      const elementsToAdjust = reportsContainer.querySelectorAll('*');
       
-      // Define colors matching your dashboard
-      const primaryBlue = '#2563eb';
-      const primaryGreen = '#10b981';
-      const primaryPurple = '#8b5cf6';
-      const primaryOrange = '#f59e0b';
-      const lightGray = '#f8fafc';
-      const darkGray = '#1f2937';
-      
-      // Header Section
-      pdf.setFillColor(24, 77, 133); // Primary blue background
-      pdf.rect(0, 0, 210, 40, 'F');
-      
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(24);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`${userClinic} - Reports & Analytics`, 20, 25);
-      
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on: ${currentDate}`, 20, 35);
-      
-      // Reset text color for content
-      pdf.setTextColor(0, 0, 0);
-      
-      let yPosition = 60;
-      
-      // Metric Cards Section (matching your dashboard images)
-      const totalOrders = allOrders.length;
-      const totalRevenue = calculateTotalRevenue();
-      const totalAppointments = reportsData.appointments.length;
-      const completedOrders = allOrders.filter(order => 
-        (order.patientorderambherstatus === 'Completed' || order.patientorderbautistastatus === 'Completed')
-      ).length;
-      
-      // Draw metric cards in a row
-      const cardWidth = 40;
-      const cardHeight = 25;
-      const cardSpacing = 10;
-      const startX = 15;
-      
-      // Card 1 - Total Orders (Blue)
-      pdf.setFillColor(37, 99, 235);
-      pdf.roundedRect(startX, yPosition, cardWidth, cardHeight, 3, 3, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Total Orders', startX + 5, yPosition + 8);
-      pdf.setFontSize(24);
-      pdf.text(`${totalOrders}`, startX + 5, yPosition + 18);
-      
-      // Card 2 - Total Revenue (Green)
-      pdf.setFillColor(16, 185, 129);
-      pdf.roundedRect(startX + cardWidth + cardSpacing, yPosition, cardWidth, cardHeight, 3, 3, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Total Revenue', startX + cardWidth + cardSpacing + 5, yPosition + 8);
-      pdf.setFontSize(20);
-      pdf.text(`₱${totalRevenue.toLocaleString()}`, startX + cardWidth + cardSpacing + 5, yPosition + 18);
-      
-      // Card 3 - Appointments (Purple)
-      pdf.setFillColor(139, 92, 246);
-      pdf.roundedRect(startX + (cardWidth + cardSpacing) * 2, yPosition, cardWidth, cardHeight, 3, 3, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Appointments', startX + (cardWidth + cardSpacing) * 2 + 5, yPosition + 8);
-      pdf.setFontSize(24);
-      pdf.text(`${totalAppointments}`, startX + (cardWidth + cardSpacing) * 2 + 5, yPosition + 18);
-      
-      // Card 4 - Completed Orders (Orange)
-      pdf.setFillColor(245, 158, 11);
-      pdf.roundedRect(startX + (cardWidth + cardSpacing) * 3, yPosition, cardWidth, cardHeight, 3, 3, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Completed Orders', startX + (cardWidth + cardSpacing) * 3 + 5, yPosition + 8);
-      pdf.setFontSize(24);
-      pdf.text(`${completedOrders}`, startX + (cardWidth + cardSpacing) * 3 + 5, yPosition + 18);
-      
-      yPosition += 40;
-      
-      // Revenue Chart Section
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('💰 Revenue Last 7 Days', 20, yPosition);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Showing revenue trends for the selected period', 20, yPosition + 6);
-      
-      // Revenue summary
-      pdf.setFontSize(12);
-      pdf.text(`Total Revenue: ₱${totalRevenue.toLocaleString()}`, 20, yPosition + 15);
-      pdf.text(`Orders: ₱${totalRevenue.toLocaleString()}`, 70, yPosition + 15);
-      pdf.text(`Appointments: ₱5,100`, 120, yPosition + 15);
-      pdf.text(`Days: 8`, 160, yPosition + 15);
-      
-      // Simple chart representation (bars)
-      const chartY = yPosition + 25;
-      const chartHeight = 30;
-      const chartWidth = 170;
-      const days = ['Aug 27', 'Aug 28', 'Aug 29', 'Aug 30', 'Aug 31', 'Sep 1', 'Sep 2', 'Sep 3'];
-      const revenues = [5000, 8000, 12000, 15000, 18000, 22000, 16000, 10000]; // Sample data
-      const maxRevenue = Math.max(...revenues);
-      
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(20, chartY + chartHeight, 20 + chartWidth, chartY + chartHeight); // X-axis
-      pdf.line(20, chartY, 20, chartY + chartHeight); // Y-axis
-      
-      // Draw bars
-      revenues.forEach((revenue, index) => {
-        const barHeight = (revenue / maxRevenue) * chartHeight;
-        const barWidth = chartWidth / revenues.length - 2;
-        const x = 22 + index * (chartWidth / revenues.length);
+      // Function to convert modern CSS colors to html2canvas-compatible formats
+      const convertColor = (colorValue) => {
+        if (!colorValue || typeof colorValue !== 'string') return colorValue;
         
-        pdf.setFillColor(37, 99, 235);
-        pdf.rect(x, chartY + chartHeight - barHeight, barWidth, barHeight, 'F');
+        // Convert oklch() to rgb()
+        if (colorValue.includes('oklch')) {
+          return '#ffffff'; // Fallback to white for unsupported colors
+        }
         
-        // Day labels
-        pdf.setFontSize(8);
-        pdf.text(days[index], x - 5, chartY + chartHeight + 8);
-      });
-      
-      yPosition += 60;
-      
-      // Completed Appointments Trend Section
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Completed Appointments Trend', 20, yPosition);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Interactive view of completed appointments over time', 20, yPosition + 6);
-      
-      // Simple bar representation for appointments
-      const appointmentData = [
-        { period: 'Aug', ambher: 2, bautista: 1 },
-        { period: 'Sep', ambher: 1, bautista: 0 }
-      ];
-      
-      const appointmentChartY = yPosition + 20;
-      appointmentData.forEach((data, index) => {
-        const x = 30 + index * 40;
+        // Convert other modern color functions to rgb if needed
+        if (colorValue.includes('color(') || colorValue.includes('lab(') || colorValue.includes('lch(')) {
+          return '#ffffff'; // Fallback to white
+        }
         
-        // Ambher bar
-        pdf.setFillColor(16, 185, 129);
-        pdf.rect(x, appointmentChartY - data.ambher * 5, 8, data.ambher * 5, 'F');
+        return colorValue;
+      };
+      
+      elementsToAdjust.forEach(element => {
+        const computedStyle = window.getComputedStyle(element);
+        const originalStyleData = {
+          background: element.style.background,
+          backgroundColor: element.style.backgroundColor,
+          color: element.style.color,
+          borderColor: element.style.borderColor,
+          boxShadow: element.style.boxShadow,
+          fill: element.style.fill,
+          stroke: element.style.stroke
+        };
         
-        // Bautista bar
-        pdf.setFillColor(245, 158, 11);
-        pdf.rect(x + 10, appointmentChartY - data.bautista * 5, 8, data.bautista * 5, 'F');
+        originalStyles.set(element, originalStyleData);
         
-        // Period label
-        pdf.setFontSize(10);
-        pdf.text(data.period, x + 2, appointmentChartY + 10);
-      });
-      
-      // Legend
-      pdf.setFillColor(16, 185, 129);
-      pdf.rect(120, appointmentChartY - 15, 8, 4, 'F');
-      pdf.setFontSize(10);
-      pdf.text('Ambher Completed: 3', 132, appointmentChartY - 12);
-      
-      yPosition += 50;
-      
-      // Start new page for detailed data
-      pdf.addPage();
-      yPosition = 20;
-      
-      // Sales by Category and Order Status Distribution
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('📊 Sales by Category', 20, yPosition);
-      pdf.text('🎯 Order Status Distribution', 110, yPosition);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Product category distribution overview', 20, yPosition + 6);
-      pdf.text('Order status distribution overview', 110, yPosition + 6);
-      
-      yPosition += 20;
-      
-      // Category distribution (simple representation)
-      const categories = ['Eyeglasses', 'Contact Lenses', 'Sunglasses'];
-      const categoryData = [60, 25, 15]; // Percentages
-      
-      categories.forEach((category, index) => {
-        const barWidth = (categoryData[index] / 100) * 60;
-        pdf.setFillColor(37 + index * 50, 99, 235);
-        pdf.rect(20, yPosition + index * 8, barWidth, 5, 'F');
-        pdf.setFontSize(9);
-        pdf.text(`${category}: ${categoryData[index]}%`, 85, yPosition + index * 8 + 3);
-      });
-      
-      // Order status distribution
-      const statuses = ['Completed: 10', 'Ready for Pickup: 1', 'Pending: 2'];
-      const statusColors = [[16, 185, 129], [37, 99, 235], [245, 158, 11]];
-      
-      statuses.forEach((status, index) => {
-        pdf.setFillColor(...statusColors[index]);
-        pdf.circle(115, yPosition + index * 8 + 2, 2, 'F');
-        pdf.setFontSize(9);
-        pdf.text(status, 120, yPosition + index * 8 + 3);
-      });
-      
-      yPosition += 40;
-      
-      // Top Products Section
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('🏆 Top Products', 20, yPosition);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Most ordered products by quantity', 20, yPosition + 6);
-      
-      yPosition += 15;
-      
-      // Top products bar chart
-      const topProducts = [
-        { name: 'LEVIS LS50159 Eyeglasses', orders: 3 },
-        { name: 'Belcon 60% UV Lite 6 Months', orders: 2 },
-        { name: 'Alison\'s Eyeglasses', orders: 1 },
-        { name: 'Belcon Comfort 6 Months', orders: 1 },
-        { name: 'PLAYBOY PR-81053', orders: 1 }
-      ];
-      
-      topProducts.forEach((product, index) => {
-        const barWidth = (product.orders / 3) * 40; // Max 3 orders
-        pdf.setFillColor(245, 158, 11);
-        pdf.rect(50, yPosition + index * 8, barWidth, 5, 'F');
+        // Fix background colors
+        if (element.classList.contains('bg-gradient-to-b') || 
+            element.classList.contains('shadow-lg') || 
+            element.classList.contains('shadow-md') || 
+            element.classList.contains('shadow-sm')) {
+          element.style.background = 'white';
+          element.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+        }
         
-        pdf.setFontSize(8);
-        pdf.text(product.name.substring(0, 25), 20, yPosition + index * 8 + 3);
-        pdf.text(`${product.orders}`, 95, yPosition + index * 8 + 3);
-      });
-      
-      yPosition += 60;
-      
-      // Recent Orders Section
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('📋 Recent Orders', 20, yPosition);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Showing 10 of ${totalOrders} orders`, 20, yPosition + 6);
-      
-      yPosition += 15;
-      
-      // Recent orders table
-      const recentOrders = allOrders
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 10);
-      
-      const tableData = recentOrders.map(order => [
-        order.patientorderambherid || order.patientorderbautistaid,
-        `${order.patientfirstname} ${order.patientlastname}`,
-        (order.patientorderambherproductname || order.patientorderbautistaproductname || '').substring(0, 30),
-        order.patientorderambherstatus || order.patientorderbautistastatus,
-        `₱${(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}`,
-        new Date(order.createdAt).toLocaleDateString()
-      ]);
-      
-      pdf.autoTable({
-        head: [['Order ID', 'Customer', 'Product', 'Status', 'Total', 'Date']],
-        body: tableData,
-        startY: yPosition,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [24, 77, 133],
-          textColor: [255, 255, 255],
-          fontSize: 9,
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fontSize: 8,
-          cellPadding: 2
-        },
-        columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 45 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 20 },
-          5: { cellWidth: 25 }
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
+        // Convert problematic colors to compatible ones
+        if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+          element.style.backgroundColor = convertColor(computedStyle.backgroundColor);
+        }
+        if (computedStyle.color && computedStyle.color.includes('oklch')) {
+          element.style.color = convertColor(computedStyle.color);
+        }
+        if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
+          element.style.borderColor = convertColor(computedStyle.borderColor);
         }
       });
+
+      // Force re-render of charts for better PDF quality
+      const chartElements = reportsContainer.querySelectorAll('.recharts-wrapper');
+      chartElements.forEach(chart => {
+        // Trigger a re-render by slightly adjusting the container
+        const parent = chart.parentElement;
+        if (parent) {
+          parent.style.transform = 'scale(1.001)';
+          setTimeout(() => {
+            parent.style.transform = 'scale(1)';
+          }, 100);
+        }
+      });
+
+      // Wait for any chart animations to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('📸 Capturing dashboard with html2canvas...');
       
-      // Footer
-      const pageCount = pdf.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        pdf.setPage(i);
+      // Add a CSS rule to override problematic colors globally
+      const styleOverride = document.createElement('style');
+      styleOverride.id = 'pdf-export-color-override';
+      styleOverride.textContent = `
+        #reportsandanalytics * {
+          color: inherit !important;
+          background-color: inherit !important;
+          border-color: inherit !important;
+        }
+        #reportsandanalytics .bg-gradient-to-b {
+          background: white !important;
+        }
+        #reportsandanalytics .shadow-lg,
+        #reportsandanalytics .shadow-md,
+        #reportsandanalytics .shadow-sm {
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+      `;
+      document.head.appendChild(styleOverride);
+      
+      // Wait for styles to apply
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Capture the Reports and Analytics section with enhanced options for color compatibility
+      const canvas = await html2canvas(reportsContainer, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        imageTimeout: 15000,
+        removeContainer: false,
+        logging: false,
+        width: reportsContainer.scrollWidth,
+        height: reportsContainer.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        ignoreElements: (element) => {
+          // Skip elements that might have problematic colors
+          const style = window.getComputedStyle(element);
+          return style.backgroundColor?.includes('oklch') || 
+                 style.color?.includes('oklch') ||
+                 style.borderColor?.includes('oklch');
+        },
+        onclone: (clonedDoc) => {
+          // Ensure all styles are properly applied in the cloned document
+          const clonedContainer = clonedDoc.getElementById('reportsandanalytics');
+          if (clonedContainer) {
+            // Ensure consistent styling in clone
+            clonedContainer.style.background = 'white';
+            clonedContainer.style.minHeight = 'auto';
+            
+            // Fix any problematic colors in the cloned document
+            const allElements = clonedContainer.querySelectorAll('*');
+            allElements.forEach(el => {
+              const style = window.getComputedStyle(el);
+              
+              // Replace oklch colors with fallbacks
+              if (style.backgroundColor?.includes('oklch')) {
+                el.style.backgroundColor = '#ffffff';
+              }
+              if (style.color?.includes('oklch')) {
+                el.style.color = '#000000';
+              }
+              if (style.borderColor?.includes('oklch')) {
+                el.style.borderColor = '#e5e7eb';
+              }
+              
+              // Ensure chart containers have proper backgrounds
+              if (el.classList.contains('recharts-wrapper')) {
+                el.style.background = 'white';
+              }
+            });
+          }
+        }
+      });
+
+      console.log('✅ Canvas captured successfully');
+
+      // Remove the style override
+      const styleOverrideElement = document.getElementById('pdf-export-color-override');
+      if (styleOverrideElement) {
+        document.head.removeChild(styleOverrideElement);
+      }
+
+      // Restore original styles
+      elementsToAdjust.forEach(element => {
+        const original = originalStyles.get(element);
+        if (original) {
+          element.style.background = original.background || '';
+          element.style.backgroundColor = original.backgroundColor || '';
+          element.style.color = original.color || '';
+          element.style.borderColor = original.borderColor || '';
+          element.style.boxShadow = original.boxShadow || '';
+          element.style.fill = original.fill || '';
+          element.style.stroke = original.stroke || '';
+        }
+      });
+
+      // Create PDF with proper dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      // Add header
+      pdf.setFillColor(24, 77, 133);
+      pdf.rect(0, 0, 210, 35, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${userClinic} - Reports & Analytics`, 15, 20);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated on: ${currentDate}`, 15, 28);
+      
+      // Add a small gap after header
+      const contentStartY = 40;
+      
+      // Calculate how many pages we need
+      const availableHeight = pageHeight - contentStartY - 15; // Leave space for footer
+      let position = 0;
+      let pageNum = 1;
+
+      while (position < imgHeight) {
+        if (pageNum > 1) {
+          pdf.addPage();
+        }
+        
+        // Calculate the height for this page
+        const remainingHeight = imgHeight - position;
+        const heightForThisPage = Math.min(remainingHeight, availableHeight);
+        
+        // Create a temporary canvas for this page section
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Set canvas dimensions for this section
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = (heightForThisPage * canvas.width) / imgWidth;
+        
+        // Draw the appropriate section of the original canvas
+        tempCtx.drawImage(
+          canvas,
+          0, (position * canvas.width) / imgWidth, // Source x, y
+          canvas.width, tempCanvas.height, // Source width, height
+          0, 0, // Destination x, y
+          tempCanvas.width, tempCanvas.height // Destination width, height
+        );
+        
+        // Add this section to the PDF
+        const tempImgData = tempCanvas.toDataURL('image/jpeg', 0.85);
+        pdf.addImage(tempImgData, 'JPEG', 0, contentStartY, imgWidth, heightForThisPage);
+        
+        // Add footer
         pdf.setFontSize(8);
         pdf.setTextColor(128, 128, 128);
-        pdf.text(`Page ${i} of ${pageCount}`, 180, 285);
-        pdf.text(`Generated by ${userClinic} - Eye2Wear System`, 20, 285);
+        pdf.text(`Page ${pageNum}`, 15, pageHeight - 5);
+        pdf.text(`Generated by ${userClinic} - Eye2Wear System`, 180, pageHeight - 5, { align: 'right' });
+        
+        position += heightForThisPage;
+        pageNum++;
       }
-      
-      // Save PDF
-      pdf.save(`${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`);
-      
+
+      // Remove loading indicator
+      document.body.removeChild(loadingToast);
+
+      // Save the PDF
+      const fileName = `${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`;
+      pdf.save(fileName);
+
       // Show success message
-      alert('PDF exported successfully!');
+      const successToast = document.createElement('div');
+      successToast.innerHTML = `
+        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="bx bx-check-circle" style="font-size: 20px;"></i>
+            <span>PDF exported successfully!</span>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(successToast);
+      
+      setTimeout(() => {
+        if (document.body.contains(successToast)) {
+          document.body.removeChild(successToast);
+        }
+      }, 3000);
+
+      console.log('✅ Enhanced PDF export completed successfully');
       
     } catch (error) {
-      console.error('Error exporting to PDF:', error);
-      alert('Error exporting to PDF. Please try again.');
+      console.error('❌ Error in enhanced PDF export:', error);
+      
+      // Remove style override if it exists
+      const styleOverrideElement = document.getElementById('pdf-export-color-override');
+      if (styleOverrideElement) {
+        document.head.removeChild(styleOverrideElement);
+      }
+      
+      // Remove loading indicator if it exists
+      const loadingElements = document.querySelectorAll('[style*="Capturing dashboard layout"]');
+      loadingElements.forEach(el => {
+        if (el.parentElement && document.body.contains(el.parentElement)) {
+          document.body.removeChild(el.parentElement);
+        }
+      });
+
+      // Show error message
+      const errorToast = document.createElement('div');
+      errorToast.innerHTML = `
+        <div style="position: fixed; top: 20px; right: 20px; background: #dc2626; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="bx bx-error" style="font-size: 20px;"></i>
+            <span>Error exporting PDF. Please try again.</span>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(errorToast);
+      
+      setTimeout(() => {
+        if (document.body.contains(errorToast)) {
+          document.body.removeChild(errorToast);
+        }
+      }, 5000);
     }
   };
 
@@ -11775,6 +11783,7 @@ const [userLocationError, setUserLocationError] = useState(null);
 const mapContainer = useRef(null);
 const map = useRef(null);
 const mapMarkersRef = useRef(new Map()); // Use a ref to persist markers across renders
+const userMarkerRef = useRef(null); // Use a ref to persist user location marker
 const [mapLoaded, setMapLoaded] = useState(false);
 const [mapCenter, setMapCenter] = useState([120.4818, 14.6417]); // Metro Manila center
 const [mapZoom, setMapZoom] = useState(10);
@@ -13679,13 +13688,36 @@ useEffect(() => {
 // Update user location on map
 useEffect(() => {
   if (map.current && userLocation) {
-    // Add user location marker
+    // Remove previous user location marker if it exists
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch (error) {
+        console.warn('Error removing previous user marker:', error);
+      }
+      userMarkerRef.current = null;
+    }
+    
+    // Remove previous accuracy circle if it exists
+    if (map.current.getSource('user-accuracy-circle')) {
+      try {
+        map.current.removeLayer('user-accuracy-circle');
+        map.current.removeSource('user-accuracy-circle');
+      } catch (error) {
+        console.warn('Error removing previous accuracy circle:', error);
+      }
+    }
+    
+    // Add new user location marker
     const userMarkerEl = document.createElement('div');
     userMarkerEl.className = 'w-5 h-5 rounded-full bg-emerald-500 border-3 border-white shadow-md animate-location-pulse transform-gpu will-change-auto';
 
-    new mapboxgl.Marker(userMarkerEl)
+    const userMarker = new mapboxgl.Marker(userMarkerEl)
       .setLngLat([userLocation.longitude, userLocation.latitude])
       .addTo(map.current);
+    
+    // Store the marker in the ref for future cleanup
+    userMarkerRef.current = userMarker;
 
     // Center map on user location with smooth animation
     map.current.flyTo({
@@ -13696,6 +13728,28 @@ useEffect(() => {
       easing: (t) => t * (2 - t) // Smooth easing function (ease-out)
     });
   }
+  
+  // Cleanup function to remove marker when component unmounts or userLocation changes
+  return () => {
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch (error) {
+        console.warn('Error removing user marker on cleanup:', error);
+      }
+      userMarkerRef.current = null;
+    }
+    
+    // Also remove accuracy circle on cleanup
+    if (map.current && map.current.getSource('user-accuracy-circle')) {
+      try {
+        map.current.removeLayer('user-accuracy-circle');
+        map.current.removeSource('user-accuracy-circle');
+      } catch (error) {
+        console.warn('Error removing accuracy circle on cleanup:', error);
+      }
+    }
+  };
 }, [userLocation]);
 
 // Handle clinic form input changes
@@ -22022,7 +22076,7 @@ filteredbautistaOrders.map((order) => (
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 
 
- { (activedashboard === 'reportsandanalytics' && !isAdminRole) && ( 
+ { (activedashboard === 'reportsandanalytics') && ( 
    <div id="reportsandanalytics" className="flex flex-col pl-5 pr-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl">  
 
      <div className="flex items-center justify-between mb-6">
