@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useRef, useCallback} from "react";
 import {Link} from "react-router-dom";
 import navlogo from  "../src/assets/images/navlogo.png";
-
 import defaultprofilepic from '../src/assets/images/defaulticon.png';
 import ambherlogo from '../src/assets/images/ambherlogo.png';
 import bautistalogo from '../src/assets/images/bautistalogo.png';
@@ -13,9 +12,15 @@ import useSmartCache from "./hooks/useSmartCache";
 import imageCompression from "browser-image-compression";
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
-
 import profileuser from "../src/assets/images/profile-user.png";
 import logout from "../src/assets/images/logout.png";
+import Footer from "./Footer";
+
+
+
+
+
+
 
 // Skeleton Loading Components for Appointments
 const AppointmentRowSkeleton = () => (
@@ -1154,8 +1159,7 @@ useEffect(() => {
     <>
 
      {/* NavBar */}
-    <div className=" bg-white w-[99vw]">
-      <header id="header" className="top-0 absolute flex justify-between items-center text-black  md:px-32 bg-white w-full drop-shadow-md">
+      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
         <a id:logocontain href="#">
           <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
         </a>
@@ -1166,6 +1170,7 @@ useEffect(() => {
         <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
         <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
         <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
+        <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
 
 
 
@@ -1261,7 +1266,6 @@ useEffect(() => {
 
 
       </header>
-    </div>
 
 
 
@@ -2199,7 +2203,7 @@ useEffect(() => {
       
         </section>
 
-
+      <Footer />
 
     </>
    )

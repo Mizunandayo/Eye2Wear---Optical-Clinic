@@ -319,6 +319,34 @@ button:focus-visible {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+#image1 {
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(0,0,0,0.8) 100%), url('./assets/images/francis.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#image2 {
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(0,0,0,0.8) 100%), url('./assets/images/johannes.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#image3 {
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(0,0,0,0.8) 100%), url('./assets/images/aljhon.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#image4 {
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(0,0,0,0.8) 100%), url('./assets/images/gabriel.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

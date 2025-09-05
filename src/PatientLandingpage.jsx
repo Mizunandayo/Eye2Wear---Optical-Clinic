@@ -25,6 +25,13 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
+import Footer from "./Footer";
+
+
+
+
+
+
 
 // Disable Mapbox telemetry globally to prevent ERR_BLOCKED_BY_CLIENT errors
 if (typeof window !== 'undefined') {
@@ -1198,12 +1205,25 @@ const handleFullscreenChange = () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
   return (
     <>
-      <div className="bg-white w-[99vw] relative z-10">
-        <header id="header" className="top-0 absolute flex justify-between items-center text-black px-4 md:px-32 bg-white w-full drop-shadow-md z-50">
+        <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
           <a href="#">
             <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
           </a>
@@ -1222,6 +1242,7 @@ const handleFullscreenChange = () => {
             <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
             <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
             <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
+             <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
           </ul>
 
           {/* Mobile Navigation */}
@@ -1294,7 +1315,6 @@ const handleFullscreenChange = () => {
             </Link>
           )}
         </header>
-      </div>
 
 
 
@@ -1312,12 +1332,9 @@ const handleFullscreenChange = () => {
       
 
       <section className="h-full w-full flex justify-center align-center">
-        <div className="bg-cover bg-center min-h-screen flex flex-col lg:flex-row items-center justify-center" style={{ backgroundImage: `url(${landingbg2})` }}>
+        <div className="bg-cover bg-center min-h-screen flex flex-col lg:flex-row items-center justify-center" >
           <div className="w-full lg:w-[50%] h-full items-center justify-center pt-[90px] px-4 sm:px-8 lg:pl-14">
-            <div className="ml-0 lg:ml-17 mr-0 lg:mr-28 mb-6 sm:mb-10 flex flex-col sm:flex-row gap-2">
-              <p className="bg-gradient-to-r from-blue-500 to-blue-800 text-white pl-3 sm:pl-4 pr-3 sm:pr-4 pt-0.5 pb-0.5 rounded-2xl text-[16px] sm:text-[20px] font-semibold italic">New</p>
-              <p className="bg-[#027bbf] text-white pl-3 sm:pl-4 pr-3 sm:pr-4 pt-0.5 pb-0.5 rounded-2xl text-[16px] sm:text-[20px] font-semibold italic">Development in progress...</p>
-            </div>
+
             <img src={landinglogodark} className="w-60 sm:w-80 lg:w-130 mt-5 ml-0 lg:ml-16 mx-auto lg:mx-0"/>
             <h1 className="text-[24px] sm:text-[32px] lg:text-[40px] text-center lg:text-left pl-0 lg:pl-17 mt-6 sm:mt-8 font-albertsans font-bold italic text-[#2d2d44]">
               <Typewriter options={{
@@ -1353,7 +1370,7 @@ const handleFullscreenChange = () => {
       </section>
 
       <section className="bg-white min-h-[160vh] w-[99.5%]">
-        <div className="bg-cover bg-center w-full min-h-screen flex flex-col items-center px-4 sm:px-8" style={{ backgroundImage: `url(${landingbg3})` }}>
+        <div className="bg-cover bg-center w-full min-h-screen flex flex-col items-center px-4 sm:px-8">
           <img src={lonelogo} className="w-20 sm:w-24 lg:w-30 mt-20 sm:mt-24 lg:mt-30" style={{ animation: 'spin 8s linear infinite' }}/>
           <h1 className="font-albertsans font-bold italic text-[#25255b] text-[18px] sm:text-[22px] lg:text-[25px] mt-5 text-center">A shared foundation to <span className="text-sky-600 font-matimo">serve the best</span> optical clinic</h1>
           <h2 className="text-[14px] sm:text-[16px] lg:text-[18px] font-medium italic text-[#2d2d44] text-center">Redefining the patient experience</h2>
@@ -1396,14 +1413,14 @@ const handleFullscreenChange = () => {
         </div>
       </section>
 
-      <section className="pt-12 flex flex-col items-center justify-start bg-white min-h-screen h-auto w-[99.5%]">
-        <div id="mappingintegration" className="flex flex-col px-2 sm:px-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl">
+
+      <section className=" pt-50 flex flex-col items-center justify-start bg-white min-h-screen h-auto w-[99.5%]">
+        <div id="mappingintegration" className="flex flex-col px-10 sm:px-15 pb-3 pt-4 transition-all duration-300 ease-in-out  bg-white   w-[100%] min-h-full h-auto rounded-2xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div className="flex items-center">
               <i className="bx bx-street-view text-[#184d85] text-[24px] sm:text-[30px] mr-3"/>
               <div>
                 <h1 className="font-albertsans font-bold text-[#184d85] text-[22px] sm:text-[28px]">Find Our Clinics</h1>
-                <p className="text-[14px] sm:text-[16px] font-medium text-[#1e1e1e]">Locate and get directions to our eye care centers</p>
               </div>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
@@ -1593,72 +1610,86 @@ const handleFullscreenChange = () => {
               </div>
             </div>
 
-            <div id="cliniclocationscontainer" className="bg-white shadow-lg rounded-2xl flex flex-col w-full lg:w-[30%] h-[400px] sm:h-[580px] overflow-y-auto mt-4 lg:mt-0">
-              <div className="p-3 sm:p-4 border-b border-[#e8e8e8] bg-[#d9f1ff]">
-                <h3 className="flex items-center font-bold text-[#2f2f2f] font-albertsans text-[16px] sm:text-[18px] mb-1">
-                  <i className="bx bx-list-ul mr-2 font-bold"></i>
-                  Clinic Locations
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">Total: {filteredClinics?.length || 0} clinics</p>
+            <div id="cliniclocationscontainer" className="bg-white shadow-lg rounded-2xl flex flex-col w-full lg:w-[30%] h-[400px] sm:h-[580px] overflow-hidden mt-4 lg:mt-0">
+              {/* Header matching popup style */}
+              <div className="p-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                    <i className="bx bx-map-pin text-blue-600 text-lg"></i>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[#1f1f1f]">Clinic Locations</h3>
+                    <p className="text-sm text-gray-600">
+                      {filteredClinics?.length || 0} available clinics
+                    </p>
+                  </div>
+                </div>
                 
-                {/* Filter Buttons */}
-                <div className="flex gap-1 sm:gap-2 mt-3">
+                {/* Filter buttons matching popup style */}
+                <div className="flex gap-2 flex-wrap">
                   <div
                     onClick={() => setClinicFilter('all')}
-                    className={`cursor-pointer font-albertsans font-semibold flex items-center ease-in-out gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs transition-all duration-200 ${
+                    className={`cursor-pointer inline-block rounded-2xl px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
                       clinicFilter === 'all'
-                        ? 'bg-[#1a88d0] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    <i className="bx bx-buildings text-xs sm:text-sm"></i>
-                    <span className="hidden sm:inline">All</span>
+                    <i className="bx bx-buildings mr-1"></i>
+                    All Clinics
                   </div>
+                  
                   <div
                     onClick={() => setClinicFilter('ambher')}
-                    className={`cursor-pointer font-albertsans font-semibold flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs ease-in-out transition-all duration-200 ${
+                    className={`cursor-pointer inline-block rounded-2xl px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
                       clinicFilter === 'ambher'
-                        ? 'bg-[#4fa63d] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    <img src={ambherlogo} className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full"/>
-                    <span className="hidden sm:inline">Ambher</span>
+                    <img src={ambherlogo} className="w-3 h-3 rounded-full object-cover inline mr-1"/>
+                    Ambher
                   </div>
+                  
                   <div
                     onClick={() => setClinicFilter('bautista')}
-                    className={`cursor-pointer font-albertsans font-semibold flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs ease-in-out transition-all duration-200 ${
+                    className={`cursor-pointer inline-block rounded-2xl px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
                       clinicFilter === 'bautista'
-                        ? 'bg-[#1f539b] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    <img src={bautistalogo} className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full"/>
-                    <span className="hidden sm:inline">Bautista</span>
+                    <img src={bautistalogo} className="w-3 h-3 rounded-full object-cover inline mr-1"/>
+                    Bautista
                   </div>
                 </div>
               </div>
+
+              {/* Content Area matching popup style */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {loadingClinicLocations ? (
                   <div className="text-center text-gray-500 py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                    <p>Loading clinic locations...</p>
+                    <p className="font-medium">Loading clinic locations...</p>
                   </div>
                 ) : !filteredClinics || filteredClinics.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <div className="text-4xl mb-2">🏥</div>
-                    <p className="font-medium">
-                      {clinicFilter === 'all' ? 'No clinics found' : 
-                       clinicFilter === 'ambher' ? 'No Ambher clinics found' :
-                       'No Bautista clinics found'}
+                    <h3 className="font-bold text-gray-700 text-lg mb-2">No Clinics Found</h3>
+                    <p className="text-sm">
+                      {clinicFilter === 'all' ? 'No clinics available in this area' : 
+                       clinicFilter === 'ambher' ? 'No Ambher Optical clinics found' :
+                       'No Bautista Eye Center clinics found'}
                     </p>
                   </div>
                 ) : (
                   filteredClinics.map((clinic, index) => (
                     <div
                       key={clinic._id || `clinic-${index}`}
-                      className={`p-3 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300 bg-white ${
-                        activeRouteClinicId === clinic._id ? 'border-blue-500 bg-blue-50' : ''
+                      className={`bg-white p-4 border rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer ${
+                        activeRouteClinicId === clinic._id 
+                          ? 'border-blue-500 bg-blue-50 shadow-md' 
+                          : 'border-gray-200 hover:border-blue-300'
                       }`}
                       onClick={() => {
                         if (map.current && clinic.coordinates?.coordinates) {
@@ -1683,73 +1714,91 @@ const handleFullscreenChange = () => {
                         }
                       }}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">{clinic.clinicName}</h4>
-                        <div className="flex items-center gap-2">
-                          {clinic.distance !== undefined && clinic.distance !== Infinity && (
-                            <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
-                              {clinic.distance < 1 
-                                ? `${Math.round(clinic.distance * 1000)}m`
-                                : `${clinic.distance.toFixed(1)}km`
-                              }
+                      {/* Clinic Header matching popup style */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                          <img 
+                            src={clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo} 
+                            className="w-10 h-10 rounded-full object-cover"
+                            alt={clinic.clinicType}
+                          />
+                        </div>
+                        <div className="min-w-0 ">
+                          <h4 className="font-albartsans font-bold text-[16px] text-[#1f1f1f] mb-1 line-clamp-1">
+                            {clinic.clinicName}
+                          </h4>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                              clinic.clinicType === 'Ambher Optical' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
+                               clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : clinic.clinicType}
                             </span>
-                          )}
-                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                            clinic.clinicType === 'Ambher Optical'
-                              ? 'bg-green-100 text-green-800'
-                              : clinic.clinicType === 'Bautista Eye Center'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-green-100 text-green-800'
+                            {clinic.distance !== undefined && clinic.distance !== Infinity && (
+                              <span className="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold bg-orange-100 text-orange-800">
+                                {clinic.distance < 1 
+                                  ? `${Math.round(clinic.distance * 1000)}m`
+                                  : `${clinic.distance.toFixed(1)}km`
+                                }
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status and details matching popup style */}
+                      <div className="space-y-2 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                            clinic.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 
-                             clinic.clinicType === 'Bautista Eye Center' ? 'Bautista' : 'External'}
-                          </span>
+                            <div className={`w-2 h-2 rounded-full ${
+                              clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                            }`}></div>
+                            {clinic.isActive ? 'Active' : 'Inactive'}
+                          </div>
+                          {index === 0 && userLocation && clinic.distance !== undefined && clinic.distance !== Infinity && (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <i className="bx bx-navigation text-xs"></i>
+                              Nearest
+                            </div>
+                          )}
+
                         </div>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{clinic.address?.fullAddress || 'Address not available'}</p>
-                      {clinic.coordinates?.coordinates && (
-                        <div className="text-xs mb-2 flex items-center gap-1">
-                          <i className="bx bx-current-location text-[#b42525]"></i>
-                          {clinic.coordinates.coordinates[1].toFixed(4)}°, {clinic.coordinates.coordinates[0].toFixed(4)}°
+                        
+                        <div className="font-medium flex items-start justify-start">
+                          <i className="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i>
+                          <p className="break-words">{clinic.address?.fullAddress || 'Address not available'}</p>
                         </div>
-                      )}
-                      {clinic.contactInfo?.phone && (
-                        <div className="text-xs mb-2 flex items-center gap-1">
-                          <i className="bx bx-phone text-[#209206]"></i>
-                          {clinic.contactInfo.phone}
-                        </div>
-                      )}
-                      {clinic.contactInfo?.email && (
-                        <div className="text-xs mb-2 flex items-center gap-1">
-                          <i className="bx bx-envelope text-[#4d9be0]"></i>
-                          {clinic.contactInfo.email}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          clinic.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full ${
-                            clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
-                          }`}></div>
-                          {clinic.isActive ? 'Active' : 'Inactive'}
-                        </div>
-                        {index === 0 && userLocation && clinic.distance !== undefined && clinic.distance !== Infinity && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            <i className="bx bx-navigation text-xs"></i>
-                            Nearest
+                        
+                        {clinic.contactInfo?.phone && (
+                          <div className="font-medium flex items-center justify-start">
+                            <i className="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i>
+                            <p className="break-all">{clinic.contactInfo.phone}</p>
                           </div>
                         )}
-                        {activeRouteClinicId === clinic._id && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            <i className="bx bx-route text-xs"></i>
-                            Route Active
+                        
+                        {clinic.contactInfo?.email && (
+                          <div className="font-medium flex items-start justify-start">
+                            <i className="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i>
+                            <p className="break-all">
+                              <a 
+                                href={`mailto:${clinic.contactInfo.email}`} 
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                              >
+                                {clinic.contactInfo.email}
+                              </a>
+                            </p>
                           </div>
                         )}
+                        
+
                       </div>
-                      
+
 
                     </div>
                   ))
@@ -1759,6 +1808,13 @@ const handleFullscreenChange = () => {
           </div>
         </div>
       </section>
+
+
+
+      <Footer />
+
+
+
     </>
   );
 }

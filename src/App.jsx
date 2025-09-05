@@ -24,6 +24,30 @@ import documenticon from "./assets/images/documenticon.png";
 import filesent from "./assets/images/filesent.png";
 import leftarrow from "./assets/images/left-arrow.png";
 import profileuser from "./assets/images/profile-user.png";
+import AboutPage from "./AboutPage";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function PatientChatButton() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -3811,6 +3835,26 @@ jsxtransition-all duration-300 ease-in-out flex-shrink-0"
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -3826,6 +3870,7 @@ export default function App() {
         <Route path="/patientproducts" element={<PatientProducts />} />
         <Route path="/patientwishlist" element={<PatientWishlist />} />
         <Route path="/patientorders" element={<PatientOrders />} />
+        <Route path="/aboutpage" element={<AboutPage />} />
       </Routes>
     </BrowserRouter>
   );

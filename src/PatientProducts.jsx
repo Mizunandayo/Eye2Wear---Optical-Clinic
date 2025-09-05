@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useCallback} from "react";
 import {Link} from "react-router-dom";
 import navlogo from  "../src/assets/images/navlogo.png";
-
 import { useAuth } from "./hooks/patientuseAuth";
 import useApiService from "./hooks/useApiService";
 import useSmartCache from "./hooks/useSmartCache";
@@ -10,7 +9,6 @@ import defaultimageplaceholder from "../src/assets/images/defaultimageplaceholde
 import heartblack from "../src/assets/images/heartblack.png";
 import heartwhite from "../src/assets/images/heartwhite.png";
 import heartfilled from "../src/assets/images/heartfilled.png";
-
 import storeimage from "../src/assets/images/store.png";
 import profileuser from "../src/assets/images/profile-user.png";
 import logout from "../src/assets/images/logout.png";
@@ -21,6 +19,17 @@ import { AmbherinventorycategoryBox } from "./components/Ambherinventorycategory
 import { BautistainventorycategoryBox } from "./components/BautistainventorycategoryBox";
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
+import Footer from "./Footer";
+
+
+
+
+
+
+
+
+
+
 
 // Skeleton Loading Components
 const ProductCardSkeleton = () => (
@@ -1614,8 +1623,7 @@ useEffect(() => {
     <>
 
      {/* NavBar */}
-<div className="bg-white w-[99vw] relative z-10">
-  <header id="header" className="top-0 absolute flex justify-between items-center text-black md:px-32 bg-white w-full drop-shadow-md z-50">
+  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
         <a id:logocontain href="#">
           <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
         </a>
@@ -1626,7 +1634,7 @@ useEffect(() => {
         <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
          <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
         <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
-
+         <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
 
 
 
@@ -1713,7 +1721,6 @@ useEffect(() => {
 
 
       </header>
-    </div>
 
 
 
@@ -2917,6 +2924,8 @@ useEffect(() => {
       )}
 
 
+
+            <Footer />
 
     </>
    )
