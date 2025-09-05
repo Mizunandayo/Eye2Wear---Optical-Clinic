@@ -8337,6 +8337,7 @@ const [ambherproductsoldCounts, setambherproductsoldCounts] = useState(0);
 const [isSubmittingAmbherCompleteOrder, setIsSubmittingAmbherCompleteOrder] = useState(false);
 const [isSubmittingAmbherPendingOrder, setIsSubmittingAmbherPendingOrder] = useState(false);
 const [isMarkingOrderComplete, setIsMarkingOrderComplete] = useState(false);
+const [sendingSmsForOrder, setSendingSmsForOrder] = useState(null); // Track which order is having SMS sent
 
 
 //Order Bautista
@@ -9193,9 +9194,153 @@ const markOrderAsComplete = useCallback(async () => {
       const updatedOrder = await response.json();
       console.log(`✅ Successfully marked ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
       
-      // SMS notification will be handled automatically by the backend controller
-      // when the order status is updated to "Completed"
-      console.log('📱 SMS notification will be sent automatically by backend controller');
+      // Send SMS notification about order completion
+      try {
+        // Check if SMS is already being sent for this order
+        if (sendingSmsForOrder === orderId) {
+          console.warn('⚠️ SMS already being sent for this order, skipping duplicate');
+          return;
+        }
+        
+        setSendingSmsForOrder(orderId);
+        
+        console.log('📱 Attempting to send SMS for order completion:', orderId);
+        console.log('🌐 API URL:', apiUrl);
+        console.log('🔑 Token available:', !!currentusertoken);
+        
+        // Add a small random delay to prevent race conditions
+        const randomDelay = Math.floor(Math.random() * 500) + 100; // 100-600ms
+        await new Promise(resolve => setTimeout(resolve, randomDelay));
+        
+        const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          },
+          body: JSON.stringify({
+            orderId: orderId,
+            orderType: isAmbher ? 'ambher' : 'bautista',
+            newStatus: 'Completed',
+            timestamp: Date.now(), // Add timestamp to make request unique
+            requestId: `complete-${orderId}-${Date.now()}` // Unique request identifier
+          })
+        });
+
+        console.log('📡 SMS Response status:', smsResponse.status);
+        const smsResponseData = await smsResponse.json();
+        console.log('📡 SMS Response data:', smsResponseData);
+
+        // Check both HTTP status AND the success field in response body
+        if (smsResponse.ok && smsResponseData.success) {
+          console.log('✅ Order completion SMS sent successfully');
+          
+          // Get customer name from order data
+          const customerFirstName = isAmbher 
+            ? selectedOrderForView.patientfirstname 
+            : selectedOrderForView.patientfirstname;
+          const customerLastName = isAmbher 
+            ? selectedOrderForView.patientlastname 
+            : selectedOrderForView.patientlastname;
+          
+          // Show success toast notification
+          setSmsToastMessage(`✅ Order completion SMS sent to ${customerFirstName} ${customerLastName}`);
+          setSmsToast(true);
+          setSmsToastClosing(false);
+          setSmsIsClicked(true); // Set to true for success (green)
+          
+          // Start progress animation
+          setSmsProgressWidth('0%');
+          setTimeout(() => setSmsProgressWidth('100%'), 100);
+          
+          // Auto-hide toast after 4 seconds
+          setTimeout(() => {
+            setSmsToastClosing(true);
+            setTimeout(() => {
+              setSmsToast(false);
+              setSmsToastClosing(false);
+              setSmsProgressWidth('0%');
+              setSmsIsClicked(false);
+              setSendingSmsForOrder(null);
+            }, 3000);
+          }, 4000);
+        } else {
+          console.warn('⚠️ SMS notification failed but order was still completed');
+          console.warn('SMS Error details:', smsResponseData);
+          
+          // Get customer name from order data
+          const customerFirstName = isAmbher 
+            ? selectedOrderForView.patientfirstname 
+            : selectedOrderForView.patientfirstname;
+          const customerLastName = isAmbher 
+            ? selectedOrderForView.patientlastname 
+            : selectedOrderForView.patientlastname;
+          
+          // Show informative error message based on the error type
+          let errorMessage = 'SMS notification failed';
+          if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
+            errorMessage = `⚠️ Order completed but SMS failed: No phone number for ${customerFirstName} ${customerLastName}`;
+          } else if (smsResponseData.message) {
+            errorMessage = `⚠️ Order completed but SMS failed: ${smsResponseData.message}`;
+          } else if (smsResponseData.error) {
+            errorMessage = `⚠️ Order completed but SMS failed: ${smsResponseData.error}`;
+          }
+          
+          // Show warning toast
+          setSmsToastMessage(errorMessage);
+          setSmsToast(true);
+          setSmsToastClosing(false);
+          setSmsIsClicked(false); // Set to false for error (red)
+          
+          // Start progress animation
+          setSmsProgressWidth('0%');
+          setTimeout(() => setSmsProgressWidth('100%'), 100);
+          
+          // Auto-hide toast after 6 seconds (longer for error messages)
+          setTimeout(() => {
+            setSmsToastClosing(true);
+            setTimeout(() => {
+              setSmsToast(false);
+              setSmsToastClosing(false);
+              setSmsProgressWidth('0%');
+              setSmsIsClicked(false);
+              setSendingSmsForOrder(null);
+            }, 3000);
+          }, 6000);
+        }
+      } catch (smsError) {
+        console.warn('⚠️ SMS notification failed but order was still completed:', smsError);
+        
+        // Get customer name from order data
+        const customerFirstName = isAmbher 
+          ? selectedOrderForView.patientfirstname 
+          : selectedOrderForView.patientfirstname;
+        const customerLastName = isAmbher 
+          ? selectedOrderForView.patientlastname 
+          : selectedOrderForView.patientlastname;
+        
+        // Show error toast
+        setSmsToastMessage(`⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName}: ${smsError.message}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+            setSmsIsClicked(false);
+            setSendingSmsForOrder(null);
+          }, 3000);
+        }, 6000);
+      }
       
       // Update the product quantity after completing the order
       try {
@@ -9371,9 +9516,10 @@ const markOrderAsComplete = useCallback(async () => {
   } finally {
     // Always reset the loading state to allow future clicks
     setIsMarkingOrderComplete(false);
+    setSendingSmsForOrder(null);
     console.log('🔄 Reset isMarkingOrderComplete to false');
   }
-}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, isMarkingOrderComplete]);
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, isMarkingOrderComplete, setSmsToast, setSmsToastMessage, setSmsToastClosing, setSmsProgressWidth, setSmsIsClicked, sendingSmsForOrder, setSendingSmsForOrder]);
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -22087,21 +22233,23 @@ filteredbautistaOrders.map((order) => (
        
        {/* Export and Refresh Buttons */}
        <div className="flex space-x-3">
-         <button
+        {/*
+  <button
            onClick={exportToPDF}
            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-albertsans"
          >
            <Download className="w-4 h-4 mr-2" />
            Export PDF
          </button>
-         <button
+         */}
+         <div
            onClick={refreshReportsData}
            disabled={reportsData.loading}
            className="flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
          >
            <RefreshCw className={`w-4 h-4 mr-2 ${reportsData.loading ? 'animate-spin' : ''}`} />
            {reportsData.loading ? 'Refreshing...' : 'Refresh'}
-         </button>
+         </div>
        </div>
      </div>
 

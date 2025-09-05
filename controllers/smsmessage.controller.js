@@ -665,9 +665,10 @@ ${appointment.appointmentclinic}`;
   static async sendOrderStatusUpdate(req, res) {
     try {
       console.log('📱 SMS Order Status Update Request received:', req.body);
-      console.log('🔍 Looking up order with custom ID:', orderId, 'Type:', orderType);
       
       const { orderId, orderType, newStatus } = req.body;
+      
+      console.log('🔍 Looking up order with custom ID:', orderId, 'Type:', orderType);
 
       if (!orderId || !orderType || !newStatus) {
         console.log('❌ Missing required fields:', { orderId, orderType, newStatus });
@@ -676,18 +677,40 @@ ${appointment.appointmentclinic}`;
         });
       }
 
-      // SMS deduplication check
+      // SMS deduplication check - but allow order completion SMS
       const requestKey = `${orderId}-${orderType}-${newStatus}`;
       const now = Date.now();
       
-      if (recentSmsRequests.has(requestKey)) {
-        const lastRequestTime = recentSmsRequests.get(requestKey);
-        if (now - lastRequestTime < 10000) { // 10 second deduplication window
-          console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus}`);
-          return res.status(200).json({
-            success: false,
-            message: 'Duplicate SMS request blocked to prevent spam'
-          });
+      // For order completion, check if we already have a successful SMS record
+      if (newStatus === 'Completed') {
+        const existingSms = await SmsMessage.findOne({
+          recipients: { $regex: orderId },
+          type: 'Order Status',
+          status: { $in: ['Sent', 'Delivered'] },
+          message: { $regex: 'completed.*ready.*pickup' }
+        }).sort({ createdAt: -1 });
+        
+        if (existingSms) {
+          const timeSinceLastSms = now - existingSms.createdAt.getTime();
+          if (timeSinceLastSms < 300000) { // 5 minutes
+            console.warn(`⚠️ Order completion SMS already sent for order ${orderId} at ${existingSms.createdAt}`);
+            return res.status(200).json({
+              success: false,
+              message: 'Order completion SMS already sent recently'
+            });
+          }
+        }
+      } else {
+        // For non-completion status updates, use regular deduplication
+        if (recentSmsRequests.has(requestKey)) {
+          const lastRequestTime = recentSmsRequests.get(requestKey);
+          if (now - lastRequestTime < 10000) { // 10 second deduplication window
+            console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus}`);
+            return res.status(200).json({
+              success: false,
+              message: 'Duplicate SMS request blocked to prevent spam'
+            });
+          }
         }
       }
       
