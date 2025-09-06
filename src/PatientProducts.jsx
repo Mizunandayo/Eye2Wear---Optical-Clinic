@@ -1733,7 +1733,7 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
+    <section className="motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
     <div className="bg-cover bg-center h-auto w-full flex justify-center " >
 
       <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-3">

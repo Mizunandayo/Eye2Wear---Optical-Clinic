@@ -1329,11 +1329,18 @@ const handleFullscreenChange = () => {
 
 
 
+
+
+
+
+
       
 
-      <section className="h-full w-full flex justify-center align-center">
-        <div className="bg-cover bg-center min-h-screen flex flex-col lg:flex-row items-center justify-center" >
-          <div className="w-full lg:w-[50%] h-full items-center justify-center pt-[90px] px-4 sm:px-8 lg:pl-14">
+      <section id="oldlandingpage" className="motion-preset-slide-up relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100">
+
+
+        <div className="relative z-10 bg-cover bg-center min-h-screen flex flex-col lg:flex-row items-center justify-center" >
+          <div className=" w-full lg:w-[50%] h-full items-center justify-center mb-40 px-4 sm:px-8 lg:pl-14">
 
             <img src={landinglogodark} className="w-60 sm:w-80 lg:w-130 mt-5 ml-0 lg:ml-16 mx-auto lg:mx-0"/>
             <h1 className="text-[24px] sm:text-[32px] lg:text-[40px] text-center lg:text-left pl-0 lg:pl-17 mt-6 sm:mt-8 font-albertsans font-bold italic text-[#2d2d44]">
@@ -1341,8 +1348,8 @@ const handleFullscreenChange = () => {
                 strings: ['Greet the world with a better view!', 'In collaboration with:', 'Ambher Optical,', 'Bautista Eye Center,', 'and DevOps Team!'], 
                 autoStart: true, loop: true, cursor: '|'}}/>
             </h1>
-            <div className="border-b-2 ml-0 lg:ml-17 mr-0 lg:mr-28 border-blue-950 pb-5">
-              <p className="text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mt-6 sm:mt-8 font-semibold italic text-[#2d2d44]">"Redefining eyewear with style, innovation, and clarity. Experience the future of vision at Eye2Wear—where every eyesight tells a story."</p>
+            <div className=" ml-0 lg:ml-17 mr-0 lg:mr-28  pb-5">
+              <p className="text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mt-6 sm:mt-8 font-medium font-albertsans text-[#2d2d44]">"Redefining eyewear with style, innovation, and clarity. Experience the future of vision at Eye2Wear—where every eyesight tells a story."</p>
               <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-10 justify-center lg:justify-start">
                 <div className="flex justify-center align-middle p-3 bg-gray-800 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all"><i className="bx bx-expand-alt mt-1 pr-2 font-bold text-white"/><p className="font-semibold text-white">Explore</p></div>
                 {localStorage.getItem("patienttoken") && (
@@ -1350,24 +1357,32 @@ const handleFullscreenChange = () => {
                 )}
               </div>
             </div>
-            <div className="ml-0 lg:ml-17 mt-6 mr-0 lg:mr-28 flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4">
-              <img src={usersicon} className="w-20 sm:w-24 lg:w-30 h-8 sm:h-9 lg:h-11"/>
-              <div className="text-center lg:text-left">
-                <div className="flex justify-center lg:justify-start items-center gap-2">
-                  <Stack spacing={1}>
-                    <Rating name="half-rating-read" defaultValue={4.5} precision={4} readOnly />
-                  </Stack>
-                  <p className="font-semibold text-[#2d2d44]">4.0/5</p>
-                </div>
-                <div className="font-regular text-[#2d2d44] text-sm sm:text-base">Trusted by 1000+ patients nationwide</div>
-              </div>
-            </div>
+
           </div>
           <div className="w-full lg:w-[50%] h-full items-center justify-center flex">
-            <img src={eyemodel2} className="w-60 sm:w-80 lg:w-140 h-60 sm:h-80 lg:h-140 mt-8 lg:mt-[35px] pr-0 lg:pr-6 rotate-[-0.3deg]"/>
+            <img src={eyemodel2} className="w-60 sm:w-80 lg:w-140 h-60 sm:h-80 lg:h-140 mt-8 mb-50 lg:mt-[35px] pr-0 lg:pr-6 rotate-[-0.3deg]"/>
+
           </div>
+
+          
         </div>
       </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       <section className="bg-white min-h-[160vh] w-[99.5%]">
         <div className="bg-cover bg-center w-full min-h-screen flex flex-col items-center px-4 sm:px-8">
@@ -1407,11 +1422,22 @@ const handleFullscreenChange = () => {
                   <h1 className="font-albertsans font-semibold italic text-white text-[18px] sm:text-[22px] lg:text-[25px]">Direct Messaging</h1>
                   <p className="text-[13px] sm:text-[14px] lg:text-[15px] font-medium italic text-white">Efficient communication with your eye-specialist</p>
                 </div>
+                
               </div>
             </div>
           </div>
         </div>
       </section>
+
+
+
+
+
+
+
+
+
+
 
 
       <section className=" pt-50 flex flex-col items-center justify-start bg-white min-h-screen h-auto w-[99.5%]">
