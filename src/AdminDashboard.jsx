@@ -8249,7 +8249,7 @@ const CACHE_DURATION = 30000; // 30 seconds cache
 // Pagination for performance
 const [ambherCurrentPage, setAmbherCurrentPage] = useState(1);
 const [bautistaCurrentPage, setBautistaCurrentPage] = useState(1);
-const ORDERS_PER_PAGE = 50; // Limit rows per page for performance
+const ORDERS_PER_PAGE = 10; // Limit rows per page for performance
 const [searchpatientorderambherTerm, setsearchpatientorderambherTerm] = useState('');
 const [searchpatientorderbautistaTerm, setsearchpatientorderbautistaTerm] = useState('');
 const [showpatientorderambher, setshowpatientorderambher] = useState(false);
@@ -11562,10 +11562,22 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
     setLoadingSmsMessages(true);
     setErrorLoadingSmsMessages(null);
 
+    // Get current user's clinic to filter SMS messages
+    const currentUserClinic = getCurrentUserClinic();
+    
     const smsMessages = await smartFetch(
       'sms_messages',
       async () => {
-        const response = await fetch(`${apiUrl}/api/sms`, {
+        // Request all messages with a large limit for frontend pagination
+        // Add clinic filter to only get messages from the current user's clinic
+        let apiUrl_withParams = `${apiUrl}/api/sms?limit=1000&page=1`;
+        
+        // Add clinic filter if user has a specific clinic (not admin)
+        if (currentUserClinic && currentUserClinic.trim()) {
+          apiUrl_withParams += `&clinic=${encodeURIComponent(currentUserClinic)}`;
+        }
+        
+        const response = await fetch(apiUrl_withParams, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${currentusertoken}`,
@@ -11574,14 +11586,56 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
         });
 
         if (!response.ok) throw new Error('Failed to fetch SMS messages');
-        return response.json();
+        const data = await response.json();
+        
+        // Debug: Log the API response to see what we're getting
+        console.log('API Response Debug:', {
+          'Response type': typeof data,
+          'Has data property': !!data.data,
+          'Data length': data?.data?.length || 0,
+          'Total from API': data?.pagination?.total || 0,
+          'Pages from API': data?.pagination?.pages || 0,
+          'Current user clinic': currentUserClinic,
+          'Response structure': {
+            success: data.success,
+            pagination: data.pagination,
+            dataLength: data.data?.length
+          }
+        });
+        
+        return data;
       },
       CACHE_DURATIONS.SHORT, // 1 minute cache
       forceRefresh
     );
 
-    setSmsMessages(smsMessages.data || smsMessages.smsMessages || smsMessages || []);
-    setFilteredSmsMessages(smsMessages.data || smsMessages.smsMessages || smsMessages || []);
+    // Get the SMS data from the response
+    let smsData = smsMessages.data || smsMessages.smsMessages || smsMessages || [];
+    
+    // Add client-side filtering as a backup (in case the backend doesn't filter properly)
+    if (currentUserClinic && currentUserClinic.trim() && smsData.length > 0) {
+      const originalCount = smsData.length;
+      smsData = smsData.filter(message => 
+        message.senderClinic === currentUserClinic
+      );
+      
+      console.log('Client-side clinic filtering applied:', {
+        originalCount,
+        filteredCount: smsData.length,
+        currentUserClinic,
+        removedMessages: originalCount - smsData.length
+      });
+    }
+    
+    setSmsMessages(smsData);
+    
+    // Set filtered messages based on current filter state
+    if (!searchSmsMessages.trim() && smsStatusFilter === 'all' && smsTypeFilter === 'all') {
+      setFilteredSmsMessages(smsData);
+    } else {
+      // Apply current filters to the new data
+      filterSmsMessages(searchSmsMessages);
+    }
   } catch (error) {
     console.error('Error fetching SMS messages:', error);
     setErrorLoadingSmsMessages(error.message);
@@ -11590,12 +11644,22 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
   } finally {
     setLoadingSmsMessages(false);
   }
-}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl]);
+}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, filterSmsMessages, searchSmsMessages, smsStatusFilter, smsTypeFilter]);
 
 // SMS Messages Filter Effects
 useEffect(() => {
-  filterSmsMessages(searchSmsMessages);
-}, [searchSmsMessages, smsStatusFilter, smsTypeFilter, filterSmsMessages]);
+  // Only filter if we have SMS messages loaded
+  if (smsMessages.length > 0) {
+    filterSmsMessages(searchSmsMessages);
+  }
+}, [searchSmsMessages, smsStatusFilter, smsTypeFilter, filterSmsMessages, smsMessages]);
+
+// Reset page to 1 when SMS data is first loaded
+useEffect(() => {
+  if (smsMessages.length > 0) {
+    setCurrentSmsPage(1);
+  }
+}, [smsMessages.length]);
 
 // Initialize SMS data when component mounts
 useEffect(() => {
@@ -20089,6 +20153,61 @@ onError={(e) => {
  <div className="flex justify-end items-center w-auto h-[9%] rounded-2xl mb-2 mt-3"> <div onClick={() => setshowpatientorderambher(true)}  className="w-50 p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center  items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx  bx-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Set Order</p></div> </div>
 
  </div>
+  {/* Pagination for Ambher Orders */}
+  {Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE) > 1 && (
+    <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+      <div className="text-sm text-gray-600 font-albertsans">
+        Page {ambherCurrentPage} of {Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE)}
+      </div>
+      <div className="flex items-center gap-2">
+        <div
+          onClick={() => setAmbherCurrentPage(prev => Math.max(1, prev - 1))}
+          className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+            ambherCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Previous
+        </div>
+        
+        {/* Page Numbers */}
+        <div className="cursor-pointer flex items-center gap-1">
+          {Array.from({ length: Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE) }, (_, i) => i + 1)
+            .filter(page => {
+              const current = ambherCurrentPage;
+              return page === 1 || page === Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE) || 
+                     (page >= current - 1 && page <= current + 1);
+            })
+            .map((page, index, array) => {
+              const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+              return (
+                <React.Fragment key={page}>
+                  {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                  <div
+                    onClick={() => setAmbherCurrentPage(page)}
+                    className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                      page === ambherCurrentPage
+                        ? 'bg-[#184d85] text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+        </div>
+        
+        <div
+          onClick={() => setAmbherCurrentPage(prev => Math.min(Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE), prev + 1))}
+          className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+            ambherCurrentPage === Math.ceil(filteredambherOrders.length / ORDERS_PER_PAGE) ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Next
+        </div>
+      </div>
+    </div>
+  )}
 
 
  <div className=" w-full h-auto mt-5">
@@ -20097,7 +20216,7 @@ onError={(e) => {
 ) : filteredambherOrders.length === 0 ? (
 <div className="text-gray-500 p-4">No orders found</div>
 ) : (
-filteredambherOrders.map((order) => (
+paginatedAmbherOrders.map((order) => (
     <div  key={order.ambherinventoryproductid} onClick={() => {
       setSelectedOrderForView(order);
       setShowViewOrderModal(true);
@@ -20131,7 +20250,6 @@ filteredambherOrders.map((order) => (
 ))
 )}
  </div>
-
 
 
   
@@ -20844,7 +20962,6 @@ filteredambherOrders.map((order) => (
                   </form>
              </div>
      
-     
 
 
 
@@ -20911,7 +21028,61 @@ filteredambherOrders.map((order) => (
  <div className="flex justify-end items-center w-auto h-[9%] rounded-2xl mb-2 mt-3"> <div onClick={() => setshowpatientorderbautista(true)}  className="w-50 p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center  items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx  bx-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Set Order</p></div> </div>
 
  </div>
-
+  {/* Pagination for Bautista Orders */}
+  {Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) > 1 && (
+    <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+      <div className="text-sm text-gray-600 font-albertsans">
+        Page {bautistaCurrentPage} of {Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE)}
+      </div>
+      <div className="flex items-center gap-2">
+        <div
+          onClick={() => setBautistaCurrentPage(prev => Math.max(1, prev - 1))}
+          className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+            bautistaCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Previous
+        </div>
+        
+        {/* Page Numbers */}
+        <div className="cursor-pointer flex items-center gap-1">
+          {Array.from({ length: Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) }, (_, i) => i + 1)
+            .filter(page => {
+              const current = bautistaCurrentPage;
+              return page === 1 || page === Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) || 
+                     (page >= current - 1 && page <= current + 1);
+            })
+            .map((page, index, array) => {
+              const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+              return (
+                <React.Fragment key={page}>
+                  {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                  <div
+                    onClick={() => setBautistaCurrentPage(page)}
+                    className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                      page === bautistaCurrentPage
+                        ? 'bg-[#184d85] text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+        </div>
+        
+        <div
+          onClick={() => setBautistaCurrentPage(prev => Math.min(Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE), prev + 1))}
+          className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+            bautistaCurrentPage === Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Next
+        </div>
+      </div>
+    </div>
+  )} 
 
  <div className=" w-full h-auto mt-5">
 {loadingBautistaOrders ? (
@@ -20919,7 +21090,7 @@ filteredambherOrders.map((order) => (
 ) : filteredbautistaOrders.length === 0 ? (
 <div className="text-gray-500 p-4">No orders found</div>
 ) : (
-filteredbautistaOrders.map((order) => (
+paginatedBautistaOrders.map((order) => (
     <div  key={order.ambherinventoryproductid} onClick={() => {
       setSelectedOrderForView(order);
       setShowViewOrderModal(true);
@@ -21658,6 +21829,61 @@ filteredbautistaOrders.map((order) => (
                   </form>
              </div>
      
+      {/* Pagination for Bautista Orders */}
+      {Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) > 1 && (
+        <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600 font-albertsans">
+            Page {bautistaCurrentPage} of {Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE)}
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              onClick={() => setBautistaCurrentPage(prev => Math.max(1, prev - 1))}
+              className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+                bautistaCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              Previous
+            </div>
+            
+            {/* Page Numbers */}
+            <div className="cursor-pointer flex items-center gap-1">
+              {Array.from({ length: Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) }, (_, i) => i + 1)
+                .filter(page => {
+                  const current = bautistaCurrentPage;
+                  return page === 1 || page === Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) || 
+                         (page >= current - 1 && page <= current + 1);
+                })
+                .map((page, index, array) => {
+                  const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+                  return (
+                    <React.Fragment key={page}>
+                      {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                      <div
+                        onClick={() => setBautistaCurrentPage(page)}
+                        className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                          page === bautistaCurrentPage
+                            ? 'bg-[#184d85] text-white'
+                            : 'bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+            </div>
+            
+            <div
+              onClick={() => setBautistaCurrentPage(prev => Math.min(Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE), prev + 1))}
+              className={`cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 transition-colors ${
+                bautistaCurrentPage === Math.ceil(filteredbautistaOrders.length / ORDERS_PER_PAGE) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              Next
+            </div>
+          </div>
+        </div>
+      )}
      
 
 
@@ -22789,6 +23015,7 @@ filteredbautistaOrders.map((order) => (
                 value={searchSmsMessages} 
                 onChange={(e) => {
                   setSearchSmsMessages(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when search changes
                   filterSmsMessages(e.target.value);
                 }} 
                 className="mr-1 transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
@@ -22807,7 +23034,10 @@ filteredbautistaOrders.map((order) => (
               <h3 className="font-albertsans font-bold text-[16px] text-[#383838]">Status:</h3>
               <select 
                 value={smsStatusFilter} 
-                onChange={(e) => setSmsStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setSmsStatusFilter(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when filter changes
+                }}
                 className="px-3 py-2 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500 font-albertsans"
               >
                 <option value="all">All Status</option>
@@ -22823,7 +23053,10 @@ filteredbautistaOrders.map((order) => (
               <h3 className="font-albertsans font-bold text-[16px] text-[#383838]">Type:</h3>
               <select 
                 value={smsTypeFilter} 
-                onChange={(e) => setSmsTypeFilter(e.target.value)}
+                onChange={(e) => {
+                  setSmsTypeFilter(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when filter changes
+                }}
                 className="px-3 py-2 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500 font-albertsans"
               >
                 <option value="all">All Types</option>
@@ -22994,31 +23227,106 @@ filteredbautistaOrders.map((order) => (
                 </tbody>
               </table>
             </div>
-
-            {/* Pagination Component for SMS Messages */}
-            {(() => {
-              const dataToDisplay = searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all' 
-                ? filteredSmsMessages 
-                : smsMessages;
-              const totalSmsMessages = dataToDisplay.length;
-              const totalPages = Math.ceil(totalSmsMessages / smsMessagesPerPage);
-
-              return totalSmsMessages > 0 && (
-                <PaginationComponent
-                  currentPage={currentSmsPage}
-                  totalPages={totalPages}
-                  onPageChange={handleSmsPageChange}
-                  totalItems={totalSmsMessages}
-                  itemsPerPage={smsMessagesPerPage}
-                  itemName="SMS messages"
-                />
-              );
-            })()}
           </div>
         )}
       </div>
     </div>        
+          <div id="smspagination">
+            
+            {/* SMS Pagination Controls - Separate dedicated container */}
+            {(() => {
+              // Use the same logic as getPaginatedSmsData to ensure consistency
+              const dataToDisplay = searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all' 
+                ? filteredSmsMessages 
+                : smsMessages;
               
+              // Ensure dataToDisplay is an array
+              const totalSmsMessages = Array.isArray(dataToDisplay) ? dataToDisplay.length : 0;
+              const totalPages = Math.ceil(totalSmsMessages / smsMessagesPerPage);
+              
+              // Debug logging
+              console.log('SMS Pagination Debug:', {
+                'Raw smsMessages length': smsMessages.length,
+                'Raw filteredSmsMessages length': filteredSmsMessages.length,
+                'Search term': searchSmsMessages,
+                'Status filter': smsStatusFilter,
+                'Type filter': smsTypeFilter,
+                'Data to display length': totalSmsMessages,
+                'Total pages calculated': totalPages,
+                'Messages per page': smsMessagesPerPage,
+                'Current page': currentSmsPage,
+                'Is using filtered data': (searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all'),
+                'Should show pagination': !loadingSmsMessages && !errorLoadingSmsMessages && totalSmsMessages > 0
+              });
+              
+              // Ensure current page doesn't exceed total pages
+              if (currentSmsPage > totalPages && totalPages > 0) {
+                setCurrentSmsPage(totalPages);
+              }
+              
+              // Show pagination logic:
+              // - Always show if there's data and multiple pages
+              // - For default state (no filters), show even with 1 page to indicate pagination is available
+              // - For filtered state, only show if there are multiple pages
+              const isDefaultState = !searchSmsMessages.trim() && smsStatusFilter === 'all' && smsTypeFilter === 'all';
+              const shouldShowPagination = totalSmsMessages > 0 && (
+                isDefaultState ? totalPages >= 1 : totalPages > 1
+              );
+
+              return !loadingSmsMessages && !errorLoadingSmsMessages && shouldShowPagination && (
+                <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600 font-albertsans">
+                    Page {currentSmsPage} of {totalPages} ({totalSmsMessages} total messages)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      onClick={() => setCurrentSmsPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentSmsPage === 1}
+                      className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </div>
+                    
+                    {/* Page Numbers */}
+                    <div className="cursor-pointer flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const current = currentSmsPage;
+                          return page === 1 || page === totalPages || 
+                                 (page >= current - 1 && page <= current + 1);
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                              <div
+                                onClick={() => setCurrentSmsPage(page)}
+                                className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                                  page === currentSmsPage
+                                    ? 'bg-[#184d85] text-white'
+                                    : 'bg-white border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+                    
+                    <div
+                      onClick={() => setCurrentSmsPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentSmsPage === totalPages}
+                      className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>    
    </div> )}
 
    {/* Promotional SMS Modal */}
