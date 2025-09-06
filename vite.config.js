@@ -5,7 +5,9 @@ import path from "path";
 import pluginRewriteAll from "vite-plugin-rewrite-all";
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
+  const isProduction = command === 'build' || mode === 'production';
+  
   return {
     plugins: [
       tailwindcss(),
@@ -20,12 +22,12 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Explicitly set NODE_ENV for production builds
-      'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+      'process.env.NODE_ENV': JSON.stringify(isProduction ? 'production' : 'development'),
     },
     build: {
       // Enable minification and optimization for production
-      minify: mode === 'production' ? 'terser' : false,
-      sourcemap: mode !== 'production',
+      minify: isProduction ? 'terser' : false,
+      sourcemap: !isProduction,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
