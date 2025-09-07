@@ -9406,7 +9406,17 @@ const markOrderAsComplete = useCallback(async () => {
           return;
         }
         
+        // Additional check: prevent duplicate SMS within a short time window for this specific order
+        const smsKey = `sms_sent_${orderId}_complete`;
+        const lastSmsSentTime = window[smsKey] || 0;
+        const timeSinceLastSms = now - lastSmsSentTime;
+        if (timeSinceLastSms < 10000) { // 10 second cooldown for SMS per order
+          console.warn(`⚠️ SMS for order ${orderId} was sent ${timeSinceLastSms}ms ago, skipping duplicate`);
+          return;
+        }
+        
         setSendingSmsForOrder(orderId);
+        window[smsKey] = now; // Mark SMS as sent for this order
         
         console.log('📱 Attempting to send SMS for order completion:', orderId);
         console.log('🌐 API URL:', apiUrl);
@@ -22436,10 +22446,21 @@ paginatedBautistaOrders.map((order) => (
                           </p>
                         </div>
                         <div
-                          onClick={markOrderAsComplete}
-                          className="w-full p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-2xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"
+                          onClick={!isMarkingOrderComplete ? markOrderAsComplete : undefined}
+                          className={`w-full p-2 rounded-2xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out ${
+                            isMarkingOrderComplete 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-[#4ca22b] hover:cursor-pointer hover:scale-103'
+                          }`}
                         >
-                          <p className="font-bold font-albertsans text-white text-[18px] ml-2">Complete Order</p>
+                          {isMarkingOrderComplete ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              <p className="font-bold font-albertsans text-white text-[18px]">Processing...</p>
+                            </>
+                          ) : (
+                            <p className="font-bold font-albertsans text-white text-[18px] ml-2">Complete Order</p>
+                          )}
                         </div>
                       </div>
                     )}

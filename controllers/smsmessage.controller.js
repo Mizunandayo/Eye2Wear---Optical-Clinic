@@ -699,14 +699,16 @@ ${appointment.appointmentclinic}`;
       const now = Date.now();
       
       // For "Ready for Pickup" status, use extra strict deduplication (longer time window)
-      const deduplicationWindow = newStatus === 'Ready for Pickup' ? 3600000 : 1800000; // 1 hour for Ready for Pickup, 30 minutes for others
+      const deduplicationWindow = newStatus === 'Ready for Pickup' ? 7200000 : 1800000; // 2 hours for Ready for Pickup, 30 minutes for others
       
       // Check if we already have a successful SMS record for this exact order and status
       const existingSms = await SmsMessage.findOne({
-        recipients: { $regex: orderId },
-        type: 'Order Status',
-        status: { $in: ['Sent', 'Delivered'] },
-        message: { $regex: newStatus.toLowerCase() }
+        $and: [
+          { recipients: { $regex: orderId } },
+          { type: 'Order Status' },
+          { status: { $in: ['Sent', 'Delivered'] } },
+          { message: { $regex: `ready for pickup|${newStatus.toLowerCase()}` } }
+        ]
       }).sort({ createdAt: -1 });
       
       if (existingSms) {
@@ -726,7 +728,7 @@ ${appointment.appointmentclinic}`;
       // Additional deduplication using memory cache with longer window
       if (recentSmsRequests.has(requestKey)) {
         const lastRequestTime = recentSmsRequests.get(requestKey);
-        const memoryCacheWindow = newStatus === 'Ready for Pickup' ? 300000 : 60000; // 5 minutes for Ready for Pickup, 1 minute for others
+        const memoryCacheWindow = newStatus === 'Ready for Pickup' ? 600000 : 60000; // 10 minutes for Ready for Pickup, 1 minute for others
         if (now - lastRequestTime < memoryCacheWindow) {
           console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus} (sent ${Math.round((now - lastRequestTime) / 1000)} seconds ago)`);
           return res.status(200).json({

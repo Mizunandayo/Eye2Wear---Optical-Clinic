@@ -178,8 +178,8 @@ export const createpatientorderambher = async (req, res) => {
                 try {
                     console.log(`📱 Checking if SMS should be sent for status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
                     
-                    // Send SMS for "Ready for Pickup" and "Completed" statuses - all other statuses are skipped
-                    const statusesToSendSms = ['Ready for Pickup', 'Completed'];
+                    // Only send SMS for "Ready for Pickup" status - "Completed" SMS is handled by frontend
+                    const statusesToSendSms = ['Ready for Pickup'];
                     
                     if (!statusesToSendSms.includes(updateData.patientorderambherstatus)) {
                         console.log(`📱 Skipping SMS for Ambher order status "${updateData.patientorderambherstatus}" - SMS only sent for: ${statusesToSendSms.join(', ')}`);

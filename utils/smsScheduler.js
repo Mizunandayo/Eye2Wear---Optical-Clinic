@@ -334,6 +334,7 @@ ${clinicName}`;
             
             if (updateResult) {
               // Send SMS notification via API endpoint only if the update was successful
+              // Only send SMS for "Ready for Pickup" status - automatic order completion doesn't need SMS
               await this.sendOrderStatusSMS(order[idField], clinicType, 'Ready for Pickup');
               
               updatedCount++;
