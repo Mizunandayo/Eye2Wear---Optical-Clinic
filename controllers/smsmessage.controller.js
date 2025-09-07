@@ -602,9 +602,9 @@ Hello ${patient.patientfirstname},
 
 This is a reminder that you have an upcoming appointment:
 
-📅 Date: ${appointmentDate}
-🕐 Time: ${appointmentTime}
-🏥 Clinic: ${clinicName}
+Date: ${appointmentDate}
+Time: ${appointmentTime}
+Clinic: ${clinicName}
 
 Please arrive 15 minutes early. If you need to reschedule, please contact us.
 
@@ -677,49 +677,73 @@ ${appointment.appointmentclinic}`;
         });
       }
 
-      // SMS deduplication check - but allow order completion SMS
+      // Check if SMS should be sent based on order status
+      // Send SMS for "Ready for Pickup" and "Completed" statuses, skip all others
+      const statusesToSendSms = ['Ready for Pickup', 'Completed'];
+      
+      if (!statusesToSendSms.includes(newStatus)) {
+        console.log(`📱 Skipping SMS for order status "${newStatus}" - SMS only sent for: ${statusesToSendSms.join(', ')}`);
+        return res.status(200).json({
+          success: true,
+          message: `Order status updated to "${newStatus}" - No SMS sent (SMS only sent for: ${statusesToSendSms.join(', ')})`,
+          smsSkipped: true,
+          skippedStatus: newStatus,
+          allowedStatuses: statusesToSendSms
+        });
+      }
+
+      console.log(`📱 Order status "${newStatus}" requires SMS notification - proceeding with SMS send`);
+
+      // Enhanced SMS deduplication check with longer time window
       const requestKey = `${orderId}-${orderType}-${newStatus}`;
       const now = Date.now();
       
-      // For order completion, check if we already have a successful SMS record
-      if (newStatus === 'Completed') {
-        const existingSms = await SmsMessage.findOne({
-          recipients: { $regex: orderId },
-          type: 'Order Status',
-          status: { $in: ['Sent', 'Delivered'] },
-          message: { $regex: 'completed.*ready.*pickup' }
-        }).sort({ createdAt: -1 });
-        
-        if (existingSms) {
-          const timeSinceLastSms = now - existingSms.createdAt.getTime();
-          if (timeSinceLastSms < 300000) { // 5 minutes
-            console.warn(`⚠️ Order completion SMS already sent for order ${orderId} at ${existingSms.createdAt}`);
-            return res.status(200).json({
-              success: false,
-              message: 'Order completion SMS already sent recently'
-            });
-          }
+      // For "Ready for Pickup" status, use extra strict deduplication (longer time window)
+      const deduplicationWindow = newStatus === 'Ready for Pickup' ? 3600000 : 1800000; // 1 hour for Ready for Pickup, 30 minutes for others
+      
+      // Check if we already have a successful SMS record for this exact order and status
+      const existingSms = await SmsMessage.findOne({
+        recipients: { $regex: orderId },
+        type: 'Order Status',
+        status: { $in: ['Sent', 'Delivered'] },
+        message: { $regex: newStatus.toLowerCase() }
+      }).sort({ createdAt: -1 });
+      
+      if (existingSms) {
+        const timeSinceLastSms = now - existingSms.createdAt.getTime();
+        if (timeSinceLastSms < deduplicationWindow) {
+          console.warn(`⚠️ SMS already sent for order ${orderId} with status "${newStatus}" at ${existingSms.createdAt}`);
+          return res.status(200).json({
+            success: false,
+            message: `SMS for order ${orderId} with status "${newStatus}" already sent recently`,
+            lastSentAt: existingSms.createdAt,
+            minutesSinceLastSms: Math.round(timeSinceLastSms / 60000),
+            deduplicationWindow: Math.round(deduplicationWindow / 60000)
+          });
         }
-      } else {
-        // For non-completion status updates, use regular deduplication
-        if (recentSmsRequests.has(requestKey)) {
-          const lastRequestTime = recentSmsRequests.get(requestKey);
-          if (now - lastRequestTime < 10000) { // 10 second deduplication window
-            console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus}`);
-            return res.status(200).json({
-              success: false,
-              message: 'Duplicate SMS request blocked to prevent spam'
-            });
-          }
+      }
+
+      // Additional deduplication using memory cache with longer window
+      if (recentSmsRequests.has(requestKey)) {
+        const lastRequestTime = recentSmsRequests.get(requestKey);
+        const memoryCacheWindow = newStatus === 'Ready for Pickup' ? 300000 : 60000; // 5 minutes for Ready for Pickup, 1 minute for others
+        if (now - lastRequestTime < memoryCacheWindow) {
+          console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus} (sent ${Math.round((now - lastRequestTime) / 1000)} seconds ago)`);
+          return res.status(200).json({
+            success: false,
+            message: 'Duplicate SMS request blocked to prevent spam',
+            secondsSinceLastRequest: Math.round((now - lastRequestTime) / 1000),
+            cacheWindow: Math.round(memoryCacheWindow / 1000)
+          });
         }
       }
       
       // Record this request
       recentSmsRequests.set(requestKey, now);
       
-      // Clean up old entries (keep only last 5 minutes)
+      // Clean up old entries (keep only last 30 minutes)
       for (const [key, timestamp] of recentSmsRequests.entries()) {
-        if (now - timestamp > 300000) { // 5 minutes
+        if (now - timestamp > 1800000) { // 30 minutes
           recentSmsRequests.delete(key);
         }
       }
@@ -814,7 +838,23 @@ ${appointment.appointmentclinic}`;
           patientDemographicPhone: patientDemographic?.patientcontactnumber
         });
         return res.status(400).json({
-          error: 'Patient contact number not found'
+          success: false,
+          error: 'Patient contact number not found',
+          recipientName: `${order.patientfirstname} ${order.patientlastname}`,
+          message: `No phone number available for ${order.patientfirstname} ${order.patientlastname}`
+        });
+      }
+
+      // Validate phone number format before proceeding
+      const formattedPhone = formatPhoneNumber(contactNumber);
+      if (!formattedPhone || formattedPhone.length < 10) {
+        console.log('❌ Invalid phone number format:', contactNumber);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid phone number format',
+          recipientName: `${order.patientfirstname} ${order.patientlastname}`,
+          recipientPhone: contactNumber,
+          message: `Invalid phone number format for ${order.patientfirstname} ${order.patientlastname}: ${contactNumber}`
         });
       }
 
@@ -851,9 +891,9 @@ Hello ${order.patientfirstname},
 
 ${statusMessage}
 
-📦 Order ID: ${orderIdField}
-📊 Status: ${newStatus}
-🏥 Clinic: ${clinicName}
+Order ID: ${orderIdField}
+Status: ${newStatus}
+Clinic: ${clinicName}
 
 If you have any questions, please don't hesitate to contact us.
 
@@ -866,6 +906,16 @@ ${clinicName}`;
       console.log('📱 Original contact number for database:', contactNumber);
       console.log('📝 Message to send:', message);
       console.log('📱 Using bulk SMS endpoint for single recipient to match promotional SMS behavior');
+      console.log('🔍 SMS Debug Info:', {
+        orderId: orderId,
+        orderType: orderType,
+        customerName: `${order.patientfirstname} ${order.patientlastname}`,
+        customerEmail: order.patientemail,
+        originalContactNumber: contactNumber,
+        formattedPhoneNumber: phoneNumber,
+        messageLength: message.length,
+        clinicName: clinicName
+      });
 
       const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
       console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
@@ -877,6 +927,33 @@ ${clinicName}`;
         error: bulkSmsResult.error,
         provider: 'iProg-Bulk'
       };
+
+      // If SMS was sent successfully, wait a bit and check status to confirm delivery
+      if (smsResult.success && smsResult.messageId) {
+        console.log('📱 SMS sent successfully, checking status after 3 seconds...');
+        
+        setTimeout(async () => {
+          try {
+            const statusResult = await iprogClient.checkSmsStatus(smsResult.messageId);
+            console.log('📊 SMS Status Check Result:', statusResult);
+            
+            if (statusResult.success) {
+              // Update SMS record with delivery status if available
+              await SmsMessage.findOneAndUpdate(
+                { iprogMessageId: smsResult.messageId },
+                { 
+                  status: statusResult.isDelivered ? 'Delivered' : statusResult.isFailed ? 'Failed' : 'Sent',
+                  deliveredAt: statusResult.isDelivered ? new Date() : null,
+                  errorMessage: statusResult.isFailed ? 'Message failed to deliver' : null
+                }
+              );
+              console.log(`📊 Updated SMS record status: ${statusResult.status} for message ${smsResult.messageId}`);
+            }
+          } catch (statusError) {
+            console.warn('⚠️ Failed to check SMS status:', statusError.message);
+          }
+        }, 3000);
+      }
 
       // Create SMS record - use original contact number to maintain consistency with patient data
       const smsRecord = new SmsMessage({
@@ -911,6 +988,9 @@ ${clinicName}`;
         success: smsResult.success,
         messageId: smsRecord.messageId,
         iprogMessageId: smsResult.messageId,
+        recipientName: `${order.patientfirstname} ${order.patientlastname}`,
+        recipientPhone: contactNumber,
+        formattedPhone: phoneNumber,
         message: smsResult.success 
           ? 'Order status update sent successfully via iProg'
           : `Failed to send order status update: ${smsResult.error}`
@@ -989,9 +1069,9 @@ Hello John,
 
 Your order has been completed. Thank you for choosing us!
 
-📦 Order ID: AMB-2024-001
-📊 Status: Completed
-🏥 Clinic: Ambher Optical
+Order ID: AMB-2024-001
+Status: Completed
+Clinic: Ambher Optical
 
 If you have any questions, please don't hesitate to contact us.
 
@@ -1233,8 +1313,8 @@ Hello ${patient.patientfirstname},
 
 Great news! An item from your wishlist is now available:
 
-👓 Product: ${productName}
-🏥 Available at: ${clinicName}
+Product: ${productName}
+Available at: ${clinicName}
 
 Visit us or contact us to place your order before it's gone!
 
@@ -1684,6 +1764,95 @@ Thank you!`;
       
     } catch (error) {
       console.error('❌ Error in test SMS:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        details: error.message
+      });
+    }
+  }
+
+  // Verify SMS delivery status after sending
+  static async verifyDeliveryStatus(req, res) {
+    try {
+      const { messageId, iprogMessageId } = req.body;
+      
+      if (!messageId && !iprogMessageId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Either messageId or iprogMessageId is required'
+        });
+      }
+      
+      // Find SMS record
+      let smsRecord;
+      if (messageId) {
+        smsRecord = await SmsMessage.findOne({ messageId: messageId });
+      } else {
+        smsRecord = await SmsMessage.findOne({ iprogMessageId: iprogMessageId });
+      }
+      
+      if (!smsRecord) {
+        return res.status(404).json({
+          success: false,
+          error: 'SMS record not found'
+        });
+      }
+      
+      // Check status with iProg if we have the iProg message ID
+      if (smsRecord.iprogMessageId) {
+        try {
+          const statusResult = await iprogClient.checkSmsStatus(smsRecord.iprogMessageId);
+          
+          if (statusResult.success) {
+            // Update SMS record with latest status
+            const updatedStatus = statusResult.isDelivered ? 'Delivered' : 
+                                statusResult.isFailed ? 'Failed' : 'Sent';
+            
+            await SmsMessage.findByIdAndUpdate(smsRecord._id, {
+              status: updatedStatus,
+              deliveredAt: statusResult.isDelivered ? new Date() : smsRecord.deliveredAt,
+              errorMessage: statusResult.isFailed ? 'Message failed to deliver' : smsRecord.errorMessage
+            });
+            
+            return res.status(200).json({
+              success: true,
+              messageId: smsRecord.messageId,
+              iprogMessageId: smsRecord.iprogMessageId,
+              currentStatus: updatedStatus,
+              isDelivered: statusResult.isDelivered,
+              isPending: statusResult.isPending,
+              isFailed: statusResult.isFailed,
+              recipientPhone: smsRecord.recipientPhones[0],
+              message: `SMS status updated to: ${updatedStatus}`
+            });
+          } else {
+            throw new Error(statusResult.error);
+          }
+        } catch (statusError) {
+          console.warn('⚠️ Failed to check iProg status:', statusError.message);
+          
+          return res.status(200).json({
+            success: false,
+            messageId: smsRecord.messageId,
+            currentStatus: smsRecord.status,
+            recipientPhone: smsRecord.recipientPhones[0],
+            error: `Unable to verify delivery status: ${statusError.message}`,
+            message: 'SMS status check failed, showing last known status'
+          });
+        }
+      } else {
+        return res.status(200).json({
+          success: true,
+          messageId: smsRecord.messageId,
+          currentStatus: smsRecord.status,
+          recipientPhone: smsRecord.recipientPhones[0],
+          message: 'No iProg message ID available for status check'
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verifying delivery status:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error',

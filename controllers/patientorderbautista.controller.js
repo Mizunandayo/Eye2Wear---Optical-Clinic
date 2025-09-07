@@ -174,18 +174,27 @@ export const createpatientorderbautista = async (req, res) => {
             // Send SMS notification for order status changes
             if (updateData.patientorderbautistastatus && updateData.patientorderbautistastatus !== originalStatus) {
                 try {
-                    console.log(`📱 Sending SMS for status change: ${originalStatus} -> ${updateData.patientorderbautistastatus}`);
+                    console.log(`📱 Checking if SMS should be sent for status change: ${originalStatus} -> ${updateData.patientorderbautistastatus}`);
                     
-                    // Add delay to prevent duplicate SMS calls
-                    const now = Date.now();
-                    if (now - lastSmsTime < 5000) { // 5 second cooldown
-                        console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
-                        return res.status(200).json(updatedbautistaorder);
+                    // Only send SMS for "Ready for Pickup" and "Completed" status - all other statuses are skipped
+                    const statusesToSendSms = ['Ready for Pickup', 'Completed'];
+                    
+                    if (!statusesToSendSms.includes(updateData.patientorderbautistastatus)) {
+                        console.log(`📱 Skipping SMS for Bautista order status "${updateData.patientorderbautistastatus}" - SMS only sent for: ${statusesToSendSms.join(', ')}`);
+                    } else {
+                        console.log(`📱 Sending SMS for Bautista status change: ${originalStatus} -> ${updateData.patientorderbautistastatus}`);
+                        
+                        // Add delay to prevent duplicate SMS calls
+                        const now = Date.now();
+                        if (now - lastSmsTime < 30000) { // 30 second cooldown instead of 5 seconds
+                            console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
+                            return res.status(200).json(updatedbautistaorder);
+                        }
+                        lastSmsTime = now;
+                        
+                        // Send SMS notification asynchronously (don't wait for it)
+                        sendOrderStatusSMS(updatedbautistaorder.patientorderbautistaid, 'bautista', updateData.patientorderbautistastatus);
                     }
-                    lastSmsTime = now;
-                    
-                    // Send SMS notification asynchronously (don't wait for it)
-                    sendOrderStatusSMS(updatedbautistaorder.patientorderbautistaid, 'bautista', updateData.patientorderbautistastatus);
                 } catch (smsError) {
                     console.error('Error sending order status SMS:', smsError);
                     // Don't fail the order update if SMS fails

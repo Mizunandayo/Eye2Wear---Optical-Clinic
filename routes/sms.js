@@ -45,6 +45,9 @@ smsrouter.get('/status/pending', SmsController.checkPendingSmsStatus);
 // POST /api/sms/test-real-phone - Test SMS with real phone number
 smsrouter.post('/test-real-phone', SmsController.testRealPhoneNumber);
 
+// POST /api/sms/verify-delivery - Verify SMS delivery status immediately after sending
+smsrouter.post('/verify-delivery', SmsController.verifyDeliveryStatus);
+
 // GET /api/sms/:id - Get SMS message by ID
 smsrouter.get('/:id', SmsController.getSmsMessageById);
 

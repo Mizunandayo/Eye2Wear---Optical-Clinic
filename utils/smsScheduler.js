@@ -1,5 +1,7 @@
 import cron from 'node-cron';
 import PatientAppointment from '../models/patientappointment.js';
+import PatientOrderAmbher from '../models/patientorderambher.js';
+import PatientOrderBautista from '../models/patientorderbautista.js';
 import SmsMessage from '../models/smsmessage.js';
 import iPragSMS from './iprogSMS.js';
 import process from 'process';
@@ -23,6 +25,14 @@ class SmsScheduler {
     cron.schedule('0 15 * * *', () => {
       console.log('⏰ Running afternoon appointment reminder job...');
       this.sendAppointmentReminders();
+    }, {
+      timezone: "Asia/Manila"
+    });
+
+    // Schedule automatic order status updates - runs every hour
+    cron.schedule('0 * * * *', () => {
+      console.log('⏰ Running hourly order status update job...');
+      this.checkAndUpdateOrderStatuses();
     }, {
       timezone: "Asia/Manila"
     });
@@ -144,9 +154,9 @@ Hello ${patient.patientfirstname},
 
 This is a friendly reminder that you have an appointment tomorrow:
 
-📅 Date: ${formattedDate}
-🕐 Time: ${appointmentTime}
-🏥 Clinic: ${clinicName}
+Date: ${formattedDate}
+Time: ${appointmentTime}
+Clinic: ${clinicName}
 
 Please arrive 15 minutes early. If you need to reschedule, please contact us immediately.
 
@@ -235,6 +245,145 @@ ${clinicName}`;
 
     } catch (error) {
       console.error('❌ Failed to send wishlist availability notification:', error);
+      throw error;
+    }
+  }
+
+  static async checkAndUpdateOrderStatuses() {
+    try {
+      console.log('🔍 Starting automatic order status update check...');
+      
+      // Get current date in Philippines timezone
+      const currentPhilippinesDate = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Manila'
+      });
+      
+      console.log(`📅 Current Philippines date: ${currentPhilippinesDate}`);
+      
+      let totalUpdated = 0;
+      
+      // Check and update Ambher orders
+      const ambherUpdated = await this.updateOrdersForClinic('ambher', currentPhilippinesDate);
+      totalUpdated += ambherUpdated;
+      
+      // Check and update Bautista orders
+      const bautistaUpdated = await this.updateOrdersForClinic('bautista', currentPhilippinesDate);
+      totalUpdated += bautistaUpdated;
+      
+      console.log(`📊 Order status update complete: ${totalUpdated} orders updated to "Ready for Pickup"`);
+      
+    } catch (error) {
+      console.error('❌ Error in checkAndUpdateOrderStatuses:', error);
+    }
+  }
+
+  static async updateOrdersForClinic(clinicType, currentDate) {
+    try {
+      const OrderModel = clinicType === 'ambher' ? PatientOrderAmbher : PatientOrderBautista;
+      const statusField = clinicType === 'ambher' ? 'patientorderambherstatus' : 'patientorderbautistastatus';
+      const pickupDateField = clinicType === 'ambher' ? 'patientorderambherproductchosenpickupdate' : 'patientorderbautistaproductchosenpickupdate';
+      const idField = clinicType === 'ambher' ? 'patientorderambherid' : 'patientorderbautistaid';
+      
+      console.log(`🔍 Checking ${clinicType} orders for status updates...`);
+      
+      // Find pending orders with pickup dates that have reached today
+      const pendingOrders = await OrderModel.find({
+        [statusField]: 'Pending',
+        [pickupDateField]: { 
+          $exists: true, 
+          $nin: ['Later', 'Now', null, '']
+        }
+      }).populate('patientdemographicid', 'patientcontactnumber patientfirstname patientlastname');
+      
+      console.log(`📋 Found ${pendingOrders.length} pending ${clinicType} orders to check`);
+      
+      let updatedCount = 0;
+      
+      for (const order of pendingOrders) {
+        const pickupDate = order[pickupDateField];
+        
+        if (!pickupDate) continue;
+        
+        // Convert pickup date to comparable format
+        let pickupDateFormatted;
+        try {
+          pickupDateFormatted = new Date(pickupDate).toLocaleDateString('en-CA');
+        } catch {
+          console.warn(`⚠️ Invalid pickup date format for order ${order[idField]}: ${pickupDate}`);
+          continue;
+        }
+        
+        console.log(`📦 Order ${order[idField]}: Pickup date ${pickupDateFormatted} vs Current date ${currentDate}`);
+        
+        // If pickup date is today or has passed, update status
+        if (pickupDateFormatted <= currentDate) {
+          try {
+            console.log(`✅ Updating order ${order[idField]} to "Ready for Pickup"`);
+            
+            // Update the order status in database only if it's still "Pending"
+            const updateResult = await OrderModel.findOneAndUpdate(
+              { 
+                _id: order._id,
+                [statusField]: 'Pending' // Only update if still Pending
+              },
+              {
+                [statusField]: 'Ready for Pickup'
+              },
+              { new: true }
+            );
+            
+            if (updateResult) {
+              // Send SMS notification via API endpoint only if the update was successful
+              await this.sendOrderStatusSMS(order[idField], clinicType, 'Ready for Pickup');
+              
+              updatedCount++;
+              console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" with SMS sent`);
+            } else {
+              console.log(`ℹ️ Order ${order[idField]} was already updated or no longer exists`);
+            }
+            
+          } catch (error) {
+            console.error(`❌ Failed to update order ${order[idField]}:`, error);
+          }
+        }
+      }
+      
+      console.log(`📊 ${clinicType} orders: ${updatedCount} out of ${pendingOrders.length} updated to "Ready for Pickup"`);
+      return updatedCount;
+      
+    } catch (error) {
+      console.error(`❌ Error updating ${clinicType} orders:`, error);
+      return 0;
+    }
+  }
+
+  static async sendOrderStatusSMS(orderId, orderType, newStatus) {
+    try {
+      console.log(`📱 Sending SMS for order ${orderId} (${orderType}) status: ${newStatus}`);
+      
+      const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/order-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderId: orderId,
+          orderType: orderType,
+          newStatus: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`SMS API returned ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Order status SMS sent successfully for order ${orderId}`);
+      return result;
+
+    } catch (error) {
+      console.error(`❌ Failed to send order status SMS for order ${orderId}:`, error);
       throw error;
     }
   }

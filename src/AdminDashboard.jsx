@@ -60,6 +60,19 @@ import {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Disable Mapbox telemetry globally to prevent ERR_BLOCKED_BY_CLIENT errors
 // Simple approach to prevent analytics requests that get blocked by ad blockers
 if (typeof window !== 'undefined') {
@@ -1914,28 +1927,28 @@ function AdminDashboard(){
   const currentuserloggedin = useMemo(() => 
     localStorage.getItem("stafftoken") ? "Staff" :
     localStorage.getItem("ownertoken") ? "Owner" :
-    localStorage.getItem("admintoken") ? "Admin" : null, []
-  );
+    localStorage.getItem("admintoken") ? "Admin" : null, 
+  []);
 
   // Helper function to determine if user should see only Ambher Optical data
-  const isAmbherOnlyUser = () => {
+  const isAmbherOnlyUser = useCallback(() => {
     if (currentuserloggedin === "Staff") {
       return localStorage.getItem('staffclinic') === 'Ambher Optical' || staffclinic === 'Ambher Optical';
     } else if (currentuserloggedin === "Owner") {
       return ownerownedclinic === 'Ambher Optical';
     }
     return false; // Admin can see all data
-  };
+  }, [currentuserloggedin, staffclinic, ownerownedclinic]);
 
   // Helper function to determine if user should see only Bautista Eye Center data
-  const isBautistaOnlyUser = () => {
+  const isBautistaOnlyUser = useCallback(() => {
     if (currentuserloggedin === "Staff") {
       return localStorage.getItem('staffclinic') === 'Bautista Eye Center' || staffclinic === 'Bautista Eye Center';
     } else if (currentuserloggedin === "Owner") {
       return ownerownedclinic === 'Bautista Eye Center';
     }
     return false; // Admin can see all data
-  };
+  }, [currentuserloggedin, staffclinic, ownerownedclinic]);
 
   // Helper function to get user's allowed clinic type(s)
   const getUserAllowedClinicTypes = useCallback(() => {
@@ -1949,6 +1962,8 @@ function AdminDashboard(){
     }
     return ['Ambher Optical']; // Default fallback
   }, [currentuserloggedin, staffclinic, ownerownedclinic]);
+
+
 
   // Helper function to get user's default clinic type
   const getUserDefaultClinicType = useCallback(() => {
@@ -2240,7 +2255,7 @@ const renderpatientaccounts = () => {
 const patientstorender = searchpatients ? filteredpatients : patients;
 const paginatedPatients = getPaginatedData(patientstorender, 'patients');
 const totalPatients = patientstorender.length;
-const totalPages = Math.ceil(totalPatients / itemsPerPage);
+const totalPages = Math.ceil(totalPatients / accountItemsPerPage);
 
 if (loadingpatients) {
   return (
@@ -2427,16 +2442,63 @@ return (
       </table>
     </div>
     
-    {/* Pagination Component */}
-    {totalPatients > 0 && (
-      <PaginationComponent
-        currentPage={currentPage.patients}
-        totalPages={totalPages}
-        onPageChange={(page) => handlePageChange('patients', page)}
-        totalItems={totalPatients}
-        itemsPerPage={itemsPerPage}
-      />
-    )}
+    {/* Pagination Component - SMS Style */}
+    {(() => {
+      const shouldShowPagination = totalPatients > accountItemsPerPage;
+      
+      return !loadingpatients && shouldShowPagination && (
+        <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600 font-albertsans">
+            Page {currentPage.patients} of {totalPages} ({totalPatients} total accounts)
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              onClick={() => handlePageChange('patients', Math.max(1, currentPage.patients - 1))}
+              disabled={currentPage.patients === 1}
+              className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </div>
+            
+            {/* Page Numbers */}
+            <div className="cursor-pointer flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  const current = currentPage.patients;
+                  return page === 1 || page === totalPages || 
+                         (page >= current - 1 && page <= current + 1);
+                })
+                .map((page, index, array) => {
+                  const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+                  return (
+                    <React.Fragment key={page}>
+                      {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                      <div
+                        onClick={() => handlePageChange('patients', page)}
+                        className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                          page === currentPage.patients
+                            ? 'bg-[#184d85] text-white'
+                            : 'bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+            </div>
+            
+            <div
+              onClick={() => handlePageChange('patients', Math.min(totalPages, currentPage.patients + 1))}
+              disabled={currentPage.patients === totalPages}
+              className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </div>
+          </div>
+        </div>
+      );
+    })()}
   </div>
 );
 };
@@ -5963,7 +6025,8 @@ const [currentPage, setCurrentPage] = useState({
   profiles: 1
 });
 
-const itemsPerPage = 10; // Number of items to display per page for tables
+const accountItemsPerPage = 5; // Number of accounts to display per page for account management
+const itemsPerPage = 10; // Number of items to display per page for other tables
 
 // Dynamic inventory per page based on container height
 const [inventoryItemsPerPage, setInventoryItemsPerPage] = useState(20);
@@ -6073,6 +6136,8 @@ const getPaginatedData = (data, section) => {
     itemsPerPageToUse = inventoryItemsPerPage;
   } else if (section === 'appointments') {
     itemsPerPageToUse = appointmentsPerPage;
+  } else if (section === 'patients' || section === 'staff') {
+    itemsPerPageToUse = accountItemsPerPage;
   } else {
     itemsPerPageToUse = itemsPerPage;
   }
@@ -8809,10 +8874,101 @@ const delay = setTimeout(checkAndFetchPatientDetails, 800);
 return () => clearTimeout(delay);
 }, [orderbautistaEmail, currentusertoken, emailcharacters, currentuserloggedin]);
 
+  // Function to check if pickup date has passed and update order status
+  const checkAndUpdatePickupStatus = useCallback(async (orders, clinicType) => {
+    const currentPhilippinesDate = getPhilippinesDate();
+    const updatedOrders = [];
+    let updatedCount = 0;
+    
+    console.log(`🔍 Checking ${orders.length} ${clinicType} orders for status updates...`);
+    
+    for (const order of orders) {
+      let shouldUpdate = false;
+      let pickupDate;
+      let currentStatus;
+      
+      if (clinicType === 'ambher') {
+        pickupDate = order.patientorderambherproductchosenpickupdate;
+        currentStatus = order.patientorderambherstatus;
+      } else {
+        pickupDate = order.patientorderbautistaproductchosenpickupdate;
+        currentStatus = order.patientorderbautistastatus;
+      }
+      
+      // Log current order status for debugging
+      console.log(`📋 Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Current status = "${currentStatus}"`);
+      
+      // Skip any orders that are not "Pending" - protect completed orders
+      if (currentStatus !== 'Pending') {
+        console.log(`⏭️ Skipping order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Status is "${currentStatus}" (not Pending)`);
+        updatedOrders.push(order);
+        continue;
+      }
+      
+      // Only update orders that are exactly "Pending" - never touch "Ready for Pickup", "Completed", or other statuses
+      if (pickupDate && 
+          pickupDate !== 'Later' && 
+          pickupDate !== 'Now') {
+        
+        // Convert pickup date to comparable format
+        const pickupDateFormatted = new Date(pickupDate).toLocaleDateString('en-CA');
+        
+        console.log(`📦 Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Pickup date ${pickupDateFormatted} vs Current date ${currentPhilippinesDate}`);
+        
+        // If pickup date is today or has passed, update status
+        if (pickupDateFormatted <= currentPhilippinesDate) {
+          shouldUpdate = true;
+          console.log(`✅ Order needs status update: Pickup date ${pickupDateFormatted} has passed!`);
+        }
+      }
+      
+      if (shouldUpdate) {
+        try {
+          // Update the order status in the database
+          const updateUrl = clinicType === 'ambher' 
+            ? `/api/patientorderambher/${order.patientorderambherid}`
+            : `/api/patientorderbautista/${order.patientorderbautistaid}`;
+            
+          const statusField = clinicType === 'ambher'
+            ? 'patientorderambherstatus'
+            : 'patientorderbautistastatus';
+            
+          const response = await fetch(updateUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentusertoken}`
+            },
+            body: JSON.stringify({
+              [statusField]: 'Ready for Pickup'
+            })
+          });
 
-
-
-
+          if (response.ok) {
+            // Update the local order object
+            const updatedOrder = { 
+              ...order, 
+              [statusField]: 'Ready for Pickup'
+            };
+            updatedOrders.push(updatedOrder);
+            updatedCount++;
+            console.log(`✅ Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid} automatically updated to "Ready for Pickup"`);
+          } else {
+            console.error(`❌ Failed to update order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}`);
+            updatedOrders.push(order);
+          }
+        } catch (error) {
+          console.error(`❌ Error updating order status:`, error);
+          updatedOrders.push(order);
+        }
+      } else {
+        updatedOrders.push(order);
+      }
+    }
+    
+    console.log(`📊 ${clinicType} orders processed: ${updatedCount} out of ${orders.length} orders updated to "Ready for Pickup"`);
+    return updatedOrders;
+  }, [currentusertoken]);
 
   // Optimized fetch function with caching and parallel requests
   const fetchAllOrdersOptimized = useCallback(async (forceRefresh = false) => {
@@ -8878,14 +9034,9 @@ return () => clearTimeout(delay);
         bautistaResponse.json()
       ]);
 
-      // Only run status check if absolutely necessary (skip during initial load for speed)
-      const processedAmbherData = forceRefresh ? 
-        await checkAndUpdateOrderStatus(ambherData, 'ambher', updateAmbherOrderStatus) : 
-        ambherData;
-      
-      const processedBautistaData = forceRefresh ? 
-        await checkAndUpdateOrderStatus(bautistaData, 'bautista', updateBautistaOrderStatus) : 
-        bautistaData;
+      // Check and update order statuses based on pickup dates
+      const processedAmbherData = await checkAndUpdatePickupStatus(ambherData, 'ambher');
+      const processedBautistaData = await checkAndUpdatePickupStatus(bautistaData, 'bautista');
 
       // Update state
       setambherOrders(processedAmbherData);
@@ -8906,7 +9057,7 @@ return () => clearTimeout(delay);
       setLoadingAmbherOrders(false);
       setLoadingBautistaOrders(false);
     }
-  }, [currentusertoken, ordersCache, lastFetchTime, setOrdersCache, setLastFetchTime]);
+  }, [currentusertoken, ordersCache, lastFetchTime, setOrdersCache, setLastFetchTime, checkAndUpdatePickupStatus, currentuserloggedin, isAmbherOnlyUser, isBautistaOnlyUser]);
 
   // Separate functions for backward compatibility
   const fetchambherOrders = useCallback(async () => {
@@ -8918,9 +9069,55 @@ return () => clearTimeout(delay);
   }, [fetchAllOrdersOptimized]);
 
 useEffect(() => {
-  // Initial load - fetch without status check for speed
+  // Initial load - fetch with status check
   fetchAllOrdersOptimized(false); 
 }, [fetchAllOrdersOptimized]);
+
+// Periodic status check - runs every hour to catch any missed updates
+useEffect(() => {
+  // Function to check for status updates
+  const performPeriodicStatusCheck = async () => {
+    console.log('🕐 Performing periodic order status check...');
+    
+    // Check Ambher orders
+    if (ambherorders.length > 0) {
+      const updatedAmbherOrders = await checkAndUpdatePickupStatus(ambherorders, 'ambher');
+      const hasAmbherUpdates = updatedAmbherOrders.some((order, index) => 
+        order.patientorderambherstatus !== ambherorders[index]?.patientorderambherstatus
+      );
+      
+      if (hasAmbherUpdates) {
+        setambherOrders(updatedAmbherOrders);
+        console.log('✅ Ambher orders status updated');
+      }
+    }
+    
+    // Check Bautista orders
+    if (bautistaorders.length > 0) {
+      const updatedBautistaOrders = await checkAndUpdatePickupStatus(bautistaorders, 'bautista');
+      const hasBautistaUpdates = updatedBautistaOrders.some((order, index) => 
+        order.patientorderbautistastatus !== bautistaorders[index]?.patientorderbautistastatus
+      );
+      
+      if (hasBautistaUpdates) {
+        setbautistaOrders(updatedBautistaOrders);
+        console.log('✅ Bautista orders status updated');
+      }
+    }
+  };
+
+  // Set up interval for periodic checks (every hour = 3600000ms)
+  const statusCheckInterval = setInterval(performPeriodicStatusCheck, 3600000);
+  
+  // Also run immediately after component mount (with a small delay to ensure orders are loaded)
+  const immediateCheck = setTimeout(performPeriodicStatusCheck, 5000);
+
+  // Cleanup interval on component unmount
+  return () => {
+    clearInterval(statusCheckInterval);
+    clearTimeout(immediateCheck);
+  };
+}, [ambherorders, bautistaorders, checkAndUpdatePickupStatus, setambherOrders, setbautistaOrders]);
 
 // Optimized filtering with useMemo for performance
 const filteredambherOrders = useMemo(() => {
@@ -8975,6 +9172,13 @@ const refreshOrdersWithStatusCheck = useCallback(async () => {
 const formatorderDates = (formattednewdate) => {
   const datedata = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(formattednewdate).toLocaleDateString(undefined, datedata);
+};
+
+// Function to get current Philippines date
+const getPhilippinesDate = () => {
+  const philippinesDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  console.log(`📅 Current Philippines date: ${philippinesDate}`);
+  return philippinesDate; // Returns YYYY-MM-DD format
 };
 
 const formatorderstatusColor = (status) => {
@@ -9235,16 +9439,13 @@ const markOrderAsComplete = useCallback(async () => {
         if (smsResponse.ok && smsResponseData.success) {
           console.log('✅ Order completion SMS sent successfully');
           
-          // Get customer name from order data
-          const customerFirstName = isAmbher 
-            ? selectedOrderForView.patientfirstname 
-            : selectedOrderForView.patientfirstname;
-          const customerLastName = isAmbher 
-            ? selectedOrderForView.patientlastname 
-            : selectedOrderForView.patientlastname;
+          // Get customer info from response data (includes phone number)
+          const customerFirstName = smsResponseData.recipientName?.split(' ')[0] || selectedOrderForView.patientfirstname;
+          const customerLastName = smsResponseData.recipientName?.split(' ').slice(1).join(' ') || selectedOrderForView.patientlastname;
+          const recipientPhone = smsResponseData.recipientPhone || selectedOrderForView.patientcontactnumber;
           
-          // Show success toast notification
-          setSmsToastMessage(`✅ Order completion SMS sent to ${customerFirstName} ${customerLastName}`);
+          // Show success toast notification with phone number
+          setSmsToastMessage(`✅ Order completion SMS sent to ${customerFirstName} ${customerLastName} (${recipientPhone})`);
           setSmsToast(true);
           setSmsToastClosing(false);
           setSmsIsClicked(true); // Set to true for success (green)
@@ -9253,7 +9454,43 @@ const markOrderAsComplete = useCallback(async () => {
           setSmsProgressWidth('0%');
           setTimeout(() => setSmsProgressWidth('100%'), 100);
           
-          // Auto-hide toast after 4 seconds
+          // Verify delivery status after 5 seconds
+          setTimeout(async () => {
+            try {
+              if (smsResponseData.iprogMessageId) {
+                console.log('🔍 Verifying SMS delivery status...');
+                const verifyResponse = await fetch(`${apiUrl}/api/sms/verify-delivery`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentusertoken}`
+                  },
+                  body: JSON.stringify({
+                    iprogMessageId: smsResponseData.iprogMessageId
+                  })
+                });
+                
+                if (verifyResponse.ok) {
+                  const verifyData = await verifyResponse.json();
+                  console.log('📊 SMS Delivery Verification:', verifyData);
+                  
+                  if (verifyData.success && verifyData.isDelivered) {
+                    console.log('✅ SMS delivery confirmed');
+                    // Update toast to show delivery confirmation
+                    setSmsToastMessage(`✅ SMS delivered to ${customerFirstName} ${customerLastName} (${recipientPhone})`);
+                  } else if (verifyData.success && verifyData.isFailed) {
+                    console.warn('⚠️ SMS delivery failed');
+                    setSmsToastMessage(`⚠️ SMS sent but delivery failed to ${customerFirstName} ${customerLastName} (${recipientPhone})`);
+                    setSmsIsClicked(false); // Change to warning color
+                  }
+                }
+              }
+            } catch (verifyError) {
+              console.warn('⚠️ Failed to verify SMS delivery:', verifyError);
+            }
+          }, 5000);
+          
+          // Auto-hide toast after 8 seconds (longer to allow delivery verification)
           setTimeout(() => {
             setSmsToastClosing(true);
             setTimeout(() => {
@@ -9263,27 +9500,26 @@ const markOrderAsComplete = useCallback(async () => {
               setSmsIsClicked(false);
               setSendingSmsForOrder(null);
             }, 3000);
-          }, 4000);
+          }, 8000);
         } else {
           console.warn('⚠️ SMS notification failed but order was still completed');
           console.warn('SMS Error details:', smsResponseData);
           
-          // Get customer name from order data
-          const customerFirstName = isAmbher 
-            ? selectedOrderForView.patientfirstname 
-            : selectedOrderForView.patientfirstname;
-          const customerLastName = isAmbher 
-            ? selectedOrderForView.patientlastname 
-            : selectedOrderForView.patientlastname;
+          // Get customer info from response or order data
+          const customerFirstName = smsResponseData.recipientName?.split(' ')[0] || selectedOrderForView.patientfirstname;
+          const customerLastName = smsResponseData.recipientName?.split(' ').slice(1).join(' ') || selectedOrderForView.patientlastname;
+          const recipientPhone = smsResponseData.recipientPhone || selectedOrderForView.patientcontactnumber;
           
           // Show informative error message based on the error type
           let errorMessage = 'SMS notification failed';
           if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
             errorMessage = `⚠️ Order completed but SMS failed: No phone number for ${customerFirstName} ${customerLastName}`;
           } else if (smsResponseData.message) {
-            errorMessage = `⚠️ Order completed but SMS failed: ${smsResponseData.message}`;
+            errorMessage = `⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName} (${recipientPhone || 'no phone'}): ${smsResponseData.message}`;
           } else if (smsResponseData.error) {
-            errorMessage = `⚠️ Order completed but SMS failed: ${smsResponseData.error}`;
+            errorMessage = `⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName} (${recipientPhone || 'no phone'}): ${smsResponseData.error}`;
+          } else {
+            errorMessage = `⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName} (${recipientPhone || 'no phone'})`;
           }
           
           // Show warning toast
@@ -9311,16 +9547,13 @@ const markOrderAsComplete = useCallback(async () => {
       } catch (smsError) {
         console.warn('⚠️ SMS notification failed but order was still completed:', smsError);
         
-        // Get customer name from order data
-        const customerFirstName = isAmbher 
-          ? selectedOrderForView.patientfirstname 
-          : selectedOrderForView.patientfirstname;
-        const customerLastName = isAmbher 
-          ? selectedOrderForView.patientlastname 
-          : selectedOrderForView.patientlastname;
+        // Get customer name and phone from order data
+        const customerFirstName = selectedOrderForView.patientfirstname;
+        const customerLastName = selectedOrderForView.patientlastname;
+        const recipientPhone = selectedOrderForView.patientcontactnumber;
         
-        // Show error toast
-        setSmsToastMessage(`⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName}: ${smsError.message}`);
+        // Show error toast with phone number
+        setSmsToastMessage(`⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName} (${recipientPhone || 'no phone'}): ${smsError.message}`);
         setSmsToast(true);
         setSmsToastClosing(false);
         setSmsIsClicked(false); // Set to false for error (red)
@@ -9520,6 +9753,10 @@ const markOrderAsComplete = useCallback(async () => {
     console.log('🔄 Reset isMarkingOrderComplete to false');
   }
 }, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, isMarkingOrderComplete, setSmsToast, setSmsToastMessage, setSmsToastClosing, setSmsProgressWidth, setSmsIsClicked, sendingSmsForOrder, setSendingSmsForOrder]);
+
+
+
+
 
 // Function to get minimum date (tomorrow)
 const getMinDate = () => {
@@ -11614,28 +11851,16 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
     
     // Add client-side filtering as a backup (in case the backend doesn't filter properly)
     if (currentUserClinic && currentUserClinic.trim() && smsData.length > 0) {
-      const originalCount = smsData.length;
       smsData = smsData.filter(message => 
         message.senderClinic === currentUserClinic
       );
       
-      console.log('Client-side clinic filtering applied:', {
-        originalCount,
-        filteredCount: smsData.length,
-        currentUserClinic,
-        removedMessages: originalCount - smsData.length
-      });
+      // Removed debug logging to prevent console spam
     }
     
     setSmsMessages(smsData);
     
-    // Set filtered messages based on current filter state
-    if (!searchSmsMessages.trim() && smsStatusFilter === 'all' && smsTypeFilter === 'all') {
-      setFilteredSmsMessages(smsData);
-    } else {
-      // Apply current filters to the new data
-      filterSmsMessages(searchSmsMessages);
-    }
+    // Let the filtering useEffect handle filtering automatically
   } catch (error) {
     console.error('Error fetching SMS messages:', error);
     setErrorLoadingSmsMessages(error.message);
@@ -11644,13 +11869,16 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
   } finally {
     setLoadingSmsMessages(false);
   }
-}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, filterSmsMessages, searchSmsMessages, smsStatusFilter, smsTypeFilter]);
+}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, currentUserClinic]);
 
 // SMS Messages Filter Effects
 useEffect(() => {
   // Only filter if we have SMS messages loaded
   if (smsMessages.length > 0) {
     filterSmsMessages(searchSmsMessages);
+  } else {
+    // Clear filtered messages when no SMS data
+    setFilteredSmsMessages([]);
   }
 }, [searchSmsMessages, smsStatusFilter, smsTypeFilter, filterSmsMessages, smsMessages]);
 
@@ -14813,7 +15041,7 @@ useEffect(() => {
 {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} 
 {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} 
 
-{ (activedashboard === 'accountmanagement' || isAdminRole) && ( <div id="accountmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
+{ (activedashboard === 'accountmanagement' || isAdminRole) && ( <div id="accountmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl" >   
 
   <div className="flex items-center"><i className="bx bxs-user-account text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Account Management</h1></div>
   <div className={`flex ${isAdminRole ? 'justify-start' : 'justify-between'} items-center mt-3 h-[60px] ${isAdminRole ? 'gap-4' : ''}`}>
@@ -20133,7 +20361,10 @@ onError={(e) => {
 
 
   { activebillingsandorderstable === 'ambherbillingsandorderstable' && ( <div id="ambherbillingsandorderstable" className="p-2  animate-fadeInUp  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
- <div className="ml-2 w-full flex  items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchambherTerm} onChange={(e) => setambherSearchTerm(e.target.value)} type="text" placeholder="Enter product name..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+ <div className="ml-2 w-full flex  items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchambherTerm} onChange={(e) => {
+   setambherSearchTerm(e.target.value);
+   setAmbherCurrentPage(1);
+ }} type="text" placeholder="Enter product name..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
  <div className="mt-5 ml-2 w-full flex justify-between items-center font-semibold text-[#383838] font-albertsans ">
   <div className="flex items-center">
   <i className="bx bx-filter mr-2 text-[20px]"/>
@@ -20143,7 +20374,10 @@ onError={(e) => {
    const statusCount = status === 'All' ? ambherorders.length : ambherorders.filter(order => order.patientorderambherstatus === status).length;
    
    return (
-     <div key={status} onClick={() => setambherFilter(status)} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${ambherfilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
+     <div key={status} onClick={() => {
+       setambherFilter(status);
+       setAmbherCurrentPage(1);
+     }} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${ambherfilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
        {status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm">{statusCount}</span>
      </div>
    );
@@ -21008,7 +21242,10 @@ paginatedAmbherOrders.map((order) => (
 
   
   { activebillingsandorderstable === 'bautistabillingsandorderstable' && ( <div id="bautistabillingsandorderstable" className="p-2  animate-fadeInUp  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
- <div className="ml-2 w-full flex  items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchbautistaTerm} onChange={(e) => setbautistaSearchTerm(e.target.value)} type="text" placeholder="Enter product name..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+ <div className="ml-2 w-full flex  items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchbautistaTerm} onChange={(e) => {
+   setbautistaSearchTerm(e.target.value);
+   setBautistaCurrentPage(1);
+ }} type="text" placeholder="Enter product name..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
  <div className="mt-5 ml-2 w-full flex justify-between items-center font-semibold text-[#383838] font-albertsans ">
   <div className="flex items-center">
   <i className="bx bx-filter mr-2 text-[20px]"/>
@@ -21018,7 +21255,10 @@ paginatedAmbherOrders.map((order) => (
    const statusCount = status === 'All' ? bautistaorders.length : bautistaorders.filter(order => order.patientorderbautistastatus === status).length;
    
    return (
-     <div key={status} onClick={() => setbautistaFilter(status)} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${bautistafilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
+     <div key={status} onClick={() => {
+       setbautistaFilter(status);
+       setBautistaCurrentPage(1);
+     }} className={`border-1 cursor-pointer transition-all duration-300 ease-in-out py-2 px-5 rounded-md text-[14px] ${bautistafilter === status ? 'bg-[#2781af] text-white' : 'hover:bg-[#2781af] hover:text-white'}`}>
        {status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm">{statusCount}</span>
      </div>
    );
@@ -23244,21 +23484,6 @@ paginatedBautistaOrders.map((order) => (
               const totalSmsMessages = Array.isArray(dataToDisplay) ? dataToDisplay.length : 0;
               const totalPages = Math.ceil(totalSmsMessages / smsMessagesPerPage);
               
-              // Debug logging
-              console.log('SMS Pagination Debug:', {
-                'Raw smsMessages length': smsMessages.length,
-                'Raw filteredSmsMessages length': filteredSmsMessages.length,
-                'Search term': searchSmsMessages,
-                'Status filter': smsStatusFilter,
-                'Type filter': smsTypeFilter,
-                'Data to display length': totalSmsMessages,
-                'Total pages calculated': totalPages,
-                'Messages per page': smsMessagesPerPage,
-                'Current page': currentSmsPage,
-                'Is using filtered data': (searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all'),
-                'Should show pagination': !loadingSmsMessages && !errorLoadingSmsMessages && totalSmsMessages > 0
-              });
-              
               // Ensure current page doesn't exceed total pages
               if (currentSmsPage > totalPages && totalPages > 0) {
                 setCurrentSmsPage(totalPages);
@@ -24425,6 +24650,9 @@ paginatedBautistaOrders.map((order) => (
       
           </div></div>
           </section>
+
+
+
     </>
   )
 }

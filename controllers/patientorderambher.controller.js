@@ -176,18 +176,27 @@ export const createpatientorderambher = async (req, res) => {
             // Send SMS notification for order status changes
             if (updateData.patientorderambherstatus && updateData.patientorderambherstatus !== originalStatus) {
                 try {
-                    console.log(`📱 Sending SMS for status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
+                    console.log(`📱 Checking if SMS should be sent for status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
                     
-                    // Add delay to prevent duplicate SMS calls
-                    const now = Date.now();
-                    if (now - lastSmsTime < 5000) { // 5 second cooldown
-                        console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
-                        return res.status(200).json(updatedorderambher);
+                    // Send SMS for "Ready for Pickup" and "Completed" statuses - all other statuses are skipped
+                    const statusesToSendSms = ['Ready for Pickup', 'Completed'];
+                    
+                    if (!statusesToSendSms.includes(updateData.patientorderambherstatus)) {
+                        console.log(`📱 Skipping SMS for Ambher order status "${updateData.patientorderambherstatus}" - SMS only sent for: ${statusesToSendSms.join(', ')}`);
+                    } else {
+                        console.log(`📱 Sending SMS for Ambher status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
+                        
+                        // Add delay to prevent duplicate SMS calls
+                        const now = Date.now();
+                        if (now - lastSmsTime < 30000) { // 30 second cooldown instead of 5 seconds
+                            console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
+                            return res.status(200).json(updatedorderambher);
+                        }
+                        lastSmsTime = now;
+                        
+                        // Send SMS notification asynchronously (don't wait for it)
+                        sendOrderStatusSMS(updatedorderambher.patientorderambherid, 'ambher', updateData.patientorderambherstatus);
                     }
-                    lastSmsTime = now;
-                    
-                    // Send SMS notification asynchronously (don't wait for it)
-                    sendOrderStatusSMS(updatedorderambher.patientorderambherid, 'ambher', updateData.patientorderambherstatus);
                 } catch (smsError) {
                     console.error('Error sending order status SMS:', smsError);
                     // Don't fail the order update if SMS fails
