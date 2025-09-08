@@ -58,16 +58,54 @@ export const createpatientorderambher = async (req, res) => {
 
 
 
-    //Get All Patient Order Ambhers
+    //Get All Patient Order Ambhers (Optimized with Pagination & Essential Fields Only)
     export const getallpatientorderambhers = async (req, res) => {
         try{
-            // Optimized query with ALL necessary fields, lean(), and proper sorting
-            const patientorderambhers = await PatientOrderAmbher.find({})
-                .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate  patientorderambherproductchosenpickupplace patientorderambherproductchosenpickuptime patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
-                .sort({patientorderambherid: -1})
-                .lean(); // Returns plain JavaScript objects for better performance
+            // Parse pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 items per page
+            const skip = (page - 1) * limit;
             
-            res.json(patientorderambhers);
+            // Parse optional filters
+            const { status, search } = req.query;
+            
+            // Build query object
+            let queryFilter = {};
+            if (status && status !== 'All') {
+                queryFilter.patientorderambherstatus = status;
+            }
+            if (search) {
+                queryFilter.$or = [
+                    { patientorderambherproductname: { $regex: search, $options: 'i' } },
+                    { patientfirstname: { $regex: search, $options: 'i' } },
+                    { patientlastname: { $regex: search, $options: 'i' } },
+                    { patientemail: { $regex: search, $options: 'i' } }
+                ];
+            }
+
+            // Execute optimized queries in parallel
+            const [patientorderambhers, totalCount] = await Promise.all([
+                PatientOrderAmbher.find(queryFilter)
+                    .select('patientorderambherid patientorderambherstatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentstatus patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace createdAt updatedAt')
+                    .sort({patientorderambherid: -1})
+                    .skip(skip)
+                    .limit(limit)
+                    .lean(),
+                PatientOrderAmbher.countDocuments(queryFilter)
+            ]);
+            
+            // Return paginated response
+            res.json({
+                orders: patientorderambhers,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                    itemsPerPage: limit,
+                    hasNextPage: page < Math.ceil(totalCount / limit),
+                    hasPrevPage: page > 1
+                }
+            });
     
         }catch(error){
             res.status(500).json({message: error.message});
@@ -99,22 +137,43 @@ export const createpatientorderambher = async (req, res) => {
 
 
 
-    //Get Order Ambher By Email
+    //Get Order Ambher By Email (Optimized with Pagination)
     export const getorderambhersbyemail = async (req, res) => {
         try{
-            // Optimized query with ALL necessary fields, lean(), and indexed email lookup
-            const patientorderambhersbyemail = await PatientOrderAmbher.find({
-                patientemail: req.params.email
-            })
-            .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace patientorderambherproductchosenpickuptime patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
-            .sort({patientorderambherid: -1})
-            .lean(); // Returns plain JavaScript objects for better performance
+            // Parse pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 items per page for user orders
+            const skip = (page - 1) * limit;
+            
+            // Execute optimized queries in parallel
+            const [patientorderambhersbyemail, totalCount] = await Promise.all([
+                PatientOrderAmbher.find({
+                    patientemail: req.params.email
+                })
+                .select('patientorderambherid patientorderambherstatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentstatus patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace createdAt updatedAt')
+                .sort({patientorderambherid: -1})
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+                PatientOrderAmbher.countDocuments({ patientemail: req.params.email })
+            ]);
 
             if(!patientorderambhersbyemail || patientorderambhersbyemail.length === 0){
                 return res.status(404).json({message: "No orderambhers found in this email"});  
             }
 
-            res.json(patientorderambhersbyemail);
+            // Return paginated response
+            res.json({
+                orders: patientorderambhersbyemail,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                    itemsPerPage: limit,
+                    hasNextPage: page < Math.ceil(totalCount / limit),
+                    hasPrevPage: page > 1
+                }
+            });
         
         }catch(error){
             res.status(500).json({message: error.message});

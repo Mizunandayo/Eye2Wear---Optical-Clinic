@@ -56,16 +56,54 @@ export const createpatientorderbautista = async (req, res) => {
 
 
 
-    //Get All Patient Bautista Orders
+    //Get All Patient Bautista Orders (Optimized with Pagination & Essential Fields Only)
     export const getallpatientorderbautistas = async (req, res) => {
         try{
-            // Optimized query with ALL necessary fields, lean(), and proper sorting
-            const patientorderbautistas = await PatientOrderBautista.find({})
-                .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace patientorderbautistaproductchosenpickuptime patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
-                .sort({patientorderbautistaid: -1})
-                .lean(); // Returns plain JavaScript objects for better performance
+            // Parse pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 items per page
+            const skip = (page - 1) * limit;
             
-            res.json(patientorderbautistas);
+            // Parse optional filters
+            const { status, search } = req.query;
+            
+            // Build query object
+            let queryFilter = {};
+            if (status && status !== 'All') {
+                queryFilter.patientorderbautistastatus = status;
+            }
+            if (search) {
+                queryFilter.$or = [
+                    { patientorderbautistaproductname: { $regex: search, $options: 'i' } },
+                    { patientfirstname: { $regex: search, $options: 'i' } },
+                    { patientlastname: { $regex: search, $options: 'i' } },
+                    { patientemail: { $regex: search, $options: 'i' } }
+                ];
+            }
+
+            // Execute optimized queries in parallel
+            const [patientorderbautistas, totalCount] = await Promise.all([
+                PatientOrderBautista.find(queryFilter)
+                    .select('patientorderbautistaid patientorderbautistastatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentstatus patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace createdAt updatedAt')
+                    .sort({patientorderbautistaid: -1})
+                    .skip(skip)
+                    .limit(limit)
+                    .lean(),
+                PatientOrderBautista.countDocuments(queryFilter)
+            ]);
+            
+            // Return paginated response
+            res.json({
+                orders: patientorderbautistas,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                    itemsPerPage: limit,
+                    hasNextPage: page < Math.ceil(totalCount / limit),
+                    hasPrevPage: page > 1
+                }
+            });
     
         }catch(error){
             res.status(500).json({message: error.message});
@@ -97,22 +135,43 @@ export const createpatientorderbautista = async (req, res) => {
 
 
 
-    //Get Bautista Order By Email
+    //Get Bautista Order By Email (Optimized with Pagination)
     export const getorderbautistasbyemail = async (req, res) => {
         try{
-            // Optimized query with ALL necessary fields, lean(), and indexed email lookup
-            const patientorderbautistasbyemail = await PatientOrderBautista.find({
-                patientemail: req.params.email
-            })
-            .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace patientorderbautistaproductchosenpickuptime patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
-            .sort({patientorderbautistaid: -1})
-            .lean(); // Returns plain JavaScript objects for better performance
+            // Parse pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 items per page for user orders
+            const skip = (page - 1) * limit;
+            
+            // Execute optimized queries in parallel
+            const [patientorderbautistasbyemail, totalCount] = await Promise.all([
+                PatientOrderBautista.find({
+                    patientemail: req.params.email
+                })
+                .select('patientorderbautistaid patientorderbautistastatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentstatus patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace createdAt updatedAt')
+                .sort({patientorderbautistaid: -1})
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+                PatientOrderBautista.countDocuments({ patientemail: req.params.email })
+            ]);
 
             if(!patientorderbautistasbyemail || patientorderbautistasbyemail.length === 0){
                 return res.status(404).json({message: "No orderbautistas found in this email"});  
             }
 
-            res.json(patientorderbautistasbyemail);
+            // Return paginated response
+            res.json({
+                orders: patientorderbautistasbyemail,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                    itemsPerPage: limit,
+                    hasNextPage: page < Math.ceil(totalCount / limit),
+                    hasPrevPage: page > 1
+                }
+            });
         
         }catch(error){
             res.status(500).json({message: error.message});

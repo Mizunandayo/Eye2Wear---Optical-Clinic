@@ -90,27 +90,64 @@ const useApiService = () => {
     }, CACHE_DURATIONS.appointments);
   };
 
-  const fetchAmbherOrders = async (email) => {
-    return cachedFetch('ambherOrders', async () => {
+  const fetchAmbherOrders = async (email, page = 1, limit = 10) => {
+    return cachedFetch(`ambherOrders_${email}_${page}_${limit}`, async () => {
       const token = getToken();
-      const response = await fetch(`/api/patientorderambher/email/${email}`, {
+      const response = await fetch(`/api/patientorderambher/email/${email}?page=${page}&limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Failed to fetch Ambher orders");
       const data = await response.json();
-      return data;
+      // Return orders array for compatibility with existing code
+      return data.orders || data;
     }, CACHE_DURATIONS.orders);
   };
 
-  const fetchBautistaOrders = async (email) => {
-    return cachedFetch('bautistaOrders', async () => {
+  const fetchBautistaOrders = async (email, page = 1, limit = 10) => {
+    return cachedFetch(`bautistaOrders_${email}_${page}_${limit}`, async () => {
       const token = getToken();
-      const response = await fetch(`/api/patientorderbautista/email/${email}`, {
+      const response = await fetch(`/api/patientorderbautista/email/${email}?page=${page}&limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Failed to fetch Bautista orders");
       const data = await response.json();
-      return data;
+      // Return orders array for compatibility with existing code  
+      return data.orders || data;
+    }, CACHE_DURATIONS.orders);
+  };
+
+  // Admin functions for fetching all orders with pagination
+  const fetchAllAmbherOrders = async (page = 1, limit = 20, status = 'All', search = '') => {
+    const cacheKey = `allAmbherOrders_${page}_${limit}_${status}_${search}`;
+    return cachedFetch(cacheKey, async () => {
+      const token = getToken();
+      const params = new URLSearchParams({ page, limit });
+      if (status !== 'All') params.append('status', status);
+      if (search) params.append('search', search);
+      
+      const response = await fetch(`/api/patientorderambher?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch all Ambher orders");
+      const data = await response.json();
+      return data.orders || data;
+    }, CACHE_DURATIONS.orders);
+  };
+
+  const fetchAllBautistaOrders = async (page = 1, limit = 20, status = 'All', search = '') => {
+    const cacheKey = `allBautistaOrders_${page}_${limit}_${status}_${search}`;
+    return cachedFetch(cacheKey, async () => {
+      const token = getToken();
+      const params = new URLSearchParams({ page, limit });
+      if (status !== 'All') params.append('status', status);
+      if (search) params.append('search', search);
+      
+      const response = await fetch(`/api/patientorderbautista?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch all Bautista orders");
+      const data = await response.json();
+      return data.orders || data;
     }, CACHE_DURATIONS.orders);
   };
 
@@ -158,6 +195,8 @@ const useApiService = () => {
     fetchPatientAppointments,
     fetchAmbherOrders,
     fetchBautistaOrders,
+    fetchAllAmbherOrders,
+    fetchAllBautistaOrders,
     fetchWishlist,
     
     // Cache invalidation

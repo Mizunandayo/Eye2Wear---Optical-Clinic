@@ -48,29 +48,32 @@ export class DatabaseOptimizer {
     }
     
     /**
-     * Optimize connection pool settings
+     * Optimize connection pool settings for better performance
      */
     static getOptimizedConnectionOptions() {
         return {
-            maxPoolSize: 10, // Maximum number of connections
-            serverSelectionTimeoutMS: 10000, // Increased from 5000 to 10000
-            socketTimeoutMS: 60000, // Increased from 45000 to 60000
-            connectTimeoutMS: 10000, // Added explicit connection timeout
+            maxPoolSize: 15, // Increased from 10 to 15 for better concurrency
+            minPoolSize: 5,  // Maintain minimum connections
+            serverSelectionTimeoutMS: 8000, // Reduced from 10000 to 8000
+            socketTimeoutMS: 45000, // Reduced from 60000 to 45000
+            connectTimeoutMS: 8000, // Reduced from 10000 to 8000
             // Connection management
             maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
             retryWrites: true,
             // Read preferences for better performance
-            readPreference: 'primaryPreferred',
+            readPreference: 'secondaryPreferred', // Changed from primaryPreferred for better load distribution
             // Write concerns for consistency vs performance balance
             writeConcern: {
                 w: 'majority',
                 j: true, // Wait for journal
-                wtimeout: 10000 // Increased from 5000 to 10000
+                wtimeout: 8000 // Reduced from 10000 to 8000
             },
             // Additional timeout settings for MongoDB Atlas
             heartbeatFrequencyMS: 10000,
             retryReads: true,
-            // Removed unsupported options
+            // Compression for better network performance
+            compressors: ['zlib'],
+            zlibCompressionLevel: 6,
         };
     }
     

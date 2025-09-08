@@ -8876,6 +8876,12 @@ return () => clearTimeout(delay);
 
   // Function to check if pickup date has passed and update order status
   const checkAndUpdatePickupStatus = useCallback(async (orders, clinicType) => {
+    // Ensure orders is an array
+    if (!Array.isArray(orders)) {
+      console.warn(`⚠️ ${clinicType} orders is not an array:`, orders);
+      return [];
+    }
+    
     const currentPhilippinesDate = getPhilippinesDate();
     const updatedOrders = [];
     let updatedCount = 0;
@@ -9034,9 +9040,13 @@ return () => clearTimeout(delay);
         bautistaResponse.json()
       ]);
 
+      // Handle paginated response format - extract orders array from pagination response
+      const ambherOrders = Array.isArray(ambherData) ? ambherData : (ambherData?.orders || []);
+      const bautistaOrders = Array.isArray(bautistaData) ? bautistaData : (bautistaData?.orders || []);
+
       // Check and update order statuses based on pickup dates
-      const processedAmbherData = await checkAndUpdatePickupStatus(ambherData, 'ambher');
-      const processedBautistaData = await checkAndUpdatePickupStatus(bautistaData, 'bautista');
+      const processedAmbherData = await checkAndUpdatePickupStatus(ambherOrders, 'ambher');
+      const processedBautistaData = await checkAndUpdatePickupStatus(bautistaOrders, 'bautista');
 
       // Update state
       setambherOrders(processedAmbherData);
@@ -10924,18 +10934,22 @@ try {
       const endTime = performance.now();
       console.log(`✅ Reports data fetched in ${(endTime - startTime).toFixed(2)}ms`);
       
+      // Handle paginated response format - extract orders array from pagination response
+      const ambherOrders = Array.isArray(ambherOrdersData) ? ambherOrdersData : (ambherOrdersData?.orders || []);
+      const bautistaOrders = Array.isArray(bautistaOrdersData) ? bautistaOrdersData : (bautistaOrdersData?.orders || []);
+      
       setReportsData({
         appointments: filteredAppointments,
-        ambherOrders: ambherOrdersData || [],
-        bautistaOrders: bautistaOrdersData || [],
+        ambherOrders: ambherOrders,
+        bautistaOrders: bautistaOrders,
         loading: false,
         error: null
       });
       
       console.log('📊 Reports data loaded:', {
         appointmentsCount: filteredAppointments?.length || 0,
-        ambherOrdersCount: (ambherOrdersData || []).length,
-        bautistaOrdersCount: (bautistaOrdersData || []).length,
+        ambherOrdersCount: ambherOrders.length,
+        bautistaOrdersCount: bautistaOrders.length,
         fetchTime: `${(endTime - startTime).toFixed(2)}ms`
       });
 
@@ -11152,12 +11166,16 @@ try {
     console.log('🔄 Processing charts data...');
     
     const { appointments, ambherOrders, bautistaOrders } = reportsData;
-    const allOrders = [...ambherOrders, ...bautistaOrders];
+    
+    // Ensure orders are arrays before spreading
+    const safeAmbherOrders = Array.isArray(ambherOrders) ? ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(bautistaOrders) ? bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
     
     console.log('📊 Data to process:', {
       appointmentsCount: appointments?.length || 0,
-      ambherOrdersCount: ambherOrders?.length || 0,
-      bautistaOrdersCount: bautistaOrders?.length || 0,
+      ambherOrdersCount: safeAmbherOrders.length,
+      bautistaOrdersCount: safeBautistaOrders.length,
       allOrdersCount: allOrders.length
     });
 
@@ -11587,7 +11605,11 @@ try {
     try {
       const userClinic = getCurrentUserClinic();
       const currentDate = new Date().toLocaleDateString();
-      const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+      
+      // Safely get orders arrays
+      const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+      const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+      const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
       
       // Create CSV content
       let csvContent = `${userClinic} - Sales Report\n`;
@@ -11597,7 +11619,7 @@ try {
       csvContent += `Summary\n`;
       csvContent += `Total Orders,${allOrders.length}\n`;
       csvContent += `Total Revenue,₱${calculateTotalRevenue().toLocaleString()}\n`;
-      csvContent += `Total Appointments,${reportsData.appointments.length}\n\n`;
+      csvContent += `Total Appointments,${Array.isArray(reportsData.appointments) ? reportsData.appointments.length : 0}\n\n`;
       
       csvContent += `Order ID,Patient Name,Product,Category,Status,Quantity,Price,Total,Date\n`;
       
@@ -11632,7 +11654,10 @@ try {
   };
 
   const calculateTotalRevenue = () => {
-    const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+    // Safely get orders arrays
+    const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
     const currentUserClinic = getCurrentUserClinic();
     
     // Calculate order revenue - ONLY FROM COMPLETED ORDERS
@@ -11674,23 +11699,26 @@ try {
   };
 
   const calculateMetrics = () => {
-    const allOrders = [...reportsData.ambherOrders, ...reportsData.bautistaOrders];
+    // Safely get orders arrays
+    const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
     const completedOrders = allOrders.filter(order => 
       (order.patientorderambherstatus === 'Completed') || 
       (order.patientorderbautistastatus === 'Completed')
     );
     
     // Calculate completed appointments based on clinic-specific status fields
-    const completedAppointments = reportsData.appointments.filter(apt => 
+    const completedAppointments = Array.isArray(reportsData.appointments) ? reportsData.appointments.filter(apt => 
       apt.patientambherappointmentstatus === 'Completed' || 
       apt.patientbautistaappointmentstatus === 'Completed'
-    );
+    ) : [];
     
     return {
       totalOrders: allOrders.length,
       completedOrders: completedOrders.length,
       totalRevenue: calculateTotalRevenue(),
-      totalAppointments: reportsData.appointments.length,
+      totalAppointments: Array.isArray(reportsData.appointments) ? reportsData.appointments.length : 0,
       completedAppointments: completedAppointments.length
     };
   };
@@ -11708,7 +11736,11 @@ try {
       console.log('📊 Reports section accessed');
       
       // Only fetch if data is empty (first time) or if not loaded yet
-      if (!reportsData.appointments.length && !reportsData.ambherOrders.length && !reportsData.bautistaOrders.length) {
+      const safeAppointments = Array.isArray(reportsData.appointments) ? reportsData.appointments : [];
+      const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+      const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+      
+      if (!safeAppointments.length && !safeAmbherOrders.length && !safeBautistaOrders.length) {
         console.log('✅ Fetching reports data (empty data detected)');
         fetchReportsData();
       } else {
@@ -11717,7 +11749,7 @@ try {
     } else {
       console.log('❌ Not in reports section, no data fetch needed');
     }
-  }, [activedashboard, reportsData.appointments.length, reportsData.ambherOrders.length, reportsData.bautistaOrders.length, fetchReportsData]);
+  }, [activedashboard, fetchReportsData]);
 
   // No need for separate processChartsData useEffect - data is now processed automatically with useMemo
 
@@ -22812,8 +22844,11 @@ paginatedBautistaOrders.map((order) => (
            {/* Revenue by Month */}
            <InteractiveRevenueChart 
              revenueData={filteredChartsData?.revenueByMonth || []} 
-             rawOrderData={[...reportsData.ambherOrders, ...reportsData.bautistaOrders]}
-             rawAppointmentData={reportsData.appointments || []}
+             rawOrderData={[
+               ...(Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : []),
+               ...(Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [])
+             ]}
+             rawAppointmentData={Array.isArray(reportsData.appointments) ? reportsData.appointments : []}
              isAmbherOnlyUser={isAmbherOnlyUser}
              isBautistaOnlyUser={isBautistaOnlyUser}
              currentuserloggedin={currentuserloggedin}
