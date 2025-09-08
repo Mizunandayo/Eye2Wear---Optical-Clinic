@@ -102,6 +102,9 @@ class iPragSMS {
       };
 
       console.log(`📱 Sending bulk SMS via iProg to ${formattedPhones.length} recipients`);
+      console.log(`🔍 Bulk SMS Request ID: BULK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+      console.log(`📋 Phone numbers: ${formattedPhones.join(', ')}`);
+      console.log(`📝 Message length: ${message.length} characters`);
       
       // Send bulk SMS request using bulk endpoint
       const response = await axios.post(`${this.baseUrl}/sms_messages/send_bulk`, payload, {
@@ -110,6 +113,9 @@ class iPragSMS {
         },
         timeout: 60000 // 60 second timeout for bulk
       });
+
+      console.log(`📡 iProg Bulk SMS Response Status: ${response.status}`);
+      console.log(`📡 iProg Bulk SMS Response Data:`, response.data);
 
       if (response.data.status === 200) {
         // Parse message IDs from comma-separated string

@@ -293,7 +293,7 @@ ${clinicName}`;
           $exists: true, 
           $nin: ['Later', 'Now', null, '']
         }
-      }).populate('patientdemographicid', 'patientcontactnumber patientfirstname patientlastname');
+      });
       
       console.log(`📋 Found ${pendingOrders.length} pending ${clinicType} orders to check`);
       
@@ -333,12 +333,30 @@ ${clinicName}`;
             );
             
             if (updateResult) {
-              // Send SMS notification via API endpoint only if the update was successful
-              // Only send SMS for "Ready for Pickup" status - automatic order completion doesn't need SMS
-              await this.sendOrderStatusSMS(order[idField], clinicType, 'Ready for Pickup');
+              // Check if SMS was already sent for this order before sending
+              const existingSms = await SmsMessage.findOne({
+                $and: [
+                  {
+                    $or: [
+                      { recipients: { $regex: `${order[idField]}` } },
+                      { message: { $regex: `Order ID: ${order[idField]}|Order.*${order[idField]}` } }
+                    ]
+                  },
+                  { type: 'Order Status' },
+                  { status: { $in: ['Sent', 'Delivered'] } },
+                  { message: { $regex: `ready for pickup`, $options: 'i' } }
+                ]
+              });
+              
+              if (!existingSms) {
+                // Send SMS notification only if no existing SMS found
+                await this.sendOrderStatusSMS(order[idField], clinicType, 'Ready for Pickup');
+                console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" with SMS sent`);
+              } else {
+                console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" (SMS already sent at ${existingSms.createdAt})`);
+              }
               
               updatedCount++;
-              console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" with SMS sent`);
             } else {
               console.log(`ℹ️ Order ${order[idField]} was already updated or no longer exists`);
             }

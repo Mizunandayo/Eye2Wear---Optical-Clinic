@@ -10134,9 +10134,27 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
   
   // Send SMS notification to customer about new order
   try {
-    // Use the order status SMS with the new order ID
-    if (result && result._id) {
-      console.log('📱 Attempting to send SMS for order:', result._id);
+    // Extract the actual order data from response
+    const orderData = result.data || result;
+    
+    // Get the order ID - use the numeric patientorderambherid for SMS, not the MongoDB _id
+    const orderId = orderData.patientorderambherid || orderData.id;
+    
+    console.log('📋 Ambher order creation result:', {
+      hasResult: !!result,
+      hasOrderData: !!orderData,
+      resultKeys: result ? Object.keys(result) : [],
+      orderDataKeys: orderData ? Object.keys(orderData) : [],
+      _id: orderData?._id,
+      patientorderambherid: orderData?.patientorderambherid,
+      id: orderData?.id,
+      selectedOrderId: orderId,
+      orderIdType: typeof orderId,
+      orderIdSource: orderData.patientorderambherid ? 'patientorderambherid' : (orderData.id ? 'id' : 'none')
+    });
+    
+    if (result && orderId) {
+      console.log('📱 Attempting to send SMS for order:', orderId);
       console.log('🌐 API URL:', apiUrl);
       console.log('🔑 Token available:', !!currentusertoken);
       
@@ -10147,7 +10165,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
           'Authorization': `Bearer ${currentusertoken}`
         },
         body: JSON.stringify({
-          orderId: result._id,
+          orderId: orderId,
           orderType: 'ambher',
           newStatus: 'Completed'
         })
@@ -10165,6 +10183,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderambherfirstName} ${orderambherlastName}`);
         setSmsToast(true);
         setSmsToastClosing(false);
+        setSmsIsClicked(true); // Set to true for success (green)
         
         // Start progress animation
         setSmsProgressWidth('0%');
@@ -10197,6 +10216,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         setSmsToastMessage(errorMessage);
         setSmsToast(true);
         setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
         
         // Start progress animation
         setSmsProgressWidth('0%');
@@ -10213,7 +10233,33 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         }, 6000);
       }
     } else {
-      console.warn('⚠️ No order ID returned, cannot send SMS');
+      console.warn('⚠️ No valid order ID found in Ambher response, cannot send SMS');
+      console.warn('📋 Ambher Response data:', {
+        hasResult: !!result,
+        hasOrderData: !!orderData,
+        orderData: orderData,
+        orderId: orderId
+      });
+      
+      // Still show order creation success, but note SMS failure
+      setSmsToastMessage(`✅ Ambher order created successfully but SMS notification failed: No order ID returned`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Set to true for order success (green), even if SMS failed
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
     }
   } catch (smsError) {
     console.warn('⚠️ SMS notification failed but order was still created:', smsError);
@@ -10425,9 +10471,25 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
   
   // Send SMS notification to customer about new order
   try {
-    // Use the order status SMS with the new order ID
-    if (result && result._id) {
-      console.log('📱 Attempting to send SMS for Bautista order:', result._id);
+    // Extract the actual order data from response
+    const orderData = result.data || result;
+    
+    // Get the order ID - use the numeric patientorderbautistaid for SMS, not the MongoDB _id
+    const orderId = orderData.patientorderbautistaid || orderData.id;
+    
+    console.log('📋 Bautista order creation result:', {
+      hasResult: !!result,
+      hasOrderData: !!orderData,
+      resultKeys: result ? Object.keys(result) : [],
+      orderDataKeys: orderData ? Object.keys(orderData) : [],
+      _id: orderData?._id,
+      patientorderbautistaid: orderData?.patientorderbautistaid,
+      id: orderData?.id,
+      selectedOrderId: orderId
+    });
+    
+    if (result && orderId) {
+      console.log('📱 Attempting to send SMS for Bautista order:', orderId);
       console.log('🌐 API URL:', apiUrl);
       console.log('🔑 Token available:', !!currentusertoken);
       
@@ -10438,7 +10500,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
           'Authorization': `Bearer ${currentusertoken}`
         },
         body: JSON.stringify({
-          orderId: result._id,
+          orderId: orderId,
           orderType: 'bautista',
           newStatus: 'Completed'
         })
@@ -10456,6 +10518,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderbautistafirstName} ${orderbautistalastName}`);
         setSmsToast(true);
         setSmsToastClosing(false);
+        setSmsIsClicked(true); // Set to true for success (green)
         
         // Start progress animation
         setSmsProgressWidth('0%');
@@ -10488,6 +10551,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         setSmsToastMessage(errorMessage);
         setSmsToast(true);
         setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
         
         // Start progress animation
         setSmsProgressWidth('0%');
@@ -10504,10 +10568,36 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
         }, 6000);
       }
     } else {
-      console.warn('⚠️ No order ID returned, cannot send SMS');
+      console.warn('⚠️ No valid order ID found in Bautista response, cannot send SMS');
+      console.warn('📋 Bautista Response data:', {
+        hasResult: !!result,
+        hasOrderData: !!orderData,
+        orderData: orderData,
+        orderId: orderId
+      });
+      
+      // Still show order creation success, but note SMS failure
+      setSmsToastMessage(`✅ Bautista order created successfully but SMS notification failed: No order ID returned`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Set to true for order success (green), even if SMS failed
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
     }
   } catch (smsError) {
-    console.warn('⚠️ SMS notification failed but order was still created:', smsError);
+    console.warn('⚠️ SMS notification failed but Bautista order was still created:', smsError);
     // Don't let SMS failure affect the order creation success
   }
   

@@ -664,7 +664,17 @@ ${appointment.appointmentclinic}`;
   // Send order status update SMS
   static async sendOrderStatusUpdate(req, res) {
     try {
-      console.log('📱 SMS Order Status Update Request received:', req.body);
+      // Add request tracking for debugging duplicate requests
+      const requestTimestamp = Date.now();
+      const requestId = `${req.body.orderId}-${req.body.orderType}-${req.body.newStatus}-${requestTimestamp}`;
+      
+      console.log('📱 SMS Order Status Update Request received:', {
+        ...req.body,
+        requestId: requestId,
+        timestamp: new Date(requestTimestamp).toISOString(),
+        userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
+        ip: req.ip || req.connection?.remoteAddress
+      });
       
       const { orderId, orderType, newStatus } = req.body;
       
@@ -698,16 +708,28 @@ ${appointment.appointmentclinic}`;
       const requestKey = `${orderId}-${orderType}-${newStatus}`;
       const now = Date.now();
       
-      // For "Ready for Pickup" status, use extra strict deduplication (longer time window)
-      const deduplicationWindow = newStatus === 'Ready for Pickup' ? 7200000 : 1800000; // 2 hours for Ready for Pickup, 30 minutes for others
+      // For "Completed" status, use very strict deduplication (longer time window)
+      const deduplicationWindow = newStatus === 'Completed' ? 10800000 : (newStatus === 'Ready for Pickup' ? 7200000 : 1800000); // 3 hours for Completed, 2 hours for Ready for Pickup, 30 minutes for others
       
-      // Check if we already have a successful SMS record for this exact order and status
+      // Enhanced database check - look for any SMS sent for this specific order with Ready for Pickup or Completed status
       const existingSms = await SmsMessage.findOne({
         $and: [
-          { recipients: { $regex: orderId } },
+          {
+            $or: [
+              { recipients: { $regex: `${orderId}` } },
+              { recipients: { $regex: `Order.*${orderId}` } },
+              { message: { $regex: `Order ID: ${orderId}|Order.*${orderId}` } }
+            ]
+          },
           { type: 'Order Status' },
           { status: { $in: ['Sent', 'Delivered'] } },
-          { message: { $regex: `ready for pickup|${newStatus.toLowerCase()}` } }
+          {
+            $or: [
+              { message: { $regex: `ready for pickup`, $options: 'i' } },
+              { message: { $regex: `completed`, $options: 'i' } },
+              { message: { $regex: newStatus.toLowerCase() } }
+            ]
+          }
         ]
       }).sort({ createdAt: -1 });
       
@@ -715,33 +737,55 @@ ${appointment.appointmentclinic}`;
         const timeSinceLastSms = now - existingSms.createdAt.getTime();
         if (timeSinceLastSms < deduplicationWindow) {
           console.warn(`⚠️ SMS already sent for order ${orderId} with status "${newStatus}" at ${existingSms.createdAt}`);
+          console.warn(`📊 Found existing SMS record: ID=${existingSms.messageId}, Recipients="${existingSms.recipients}", Message preview="${existingSms.message.substring(0, 100)}..."`);
           return res.status(200).json({
             success: false,
             message: `SMS for order ${orderId} with status "${newStatus}" already sent recently`,
             lastSentAt: existingSms.createdAt,
             minutesSinceLastSms: Math.round(timeSinceLastSms / 60000),
-            deduplicationWindow: Math.round(deduplicationWindow / 60000)
+            deduplicationWindow: Math.round(deduplicationWindow / 60000),
+            duplicatePrevented: true,
+            existingSmsId: existingSms.messageId
           });
         }
       }
 
-      // Additional deduplication using memory cache with longer window
+      // Additional deduplication using memory cache with longer window for Completed status
       if (recentSmsRequests.has(requestKey)) {
         const lastRequestTime = recentSmsRequests.get(requestKey);
-        const memoryCacheWindow = newStatus === 'Ready for Pickup' ? 600000 : 60000; // 10 minutes for Ready for Pickup, 1 minute for others
+        const memoryCacheWindow = newStatus === 'Completed' ? 1800000 : (newStatus === 'Ready for Pickup' ? 600000 : 60000); // 30 minutes for Completed, 10 minutes for Ready for Pickup, 1 minute for others
         if (now - lastRequestTime < memoryCacheWindow) {
           console.warn(`⚠️ Duplicate SMS request blocked for order ${orderId} with status ${newStatus} (sent ${Math.round((now - lastRequestTime) / 1000)} seconds ago)`);
           return res.status(200).json({
             success: false,
             message: 'Duplicate SMS request blocked to prevent spam',
             secondsSinceLastRequest: Math.round((now - lastRequestTime) / 1000),
-            cacheWindow: Math.round(memoryCacheWindow / 1000)
+            cacheWindow: Math.round(memoryCacheWindow / 1000),
+            duplicatePrevented: true
           });
         }
       }
       
-      // Record this request
+      // Record this request with additional tracking
       recentSmsRequests.set(requestKey, now);
+      
+      // Also track by request ID if provided (from frontend)
+      const frontendRequestId = req.body.requestId;
+      if (frontendRequestId) {
+        const frontendRequestKey = `frontend-${frontendRequestId}`;
+        if (recentSmsRequests.has(frontendRequestKey)) {
+          console.warn(`⚠️ Duplicate frontend request detected: ${frontendRequestId}`);
+          return res.status(200).json({
+            success: false,
+            message: 'Duplicate frontend request detected',
+            requestId: frontendRequestId,
+            duplicatePrevented: true
+          });
+        }
+        recentSmsRequests.set(frontendRequestKey, now);
+      }
+      
+      console.log(`🔒 SMS request recorded for deduplication: ${requestKey}${frontendRequestId ? ` (frontend: ${frontendRequestId})` : ''}`);
       
       // Clean up old entries (keep only last 30 minutes)
       for (const [key, timestamp] of recentSmsRequests.entries()) {
@@ -767,10 +811,27 @@ ${appointment.appointmentclinic}`;
       }
 
       // Get order details using custom order ID field
+      // First try with the provided orderId (should be numeric)
       if (orderType === 'ambher') {
-        order = await OrderModel.findOne({ patientorderambherid: orderId });
+        // Convert string numbers to actual numbers for Mongoose queries
+        const numericOrderId = isNaN(orderId) ? orderId : Number(orderId);
+        order = await OrderModel.findOne({ patientorderambherid: numericOrderId });
+        
+        // Fallback: if not found and orderId looks like an ObjectId, try using MongoDB _id
+        if (!order && mongoose.Types.ObjectId.isValid(orderId)) {
+          console.log('🔄 Numeric order ID not found, trying MongoDB _id as fallback:', orderId);
+          order = await OrderModel.findOne({ _id: orderId });
+        }
       } else {
-        order = await OrderModel.findOne({ patientorderbautistaid: orderId });
+        // Convert string numbers to actual numbers for Mongoose queries
+        const numericOrderId = isNaN(orderId) ? orderId : Number(orderId);
+        order = await OrderModel.findOne({ patientorderbautistaid: numericOrderId });
+        
+        // Fallback: if not found and orderId looks like an ObjectId, try using MongoDB _id
+        if (!order && mongoose.Types.ObjectId.isValid(orderId)) {
+          console.log('🔄 Numeric order ID not found, trying MongoDB _id as fallback:', orderId);
+          order = await OrderModel.findOne({ _id: orderId });
+        }
       }
       
       console.log('📋 Order lookup result:', order ? 'Found' : 'Not found');
@@ -863,6 +924,26 @@ ${appointment.appointmentclinic}`;
       // Determine clinic name based on order type
       const clinicName = orderType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
 
+      // Get product details for the SMS
+      let productDetails = '';
+      if (order) {
+        const productName = orderType === 'ambher' 
+          ? order.patientorderambherproductname 
+          : order.patientorderbautistaproductname;
+        const productQuantity = orderType === 'ambher' 
+          ? order.patientorderambherproductquantity 
+          : order.patientorderbautistaproductquantity;
+        const productBrand = orderType === 'ambher' 
+          ? order.patientorderambherproductbrand 
+          : order.patientorderbautistaproductbrand;
+
+        if (productName && productQuantity) {
+          productDetails = `
+Product: ${productName}${productBrand ? ` (${productBrand})` : ''}
+Quantity: ${productQuantity}`;
+        }
+      }
+
       // Create status-specific message
       let statusMessage = '';
       switch (newStatus.toLowerCase()) {
@@ -885,7 +966,7 @@ ${appointment.appointmentclinic}`;
           statusMessage = `Your order status has been updated to: ${newStatus}`;
       }
 
-      // Create SMS message
+      // Create SMS message with product details
       const orderIdField = orderType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid;
       const message = `Order Status Update
 
@@ -894,7 +975,7 @@ Hello ${order.patientfirstname},
 ${statusMessage}
 
 Order ID: ${orderIdField}
-Status: ${newStatus}
+Status: ${newStatus}${productDetails}
 Clinic: ${clinicName}
 
 If you have any questions, please don't hesitate to contact us.
@@ -921,6 +1002,7 @@ ${clinicName}`;
 
       const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
       console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
+      console.log(`💰 POTENTIAL CREDIT USAGE: 1 SMS sent to iProg API for order ${orderId}`);
 
       // Extract single result from bulk response
       const smsResult = {

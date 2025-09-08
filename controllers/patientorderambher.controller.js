@@ -15,10 +15,11 @@ import process from 'process';
 export const createpatientorderambher = async (req, res) => {
     try{
         const requiredpatientorderfields = [
-      'patientprofilepicture', 'patientlastname', 'patientfirstname',
-      'patientemail', 'patientcontactnumber', 'patientorderambherproductid',
-      'patientorderambherproductname', 'patientorderambherproductprice',
-      'patientorderambherproductquantity', 'patientorderambherproductchosenpickupdate','patientorderambherproductchosenpickupplace'
+      'patientlastname', 'patientfirstname', 'patientemail', 'patientcontactnumber',
+      'patientorderambherproductid', 'patientorderambherproductname', 'patientorderambherproductbrand',
+      'patientorderambherproductmodelnumber', 'patientorderambherproductcategory', 'patientorderambherproductimage',
+      'patientorderambherproductprice', 'patientorderambherproductquantity', 'patientorderambherproductsubtotal',
+      'patientorderambherproductdescription'
       ];
 
       const missingrequiredpatientorderfields = requiredpatientorderfields.filter(field => !req.body[field]);
@@ -77,6 +78,8 @@ export const createpatientorderambher = async (req, res) => {
             if (search) {
                 queryFilter.$or = [
                     { patientorderambherproductname: { $regex: search, $options: 'i' } },
+                    { patientorderambherproductbrand: { $regex: search, $options: 'i' } },
+                    { patientorderambherproductmodelnumber: { $regex: search, $options: 'i' } },
                     { patientfirstname: { $regex: search, $options: 'i' } },
                     { patientlastname: { $regex: search, $options: 'i' } },
                     { patientemail: { $regex: search, $options: 'i' } }
@@ -86,7 +89,7 @@ export const createpatientorderambher = async (req, res) => {
             // Execute optimized queries in parallel
             const [patientorderambhers, totalCount] = await Promise.all([
                 PatientOrderAmbher.find(queryFilter)
-                    .select('patientorderambherid patientorderambherstatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentstatus patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace createdAt updatedAt')
+                    .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
                     .sort({patientorderambherid: -1})
                     .skip(skip)
                     .limit(limit)
@@ -150,7 +153,7 @@ export const createpatientorderambher = async (req, res) => {
                 PatientOrderAmbher.find({
                     patientemail: req.params.email
                 })
-                .select('patientorderambherid patientorderambherstatus patientprofilepicture patientlastname patientfirstname patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentstatus patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace createdAt updatedAt')
+                .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
                 .sort({patientorderambherid: -1})
                 .skip(skip)
                 .limit(limit)
@@ -360,12 +363,16 @@ export const updatePaymentAmbher = async (req, res) => {
     }
 
     // Update the payment fields
+    const remainingBalance = order.patientorderambherproducttotal - patientorderambheramountpaid;
+    const paymentStatus = remainingBalance <= 0 ? 'Fully Paid' : 'Partially Paid';
+    
     const updatedOrder = await PatientOrderAmbher.findOneAndUpdate(
       { patientorderambherid: id },
       {
         patientorderambheramountpaid: patientorderambheramountpaid,
         patientorderambheramountpaidchange: patientorderambheramountpaidchange,
-        patientorderambherremainingbalance: order.patientorderambherproducttotal - patientorderambheramountpaid
+        patientorderambherremainingbalance: remainingBalance,
+        patientorderambherproductpaymentstatus: paymentStatus
       },
       { new: true }
     );
