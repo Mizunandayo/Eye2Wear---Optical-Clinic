@@ -36,7 +36,7 @@ import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus } from '../utils/orderStatusUpdater';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { TrendingUp, BarChart3, PieChart as PieChartIcon, Target, DollarSign, Package, Users, Calendar, RefreshCw, Download } from "lucide-react";
 import {
@@ -522,7 +522,7 @@ const SmsRowSkeleton = () => (
 );
 
 // Interactive Bar Chart Component for Completed Appointments
-const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
+const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin, getFilterDisplayText }) => {
   const [timeRange, setTimeRange] = React.useState("90d");
   const [activeChart, setActiveChart] = React.useState("ambher");
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
@@ -634,6 +634,12 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
 
   const chartColors = getChartColors();
 
+  // Generate dynamic title based on time range and selected year
+  const getAppointmentChartTitle = () => {
+    const dateText = getFilterDisplayText(timeRange, selectedYear);
+    return `Completed Appointments - ${dateText}`;
+  };
+
   // Determine available chart options based on user permissions
   const availableCharts = React.useMemo(() => {
     const charts = [];
@@ -658,9 +664,9 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
       {/* Header with Interactive Buttons */}
       <div className="flex flex-col items-stretch border-b sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3">
-          <h3 className="text-xl font-bold text-gray-800 font-albertsans">Completed Appointments Trend</h3>
+          <h3 className="text-xl font-bold text-gray-800 font-albertsans">{getAppointmentChartTitle()}</h3>
           <p className="text-sm text-gray-600 font-albertsans">
-            Interactive view of completed appointments over time
+            Interactive view of completed appointments over selected time period
           </p>
         </div>
         
@@ -797,7 +803,7 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
 };
 
 // Interactive Revenue Chart Component
-const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin }) => {
+const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnlyUser, isBautistaOnlyUser, currentuserloggedin, getFilterDisplayText }) => {
   const [timeRange, setTimeRange] = React.useState("90d");
   const [dataFilter, setDataFilter] = React.useState("all"); // all, appointments, orders
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
@@ -969,18 +975,8 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
     const filterText = dataFilter === "appointments" ? "Appointments " : 
                       dataFilter === "orders" ? "Orders " : "";
     
-    switch (timeRange) {
-      case "7d":
-        return `${filterText}Revenue Last 7 Days`;
-      case "30d":
-        return `${filterText}Revenue Last 30 Days`;
-      case "90d":
-        return `${filterText}Revenue Last 3 Months`;
-      case "365d":
-        return `${filterText}Revenue Last Year`;
-      default:
-        return `${filterText}Revenue Last 3 Months`;
-    }
+    const dateText = getFilterDisplayText(timeRange, selectedYear);
+    return `${filterText}Revenue - ${dateText}`;
   };
 
   return (
@@ -1605,7 +1601,7 @@ const MedicalRecordImageViewer = ({ record, loadMedicalRecordImage, onImageClick
 
 
 // TopProductsChart component using the new chart design
-const TopProductsChart = ({ data }) => {
+const TopProductsChart = ({ data, filter, year, onFilterChange, onYearChange, getAvailableYears, getResponsiveTitle, getFilterDisplayText }) => {
   // Transform the data to match the expected format
   const chartData = data?.map((item, index) => ({
     product: item.product,
@@ -1632,13 +1628,50 @@ const TopProductsChart = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-[#184d85]" />
-            <span className="text-xl font-bold text-gray-800 font-albertsans">Top Products</span>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <CardTitle>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-[#184d85]" />
+                <span className="text-xl font-bold text-gray-800 font-albertsans">
+                  {getResponsiveTitle('Top Products', filter, year)}
+                </span>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              <span className="text-sm text-gray-500 font-albertsans">
+                Most ordered products for {getFilterDisplayText(filter, year).toLowerCase()}
+              </span>
+            </CardDescription>
           </div>
-        </CardTitle>
-        <CardDescription><span className="text-sm text-gray-500 font-albertsans">Most ordered products by quantity</span></CardDescription>
+          <div className="flex items-center gap-2">
+            <select
+              value={filter}
+              onChange={(e) => onFilterChange(e.target.value)}
+              className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              aria-label="Select date range for top products"
+            >
+              <option value="thisWeek">This Week</option>
+              <option value="thisMonth">This Month</option>
+              <option value="thisYear">This Year</option>
+              <option value="lastMonth">Last Month</option>
+              <option value="last3Months">Last 3 Months</option>
+              <option value="lastYear">Last Year</option>
+            </select>
+            {filter === 'lastYear' && (
+              <select
+                value={year}
+                onChange={(e) => onYearChange(parseInt(e.target.value))}
+                className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                aria-label="Select year for top products"
+              >
+                {getAvailableYears().map(yearOption => (
+                  <option key={yearOption} value={yearOption}>{yearOption}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
@@ -1727,7 +1760,7 @@ const TopProductsChart = ({ data }) => {
               <i className="bx bx-bar-chart-alt text-4xl mb-2 opacity-50"></i>
               <p className="font-albertsans">No product data available</p>
               <p className="text-sm text-gray-400 font-albertsans mt-1">
-                Orders will appear here once placed
+                for {getFilterDisplayText(filter, year).toLowerCase()}
               </p>
             </div>
           </div>
@@ -1814,6 +1847,13 @@ function AdminDashboard(){
   const [smsProgressWidth, setSmsProgressWidth] = useState('0%');
   const [smsIsClicked, setSmsIsClicked] = useState(false);
 
+  // PDF Export Toast States
+  const [pdfToast, setPdfToast] = useState(false);
+  const [pdfToastMessage, setPdfToastMessage] = useState('');
+  const [pdfToastClosing, setPdfToastClosing] = useState(false);
+  const [pdfProgressWidth, setPdfProgressWidth] = useState('0%');
+  const [pdfIsClicked, setPdfIsClicked] = useState(false);
+
 
 
   
@@ -1824,7 +1864,6 @@ function AdminDashboard(){
 
   const [ownerownedclinic,setownerownedclinic] = useState('');
   const [staffclinic, setStaffClinic] = useState('');
-  const [currentUserClinic, setCurrentUserClinic] = useState('');
 
   // Reports and Analytics State - Optimized
   const [reportsData, setReportsData] = useState({
@@ -1845,8 +1884,10 @@ function AdminDashboard(){
   // Separate filters for Sales by Category and Order Status Distribution charts
   const [salesCategoryFilter, setSalesCategoryFilter] = useState('thisMonth');
   const [orderStatusFilter, setOrderStatusFilter] = useState('thisMonth');
+  const [topProductsFilter, setTopProductsFilter] = useState('thisMonth');
   const [salesCategoryYear, setSalesCategoryYear] = useState(new Date().getFullYear());
   const [orderStatusYear, setOrderStatusYear] = useState(new Date().getFullYear());
+  const [topProductsYear, setTopProductsYear] = useState(new Date().getFullYear());
 
   // Recent Orders Pagination State
   const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
@@ -1891,6 +1932,142 @@ function AdminDashboard(){
         return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: endOfDay };
     }
   }, []);
+
+  // Helper function to get responsive title based on filter and year
+  const getFilterDisplayText = useCallback((filterValue, selectedYear = null) => {
+    const now = new Date();
+    
+    switch (filterValue) {
+      case 'thisWeek': {
+        // Get the start of the current week (Sunday)
+        const startOfWeek = new Date(now);
+        const dayOfWeek = startOfWeek.getDay();
+        startOfWeek.setDate(now.getDate() - dayOfWeek);
+        
+        // Get the end of the current week (Saturday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        const monthName = startOfWeek.toLocaleDateString('en-US', { month: 'long' });
+        const year = startOfWeek.getFullYear();
+        
+        // Check if week spans across different months
+        if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+          return `${monthName} ${startOfWeek.getDate()}-${endOfWeek.getDate()}, ${year}`;
+        } else {
+          const endMonthName = endOfWeek.toLocaleDateString('en-US', { month: 'long' });
+          return `${monthName} ${startOfWeek.getDate()} - ${endMonthName} ${endOfWeek.getDate()}, ${year}`;
+        }
+      }
+      case '7d': {
+        // Last 7 days from today
+        const endDate = new Date(now);
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6); // 7 days including today
+        
+        const startMonthName = startDate.toLocaleDateString('en-US', { month: 'long' });
+        const endMonthName = endDate.toLocaleDateString('en-US', { month: 'long' });
+        const year = endDate.getFullYear();
+        
+        // Check if the 7 days span across different months
+        if (startDate.getMonth() === endDate.getMonth()) {
+          return `${startMonthName} ${startDate.getDate()}-${endDate.getDate()}, ${year}`;
+        } else {
+          return `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}, ${year}`;
+        }
+      }
+      case '30d': {
+        // Last 30 days from today
+        const endDate = new Date(now);
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29); // 30 days including today
+        
+        const startMonthName = startDate.toLocaleDateString('en-US', { month: 'short' });
+        const endMonthName = endDate.toLocaleDateString('en-US', { month: 'short' });
+        const year = endDate.getFullYear();
+        
+        // Check if the 30 days span across different months
+        if (startDate.getMonth() === endDate.getMonth()) {
+          return `${startMonthName} ${startDate.getDate()}-${endDate.getDate()}, ${year}`;
+        } else if (startDate.getFullYear() === endDate.getFullYear()) {
+          return `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}, ${year}`;
+        } else {
+          return `${startMonthName} ${startDate.getDate()}, ${startDate.getFullYear()} - ${endMonthName} ${endDate.getDate()}, ${year}`;
+        }
+      }
+      case '90d': {
+        // Last 90 days - show as month range
+        const endDate = new Date(now);
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - 89); // 90 days including today
+        
+        const startMonthName = startDate.toLocaleDateString('en-US', { month: 'short' });
+        const endMonthName = endDate.toLocaleDateString('en-US', { month: 'short' });
+        const year = endDate.getFullYear();
+        
+        if (startDate.getFullYear() === endDate.getFullYear()) {
+          return `${startMonthName}-${endMonthName} ${year}`;
+        } else {
+          return `${startMonthName} ${startDate.getFullYear()} - ${endMonthName} ${year}`;
+        }
+      }
+      case '365d': {
+        // Last 365 days - show as year
+        const endDate = new Date(now);
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - 364); // 365 days including today
+        
+        if (startDate.getFullYear() === endDate.getFullYear()) {
+          return `${endDate.getFullYear()}`;
+        } else {
+          return `${startDate.getFullYear()}-${endDate.getFullYear()}`;
+        }
+      }
+      case 'thisMonth': {
+        const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+        const year = now.getFullYear();
+        return `${monthName} ${year}`;
+      }
+      case 'thisYear': {
+        return `${now.getFullYear()}`;
+      }
+      case 'lastMonth': {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const monthName = lastMonth.toLocaleDateString('en-US', { month: 'long' });
+        const year = lastMonth.getFullYear();
+        return `${monthName} ${year}`;
+      }
+      case 'last3Months': {
+        const endMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        
+        const startMonthName = startMonth.toLocaleDateString('en-US', { month: 'short' });
+        const endMonthName = endMonth.toLocaleDateString('en-US', { month: 'short' });
+        const year = endMonth.getFullYear();
+        
+        // Check if the 3 months span across different years
+        if (startMonth.getFullYear() === endMonth.getFullYear()) {
+          return `${startMonthName}-${endMonthName} ${year}`;
+        } else {
+          return `${startMonthName} ${startMonth.getFullYear()} - ${endMonthName} ${year}`;
+        }
+      }
+      case 'lastYear': {
+        return selectedYear ? `${selectedYear}` : `${now.getFullYear() - 1}`;
+      }
+      default: {
+        const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+        const year = now.getFullYear();
+        return `${monthName} ${year}`;
+      }
+    }
+  }, []);
+
+  // Helper function to generate responsive chart/table titles
+  const getResponsiveTitle = useCallback((baseTitle, filterValue, selectedYear = null) => {
+    const filterText = getFilterDisplayText(filterValue, selectedYear);
+    return `${baseTitle} - ${filterText}`;
+  }, [getFilterDisplayText]);
 
   // Function to extract available years from order data
   const getAvailableYears = useCallback(() => {
@@ -2019,7 +2196,6 @@ function AdminDashboard(){
             setadminlastname(data.stafflastname || '');
             setadminprofilepicture(data.staffprofilepicture || '');
             setStaffClinic(data.staffclinic || '');
-            setCurrentUserClinic(data.staffclinic || '');
             setadmintype(data.role || '');
           }
         }
@@ -2031,7 +2207,6 @@ function AdminDashboard(){
             setadminlastname(data.ownerlastname || '');
             setadminprofilepicture(data.ownerprofilepicture || '');
             setownerownedclinic(data.ownerclinic || '');
-            setCurrentUserClinic(data.ownerclinic || '');
             setadmintype(data.role || '');
           }
         }
@@ -2053,6 +2228,26 @@ function AdminDashboard(){
       setReportsDataLoadedOnce(true);
     }
   }, [userDataLoaded, reportsDataLoadedOnce, currentuserloggedin]);
+
+  // PDF Toast handling - Auto-hide after showing
+  useEffect(() => {
+    if (pdfToast) {
+      // Start progress animation
+      setPdfProgressWidth('0%');
+      setTimeout(() => setPdfProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setPdfToastClosing(true);
+        setTimeout(() => {
+          setPdfToast(false);
+          setPdfToastClosing(false);
+          setPdfProgressWidth('0%');
+          setPdfIsClicked(false);
+        }, 3000);
+      }, 4000);
+    }
+  }, [pdfToast]);
 
 
 
@@ -8623,6 +8818,32 @@ if (patientorderambherproductToast) {
 }
 }, [patientorderambherproductToast, patientorderbautistaproductToast]);
 
+// UseEffect for PDF Toast
+useEffect(() => {
+  if (pdfToast) {
+    setPdfProgressWidth('0%');
+    setPdfToastClosing(false);
+
+    const progresstimer = setTimeout(() => {
+      setPdfProgressWidth('100%');
+    }, 50);
+
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setPdfToastClosing(true);
+      setTimeout(() => {
+        setPdfToast(false);
+        setPdfProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [pdfToast]);
+
 
 
 
@@ -10882,11 +11103,11 @@ try {
   // Note: chartsData is now handled by processedChartsData and filteredChartsData useMemo hooks
 
   // Get current user clinic from localStorage
-  const getCurrentUserClinic = () => {
+  const getCurrentUserClinic = useCallback(() => {
     const staffClinic = localStorage.getItem('staffclinic');
     const ownerClinic = localStorage.getItem('ownerclinic');
     return staffClinic || ownerClinic || '';
-  };
+  }, []);
 
   // Optimized Reports Data Fetching with Smart Cache and Parallel Requests
   const fetchReportsData = useCallback(async (forceRefresh = false) => {
@@ -11051,7 +11272,7 @@ try {
         error: 'Failed to fetch reports data'
       }));
     }
-  }, [smartFetch, CACHE_DURATIONS]);
+  }, [smartFetch, CACHE_DURATIONS, getCurrentUserClinic]);
 
   // Refresh reports data function - clears cache and reloads data
   const refreshReportsData = useCallback(async () => {
@@ -11357,393 +11578,23 @@ try {
     return processStatusData(filteredOrders);
   }, [reportsData, orderStatusFilter, orderStatusYear, filterOrdersByDateRange, processStatusData]);
 
-  // Enhanced PDF export function with html2canvas for complete layout capture
-  const exportToPDF = async () => {
-    try {
-      console.log('🚀 Starting enhanced PDF export...');
-      const userClinic = getCurrentUserClinic();
-      const currentDate = new Date().toLocaleDateString();
-      
-      // Show loading indicator
-      const loadingToast = document.createElement('div');
-      loadingToast.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #184d85; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 20px; height: 20px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            <span>Capturing dashboard layout...</span>
-          </div>
-        </div>
-        <style>
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        </style>
-      `;
-      document.body.appendChild(loadingToast);
-
-      // Get the Reports and Analytics container
-      const reportsContainer = document.getElementById('reportsandanalytics');
-      if (!reportsContainer) {
-        throw new Error('Reports and Analytics container not found');
-      }
-
-      // Temporarily adjust styles for better PDF capture and fix color compatibility
-      const originalStyles = new Map();
-      const elementsToAdjust = reportsContainer.querySelectorAll('*');
-      
-      // Function to convert modern CSS colors to html2canvas-compatible formats
-      const convertColor = (colorValue) => {
-        if (!colorValue || typeof colorValue !== 'string') return colorValue;
-        
-        // Convert oklch() to rgb()
-        if (colorValue.includes('oklch')) {
-          return '#ffffff'; // Fallback to white for unsupported colors
-        }
-        
-        // Convert other modern color functions to rgb if needed
-        if (colorValue.includes('color(') || colorValue.includes('lab(') || colorValue.includes('lch(')) {
-          return '#ffffff'; // Fallback to white
-        }
-        
-        return colorValue;
-      };
-      
-      elementsToAdjust.forEach(element => {
-        const computedStyle = window.getComputedStyle(element);
-        const originalStyleData = {
-          background: element.style.background,
-          backgroundColor: element.style.backgroundColor,
-          color: element.style.color,
-          borderColor: element.style.borderColor,
-          boxShadow: element.style.boxShadow,
-          fill: element.style.fill,
-          stroke: element.style.stroke
-        };
-        
-        originalStyles.set(element, originalStyleData);
-        
-        // Fix background colors
-        if (element.classList.contains('bg-gradient-to-b') || 
-            element.classList.contains('shadow-lg') || 
-            element.classList.contains('shadow-md') || 
-            element.classList.contains('shadow-sm')) {
-          element.style.background = 'white';
-          element.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-        }
-        
-        // Convert problematic colors to compatible ones
-        if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
-          element.style.backgroundColor = convertColor(computedStyle.backgroundColor);
-        }
-        if (computedStyle.color && computedStyle.color.includes('oklch')) {
-          element.style.color = convertColor(computedStyle.color);
-        }
-        if (computedStyle.borderColor && computedStyle.borderColor.includes('oklch')) {
-          element.style.borderColor = convertColor(computedStyle.borderColor);
-        }
-      });
-
-      // Force re-render of charts for better PDF quality
-      const chartElements = reportsContainer.querySelectorAll('.recharts-wrapper');
-      chartElements.forEach(chart => {
-        // Trigger a re-render by slightly adjusting the container
-        const parent = chart.parentElement;
-        if (parent) {
-          parent.style.transform = 'scale(1.001)';
-          setTimeout(() => {
-            parent.style.transform = 'scale(1)';
-          }, 100);
-        }
-      });
-
-      // Wait for any chart animations to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      console.log('📸 Capturing dashboard with html2canvas...');
-      
-      // Add a CSS rule to override problematic colors globally
-      const styleOverride = document.createElement('style');
-      styleOverride.id = 'pdf-export-color-override';
-      styleOverride.textContent = `
-        #reportsandanalytics * {
-          color: inherit !important;
-          background-color: inherit !important;
-          border-color: inherit !important;
-        }
-        #reportsandanalytics .bg-gradient-to-b {
-          background: white !important;
-        }
-        #reportsandanalytics .shadow-lg,
-        #reportsandanalytics .shadow-md,
-        #reportsandanalytics .shadow-sm {
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        }
-      `;
-      document.head.appendChild(styleOverride);
-      
-      // Wait for styles to apply
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Capture the Reports and Analytics section with enhanced options for color compatibility
-      const canvas = await html2canvas(reportsContainer, {
-        scale: 2, // Higher quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        imageTimeout: 15000,
-        removeContainer: false,
-        logging: false,
-        width: reportsContainer.scrollWidth,
-        height: reportsContainer.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        ignoreElements: (element) => {
-          // Skip elements that might have problematic colors
-          const style = window.getComputedStyle(element);
-          return style.backgroundColor?.includes('oklch') || 
-                 style.color?.includes('oklch') ||
-                 style.borderColor?.includes('oklch');
-        },
-        onclone: (clonedDoc) => {
-          // Ensure all styles are properly applied in the cloned document
-          const clonedContainer = clonedDoc.getElementById('reportsandanalytics');
-          if (clonedContainer) {
-            // Ensure consistent styling in clone
-            clonedContainer.style.background = 'white';
-            clonedContainer.style.minHeight = 'auto';
-            
-            // Fix any problematic colors in the cloned document
-            const allElements = clonedContainer.querySelectorAll('*');
-            allElements.forEach(el => {
-              const style = window.getComputedStyle(el);
-              
-              // Replace oklch colors with fallbacks
-              if (style.backgroundColor?.includes('oklch')) {
-                el.style.backgroundColor = '#ffffff';
-              }
-              if (style.color?.includes('oklch')) {
-                el.style.color = '#000000';
-              }
-              if (style.borderColor?.includes('oklch')) {
-                el.style.borderColor = '#e5e7eb';
-              }
-              
-              // Ensure chart containers have proper backgrounds
-              if (el.classList.contains('recharts-wrapper')) {
-                el.style.background = 'white';
-              }
-            });
-          }
-        }
-      });
-
-      console.log('✅ Canvas captured successfully');
-
-      // Remove the style override
-      const styleOverrideElement = document.getElementById('pdf-export-color-override');
-      if (styleOverrideElement) {
-        document.head.removeChild(styleOverrideElement);
-      }
-
-      // Restore original styles
-      elementsToAdjust.forEach(element => {
-        const original = originalStyles.get(element);
-        if (original) {
-          element.style.background = original.background || '';
-          element.style.backgroundColor = original.backgroundColor || '';
-          element.style.color = original.color || '';
-          element.style.borderColor = original.borderColor || '';
-          element.style.boxShadow = original.boxShadow || '';
-          element.style.fill = original.fill || '';
-          element.style.stroke = original.stroke || '';
-        }
-      });
-
-      // Create PDF with proper dimensions
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      // Add header
-      pdf.setFillColor(24, 77, 133);
-      pdf.rect(0, 0, 210, 35, 'F');
-      
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`${userClinic} - Reports & Analytics`, 15, 20);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on: ${currentDate}`, 15, 28);
-      
-      // Add a small gap after header
-      const contentStartY = 40;
-      
-      // Calculate how many pages we need
-      const availableHeight = pageHeight - contentStartY - 15; // Leave space for footer
-      let position = 0;
-      let pageNum = 1;
-
-      while (position < imgHeight) {
-        if (pageNum > 1) {
-          pdf.addPage();
-        }
-        
-        // Calculate the height for this page
-        const remainingHeight = imgHeight - position;
-        const heightForThisPage = Math.min(remainingHeight, availableHeight);
-        
-        // Create a temporary canvas for this page section
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        // Set canvas dimensions for this section
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = (heightForThisPage * canvas.width) / imgWidth;
-        
-        // Draw the appropriate section of the original canvas
-        tempCtx.drawImage(
-          canvas,
-          0, (position * canvas.width) / imgWidth, // Source x, y
-          canvas.width, tempCanvas.height, // Source width, height
-          0, 0, // Destination x, y
-          tempCanvas.width, tempCanvas.height // Destination width, height
-        );
-        
-        // Add this section to the PDF
-        const tempImgData = tempCanvas.toDataURL('image/jpeg', 0.85);
-        pdf.addImage(tempImgData, 'JPEG', 0, contentStartY, imgWidth, heightForThisPage);
-        
-        // Add footer
-        pdf.setFontSize(8);
-        pdf.setTextColor(128, 128, 128);
-        pdf.text(`Page ${pageNum}`, 15, pageHeight - 5);
-        pdf.text(`Generated by ${userClinic} - Eye2Wear System`, 180, pageHeight - 5, { align: 'right' });
-        
-        position += heightForThisPage;
-        pageNum++;
-      }
-
-      // Remove loading indicator
-      document.body.removeChild(loadingToast);
-
-      // Save the PDF
-      const fileName = `${userClinic.replace(/\s+/g, '_')}_Reports_Analytics_${currentDate.replace(/\//g, '-')}.pdf`;
-      pdf.save(fileName);
-
-      // Show success message
-      const successToast = document.createElement('div');
-      successToast.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="bx bx-check-circle" style="font-size: 20px;"></i>
-            <span>PDF exported successfully!</span>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(successToast);
-      
-      setTimeout(() => {
-        if (document.body.contains(successToast)) {
-          document.body.removeChild(successToast);
-        }
-      }, 3000);
-
-      console.log('✅ Enhanced PDF export completed successfully');
-      
-    } catch (error) {
-      console.error('❌ Error in enhanced PDF export:', error);
-      
-      // Remove style override if it exists
-      const styleOverrideElement = document.getElementById('pdf-export-color-override');
-      if (styleOverrideElement) {
-        document.head.removeChild(styleOverrideElement);
-      }
-      
-      // Remove loading indicator if it exists
-      const loadingElements = document.querySelectorAll('[style*="Capturing dashboard layout"]');
-      loadingElements.forEach(el => {
-        if (el.parentElement && document.body.contains(el.parentElement)) {
-          document.body.removeChild(el.parentElement);
-        }
-      });
-
-      // Show error message
-      const errorToast = document.createElement('div');
-      errorToast.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #dc2626; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: 'Albert Sans', sans-serif;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="bx bx-error" style="font-size: 20px;"></i>
-            <span>Error exporting PDF. Please try again.</span>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(errorToast);
-      
-      setTimeout(() => {
-        if (document.body.contains(errorToast)) {
-          document.body.removeChild(errorToast);
-        }
-      }, 5000);
+  const filteredTopProducts = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, topProductsFilter, topProductsYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
     }
-  };
+    
+    return processTopProducts(filteredOrders);
+  }, [reportsData, topProductsFilter, topProductsYear, filterOrdersByDateRange, processTopProducts]);
 
-  const exportToExcel = () => {
-    try {
-      const userClinic = getCurrentUserClinic();
-      const currentDate = new Date().toLocaleDateString();
-      
-      // Safely get orders arrays
-      const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
-      const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
-      const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
-      
-      // Create CSV content
-      let csvContent = `${userClinic} - Sales Report\n`;
-      csvContent += `Generated on: ${currentDate}\n`;
-      csvContent += `Report Period: ${reportsFilter.dateRange}\n\n`;
-      
-      csvContent += `Summary\n`;
-      csvContent += `Total Orders,${allOrders.length}\n`;
-      csvContent += `Total Revenue,₱${calculateTotalRevenue().toLocaleString()}\n`;
-      csvContent += `Total Appointments,${Array.isArray(reportsData.appointments) ? reportsData.appointments.length : 0}\n\n`;
-      
-      csvContent += `Order ID,Patient Name,Product,Category,Status,Quantity,Price,Total,Date\n`;
-      
-      allOrders.forEach(order => {
-        const orderId = order.patientorderambherid || order.patientorderbautistaid;
-        const patientName = `${order.patientfirstname} ${order.patientlastname}`;
-        const productName = order.patientorderambherproductname || order.patientorderbautistaproductname;
-        const category = order.patientorderambherproductcategory || order.patientorderbautistaproductcategory;
-        const status = order.patientorderambherstatus || order.patientorderbautistastatus;
-        const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity;
-        const price = order.patientorderambherproductprice || order.patientorderbautistaproductprice;
-        const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal;
-        const date = new Date(order.createdAt).toLocaleDateString();
-        
-        csvContent += `${orderId},"${patientName}","${productName}","${category}","${status}",${quantity},₱${price},₱${total},"${date}"\n`;
-      });
-      
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `${userClinic.replace(/\s+/g, '_')}_Sales_Report_${currentDate.replace(/\//g, '-')}.csv`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      alert('Error exporting to Excel');
-    }
-  };
 
-  const calculateTotalRevenue = () => {
+
+
+
+  const calculateTotalRevenue = useCallback(() => {
     // Safely get orders arrays
     const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
     const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
@@ -11786,9 +11637,9 @@ try {
     }, 0);
     
     return orderRevenue + appointmentRevenue;
-  };
+  }, [reportsData, getCurrentUserClinic]);
 
-  const calculateMetrics = () => {
+  const calculateMetrics = useCallback(() => {
     // Safely get orders arrays
     const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
     const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
@@ -11811,7 +11662,304 @@ try {
       totalAppointments: Array.isArray(reportsData.appointments) ? reportsData.appointments.length : 0,
       completedAppointments: completedAppointments.length
     };
-  };
+  }, [reportsData, calculateTotalRevenue]);
+
+  // PDF Generation Function
+  const generateReportsPDF = useCallback(() => {
+    if (reportsData.loading) {
+      alert('Please wait for data to load before generating PDF');
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+
+      // Helper function to add new page if needed
+      const checkPageSpace = (requiredSpace) => {
+        if (yPosition + requiredSpace > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      // Get clinic information
+      const getClinicInfo = () => {
+        if (isAmbherOnlyUser()) {
+          return { name: "Ambher Optical", logo: null };
+        } else if (isBautistaOnlyUser()) {
+          return { name: "Bautista Eye Center", logo: null };
+        } else {
+          return { name: "Eye2Wear Optical Management System", logo: null };
+        }
+      };
+
+      const clinicInfo = getClinicInfo();
+
+      // Get user information
+      const getUserInfo = () => {
+        const userType = currentuserloggedin;
+        const fullName = `${adminfirstname} ${adminlastname}`.trim() || 'Unknown User';
+        return { userType, fullName };
+      };
+
+      const userInfo = getUserInfo();
+
+      // Header with clinic name and logo
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(clinicInfo.name, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      pdf.setFontSize(16);
+      pdf.text('Reports and Analytics', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // Generation details
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleString();
+      pdf.text(`Generated on: ${formattedDate}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`Generated by: ${userInfo.fullName} (${userInfo.userType})`, 20, yPosition);
+      yPosition += 15;
+
+      // Summary metrics
+      checkPageSpace(40);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Summary Metrics', 20, yPosition);
+      yPosition += 10;
+
+      const metrics = calculateMetrics();
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      
+      const summaryData = [
+        ['Metric', 'Value'],
+        ['Total Orders', metrics.totalOrders.toString()],
+        ['Total Revenue', `PHP ${metrics.totalRevenue.toLocaleString()}`],
+        ['Total Appointments', metrics.totalAppointments.toString()],
+        ['Completed Orders', metrics.completedOrders.toString()]
+      ];
+
+      autoTable(pdf, {
+        startY: yPosition,
+        head: [summaryData[0]],
+        body: summaryData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: [24, 77, 133] },
+        margin: { left: 20, right: 20 }
+      });
+
+      yPosition = pdf.lastAutoTable.finalY + 15;
+
+      // Revenue Chart Data (if available)
+      if (filteredChartsData?.revenueByMonth && filteredChartsData.revenueByMonth.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Revenue by Month', 20, yPosition);
+        yPosition += 10;
+
+        const revenueHeaders = ['Month', 'Revenue (PHP)'];
+        const revenueData = filteredChartsData.revenueByMonth.map(item => [
+          item.month || item.name || 'N/A',
+          `PHP ${(item.revenue || item.value || 0).toLocaleString()}`
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [revenueHeaders],
+          body: revenueData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Appointments Data (if available)
+      if (filteredChartsData?.dailyAppointments && filteredChartsData.dailyAppointments.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Daily Appointments', 20, yPosition);
+        yPosition += 10;
+
+        const appointmentHeaders = ['Date', 'Total Appointments'];
+        const appointmentData = filteredChartsData.dailyAppointments.slice(0, 10).map(item => [
+          item.date || item.name || 'N/A',
+          (item.total || item.value || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [appointmentHeaders],
+          body: appointmentData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Sales by Category Data
+      if (filteredSalesByCategory && filteredSalesByCategory.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Sales by Category', salesCategoryFilter, salesCategoryYear), 20, yPosition);
+        yPosition += 10;
+
+        const categoryHeaders = ['Category', 'Quantity Sold'];
+        const categoryData = filteredSalesByCategory.map(item => [
+          item.category || 'N/A',
+          (item.quantity || item.value || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [categoryHeaders],
+          body: categoryData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Order Status Distribution
+      if (filteredOrderStatusDistribution && filteredOrderStatusDistribution.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Order Status Distribution', orderStatusFilter, orderStatusYear), 20, yPosition);
+        yPosition += 10;
+
+        const statusHeaders = ['Status', 'Count'];
+        const statusData = filteredOrderStatusDistribution.map(item => [
+          item.status || 'N/A',
+          (item.value || item.count || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [statusHeaders],
+          body: statusData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Top Products Data
+      if (filteredTopProducts && filteredTopProducts.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Top Products', topProductsFilter, topProductsYear), 20, yPosition);
+        yPosition += 10;
+
+        const productHeaders = ['Product Name', 'Sales Count'];
+        const productData = filteredTopProducts.slice(0, 10).map(item => [
+          item.product || item.name || item.productName || 'N/A',
+          (item.quantity || item.value || item.sales || item.count || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [productHeaders],
+          body: productData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Recent Orders Table (based on current pagination)
+      if (paginatedRecentOrders?.orders && paginatedRecentOrders.orders.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Recent Orders (Page ${paginatedRecentOrders.currentPage} of ${paginatedRecentOrders.totalPages})`, 20, yPosition);
+        yPosition += 10;
+
+        const orderHeaders = ['Order ID', 'Customer', 'Product', 'Status', 'Total', 'Date'];
+        const orderData = paginatedRecentOrders.orders.map(order => [
+          `#${order.patientorderambherid || order.patientorderbautistaid}`,
+          `${order.patientfirstname} ${order.patientlastname}`,
+          (order.patientorderambherproductname || order.patientorderbautistaproductname || '').substring(0, 20) + '...',
+          order.patientorderambherstatus || order.patientorderbautistastatus || 'N/A',
+          `PHP ${(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}`,
+          new Date(order.createdAt).toLocaleDateString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [orderHeaders],
+          body: orderData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            2: { cellWidth: 30 }, // Product column
+            3: { cellWidth: 20 }, // Status column
+          }
+        });
+      }
+
+      // Save the PDF with simple, reliable method
+      const fileName = `Reports_Analytics_${clinicInfo.name.replace(/\s+/g, '_')}_${currentDate.toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      // Show success toast
+      setPdfToastMessage("PDF report generated successfully!");
+      setPdfToast(true);
+      setPdfIsClicked(true);
+      setPdfToastClosing(false);
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      
+      // Show error toast
+      setPdfToastMessage("Error generating PDF. Please try again.");
+      setPdfToast(true);
+      setPdfIsClicked(false);
+      setPdfToastClosing(false);
+    }
+  }, [
+    reportsData, 
+    calculateMetrics, 
+    filteredChartsData, 
+    filteredSalesByCategory, 
+    filteredOrderStatusDistribution, 
+    filteredTopProducts,
+    paginatedRecentOrders,
+    salesCategoryFilter,
+    orderStatusFilter,
+    topProductsFilter,
+    salesCategoryYear,
+    orderStatusYear,
+    topProductsYear,
+    getResponsiveTitle,
+    isAmbherOnlyUser,
+    isBautistaOnlyUser,
+    currentuserloggedin,
+    adminfirstname,
+    adminlastname
+  ]);
 
   // Chart colors
   const CHART_COLORS = [
@@ -12001,7 +12149,7 @@ const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
   } finally {
     setLoadingSmsMessages(false);
   }
-}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, currentUserClinic]);
+}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, getCurrentUserClinic]);
 
 // SMS Messages Filter Effects
 useEffect(() => {
@@ -21027,6 +21175,23 @@ paginatedAmbherOrders.map((order) => (
 </div>  
 )}
 
+{pdfToast && (
+<div className=" bottom-4 right-8  z-101   transform fixed " >
+    <div key={pdfIsClicked ? 'success' : 'error'}  className={` ${pdfToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s]  motion-ease-spring-smooth' : 'motion-preset-slide-left'}  flex items-center bg-white   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
+      {pdfIsClicked ? (          
+         <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle "></i></span>
+      ) : (
+        <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle "></i></span>
+      )}
+      {pdfToastMessage}
+
+      <div  className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-green-500' : 'bg-red-500'} `}  style={{width: pdfProgressWidth,transition: 'width 4s linear' }}/>
+
+    </div>
+
+</div>  
+)}
+
 
 
 {showpatientorderedambher && (
@@ -22842,19 +23007,19 @@ paginatedBautistaOrders.map((order) => (
        
        {/* Export and Refresh Buttons */}
        <div className="flex space-x-3">
-        {/*
-  <button
-           onClick={exportToPDF}
-           className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-albertsans"
-         >
+ 
+        <div 
+          onClick={generateReportsPDF}
+          className="flex items-center px-4 py-2 bg-red-900 text-white rounded-lg hover:bg-red-800 transition-all duration-200 font-albertsans cursor-pointer"
+        >
            <Download className="w-4 h-4 mr-2" />
            Export PDF
-         </button>
-         */}
+         </div>
+       
          <div
            onClick={refreshReportsData}
            disabled={reportsData.loading}
-           className="flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+           className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
          >
            <RefreshCw className={`w-4 h-4 mr-2 ${reportsData.loading ? 'animate-spin' : ''}`} />
            {reportsData.loading ? 'Refreshing...' : 'Refresh'}
@@ -22942,6 +23107,7 @@ paginatedBautistaOrders.map((order) => (
              isAmbherOnlyUser={isAmbherOnlyUser}
              isBautistaOnlyUser={isBautistaOnlyUser}
              currentuserloggedin={currentuserloggedin}
+             getFilterDisplayText={getFilterDisplayText}
            />
          </div>
 
@@ -22953,6 +23119,7 @@ paginatedBautistaOrders.map((order) => (
              isAmbherOnlyUser={isAmbherOnlyUser}
              isBautistaOnlyUser={isBautistaOnlyUser}
              currentuserloggedin={currentuserloggedin}
+             getFilterDisplayText={getFilterDisplayText}
            />
          </div>
 
@@ -22964,10 +23131,12 @@ paginatedBautistaOrders.map((order) => (
                <div>
                  <div className="flex items-center gap-2">
                    <PieChartIcon className="h-5 w-5 text-[#184d85]" />
-                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">Sales by Category</h3>
+                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">
+                     {getResponsiveTitle('Sales by Category', salesCategoryFilter, salesCategoryYear)}
+                   </h3>
                  </div>
                  <p className="text-sm text-gray-600 font-albertsans">
-                   Product category distribution overview
+                   Product category distribution for {getFilterDisplayText(salesCategoryFilter, salesCategoryYear).toLowerCase()}
                  </p>
                </div>
                <div className="flex items-center gap-2">
@@ -23058,12 +23227,7 @@ paginatedBautistaOrders.map((order) => (
                    <i className="bx bx-pie-chart-alt-2 text-4xl mb-2"></i>
                    <p className="font-albertsans">No sales category data available</p>
                    <p className="text-sm text-gray-400 font-albertsans mt-1">
-                     for {salesCategoryFilter === 'thisWeek' ? 'this week' : 
-                          salesCategoryFilter === 'thisMonth' ? 'this month' :
-                          salesCategoryFilter === 'thisYear' ? 'this year' :
-                          salesCategoryFilter === 'lastMonth' ? 'last month' :
-                          salesCategoryFilter === 'last3Months' ? 'last 3 months' :
-                          salesCategoryFilter === 'lastYear' ? `year ${salesCategoryYear}` : 'selected period'}
+                     for {getFilterDisplayText(salesCategoryFilter, salesCategoryYear).toLowerCase()}
                    </p>
                  </div>
                </div>
@@ -23101,10 +23265,12 @@ paginatedBautistaOrders.map((order) => (
                <div>
                  <div className="flex items-center gap-2">
                    <Target className="h-5 w-5 text-[#184d85]" />
-                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">Order Status Distribution</h3>
+                   <h3 className="text-xl font-bold text-gray-800 font-albertsans">
+                     {getResponsiveTitle('Order Status Distribution', orderStatusFilter, orderStatusYear)}
+                   </h3>
                  </div>
                  <p className="text-sm text-gray-600 font-albertsans">
-                   Order status distribution overview
+                   Order status breakdown for {getFilterDisplayText(orderStatusFilter, orderStatusYear).toLowerCase()}
                  </p>
                </div>
                <div className="flex items-center gap-2">
@@ -23178,12 +23344,7 @@ paginatedBautistaOrders.map((order) => (
                    <i className="bx bx-pie-chart-alt-2 text-4xl mb-2"></i>
                    <p className="font-albertsans">No order status data available</p>
                    <p className="text-sm text-gray-400 font-albertsans mt-1">
-                     for {orderStatusFilter === 'thisWeek' ? 'this week' : 
-                          orderStatusFilter === 'thisMonth' ? 'this month' :
-                          orderStatusFilter === 'thisYear' ? 'this year' :
-                          orderStatusFilter === 'lastMonth' ? 'last month' :
-                          orderStatusFilter === 'last3Months' ? 'last 3 months' :
-                          orderStatusFilter === 'lastYear' ? `year ${orderStatusYear}` : 'selected period'}
+                     for {getFilterDisplayText(orderStatusFilter, orderStatusYear).toLowerCase()}
                    </p>
                  </div>
                </div>
@@ -23217,14 +23378,25 @@ paginatedBautistaOrders.map((order) => (
          </div>
 
          {/* Top Products */}
-         <TopProductsChart data={filteredChartsData?.topProducts} />
+         <TopProductsChart 
+           data={filteredTopProducts} 
+           filter={topProductsFilter}
+           year={topProductsYear}
+           onFilterChange={setTopProductsFilter}
+           onYearChange={setTopProductsYear}
+           getAvailableYears={getAvailableYears}
+           getResponsiveTitle={getResponsiveTitle}
+           getFilterDisplayText={getFilterDisplayText}
+         />
 
          {/* Recent Orders Table */}
          <div className="mt-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
            <div className="flex items-center justify-between mb-4">
              <div className="flex items-center gap-2">
                <BarChart3 className="h-5 w-5 text-[#184d85]" />
-               <h3 className="text-xl font-bold text-gray-800 font-albertsans">Recent Orders</h3>
+               <h3 className="text-xl font-bold text-gray-800 font-albertsans">
+                 Recent Orders {paginatedRecentOrders.totalPages > 1 ? `(Page ${paginatedRecentOrders.currentPage} of ${paginatedRecentOrders.totalPages})` : ''}
+               </h3>
              </div>
              <div className="text-sm text-gray-600 font-albertsans">
                Showing {paginatedRecentOrders.orders.length} of {paginatedRecentOrders.totalOrders} orders
@@ -23795,6 +23967,22 @@ paginatedBautistaOrders.map((order) => (
          {smsToastMessage}
 
          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${smsIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: smsProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
+
+   {/* PDF Export Toast Notification */}
+   {pdfToast && (
+     <div className={`${smsToast ? 'bottom-20' : 'bottom-4'} right-8 z-101 transform fixed`}>
+       <div key={pdfIsClicked ? 'success' : 'error'} className={`${pdfToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {pdfIsClicked ? (          
+           <span className="text-blue-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {pdfToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: pdfProgressWidth, transition: 'width 4s linear'}}/>
        </div>
      </div>  
    )}
