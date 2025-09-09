@@ -3,6 +3,7 @@ import {
   getAllClinicLocations,
   getClinicLocationById,
   getCurrentUserClinicLocation,
+  getClinicLocationsByType,
   upsertClinicLocation,
   findNearbyClinic,
   geocodeAddress,
@@ -15,6 +16,7 @@ const router = express.Router();
 // Public routes
 router.get('/clinics', getAllClinicLocations);
 router.get('/clinics/:clinicId', getClinicLocationById);
+router.get('/clinics/type/:clinicType', getClinicLocationsByType);
 router.get('/nearby', findNearbyClinic);
 router.get('/geocode', geocodeAddress);
 

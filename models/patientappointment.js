@@ -66,6 +66,11 @@ patientambherappointmenteyespecialist: String,
 patientambherappointmentstaffname: String,
 patientambherappointmentdate: String,
 patientambherappointmenttime: String,
+patientambherappointmentlocation: {
+    type: String,
+    ref: 'ClinicLocation'
+},
+patientambherappointmentlocationaddress: String,
 patientambherappointmentcataractscreening: {type: Boolean, default: false},
 patientambherappointmentpediatricassessment: {type: Boolean, default: false},
 patientambherappointmentpediatricoptometrist: {type: Boolean, default: false},
@@ -121,6 +126,11 @@ patientbautistaappointmenteyespecialist: String,
 patientbautistaappointmentstaffname: String,
 patientbautistaappointmentdate: String,
 patientbautistaappointmenttime: String,
+patientbautistaappointmentlocation: {
+    type: String,
+    ref: 'ClinicLocation'
+},
+patientbautistaappointmentlocationaddress: String,
 patientbautistaappointmentcomprehensiveeyeexam: {type: Boolean, default: false},
 patientbautistaappointmentdiabeticretinopathy: {type: Boolean, default: false},
 patientbautistaappointmentglaucoma: {type: Boolean, default: false},

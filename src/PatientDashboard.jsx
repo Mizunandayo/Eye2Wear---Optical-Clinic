@@ -199,7 +199,53 @@ function PatientDashboard(){
     const [showotherpatientambherappointmentotherservice, setshowotherpatientambherappointmentotherservice] = useState(false);
     const [patientambherappointmentotherservicenote, setpatientambherappointmentotherservicenote] = useState("");
 
+    // Clinic location states
+    const [ambherlocations, setambherlocations] = useState([]);
+    const [bautistalocations, setbautistalocations] = useState([]);
+    const [loadinglocations, setloadinglocations] = useState(false);
 
+  // Function to fetch clinic locations by type
+  const fetchcliniclocations = async (clinicType) => {
+    try {
+      setloadinglocations(true);
+      const response = await fetch(`/api/cliniclocation/clinics/type/${encodeURIComponent(clinicType)}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.data;
+      } else {
+        console.error('Failed to fetch clinic locations:', data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching clinic locations:', error);
+      return [];
+    } finally {
+      setloadinglocations(false);
+    }
+  };
+
+  // Helper function to get location address by clinic ID
+  const getLocationAddress = (clinicId, locations) => {
+    if (!clinicId || !locations) return '';
+    const location = locations.find(loc => loc.clinicId === clinicId);
+    return location ? (location.address?.fullAddress || `${location.address?.street}, ${location.address?.city}` || location.clinicName) : '';
+  };
+
+  // Load clinic locations on component mount
+  useEffect(() => {
+    const loadcliniclocations = async () => {
+      const [ambherData, bautistaData] = await Promise.all([
+        fetchcliniclocations('Ambher Optical'),
+        fetchcliniclocations('Bautista Eye Center')
+      ]);
+      
+      setambherlocations(ambherData);
+      setbautistalocations(bautistaData);
+    };
+
+    loadcliniclocations();
+  }, []);
 
   useEffect(() => {
     adjusttextareaheight();
@@ -250,6 +296,8 @@ const patientsubmitappointment = async (formData) => {
       patientambherappointmentstaffname: "Ambher Staff Name",
       patientambherappointmentdate: formData.get('patientambherappointmentdate'),
       patientambherappointmenttime: formData.get('patientambherappointmenttime'),
+      patientambherappointmentlocation: formData.get('patientambherappointmentlocation'),
+      patientambherappointmentlocationaddress: getLocationAddress(formData.get('patientambherappointmentlocation'), ambherlocations),
       patientambherappointmentcataractscreening: formData.has('patientambherappointmentcataractscreening'),
       patientambherappointmentpediatricassessment: formData.has('patientambherappointmentpediatricassessment'),
       patientambherappointmentcolorvisiontesting: formData.has('patientambherappointmentcolorvisiontesting'),
@@ -275,6 +323,8 @@ const patientsubmitappointment = async (formData) => {
       patientbautistaappointmentstaffname: "Bautista Staff Name",
       patientbautistaappointmentdate: formData.get('patientbautistaappointmentdate'),
       patientbautistaappointmenttime: formData.get('patientbautistaappointmenttime'),
+      patientbautistaappointmentlocation: formData.get('patientbautistaappointmentlocation'),
+      patientbautistaappointmentlocationaddress: getLocationAddress(formData.get('patientbautistaappointmentlocation'), bautistalocations),
       patientbautistaappointmentcomprehensiveeyeexam: formData.has('patientbautistaappointmentcomprehensiveeyeexam'),
       patientbautistaappointmentdiabeticretinopathy: formData.has('patientbautistaappointmentdiabeticretinopathy'),
       patientbautistaappointmentglaucoma: formData.has('patientbautistaappointmentglaucoma'),
@@ -439,8 +489,6 @@ const checkclinicscheduledappointments = async (formData) => {
  //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES
  //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES
  //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES //CHECKS IF THERE ARE EMPTY FIELDS IN APPOINTMENTFORM TO AVOID NULL VALUES
-let ambherservicesselected;
-let bautistaservicesselected;
 
 const[patientappointmentformerror, setpatientappointmentformerror] = useState(null);
 const [showpatientappointmentformError, setshowpatientappointmentformError] = useState(false);
@@ -472,32 +520,6 @@ const handlesubmitpatientappointment = async (e) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowdate = tomorrow.toISOString().split('T')[0];
 
-
-
-
-  ambherservicesselected = [
-    'patientambherappointmentcataractscreening',
-    'patientambherappointmentpediatricassessment',
-    'patientambherappointmentcolorvisiontesting',
-    'patientambherappointmentlowvisionaid',
-    'patientambherappointmentrefraction',
-    'patientambherappointmentcontactlensefitting',
-    'patientambherappointmentotherservice',
-    'patientambherappointmentotherservicenote'
-  ].some(service => appointmentformdata.has(service));
-
-  bautistaservicesselected = [
-    'patientbautistaappointmentcomprehensiveeyeexam',
-    'patientbautistaappointmentdiabeticretinopathy',
-    'patientbautistaappointmentglaucoma',
-    'patientbautistaappointmenthypertensiveretinopathy',
-    'patientbautistaappointmentretinolproblem',
-    'patientbautistaappointmentcataractsurgery',
-    'patientbautistaappointmentpterygiumsurgery',
-    'patientbautistaappointmentotherservice',
-    'patientbautistaappointmentotherservicenote'
-  ].some(service => appointmentformdata.has(service));
-
   let errormessage = null;
   
   if(!patientambherappointmentdate && !patientbautistaappointmentdate) {
@@ -506,12 +528,6 @@ const handlesubmitpatientappointment = async (e) => {
   else if((patientambherappointmentdate && !patientambherappointmenttime) || 
           (patientbautistaappointmentdate && !patientbautistaappointmenttime)){
     errormessage = "Please select time for your appointment";
-  }
-  else if((patientambherappointmentdate || patientambherappointmenttime) && !ambherservicesselected){
-    errormessage = "Please select at least one service from Ambher Optical";
-  }
-  else if((patientbautistaappointmentdate || patientbautistaappointmenttime) && !bautistaservicesselected){
-    errormessage = "Please select at least one service from Bautista Eye Center";
   }
   else if(patientambherappointmentdate && patientambherappointmentdate < tomorrowdate) {
     errormessage = "Scheduled appointment date for Ambher Optical must be scheduled for tomorrow or later";
@@ -1337,240 +1353,440 @@ useEffect(() => {
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
-                 { activeappointmenttable === 'bookappointment' && ( <div id="bookappointment" className="animate-fadeInUp flex flex-col items-center   w-max h-[83%] rounded-2xl mt-6" >
-                  <form onSubmit={handlesubmitpatientappointment}>      
-
-                  {patientappointmentformerror && (
-                 <div className=" top-4  -translate-x-1/2  z-100   left-1/2 transform fixed " >
-                  <div  className={` ${patientappointmentformerrorClosing  ? 'motion-opacity-out-0' : 'motion-preset-bounce'}  bg-red-100 flex items-center   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
-                      <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle "></i></span><h1 className="text-red-950">{patientappointmentformerror}</h1>
-                   </div>
-           
-                </div>
-                  )}
-
-
-                  <div className="mt-3  flex justify-center items-start h-fit w-full rounded-3xl "  >
-
-                    <div className="flex flex-col mr-3 bg-[#fdfdfd] h-max w-full rounded-3xl">
-                      <div className="flex p-3">
-                      <img src={ambherlogo} className="w-15"/>  
-                      <h1 className="font-albertsans font-bold text-[20px] text-[#237234] mt-1 ml-3">Ambher Optical</h1>
-                      </div>
-
-                     <div className="flex justify-center items-center">           
-                      <div className="mr-10 flex flex-col h-fit form-group ml-3 mt-4 ">
-                             <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmentdate">Preferred Appointment Date: </label>     
-                             <input className="[&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[70%] h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"  min={getdatetomorrow()} max={getuptothreemonthsappointmentavailability()} type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" required={!!ambherservicesselected}/> </div>
-                     
-                      <div className="ml-10 flex flex-col h-fit form-group mt-4 ">
-                             <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmenttime">Preferred Appointment Time: </label>     
-                             <select  name="patientambherappointmenttime" id="patientambherappointmenttime"  required={!!ambherservicesselected}  className="h-10 w-60 p-2 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px] font-semibold">
-                               <option value="">Select a time</option>
-                               {ambherappointmentschedules.map((time, index) => (<option key={index} value={time}>{time}</option>))}
-                             </select>
-                     </div>
-                     </div>
-
-                     <div className="p-4">
-                     <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentcataractscreening" id="patientambherappointmentcataractscreening" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcataractscreening">Visual/Cataract Screening</label>   
-                        </div>
-
-                     <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentpediatricassessment" id="patientambherappointmentpediatricassessment" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricassessment">Pediatric Assessment</label>   
-                        </div>   
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentpediatricoptometrist" id="patientambherappointmentpediatricoptometrist" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricoptometrist">Pediatric Optometrist</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentcolorvisiontesting" id="patientambherappointmentcolorvisiontesting" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcolorvisiontesting">Color Vision Testing</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentlowvisionaid" id="patientambherappointmentlowvisionaid" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentlowvisionaid">Low Vision Aid</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentrefraction" id="patientambherappointmentrefraction" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentrefraction">Refraction</label>   
-                        </div>      
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientambherappointmentcontactlensefitting" id="patientambherappointmentcontactlensefitting" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcontactlensefitting">Contact Lense Fitting</label>   
-                        </div>  
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={showotherpatientambherappointmentotherservice} onChange={(e) => setshowotherpatientambherappointmentotherservice(e.target.checked)}  type="checkbox" name="patientambherappointmentotherservice" id="patientambherappointmentotherservice" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentotherservice">Other</label>   
-                        </div>  
-     
-
-                      {showotherpatientambherappointmentotherservice && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={patientambherappointmentotherservicenote} onChange={(e) => {setpatientambherappointmentotherservicenote(e.target.value); adjusttextareaheight();}} placeholder="Please specify other Ambher Optical services.."/>
-                          </div>
-                        )}   
-
-
-
-           
-
-
-                     </div>
-
-                    </div>
-
-                    <div className=" ml-3 bg-[#fdfdfd]  h-max w-full rounded-3xl">
-                    <div className="flex p-3">
-                      <img src={bautistalogo} className="w-15"/>  
-                      <h1 className="font-albertsans font-bold text-[20px] text-[#2387c5] mt-1 ml-3">Bautista Eye Center</h1>
-                      </div>
-
-
+                 { activeappointmenttable === 'bookappointment' && ( 
+                  <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-6 py-8">
+                    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                       
-                    <div className="flex flex-col mr-3 bg-[#fdfdfd] h-full w-full rounded-3xl">
+                      {/* Form Header */}
+                      <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i className="bx bx-calendar-plus text-blue-600 text-2xl"></i>
+                          </div>
+                          <div>
+                            <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Book Your Appointment</h1>
+                            <p className="text-gray-600 mt-1">Schedule your consultation with our expert eye care professionals</p>
+                          </div>
+                        </div>
+                      </div>
 
+                      <form onSubmit={handlesubmitpatientappointment} className="p-8">
+                        
+                        {/* Error Message */}
+                        {patientappointmentformerror && (
+                          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+                            <div className={`${patientappointmentformerrorClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border border-red-200 rounded-lg shadow-lg px-6 py-4 flex items-center gap-3`}>
+                              <i className="bx bx-x-circle text-red-500 text-xl"></i>
+                              <span className="text-red-800 font-medium">{patientappointmentformerror}</span>
+                            </div>
+                          </div>
+                        )}
 
-                     <div className="flex justify-center items-center">           
-                      <div className="mr-10 flex flex-col h-fit form-group ml-3 mt-4 ">
-                             <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientbautistaappointmentdate">Preferred Appointment Date: </label>     
-                             <input className="[&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[70%] h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientbautistaappointmentdate" id="patientbautistaappointmentdate" placeholder=""   min={getdatetomorrow()} 
-                               max={getuptothreemonthsappointmentavailability()}
-                               required={!!bautistaservicesselected}
-                               onChange={(e) => {
-                                 if (disablebautistaweekends(e.target.value)) {
-                                   setbautistashownotavailweekendToast(false);
-                                   setbautistashownotavailweekendToastClosing(false);
-                                   setTimeout(() => {
-                                     setbautistashownotavailweekendToast(true);
-                                     e.target.value = "";
-                                   }, 50);
-                                 }
-                               }}/> </div>
+                        {/* Clinic Selection Cards */}
+                        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+                          
+                          {/* Ambher Optical Card */}
+                          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
+                            <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-green-200">
+                              <div className="flex items-center gap-4">
+                                <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
+                                <div>
+                                  <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
+                                  <p className="text-green-600 text-sm">Vision Care & Eye Wellness</p>
+                                </div>
+                              </div>
+                            </div>
 
-          {bautistashownotavailweekendToast && (
-            <div className="top-4  -translate-x-1/2  z-100   left-1/2 transform fixed " >
-                  <div  className={` ${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'}  flex items-center bg-red-100   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
-                      <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle "></i></span><h1 className="text-red-950">Bautista weekend dates are not available</h1>
-                  </div>
-           
-            </div>
-          )}
-                     
-                      <div className="ml-10 flex flex-col h-fit form-group mt-4 ">
-                             <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientbautistaappointmenttime">Preferred Appointment Time: </label>     
-                             <select  name="patientbautistaappointmenttime" id="patientbautistaappointmenttime"  required={!!bautistaservicesselected}  className="h-10 w-60 p-2 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px] font-semibold">
-                               <option value="">Select a time</option>
-                               {bautistaappointmentschedules.map((time, index) => (<option key={index} value={time}>{time}</option>))}
-                             </select>                
-                      </div>  </div>
-                     <div className="p-4">
-                     <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentcomprehensiveeyeexam" id="patientbautistaappointmentcomprehensiveeyeexam" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcomprehensiveeyeexam">Comprehensive Eye Exam</label>   
+                            <div className="p-6 space-y-6">
+                              {/* Date, Time & Location Selection */}
+                              <div className="flex flex-col items-center justify-center gap-4">
+                              <div className="grid md:grid-cols-2 gap-4 w-full">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmentdate">
+                                    Preferred Date
+                                  </label>
+                                  <input 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]"
+                                    min={getdatetomorrow()} 
+                                    max={getuptothreemonthsappointmentavailability()} 
+                                    type="date" 
+                                    name="patientambherappointmentdate" 
+                                    id="patientambherappointmentdate" 
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmenttime">
+                                    Preferred Time
+                                  </label>
+                                  <select 
+                                    name="patientambherappointmenttime" 
+                                    id="patientambherappointmenttime" 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                                  >
+                                    <option value="">Select a time</option>
+                                    {ambherappointmentschedules.map((time, index) => (
+                                      <option key={index} value={time}>{time}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmentlocation">
+                                    Clinic Location
+                                  </label>
+                                  <select 
+                                    name="patientambherappointmentlocation" 
+                                    id="patientambherappointmentlocation" 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                                    disabled={loadinglocations}
+                                  >
+                                    <option value="">
+                                      {loadinglocations ? 'Loading locations...' : 'Select a location'}
+                                    </option>
+                                    {ambherlocations.map((location) => (
+                                      <option key={location.clinicId} value={location.clinicId}>
+                                        {location.clinicName} - {location.address?.city || location.address?.fullAddress}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              {/* Services Description */}
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                  <i className="bx bx-list-check text-green-600"></i>
+                                  Our Services
+                                </h3>
+                                <div className="bg-white rounded-xl p-6 border border-green-200">
+                                  <p className="text-gray-700 leading-relaxed mb-4">
+                                    <span className="font-semibold text-green-700">Ambher Optical</span> specializes in comprehensive vision care and eye wellness services. Our experienced optometrists provide:
+                                  </p>
+                                  
+                                  <div className="space-y-3 text-gray-600">
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Visual & Cataract Screening</span> - Early detection and assessment of cataracts and vision problems
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Pediatric Eye Care</span> - Specialized assessments and optometry services for children
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Color Vision Testing</span> - Comprehensive color blindness and vision deficiency evaluations
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Low Vision Solutions</span> - Assistive devices and rehabilitation for vision impairment
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Refraction Services</span> - Precise measurement for eyeglass and contact lens prescriptions
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Contact Lens Fitting</span> - Professional fitting and consultation for all contact lens types
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-6 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                    <p className="text-sm text-green-800">
+                                      <i className="bx bx-info-circle mr-2"></i>
+                                      <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bautista Eye Center Card */}
+                          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 overflow-hidden">
+                            <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-blue-200">
+                              <div className="flex items-center gap-4">
+                                <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
+                                <div>
+                                  <h2 className="text-xl font-bold text-blue-700 font-albertsans">Bautista Eye Center</h2>
+                                  <p className="text-blue-600 text-sm">Comprehensive Eye Care & Surgery</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                              {/* Date, Time & Location Selection */}
+                              <div className="flex flex-col items-center justify-center gap-4">
+                              <div className="grid md:grid-cols-2 gap-4 w-full">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmentdate">
+                                    Preferred Date
+                                  </label>
+                                  <input 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]"
+                                    type="date" 
+                                    name="patientbautistaappointmentdate" 
+                                    id="patientbautistaappointmentdate" 
+                                    min={getdatetomorrow()} 
+                                    max={getuptothreemonthsappointmentavailability()}
+                                    onChange={(e) => {
+                                      if (disablebautistaweekends(e.target.value)) {
+                                        setbautistashownotavailweekendToast(false);
+                                        setbautistashownotavailweekendToastClosing(false);
+                                        setTimeout(() => {
+                                          setbautistashownotavailweekendToast(true);
+                                          e.target.value = "";
+                                        }, 50);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmenttime">
+                                    Preferred Time
+                                  </label>
+                                  <select 
+                                    name="patientbautistaappointmenttime" 
+                                    id="patientbautistaappointmenttime" 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                  >
+                                    <option value="">Select a time</option>
+                                    {bautistaappointmentschedules.map((time, index) => (
+                                      <option key={index} value={time}>{time}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                        </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmentlocation">
+                                    Clinic Location
+                                  </label>
+                                  <select 
+                                    name="patientbautistaappointmentlocation" 
+                                    id="patientbautistaappointmentlocation" 
+                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                    disabled={loadinglocations}
+                                  >
+                                    <option value="">
+                                      {loadinglocations ? 'Loading locations...' : 'Select a location'}
+                                    </option>
+                                    {bautistalocations.map((location) => (
+                                      <option key={location.clinicId} value={location.clinicId}>
+                                        {location.clinicName} - {location.address?.city || location.address?.fullAddress}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                              </div>
+
+                              {/* Weekend Toast */}
+                              {bautistashownotavailweekendToast && (
+                                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+                                  <div className={`${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border border-red-200 rounded-lg shadow-lg px-6 py-4 flex items-center gap-3`}>
+                                    <i className="bx bx-x-circle text-red-500 text-xl"></i>
+                                    <span className="text-red-800 font-medium">Bautista weekend dates are not available</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Services Description */}
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                  <i className="bx bx-list-check text-blue-600"></i>
+                                  Our Services
+                                </h3>
+                                <div className="bg-white rounded-xl p-6 border border-blue-200">
+                                  <p className="text-gray-700 leading-relaxed mb-4">
+                                    <span className="font-semibold text-blue-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
+                                  </p>
+                                  
+                                  <div className="space-y-3 text-gray-600">
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                    <p className="text-sm text-blue-800">
+                                      <i className="bx bx-info-circle mr-2"></i>
+                                      <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
+                                    </p>
+                                  </div>
+                                  
+                                  <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                    <p className="text-xs text-amber-800 flex items-center gap-2">
+                                      <i className="bx bx-calendar-x text-amber-600"></i>
+                                      <span className="font-medium">Note:</span> Weekend appointments are not available at this location.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                     <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentdiabeticretinopathy" id="patientbautistaappointmentdiabeticretinopathy" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentdiabeticretinopathy">Diabetic Retinopathy</label>   
-                        </div>   
+                        {/* Additional Information Section */}
+                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                          <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                            <i className="bx bx-note text-gray-600"></i>
+                            Additional Information
+                          </h3>
+                          
+                          <div className="grid lg:grid-cols-2 gap-8">
+                            {/* Notes Section */}
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-3" htmlFor="patientadditionalappointmentnotes">
+                                Additional Appointment Notes
+                              </label>
+                              <textarea 
+                                className="w-full p-4 border border-gray-300 rounded-xl text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[120px]" 
+                                ref={textarearef} 
+                                rows={4} 
+                                value={additionaldetails} 
+                                onChange={(e) => {setadditionaldetails(e.target.value); adjusttextareaheight();}} 
+                                placeholder="Please provide any additional details about your appointment, symptoms, or special requirements..."
+                              />
+                            </div>
 
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentglaucoma" id="patientbautistaappointmentglaucoma" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentglaucoma">Glaucoma</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmenthypertensiveretinopathy" id="patientbautistaappointmenthypertensiveretinopathy" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmenthypertensiveretinopathy">Hypertensive Retinopathy</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentretinolproblem" id="patientbautistaappointmentretinolproblem" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentretinolproblem">Retinol Problem</label>   
-                        </div>    
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentcataractsurgery" id="patientbautistaappointmentcataractsurgery" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcataractsurgery">Cataract Surgery</label>   
-                        </div>      
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientbautistaappointmentpterygiumsurgery" id="patientbautistaappointmentpterygiumsurgery" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentpterygiumsurgery">Pterygium Surgery</label>   
-                        </div>  
-
-                      <div className="flex items-center mt-5 ml-7">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={showotherpatientbautistaappointmentotherservice} onChange={(e) => setshowotherpatientbautistaappointmentotherservice(e.target.checked)}  type="checkbox" name="patientbautistaappointmentotherservice" id="patientbautistaappointmentotherservice" />
-                        <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentotherservice">Other</label>   
-                        </div>  
-     
-
-                      {showotherpatientbautistaappointmentotherservice && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={patientbautistaappointmentotherservicenote} onChange={(e) => {setpatientbautistaappointmentotherservicenote(e.target.value); adjusttextareaheight();}} placeholder="Please specify other Bautista Eye Center services..."/>
-                          </div>
-                        )}   
-
-
-
-
-                     </div>
-
-                    </div>
-                    </div>
-
-                  </div>
-
-                <div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-
-                </div>
-
+                            {/* Image Upload Section */}
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                Upload Supporting Documents/Images
+                              </label>
+                              <div className="space-y-4">
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white">
+                                  <img 
+                                    className="w-full h-48 object-cover rounded-lg mb-4" 
+                                    src={appointmentpreviewimage || defaultimageplaceholder}
+                                    alt="Preview"
+                                  />
                                   
-                <div className="mt-3 ml-7 w-max flex flex-col">
-                          <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Additional Appointment Notes</label>  
+                                  <input 
+                                    className="hidden" 
+                                    type="file" 
+                                    onChange={appointmenthandleprofilechange} 
+                                    accept="image/jpeg, image/jpg, image/png" 
+                                    ref={appointmentimageinputref} 
+                                  />
+                                  
+                                  <div className="space-y-3">
+                                    <button 
+                                      type="button"
+                                      onClick={appointmenthandleuploadclick} 
+                                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                    >
+                                      <i className="bx bx-cloud-upload text-lg"></i>
+                                      Upload Document
+                                    </button>
+                                    
+                                    {appointmentselectedimage && (
+                                      <button 
+                                        type="button"
+                                        onClick={appointmenthandleremoveprofile} 
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200 ml-3"
+                                      >
+                                        <i className="bx bx-trash text-lg"></i>
+                                        Remove
+                                      </button>
+                                    )}
+                                  </div>
+                                  
+                                  <p className="text-sm text-gray-500 mt-3">
+                                    Supported formats: JPEG, JPG, PNG (Max 5MB)
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
-                              <textarea className="w-[1280px] text-[20px] rounded-md p-2 border-2 border-[#2d2d44]   text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={additionaldetails} onChange={(e) => {setadditionaldetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify additional appointment notes..."/>
-                          
-                       <div className=" w-fit h-fit mt-5">
-                      <img className=" object-cover max-w-320 rounded-2xl" src={appointmentpreviewimage || defaultimageplaceholder}/>
-                    
-                      <input  className="hidden" type="file" onChange={appointmenthandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={appointmentimageinputref} />
-                      <div onClick={appointmenthandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                            
-                      {appointmentselectedimage && (<div onClick={appointmenthandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-                      </div>
-                  
-                          
-                </div>
-
-
-                          
-
-                <div className="w-full flex justify-end  pl-7 mt-5 mb-5">
-
-              <button type="submit" disabled={issubmitting} className={`submit-btn mt-12 w-full flex items-center justify-center gap-2 ${issubmitting ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out`} style={{ backgroundColor: issubmitting ? "#9ca3af" : "#5e9e3b", fontSize: "20px", padding: "16px 20px", color: "white", borderRadius: "20px" }}>
-                {issubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Submitting Appointment...</span>
-                  </>
-                ) : (
-                  "Submit Appointment"
-                )}
-              </button>
-                </div>
-                </form>
-               </div>   
+                        {/* Submit Section */}
+                        <div className="flex justify-center pt-8">
+                          <button 
+                            type="submit" 
+                            disabled={issubmitting} 
+                            className={`
+                              px-12 py-4 text-lg font-semibold rounded-xl transition-all duration-300 
+                              flex items-center gap-3 min-w-[280px] justify-center
+                              ${issubmitting 
+                                ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                                : 'bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                              }
+                            `}
+                          >
+                            {issubmitting ? (
+                              <>
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                <span>Submitting Appointment...</span>
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-calendar-check text-xl"></i>
+                                <span>Submit Appointment Request</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
                 )}
 
 

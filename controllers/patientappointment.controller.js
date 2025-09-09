@@ -1,4 +1,5 @@
     import PatientAppointment from "../models/patientappointment.js";
+    import ClinicLocation from "../models/cliniclocation.js";
     import process from 'process';
 
 
@@ -11,6 +12,35 @@
     //Create Patient Appointment
     export const createpatientappointment = async (req, res) => {
         try{
+            // Validate clinic locations if provided
+            const { patientambherappointmentlocation, patientbautistaappointmentlocation } = req.body;
+            
+            if (patientambherappointmentlocation) {
+                const ambherLocation = await ClinicLocation.findOne({ 
+                    clinicId: patientambherappointmentlocation, 
+                    clinicType: 'Ambher Optical',
+                    isActive: true 
+                });
+                if (!ambherLocation) {
+                    return res.status(400).json({
+                        message: 'Invalid Ambher Optical clinic location selected'
+                    });
+                }
+            }
+            
+            if (patientbautistaappointmentlocation) {
+                const bautistaLocation = await ClinicLocation.findOne({ 
+                    clinicId: patientbautistaappointmentlocation, 
+                    clinicType: 'Bautista Eye Center',
+                    isActive: true 
+                });
+                if (!bautistaLocation) {
+                    return res.status(400).json({
+                        message: 'Invalid Bautista Eye Center clinic location selected'
+                    });
+                }
+            }
+
             const newpatientappointment = new PatientAppointment(req.body);
             const savedpatientappointment = await newpatientappointment.save();
             res.status(201).json(savedpatientappointment);

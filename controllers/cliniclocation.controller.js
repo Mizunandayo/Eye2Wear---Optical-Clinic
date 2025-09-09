@@ -63,6 +63,37 @@ export const getClinicLocationById = async (req, res) => {
   }
 };
 
+// Get clinic locations by clinic type
+export const getClinicLocationsByType = async (req, res) => {
+  try {
+    const { clinicType } = req.params;
+    
+    // Validate clinic type
+    if (!['Ambher Optical', 'Bautista Eye Center'].includes(clinicType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid clinic type. Must be "Ambher Optical" or "Bautista Eye Center"'
+      });
+    }
+    
+    const locations = await ClinicLocation.find({ 
+      clinicType,
+      isActive: true 
+    }).select('clinicId clinicName address.fullAddress address.street address.city address.state contactInfo.phone');
+    
+    res.status(200).json({
+      success: true,
+      data: locations
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching clinic locations by type',
+      error: error.message
+    });
+  }
+};
+
 // Get current user's clinic location
 export const getCurrentUserClinicLocation = async (req, res) => {
   try {
