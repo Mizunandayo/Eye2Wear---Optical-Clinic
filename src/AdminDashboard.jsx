@@ -9448,6 +9448,203 @@ const formatorderstatusColor = (status) => {
   }
 };
 
+// PDF Export function for billing details
+const exportBillingToPDF = async (orderData) => {
+  try {
+    // Determine if it's Ambher or Bautista order
+    const isAmbher = orderData.patientorderambherid;
+    
+    // Extract order details
+    const orderId = isAmbher ? orderData.patientorderambherid : orderData.patientorderbautistaid;
+    const productName = isAmbher 
+      ? orderData.patientorderambherproductname 
+      : orderData.patientorderbautistaproductname;
+    const productPrice = isAmbher 
+      ? orderData.patientorderambherproductprice 
+      : orderData.patientorderbautistaproductprice;
+    const productQuantity = isAmbher 
+      ? orderData.patientorderambherproductquantity 
+      : orderData.patientorderbautistaproductquantity;
+    const amountPaid = isAmbher 
+      ? orderData.patientorderambheramountpaid 
+      : orderData.patientorderbautistaamountpaid;
+    const productTotal = isAmbher 
+      ? orderData.patientorderambherproducttotal 
+      : orderData.patientorderbautistaproducttotal;
+    const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
+    const clinicAddress = isAmbher
+      ? orderData.patientorderambherproductchosenpickupplace
+      : orderData.patientorderbautistaproductchosenpickupplace;
+    const customerName = `${orderData.patientfirstname} ${orderData.patientlastname}`;
+    const customerEmail = orderData.patientemail;
+    const orderDate = formatorderDates(orderData.createdAt);
+    const orderNotes = isAmbher 
+      ? orderData.patientorderambherproductnotes 
+      : orderData.patientorderbautistaproductnotes;
+
+    // Create new PDF document
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Set font
+    pdf.setFont('helvetica');
+    
+    // Header Section
+    pdf.setFontSize(20);
+    pdf.setTextColor(24, 77, 133); // #184d85
+    pdf.text('OFFICIAL RECEIPT', pageWidth / 2, 25, { align: 'center' });
+    
+    // Clinic Information
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(clinic, pageWidth / 2, 40, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text(clinicAddress, pageWidth / 2, 48, { align: 'center' });
+    
+    // TIN Number (You should replace this with actual TIN)
+    const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
+    pdf.text(tinNumber, pageWidth / 2, 55, { align: 'center' });
+    
+    // Horizontal line
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 65, pageWidth - 20, 65);
+    
+    // Receipt Details
+    pdf.setFontSize(12);
+    const leftCol = 25;
+    const rightCol = 120;
+    let yPos = 80;
+    
+    // Receipt Information
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(`Receipt No: #${orderId}`, leftCol, yPos);
+    pdf.text(`Date: ${orderDate}`, rightCol, yPos);
+    yPos += 10;
+    
+    // Customer Information
+    pdf.text('BILL TO:', leftCol, yPos);
+    yPos += 8;
+    pdf.text(`${customerName}`, leftCol, yPos);
+    yPos += 6;
+    pdf.text(`${customerEmail}`, leftCol, yPos);
+    yPos += 15;
+    
+    // Table Header
+    pdf.setFillColor(24, 77, 133); // #184d85
+    pdf.setTextColor(255, 255, 255);
+    pdf.rect(20, yPos, pageWidth - 40, 10, 'F');
+    
+    pdf.setFontSize(10);
+    pdf.text('DESCRIPTION', 25, yPos + 7);
+    pdf.text('QTY', 120, yPos + 7);
+    pdf.text('UNIT PRICE', 140, yPos + 7);
+    pdf.text('AMOUNT', 170, yPos + 7);
+    
+    yPos += 15;
+    
+    // Product Details
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(10);
+    
+    // Product name (split if too long)
+    const productNameLines = pdf.splitTextToSize(productName, 90);
+    pdf.text(productNameLines, 25, yPos);
+    
+    // Calculate the height needed for product name
+    const lineHeight = 5;
+    const productNameHeight = productNameLines.length * lineHeight;
+    
+    pdf.text(`${productQuantity}`, 120, yPos);
+    pdf.text(`PHP ${Number(productPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 140, yPos);
+    pdf.text(`PHP ${(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    
+    yPos += Math.max(productNameHeight, 8) + 5;
+    
+    // Order notes if available
+    if (orderNotes && orderNotes.trim()) {
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Notes:', 25, yPos);
+      yPos += 5;
+      const notesLines = pdf.splitTextToSize(orderNotes, 160);
+      pdf.text(notesLines, 25, yPos);
+      yPos += notesLines.length * 4 + 5;
+    }
+    
+    // Horizontal line before totals
+    pdf.setLineWidth(0.3);
+    pdf.line(20, yPos, pageWidth - 20, yPos);
+    yPos += 10;
+    
+    // Totals Section
+    pdf.setFontSize(11);
+    pdf.setTextColor(0, 0, 0);
+    
+    const subtotal = Number(productPrice) * Number(productQuantity);
+    
+    pdf.text('Subtotal:', 140, yPos);
+    pdf.text(`PHP ${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    yPos += 8;
+    
+    // Amount Paid
+    pdf.text('Amount Paid:', 140, yPos);
+    pdf.text(`PHP ${Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    yPos += 8;
+    
+    // Remaining Balance (if any)
+    const remainingBalance = Number(productTotal) - Number(amountPaid);
+    if (remainingBalance > 0) {
+      pdf.setTextColor(196, 54, 54); // Red color for balance
+      pdf.text('Remaining Balance:', 140, yPos);
+      pdf.text(`PHP ${remainingBalance.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      yPos += 8;
+    }
+    
+    // Total line
+    pdf.setLineWidth(0.5);
+    pdf.line(135, yPos, pageWidth - 20, yPos);
+    yPos += 8;
+    
+    // Total Amount
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('TOTAL:', 140, yPos);
+    pdf.text(`PHP ${Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    
+    yPos += 25;
+    
+    // Payment Status
+    pdf.setFontSize(10);
+    if (remainingBalance <= 0) {
+      pdf.setTextColor(35, 165, 74); // Green
+      pdf.text('✓ FULLY PAID', pageWidth / 2, yPos, { align: 'center' });
+    } else {
+      pdf.setTextColor(196, 54, 54); // Red
+      pdf.text('⚠ PARTIAL PAYMENT', pageWidth / 2, yPos, { align: 'center' });
+    }
+    
+    yPos += 20;
+    
+    // Footer
+    pdf.setFontSize(9);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Thank you for your business!', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+    pdf.text('This is an official receipt generated by Eye2Wear Optical System', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+    pdf.text(`Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}`, pageWidth / 2, yPos, { align: 'center' });
+    
+    // Save the PDF
+    const fileName = `Receipt_${clinic.replace(' ', '_')}_Order_${orderId}_${customerName.replace(' ', '_')}.pdf`;
+    pdf.save(fileName);
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+  }
+};
+
 // View Order Modal handlers
 const handleViewOrder = (order) => {
   setSelectedOrderForView(order);
@@ -22695,18 +22892,35 @@ paginatedBautistaOrders.map((order) => (
 
             {/* View Order Details Modal */}
 {showViewOrderModal && selectedOrderForView && (
-  <div className="fixed inset-0 bg-[#000000b1] flex items-center justify-center z-20 p-4">
+  <div className="fixed inset-0 bg-[#000000b1] flex items-center justify-center z-99999 p-4">
     <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
       <div className="sticky z-99 top-0 bg-white border-b px-8 py-6 flex justify-between items-center rounded-t-2xl">
         <div className="flex justify-center items-center">
           <img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all p-1" />
           <h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Billing Details</h1>
         </div>
-        <div 
-          onClick={closeViewOrderModal}
-          className="cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"
-        >
-          ×
+        <div className="flex items-center justify-center gap-7">
+          {(() => {
+            const orderStatus = selectedOrderForView.patientorderambherid 
+              ? selectedOrderForView.patientorderambherstatus 
+              : selectedOrderForView.patientorderbautistastatus;
+            
+            return orderStatus === 'Completed' && (
+              <div
+                onClick={() => exportBillingToPDF(selectedOrderForView)}
+                className="cursor-pointer bg-[#184d85] hover:bg-[#0f3a6b] text-white px-5 py-3 rounded-lg font-medium font-albertsans transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <i className="bx bx-download text-lg"></i>
+                Export PDF
+              </div>
+            );
+          })()}
+          <div 
+            onClick={closeViewOrderModal}
+            className="cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"
+          >
+            ×
+          </div>
         </div>
       </div>
       

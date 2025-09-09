@@ -1278,7 +1278,7 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="motion-preset-slide-up bg-cover bg-center min-h-[100vh]  w-[99vw] flex justify-center align-center" >
+    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh]  w-[99vw] flex justify-center align-center" >
     <div className="bg-cover bg-center h-full w-full flex items-center justify-center " >
 
       <div className="w-full h-full flex justify-start items-start pt-3 ">

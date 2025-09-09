@@ -1440,7 +1440,7 @@ const handleFullscreenChange = () => {
 
 
 
-      <section className=" pt-50 flex flex-col items-center justify-start bg-white min-h-screen h-auto w-[99.5%]">
+      <section className="pb-50 pt-50 flex flex-col items-center justify-start bg-white min-h-screen h-auto w-[99.5%]">
         <div id="mappingintegration" className="flex flex-col px-10 sm:px-15 pb-3 pt-4 transition-all duration-300 ease-in-out  bg-white   w-[100%] min-h-full h-auto rounded-2xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div className="flex items-center">

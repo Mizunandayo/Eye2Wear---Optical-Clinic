@@ -7,7 +7,7 @@ import bautistalogo from "../src/assets/images/bautistalogo.png";
 
 function Footer() {
   return (
-    <section id="section3" className=" mt-50 relative bg-[#0D0D0D] text-white overflow-hidden min-h-screen h-auto w-[99vw]">
+    <section id="section3" className=" relative bg-[#0D0D0D] text-white overflow-hidden min-h-screen h-auto w-[99vw]">
         {/* Gradient Overlays */}
         <div className="-translate-x-1/3 -translate-y-1/3 absolute top-0 left-0 w-90 h-90 bg-blue-500/10 blur-3xl rounded-full "></div>
         <div className="bg-green-500/10 blur-3xl rounded-full translate-x-1/3 translate-y-1/3 absolute bottom-0 right-0 w-90 h-90 "></div>
