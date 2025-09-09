@@ -1927,6 +1927,158 @@ ${clinicName}`;
     }
   }
 
+  // Send restock notification SMS for wishlist items (called programmatically)
+  static async sendRestockNotification(phoneNumber, customerName, product, clinicType) {
+    try {
+      console.log(`📱 Sending restock notification to ${customerName} (${phoneNumber})`);
+      
+      const clinicName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+
+      // Create enhanced SMS message for restock notification
+      const message = ` Great News! Your Wishlist Item is Back in Stock!
+
+Hello ${customerName.split(' ')[0]},
+
+The product you wishlisted is now available:
+
+  Product: ${product.ambherinventoryproductname || product.bautistainventoryproductname}
+  Brand: ${product.ambherinventoryproductbrand || product.bautistainventoryproductbrand}
+  Price: ₱${(product.ambherinventoryproductprice || product.bautistainventoryproductprice).toLocaleString()}
+  Available at: ${clinicName}
+
+Don't miss out - visit us or order online before it's gone again!
+
+Thank you,
+${clinicName}`;
+
+      // Send SMS via iProg using bulk endpoint for consistency
+      const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+
+      // Enhanced credits tracking for restock notification SMS
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`💳 Checking credits before sending restock notification SMS (attempt ${attempt})...`);
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
+      const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhoneNumber], message);
+
+      // Enhanced credits check after sending with multiple attempts
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification for restock notification...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= 5) { // Max 5 credits for single SMS
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT for Restock Notification SMS:`);
+          console.log(`   📊 Recipients: 1`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${actualCreditsDeducted}`);
+        }
+      }
+      
+      // Extract single result from bulk response
+      const smsResult = {
+        success: bulkSmsResult.success,
+        messageId: bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : null,
+        error: bulkSmsResult.error,
+        provider: 'iProg-Bulk'
+      };
+
+      // Create SMS record - use original contact number to maintain consistency with patient data
+      const smsRecord = new SmsMessage({
+        recipients: customerName,
+        recipientPhones: [phoneNumber], // Use original contact number with "+" prefix
+        senderClinic: clinicName,
+        senderUserId: getValidSenderUserId('system-restock'),
+        senderUserName: 'Restock Notification System',
+        type: 'Wishlist',
+        message: message,
+        status: smsResult.success ? 'Sent' : 'Failed',
+        iprogMessageId: smsResult.messageId,
+        smsProvider: 'iProg',
+        smsCreditsDeducted: actualCreditsDeducted, // Enhanced credits tracking
+        smsCreditsBalance: creditsAfterSending, // Enhanced credits tracking
+        errorMessage: smsResult.success ? null : smsResult.error,
+        sentAt: smsResult.success ? new Date() : null
+      });
+
+      await smsRecord.save();
+
+      const result = {
+        success: smsResult.success,
+        messageId: smsRecord.messageId,
+        iprogMessageId: smsResult.messageId,
+        recipientName: customerName,
+        recipientPhone: phoneNumber,
+        productName: product.ambherinventoryproductname || product.bautistainventoryproductname,
+        message: smsResult.success 
+          ? 'Restock notification sent successfully via iProg'
+          : `Failed to send restock notification: ${smsResult.error}`
+      };
+
+      console.log(`📱 Restock SMS result:`, result);
+      return result;
+
+    } catch (error) {
+      console.error('Error sending restock notification:', error);
+      throw error;
+    }
+  }
+
   // Check SMS delivery status
   static async checkSmsStatus(req, res) {
     try {
