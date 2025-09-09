@@ -30,6 +30,9 @@ smsrouter.get('/test-order-sms', SmsController.testOrderSms);
 // POST /api/sms/test-real-order - Test real order SMS functionality
 smsrouter.post('/test-real-order', SmsController.testRealOrderSms);
 
+// POST /api/sms/pickup-notification - Send pickup date notification SMS
+smsrouter.post('/pickup-notification', SmsController.sendPickupNotification);
+
 // GET /api/sms/diagnose-phone-issue - Diagnose phone number issues
 smsrouter.get('/diagnose-phone-issue', SmsController.diagnosePhoneIssue);
 

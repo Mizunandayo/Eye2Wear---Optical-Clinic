@@ -2249,6 +2249,26 @@ function AdminDashboard(){
     }
   }, [pdfToast]);
 
+  // SMS Toast handling - Auto-hide after showing
+  useEffect(() => {
+    if (smsToast) {
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+          setSmsIsClicked(false);
+        }, 3000);
+      }, 4000);
+    }
+  }, [smsToast]);
+
 
 
 
@@ -9558,10 +9578,117 @@ const updatePickupDate = useCallback(async (pickupDate) => {
   }
 }, [selectedOrderForView, currentusertoken, apiUrl, checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus, refreshOrdersWithStatusCheck]);
 
+// Function to send SMS notification for pickup date changes
+const sendPickupDateSMS = useCallback(async (orderDetails, newPickupDate, isUpdate = false) => {
+  try {
+    if (!orderDetails || !newPickupDate) {
+      console.warn('⚠️ Missing order details or pickup date for SMS notification');
+      return;
+    }
+
+    const isAmbher = orderDetails.patientorderambherid;
+    const orderId = isAmbher ? orderDetails.patientorderambherid : orderDetails.patientorderbautistaid;
+    const customerPhone = orderDetails.patientcontactnumber;
+    const customerFirstName = orderDetails.patientfirstname;
+    const customerLastName = orderDetails.patientlastname;
+
+    if (!customerPhone) {
+      console.warn('⚠️ No customer phone number available for SMS notification');
+      return;
+    }
+
+    console.log(`📱 Sending pickup date ${isUpdate ? 'update' : 'schedule'} SMS for order ${orderId}...`);
+
+    // Prepare SMS data
+    const smsData = {
+      orderId: orderId,
+      orderType: isAmbher ? 'ambher' : 'bautista',
+      patientName: `${customerFirstName} ${customerLastName}`,
+      patientPhone: customerPhone,
+      pickupDate: newPickupDate,
+      productName: isAmbher ? orderDetails.patientorderambherproductname : orderDetails.patientorderbautistaproductname,
+      clinicName: isAmbher ? 'Ambher Optical' : 'Bautista Eye Center',
+      isScheduling: !isUpdate
+    };
+
+    const smsResponse = await fetch(`${apiUrl}/api/sms/pickup-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(smsData)
+    });
+
+    console.log('📡 Pickup SMS Response status:', smsResponse.status);
+    const smsResponseData = await smsResponse.json();
+    console.log('📡 Pickup SMS Response data:', smsResponseData);
+
+    if (smsResponse.ok && smsResponseData.success) {
+      console.log(`✅ Pickup date ${isUpdate ? 'update' : 'schedule'} SMS sent successfully`);
+      
+      // Show success toast notification
+      const actionText = isUpdate ? 'updated' : 'scheduled';
+      setSmsToastMessage(`✅ Pickup date ${actionText} SMS sent to ${customerFirstName} ${customerLastName} (${customerPhone})`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Green for success
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+    } else {
+      console.warn(`⚠️ Pickup date ${isUpdate ? 'update' : 'schedule'} SMS failed:`, smsResponseData);
+      
+      // Show error toast notification
+      const actionText = isUpdate ? 'update' : 'schedule';
+      setSmsToastMessage(`❌ Failed to send pickup date ${actionText} SMS to ${customerFirstName} ${customerLastName}`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(false); // Red for error
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+    }
+  } catch (error) {
+    console.error('❌ Error sending pickup date SMS:', error);
+    
+    // Show error toast notification
+    const actionText = isUpdate ? 'update' : 'schedule';
+    setSmsToastMessage(`❌ Error sending pickup date ${actionText} SMS: ${error.message}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for error
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+  }
+}, [currentusertoken, apiUrl, setSmsToastMessage, setSmsToast, setSmsToastClosing, setSmsIsClicked, setSmsProgressWidth]);
+
 const handlePickupDateChange = (e) => {
   const selectedDate = e.target.value;
+  const previousPickupDate = selectedOrderForView?.patientorderambherproductchosenpickupdate || 
+                            selectedOrderForView?.patientorderbautistaproductchosenpickupdate;
+  
   setSelectedPickupDate(selectedDate);
   updatePickupDate(selectedDate);
+  
+  // Send SMS notification for pickup date change
+  if (selectedDate && selectedOrderForView) {
+    // Determine if this is an update (there was a previous date) or initial scheduling
+    const isUpdate = previousPickupDate && 
+                     previousPickupDate !== 'Later' && 
+                     previousPickupDate !== 'Now' && 
+                     previousPickupDate !== selectedDate;
+    
+    // Send SMS notification after a short delay to ensure the order is updated
+    setTimeout(() => {
+      sendPickupDateSMS(selectedOrderForView, selectedDate, isUpdate);
+    }, 1000);
+  }
 };
 
 // SMS functionality integrated directly into markOrderAsComplete function

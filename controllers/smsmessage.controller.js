@@ -1944,6 +1944,134 @@ Thank you!`;
       });
     }
   }
+
+  // Send pickup date notification SMS
+  static async sendPickupNotification(req, res) {
+    try {
+      const { 
+        orderId, 
+        orderType, 
+        patientName, 
+        patientPhone, 
+        pickupDate, 
+        productName, 
+        clinicName,
+        isScheduling = false 
+      } = req.body;
+
+      // Validate required fields
+      if (!orderId || !orderType || !patientName || !patientPhone || !pickupDate) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: orderId, orderType, patientName, patientPhone, pickupDate'
+        });
+      }
+
+      // Format phone number
+      const formattedPhone = formatPhoneNumber(patientPhone);
+      if (!formattedPhone || formattedPhone.length < 10) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid phone number format',
+          patientPhone
+        });
+      }
+
+      // Determine the clinic name if not provided
+      const clinic = clinicName || (orderType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center');
+
+      // Format the pickup date
+      let formattedPickupDate = pickupDate;
+      try {
+        const date = new Date(pickupDate);
+        if (!isNaN(date.getTime())) {
+          formattedPickupDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        }
+      } catch (dateError) {
+        console.warn('Date formatting failed, using original:', pickupDate, dateError.message);
+      }
+
+      // Create the SMS message
+      const actionText = isScheduling ? 'scheduled' : 'updated';
+      const message = `Pickup Date ${isScheduling ? 'Scheduled' : 'Updated'}
+
+Hello ${patientName},
+
+Your pickup date has been ${actionText}:
+
+Order #${orderId}
+${productName ? `Product: ${productName}` : ''}
+Pickup Date: ${formattedPickupDate}
+Location: ${clinic}
+
+Please bring a valid ID when picking up your order.
+
+Thank you,
+${clinic}`;
+
+      console.log(`📱 Sending pickup notification SMS to: ${formattedPhone}`);
+      console.log(`📋 Order: ${orderId} (${orderType})`);
+      console.log(`📅 Pickup date: ${formattedPickupDate}`);
+
+      // Send SMS via iProg using bulk endpoint for consistency
+      const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhone], message);
+
+      // Create SMS record
+      const validSenderUserId = getValidSenderUserId('system');
+      const smsRecord = new SmsMessage({
+        recipients: patientName,
+        recipientPhones: [formattedPhone],
+        senderClinic: clinic,
+        senderUserId: validSenderUserId,
+        senderUserName: 'Pickup Notification System',
+        type: 'Order Status',
+        message: message,
+        status: bulkSmsResult.success ? 'Sent' : 'Failed',
+        iprogMessageId: bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : null,
+        smsProvider: 'iProg',
+        errorMessage: bulkSmsResult.success ? null : bulkSmsResult.error,
+        sentAt: bulkSmsResult.success ? new Date() : null
+      });
+
+      await smsRecord.save();
+
+      if (bulkSmsResult.success) {
+        console.log(`✅ Pickup notification SMS sent successfully: ${smsRecord.messageId}`);
+        
+        res.status(200).json({
+          success: true,
+          messageId: smsRecord.messageId,
+          iprogMessageId: smsRecord.iprogMessageId,
+          recipientName: patientName,
+          recipientPhone: formattedPhone,
+          message: `Pickup notification SMS sent successfully to ${patientName}`
+        });
+      } else {
+        console.error(`❌ Failed to send pickup notification SMS:`, bulkSmsResult.error);
+        
+        res.status(500).json({
+          success: false,
+          error: bulkSmsResult.error,
+          messageId: smsRecord.messageId,
+          recipientName: patientName,
+          message: `Failed to send pickup notification SMS to ${patientName}`
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Error in sendPickupNotification:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        details: error.message
+      });
+    }
+  }
 }
 
 export default SmsController;
