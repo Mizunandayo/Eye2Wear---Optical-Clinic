@@ -287,6 +287,57 @@ class iPragSMS {
   }
 
   /**
+   * Check SMS credits balance using iProg API
+   * @returns {Promise<Object>} SMS credits balance result
+   */
+  async checkSmsCredits() {
+    try {
+      if (!this.apiToken) {
+        throw new Error('iProg API token not configured');
+      }
+
+      console.log('💳 Checking SMS credits balance...');
+
+      // Check SMS credits using GET endpoint with query parameters
+      const response = await axios.get(`${this.baseUrl}/account/sms_credits`, {
+        params: {
+          api_token: this.apiToken
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      console.log('📡 iProg Credits Response:', response.data);
+
+      if (response.data.status === 'success') {
+        const creditsBalance = response.data.data.load_balance;
+        console.log(`✅ SMS credits retrieved: ${creditsBalance} credits remaining`);
+        
+        return {
+          success: true,
+          balance: creditsBalance,
+          message: response.data.message,
+          provider: 'iProg'
+        };
+      } else {
+        throw new Error(`iProg API returned status ${response.data.status}: ${response.data.message}`);
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to check SMS credits:', error.message);
+      
+      return {
+        success: false,
+        error: error.message,
+        provider: 'iProg',
+        balance: null
+      };
+    }
+  }
+
+  /**
    * Get SMS provider status and configuration
    * @returns {Object} Provider status information
    */
@@ -298,13 +349,15 @@ class iPragSMS {
       endpoints: {
         singleSMS: `${this.baseUrl}/sms_messages`,
         bulkSMS: `${this.baseUrl}/sms_messages/send_bulk`,
-        statusCheck: `${this.baseUrl}/sms_messages/status`
+        statusCheck: `${this.baseUrl}/sms_messages/status`,
+        creditsCheck: `${this.baseUrl}/account/sms_credits`
       },
       features: [
         'Philippines SMS delivery',
         'Single SMS sending for order status updates',
         'Bulk SMS sending for promotional messages',
         'SMS delivery status checking',
+        'SMS credits balance checking',
         'Multiple SMS providers (0 or 1)',
         'Queue-based message processing',
         'Message tracking with unique IDs'

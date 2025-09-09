@@ -24,6 +24,9 @@ smsrouter.get('/stats', SmsController.getSmsStats);
 // GET /api/sms/test - Test SMS configuration
 smsrouter.get('/test', SmsController.testSmsConfiguration);
 
+// GET /api/sms/credits - Check SMS credits balance
+smsrouter.get('/credits', SmsController.checkSmsCredits);
+
 // GET /api/sms/test-order-sms - Test order SMS functionality  
 smsrouter.get('/test-order-sms', SmsController.testOrderSms);
 

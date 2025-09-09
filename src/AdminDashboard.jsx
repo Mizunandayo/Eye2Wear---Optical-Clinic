@@ -513,7 +513,7 @@ const SmsRowSkeleton = () => (
       <div className="h-6 bg-gray-300 rounded-full w-16 mx-auto"></div>
     </td>
     <td className="py-3 px-6 text-center">
-      <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
+      <div className="h-4 bg-gray-300 rounded w-12 mx-auto"></div>
     </td>
     <td className="py-3 px-6 text-center">
       <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
@@ -1846,6 +1846,7 @@ function AdminDashboard(){
   const [smsToastClosing, setSmsToastClosing] = useState(false);
   const [smsProgressWidth, setSmsProgressWidth] = useState('0%');
   const [smsIsClicked, setSmsIsClicked] = useState(false);
+  const [smsToastType, setSmsToastType] = useState('success'); // 'success', 'error', 'warning'
 
   // PDF Export Toast States
   const [pdfToast, setPdfToast] = useState(false);
@@ -12168,6 +12169,12 @@ const [promotionalSmsSubject, setPromotionalSmsSubject] = useState('');
 const [promotionalSmsMessage, setPromotionalSmsMessage] = useState('');
 const [sendingSms, setSendingSms] = useState(false);
 
+// SMS Credits State Variables
+const [smsCredits, setSmsCredits] = useState(null);
+const [loadingSmsCredits, setLoadingSmsCredits] = useState(false);
+const [smsCreditsError, setSmsCreditsError] = useState(null);
+const [lastCreditsUpdate, setLastCreditsUpdate] = useState(null);
+
 // SMS Search functionality
 const searchSmsDebounce = (functions, delay) => {
   let debounceTimer;
@@ -12296,12 +12303,49 @@ useEffect(() => {
   }
 }, [smsMessages.length]);
 
+// Fetch SMS Credits function
+const fetchSmsCredits = useCallback(async (forceRefresh = false) => {
+  setLoadingSmsCredits(true);
+  setSmsCreditsError(null);
+  
+  try {
+    console.log('💳 Fetching SMS credits...');
+    
+    const response = await fetch(`${apiUrl}/api/sms/credits`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch SMS credits');
+    const data = await response.json();
+    
+    if (data.success) {
+      setSmsCredits(data.balance);
+      setLastCreditsUpdate(new Date());
+      console.log(`✅ SMS credits fetched: ${data.balance} credits remaining`);
+    } else {
+      throw new Error(data.error || 'Failed to get SMS credits');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error fetching SMS credits:', error);
+    setSmsCreditsError(error.message);
+    setSmsCredits(null);
+  } finally {
+    setLoadingSmsCredits(false);
+  }
+}, [currentusertoken, apiUrl]);
+
 // Initialize SMS data when component mounts
 useEffect(() => {
   if (activedashboard === 'smsmonitoring') {
     fetchSmsMessagesData();
+    fetchSmsCredits(); // Also fetch credits when entering SMS monitoring
   }
-}, [activedashboard, fetchSmsMessagesData]);
+}, [activedashboard, fetchSmsMessagesData, fetchSmsCredits]);
 
 // Listen for real-time SMS updates
 useEffect(() => {
@@ -12348,6 +12392,7 @@ const handleSmsPageChange = (page) => {
 const sendPromotionalSms = async () => {
   if (!promotionalSmsSubject.trim() || !promotionalSmsMessage.trim()) {
     setSmsIsClicked(false);
+    setSmsToastType('error');
     setSmsToastMessage('Please fill in both subject and message fields');
     setSmsToast(true);
     setSmsToastClosing(false);
@@ -12418,14 +12463,92 @@ const sendPromotionalSms = async () => {
     });
 
     const result = await response.json();
+    console.log('🐛 SMS Response Debug:', {
+      httpStatus: response.status,
+      responseOk: response.ok,
+      result: result,
+      hasSuccess: 'success' in result,
+      successValue: result.success,
+      successCount: result.successCount,
+      failCount: result.failCount,
+      error: result.error
+    });
 
     if (!response.ok) {
       throw new Error(result.error || 'Failed to send SMS');
     }
 
-    // Show success message
-    setSmsIsClicked(true);
-    setSmsToastMessage(`SMS sent successfully to ${result.successCount} recipients${result.failCount > 0 ? ` (${result.failCount} failed)` : ''}`);
+    // Check if the response indicates success but with detailed results
+    const isSuccess = result.success && result.successCount > 0;
+    const isPartialSuccess = result.success && result.successCount > 0 && result.failCount > 0;
+    const isFailure = !result.success || result.successCount === 0;
+
+    // Special handling for insufficient credits or when all messages failed
+    if (result.error && (result.error.toLowerCase().includes('insufficient') || 
+        result.error.toLowerCase().includes('credit')) ||
+        (result.success && result.successCount === 0 && result.failCount > 0) ||
+        (!result.success && result.successCount === 0)) {
+      setSmsIsClicked(false);
+      setSmsToastType('error');
+      
+      // More specific error message based on the failure type
+      let errorMessage = 'Failed to send SMS.';
+      if (result.error && result.error.toLowerCase().includes('insufficient')) {
+        errorMessage = 'Insufficient SMS credits. Please top up your account to send messages.';
+      } else if (result.error && result.error.toLowerCase().includes('credit')) {
+        errorMessage = 'SMS credit issue detected. Please check your account balance.';
+      } else if (result.failCount > 0) {
+        errorMessage = `Failed to send SMS to all ${result.failCount} recipients. Please check your SMS credits.`;
+      } else if (result.error) {
+        errorMessage = result.error;
+      }
+      
+      setSmsToastMessage(errorMessage);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
+      
+      // Clear form and close modal
+      setPromotionalSmsSubject('');
+      setPromotionalSmsMessage('');
+      setShowPromotionalSmsModal(false);
+      setSendingSms(false);
+      
+      // Refresh SMS credits to show updated balance
+      await fetchSmsCredits(true);
+      return;
+    }
+
+    // Show appropriate message based on results
+    setSmsIsClicked(isSuccess);
+    
+    if (isFailure) {
+      setSmsToastType('error');
+      setSmsToastMessage(
+        result.failCount 
+          ? `Failed to send SMS to all ${result.failCount} recipients. ${result.error || 'Please check your SMS credits and try again.'}`
+          : result.error || 'Failed to send SMS. Please try again.'
+      );
+    } else if (isPartialSuccess) {
+      setSmsToastType('warning');
+      setSmsToastMessage(`SMS sent to ${result.successCount} recipients (${result.failCount} failed). Please check your SMS credits.`);
+    } else {
+      setSmsToastType('success');
+      setSmsToastMessage(`SMS sent successfully to ${result.successCount} recipients`);
+    }
     setSmsToast(true);
     setSmsToastClosing(false);
     
@@ -12448,12 +12571,14 @@ const sendPromotionalSms = async () => {
     setPromotionalSmsMessage('');
     setShowPromotionalSmsModal(false);
 
-    // Refresh SMS messages list
+    // Refresh SMS messages list and credits
     await fetchSmsMessagesData(true);
+    await fetchSmsCredits(true); // Refresh credits after sending SMS
 
   } catch (error) {
     console.error('Error sending promotional SMS:', error);
     setSmsIsClicked(false);
+    setSmsToastType('error');
     setSmsToastMessage(error.message || 'Failed to send promotional SMS');
     setSmsToast(true);
     setSmsToastClosing(false);
@@ -23753,7 +23878,42 @@ paginatedBautistaOrders.map((order) => (
             </div>
             </div>
 
-            <div onClick={() => setShowPromotionalSmsModal(true)} id="sendsmspromotionalbutton" className="ml-1 w-75 h-10 bg-[#4ca22b] transition-all duration-300 ease-in-out hover:scale-105    rounded-2xl cursor-pointer flex justify-center items-center text-white font-semibold gap-2 text-[17px]"><i className="bx bxs-paper-plane"/> <h1>Send Promotional SMS</h1> </div>
+            {/* SMS Credits and Send Button Section */}
+            <div className="flex items-center gap-4">
+              {/* SMS Credits Display */}
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-200">
+     
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-blue-800 font-semibold text-[17px]">SMS Credits</span>
+                  {loadingSmsCredits ? (
+                    <div className="animate-pulse bg-blue-200 h-4 w-12 rounded"></div>
+                  ) : smsCreditsError ? (
+                    <span className="text-red-500 text-xs cursor-pointer" onClick={() => fetchSmsCredits(true)} title="Click to retry">
+                      Error - Retry
+                    </span>
+                  ) : smsCredits !== null ? (
+                    <span className={`font-bold text-lg ${smsCredits < 10 ? 'text-red-600' : smsCredits < 50 ? 'text-orange-600' : 'text-green-600'}`}>
+                      {smsCredits.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 text-sm">--</span>
+                  )}
+                </div>
+                <div
+                  onClick={() => fetchSmsCredits(true)}
+                  className="text-blue-600 hover:text-blue-800 transition-colors ml-1"
+                  title="Refresh credits"
+                >
+                  <i className="bx bx-refresh text-[17px]"></i>
+                </div>
+              </div>
+
+              {/* Send Promotional SMS Button */}
+              <div onClick={() => setShowPromotionalSmsModal(true)} id="sendsmspromotionalbutton" className="ml-1 w-75 h-10 bg-[#4ca22b] transition-all duration-300 ease-in-out hover:scale-105 rounded-2xl cursor-pointer flex justify-center items-center text-white font-semibold gap-2 text-[17px]">
+                <i className="bx bxs-paper-plane"/> 
+                <h1>Send Promotional SMS</h1> 
+              </div>
+            </div>
 
           </div>
         </div>
@@ -23771,6 +23931,7 @@ paginatedBautistaOrders.map((order) => (
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
                   <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Credits</th>
                   <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
                 </tr>
               </thead>
@@ -23815,6 +23976,7 @@ paginatedBautistaOrders.map((order) => (
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
                     <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Credits</th>
                     <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
                   </tr>
                 </thead>
@@ -23900,6 +24062,21 @@ paginatedBautistaOrders.map((order) => (
                           }`}>
                             {sms.status}
                           </span>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          <div className="flex flex-col items-center">
+                            <span className={`text-sm font-semibold ${
+                              sms.smsCreditsDeducted > 0 ? 'text-red-600' : 'text-gray-400'
+                            }`}>
+                              {sms.smsCreditsDeducted > 0 ? `-${sms.smsCreditsDeducted}` : '0'}
+                            </span>
+                            {sms.smsCreditsBalance !== null && sms.smsCreditsBalance !== undefined && (
+                              <span className="text-xs text-gray-500 mt-1">
+                                Bal: {sms.smsCreditsBalance}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">
@@ -24085,15 +24262,21 @@ paginatedBautistaOrders.map((order) => (
    {/* SMS Toast Notification */}
    {smsToast && (
      <div className="bottom-4 right-8 z-101 transform fixed">
-       <div key={smsIsClicked ? 'success' : 'error'} className={`${smsToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
-         {smsIsClicked ? (          
+       <div key={smsToastType} className={`${smsToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {smsToastType === 'success' ? (          
            <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : smsToastType === 'warning' ? (
+           <span className="text-yellow-600 font-semibold text-[20px]"><i className="mr-2 bx bx-error-circle"></i></span>
          ) : (
            <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
          )}
          {smsToastMessage}
 
-         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${smsIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: smsProgressWidth, transition: 'width 4s linear'}}/>
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${
+           smsToastType === 'success' ? 'bg-green-500' : 
+           smsToastType === 'warning' ? 'bg-yellow-500' : 
+           'bg-red-500'
+         }`} style={{width: smsProgressWidth, transition: 'width 4s linear'}}/>
        </div>
      </div>  
    )}

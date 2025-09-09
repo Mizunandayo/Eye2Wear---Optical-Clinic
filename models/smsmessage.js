@@ -59,6 +59,14 @@ const smsMessageSchema = new mongoose.Schema({
     enum: ['Twilio', 'iProg', 'Manual', 'System'],
     default: 'iProg'
   },
+  smsCreditsDeducted: {
+    type: Number,
+    default: 0
+  },
+  smsCreditsBalance: {
+    type: Number,
+    default: null
+  },
   errorMessage: {
     type: String
   },

@@ -115,15 +115,97 @@ class SmsController {
         console.log('📱 Formatted phone number:', formattedPhone);
         console.log('📱 Using bulk SMS endpoint for single recipient to match promotional SMS behavior');
 
+        // Enhanced credits tracking for order completion SMS
+        let creditsBeforeSending = null;
+        let creditsAfterSending = null;
+        let actualCreditsDeducted = 0;
+
+        // Try multiple times to get accurate credits before sending
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const creditsBeforeResult = await iprogClient.checkSmsCredits();
+            if (creditsBeforeResult.success) {
+              creditsBeforeSending = creditsBeforeResult.balance;
+              console.log(`💳 Order SMS credits before (attempt ${attempt}): ${creditsBeforeSending}`);
+              break;
+            }
+          } catch (error) {
+            console.warn(`⚠️ Order SMS credits check attempt ${attempt} failed:`, error.message);
+            if (attempt < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+
         // Use bulk SMS endpoint with single recipient (same as promotional SMS)
         const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhone], fullMessage);
         console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
 
+        // Enhanced credits check after sending with multiple attempts
+        if (creditsBeforeSending !== null && bulkSmsResult.success) {
+          console.log('💳 Starting post-order SMS credits verification...');
+          
+          const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+          
+          for (let attempt = 0; attempt < delays.length; attempt++) {
+            try {
+              console.log(`💳 Waiting ${delays[attempt]/1000} seconds for order SMS API balance update...`);
+              await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+              
+              const creditsAfterResult = await iprogClient.checkSmsCredits();
+              if (creditsAfterResult.success) {
+                const newCreditsAfter = creditsAfterResult.balance;
+                const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+                
+                console.log(`💳 Order SMS credits check attempt ${attempt + 1}:`);
+                console.log(`   Before: ${creditsBeforeSending}`);
+                console.log(`   After: ${newCreditsAfter}`);
+                console.log(`   Calculated deduction: ${newActualDeducted}`);
+                
+                // If we get a reasonable deduction amount, use it
+                if (newActualDeducted > 0 && newActualDeducted <= 5) {
+                  creditsAfterSending = newCreditsAfter;
+                  actualCreditsDeducted = newActualDeducted;
+                  console.log(`✅ Using order SMS credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                  break;
+                } else if (attempt === delays.length - 1) {
+                  // Last attempt, use whatever we got
+                  creditsAfterSending = newCreditsAfter;
+                  actualCreditsDeducted = newActualDeducted;
+                  console.log(`⚠️ Using final order SMS attempt result: ${actualCreditsDeducted}`);
+                }
+              }
+            } catch (error) {
+              console.warn(`⚠️ Order SMS credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+            }
+          }
+        }
+
         if (bulkSmsResult.success) {
-          // Update SMS record with success
+          // Update SMS record with success and enhanced credits information
           smsRecord.status = 'Sent';
           smsRecord.sentAt = new Date();
           smsRecord.iprogMessageId = bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : 'bulk-sent';
+          
+          // Enhanced credits storage for order completion SMS
+          if (actualCreditsDeducted > 0) {
+            smsRecord.smsCreditsDeducted = actualCreditsDeducted;
+            smsRecord.smsCreditsBalance = creditsAfterSending;
+            console.log(`💾 Order SMS stored ACTUAL credits deducted: ${actualCreditsDeducted}`);
+          } else {
+            // Fallback: use 1 credit for single SMS
+            smsRecord.smsCreditsDeducted = 1;
+            smsRecord.smsCreditsBalance = creditsAfterSending || creditsBeforeSending;
+            console.warn(`⚠️ Order SMS using fallback credits calculation: 1`);
+          }
+          
+          // Enhanced logging for order completion SMS
+          console.log(`💰 ORDER SMS CREDITS TRACKING:`);
+          console.log(`   💳 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💳 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   💾 Stored in DB: ${smsRecord.smsCreditsDeducted}`);
+          
           await smsRecord.save();
 
           return res.status(200).json({
@@ -132,19 +214,24 @@ class SmsController {
             iprogMessageId: bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : 'bulk-sent',
             message: 'Order completion SMS sent successfully via bulk endpoint',
             successCount: 1,
-            failCount: 0
+            failCount: 0,
+            creditsDeducted: smsRecord.smsCreditsDeducted,
+            remainingCredits: creditsAfterSending
           });
         } else {
           // Update SMS record with failure
           smsRecord.status = 'Failed';
           smsRecord.errorMessage = bulkSmsResult.error;
+          smsRecord.smsCreditsDeducted = 0; // No credits deducted for failed SMS
+          smsRecord.smsCreditsBalance = creditsBeforeSending; // Keep original balance
           await smsRecord.save();
 
           return res.status(200).json({
             success: false,
             error: bulkSmsResult.error || 'Failed to send order completion SMS',
             successCount: 0,
-            failCount: 1
+            failCount: 1,
+            creditsDeducted: 0
           });
         }
       }
@@ -200,6 +287,28 @@ class SmsController {
       const providerInfo = iprogClient.getProviderInfo();
       console.log('📱 SMS Provider Configuration:', providerInfo);
 
+      // Enhanced credits tracking with multiple checks for accuracy
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
       // Prepare phone numbers for bulk SMS
       const phoneNumbers = validPatients.map(patient => formatPhoneNumber(patient.patientcontactnumber));
 
@@ -207,6 +316,57 @@ class SmsController {
       console.log(`📱 Sending promotional SMS to ${phoneNumbers.length} recipients via iProg bulk API`);
       
       const bulkSmsResult = await iprogClient.sendBulkSMS(phoneNumbers, fullMessage);
+
+      // Enhanced credits check after sending with multiple attempts and longer delays
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= phoneNumbers.length * 5) {
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT:`);
+          console.log(`   📊 Recipients: ${phoneNumbers.length}`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${(actualCreditsDeducted / phoneNumbers.length).toFixed(2)}`);
+        }
+      }
 
       let successCount = 0;
       let failCount = 0;
@@ -296,17 +456,63 @@ class SmsController {
         }
       }
 
-      // Update SMS record status
+      // Update SMS record status and credits information with enhanced logic
       if (successCount > 0 && failCount === 0) {
         smsRecord.status = 'Sent';
         smsRecord.sentAt = new Date();
+        
+        // Enhanced credits storage logic
+        if (actualCreditsDeducted > 0) {
+          smsRecord.smsCreditsDeducted = actualCreditsDeducted;
+          smsRecord.smsCreditsBalance = creditsAfterSending;
+          console.log(`💾 Stored ACTUAL credits deducted: ${actualCreditsDeducted}`);
+        } else {
+          // Fallback: use recipient count but log the issue
+          smsRecord.smsCreditsDeducted = successCount;
+          smsRecord.smsCreditsBalance = creditsAfterSending || creditsBeforeSending;
+          console.warn(`⚠️ Using fallback credits calculation: ${successCount} (recipient count)`);
+        }
+        
       } else if (successCount > 0 && failCount > 0) {
         smsRecord.status = 'Sent';
         smsRecord.sentAt = new Date();
+        
+        // Enhanced credits storage logic for partial success
+        if (actualCreditsDeducted > 0) {
+          smsRecord.smsCreditsDeducted = actualCreditsDeducted;
+          smsRecord.smsCreditsBalance = creditsAfterSending;
+          console.log(`💾 Stored ACTUAL credits deducted (partial): ${actualCreditsDeducted}`);
+        } else {
+          // Fallback: use successful count
+          smsRecord.smsCreditsDeducted = successCount;
+          smsRecord.smsCreditsBalance = creditsAfterSending || creditsBeforeSending;
+          console.warn(`⚠️ Using fallback credits calculation (partial): ${successCount} (success count)`);
+        }
+        
         smsRecord.errorMessage = `Partial success: ${successCount} sent, ${failCount} failed`;
       } else {
         smsRecord.status = 'Failed';
+        smsRecord.smsCreditsDeducted = 0; // No credits deducted for failed SMS
+        smsRecord.smsCreditsBalance = creditsBeforeSending; // Keep original balance
         smsRecord.errorMessage = 'All messages failed to send';
+      }
+
+      // Enhanced logging with detailed breakdown
+      console.log(`💰 ENHANCED CREDITS TRACKING SUMMARY:`);
+      console.log(`   📱 Recipients: ${phoneNumbers.length} phone numbers`);
+      console.log(`   ✅ Success Count: ${successCount}`);
+      console.log(`   ❌ Fail Count: ${failCount}`);
+      console.log(`   💳 Credits Before: ${creditsBeforeSending}`);
+      console.log(`   💳 Credits After: ${creditsAfterSending}`);
+      console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+      console.log(`   💾 Stored in DB: ${smsRecord.smsCreditsDeducted}`);
+      
+      if (actualCreditsDeducted > 0 && successCount > 0) {
+        console.log(`   📊 Rate Analysis: ${(actualCreditsDeducted / successCount).toFixed(2)} credits per successful SMS`);
+        if (actualCreditsDeducted > successCount) {
+          console.log(`   🚨 NOTICE: iProg charged more than expected (${actualCreditsDeducted} vs ${successCount})`);
+          console.log(`   💡 Possible reasons: batch fees, long message splitting, or provider charges`);
+        }
       }
 
       await smsRecord.save();
@@ -614,7 +820,81 @@ ${appointment.appointmentclinic}`;
       // Send SMS via iProg using bulk endpoint for consistency
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
+      // Enhanced credits tracking for appointment reminder SMS
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`💳 Checking credits before sending appointment reminder SMS (attempt ${attempt})...`);
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
       const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+
+      // Enhanced credits check after sending with multiple attempts
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification for appointment reminder...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= 5) { // Max 5 credits for single SMS
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT for Appointment Reminder SMS:`);
+          console.log(`   📊 Recipients: 1`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${actualCreditsDeducted}`);
+        }
+      }
       
       // Extract single result from bulk response
       const smsResult = {
@@ -636,6 +916,8 @@ ${appointment.appointmentclinic}`;
         status: smsResult.success ? 'Sent' : 'Failed',
         iprogMessageId: smsResult.messageId,
         smsProvider: 'iProg',
+        smsCreditsDeducted: actualCreditsDeducted, // Enhanced credits tracking
+        smsCreditsBalance: creditsAfterSending, // Enhanced credits tracking
         errorMessage: smsResult.success ? null : smsResult.error,
         sentAt: smsResult.success ? new Date() : null
       });
@@ -1000,9 +1282,83 @@ ${clinicName}`;
         clinicName: clinicName
       });
 
+      // Enhanced credits tracking for order status SMS (same as promotional SMS)
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`💳 Checking credits before sending order status SMS (attempt ${attempt})...`);
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
       const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
       console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
       console.log(`💰 POTENTIAL CREDIT USAGE: 1 SMS sent to iProg API for order ${orderId}`);
+
+      // Enhanced credits check after sending with multiple attempts
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification for order status...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= 5) { // Max 5 credits for single SMS
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT for Order Status SMS:`);
+          console.log(`   📊 Recipients: 1`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${actualCreditsDeducted}`);
+        }
+      }
 
       // Extract single result from bulk response
       const smsResult = {
@@ -1051,6 +1407,8 @@ ${clinicName}`;
         status: smsResult.success ? 'Sent' : 'Failed',
         iprogMessageId: smsResult.messageId,
         smsProvider: 'iProg',
+        smsCreditsDeducted: actualCreditsDeducted, // Enhanced credits tracking
+        smsCreditsBalance: creditsAfterSending, // Enhanced credits tracking
         errorMessage: smsResult.success ? null : smsResult.error,
         sentAt: smsResult.success ? new Date() : null
       });
@@ -1122,6 +1480,45 @@ ${clinicName}`;
       res.status(500).json({
         success: false,
         error: 'SMS configuration test failed',
+        details: error.message
+      });
+    }
+  }
+
+  // Check SMS credits balance
+  static async checkSmsCredits(req, res) {
+    try {
+      console.log('💳 Checking SMS credits balance...');
+      
+      // Use iProg client to check credits
+      const creditsResult = await iprogClient.checkSmsCredits();
+      
+      if (creditsResult.success) {
+        console.log(`✅ SMS credits retrieved: ${creditsResult.balance} credits`);
+        
+        res.status(200).json({
+          success: true,
+          message: 'SMS credits retrieved successfully',
+          balance: creditsResult.balance,
+          provider: creditsResult.provider,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.error('❌ Failed to check SMS credits:', creditsResult.error);
+        
+        res.status(500).json({
+          success: false,
+          error: 'Failed to check SMS credits',
+          details: creditsResult.error,
+          provider: creditsResult.provider
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ SMS credits check failed:', error);
+      res.status(500).json({
+        success: false,
+        error: 'SMS credits check failed',
         details: error.message
       });
     }
@@ -1408,7 +1805,81 @@ ${clinicName}`;
       // Send SMS via iProg using bulk endpoint for consistency
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
+      // Enhanced credits tracking for wishlist notification SMS
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`💳 Checking credits before sending wishlist notification SMS (attempt ${attempt})...`);
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
       const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+
+      // Enhanced credits check after sending with multiple attempts
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification for wishlist notification...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= 5) { // Max 5 credits for single SMS
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT for Wishlist Notification SMS:`);
+          console.log(`   📊 Recipients: 1`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${actualCreditsDeducted}`);
+        }
+      }
       
       // Extract single result from bulk response
       const smsResult = {
@@ -1430,6 +1901,8 @@ ${clinicName}`;
         status: smsResult.success ? 'Sent' : 'Failed',
         iprogMessageId: smsResult.messageId,
         smsProvider: 'iProg',
+        smsCreditsDeducted: actualCreditsDeducted, // Enhanced credits tracking
+        smsCreditsBalance: creditsAfterSending, // Enhanced credits tracking
         errorMessage: smsResult.success ? null : smsResult.error,
         sentAt: smsResult.success ? new Date() : null
       });
@@ -2018,8 +2491,82 @@ ${clinic}`;
       console.log(`📋 Order: ${orderId} (${orderType})`);
       console.log(`📅 Pickup date: ${formattedPickupDate}`);
 
+      // Enhanced credits tracking for pickup notification SMS
+      let creditsBeforeSending = null;
+      let creditsAfterSending = null;
+      let actualCreditsDeducted = 0;
+
+      // Try multiple times to get accurate credits before sending
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`💳 Checking credits before sending pickup notification SMS (attempt ${attempt})...`);
+          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          if (creditsBeforeResult.success) {
+            creditsBeforeSending = creditsBeforeResult.balance;
+            console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
+            break; // Success, exit loop
+          }
+        } catch (error) {
+          console.warn(`⚠️ Credits check attempt ${attempt} failed:`, error.message);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+          }
+        }
+      }
+
       // Send SMS via iProg using bulk endpoint for consistency
       const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhone], message);
+
+      // Enhanced credits check after sending with multiple attempts
+      if (creditsBeforeSending !== null && bulkSmsResult.success) {
+        console.log('💳 Starting post-SMS credits verification for pickup notification...');
+        
+        // Try multiple times with increasing delays to get accurate post-SMS credits
+        const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
+        
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          try {
+            console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+            
+            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            if (creditsAfterResult.success) {
+              const newCreditsAfter = creditsAfterResult.balance;
+              const newActualDeducted = creditsBeforeSending - newCreditsAfter;
+              
+              console.log(`💳 Credits check attempt ${attempt + 1}:`);
+              console.log(`   Before: ${creditsBeforeSending}`);
+              console.log(`   After: ${newCreditsAfter}`);
+              console.log(`   Calculated deduction: ${newActualDeducted}`);
+              
+              // If we get a reasonable deduction amount, use it
+              if (newActualDeducted > 0 && newActualDeducted <= 5) { // Max 5 credits for single SMS
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`✅ Using credits deduction from attempt ${attempt + 1}: ${actualCreditsDeducted}`);
+                break;
+              } else if (attempt === delays.length - 1) {
+                // Last attempt, use whatever we got
+                creditsAfterSending = newCreditsAfter;
+                actualCreditsDeducted = newActualDeducted;
+                console.log(`⚠️ Using final attempt result: ${actualCreditsDeducted}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Credits check after sending (attempt ${attempt + 1}) failed:`, error.message);
+          }
+        }
+        
+        // Final verification log
+        if (actualCreditsDeducted > 0) {
+          console.log(`🎯 FINAL CREDITS TRACKING RESULT for Pickup Notification SMS:`);
+          console.log(`   📊 Recipients: 1`);
+          console.log(`   💰 Credits Before: ${creditsBeforeSending}`);
+          console.log(`   💰 Credits After: ${creditsAfterSending}`);
+          console.log(`   🔥 ACTUAL Deducted: ${actualCreditsDeducted}`);
+          console.log(`   📈 Rate per SMS: ${actualCreditsDeducted}`);
+        }
+      }
 
       // Create SMS record
       const validSenderUserId = getValidSenderUserId('system');
@@ -2034,6 +2581,8 @@ ${clinic}`;
         status: bulkSmsResult.success ? 'Sent' : 'Failed',
         iprogMessageId: bulkSmsResult.messageIds ? bulkSmsResult.messageIds[0] : null,
         smsProvider: 'iProg',
+        smsCreditsDeducted: actualCreditsDeducted, // Enhanced credits tracking
+        smsCreditsBalance: creditsAfterSending, // Enhanced credits tracking
         errorMessage: bulkSmsResult.success ? null : bulkSmsResult.error,
         sentAt: bulkSmsResult.success ? new Date() : null
       });
