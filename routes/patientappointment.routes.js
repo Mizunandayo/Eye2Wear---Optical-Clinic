@@ -8,12 +8,14 @@ import {
     deleteappointmentbyid,
     getambherappointmentsbydatetime,
     getbautistaappointmentsbydatetime,
+    upload,
 } from '../controllers/patientappointment.controller.js';
 
 
 const patientappointmentrouter = express.Router();
 
-patientappointmentrouter.post('/appointments', createpatientappointment);
+// Use multer middleware for appointment creation to handle file uploads
+patientappointmentrouter.post('/appointments', upload.array('supportingdocuments', 5), createpatientappointment);
 patientappointmentrouter.get('/appointments', getallpatientappointments);
 patientappointmentrouter.get('/appointments/email/:email', getappointmentsbyemail);
 patientappointmentrouter.get('/appointments/:id', getpatientappointmentbyid);

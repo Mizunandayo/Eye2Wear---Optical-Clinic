@@ -188,6 +188,33 @@ patientadditionalappointmentnotesimage: {
         required: true,
         default:"default-profile-url"
       },
+// Supporting documents and images (up to 5 files)
+patientsupportingdocuments: [{
+    filename: {
+        type: String,
+        required: true
+    },
+    originalname: {
+        type: String,
+        required: true
+    },
+    mimetype: {
+        type: String,
+        required: true
+    },
+    size: {
+        type: Number,
+        required: true
+    },
+    url: {
+        type: String,
+        required: true
+    },
+    uploaddate: {
+        type: Date,
+        default: Date.now
+    }
+}],
 patientappointmentpaymentotal: Number,
 
 //TIMESTAMPS

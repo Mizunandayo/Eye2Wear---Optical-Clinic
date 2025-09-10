@@ -345,19 +345,31 @@ const patientsubmitappointment = async (formData) => {
 
 
       patientadditionalappointmentnotes: additionaldetails,
-      patientadditionalappointmentnotesimage: appointmentpreviewimage || defaultimageplaceholder,
+      patientadditionalappointmentnotesimage: defaultimageplaceholder,
       patientappointmentpaymentotal: 1000,
-
     }
 
+    // Create FormData for file uploads
+    const submissionFormData = new FormData();
+    
+    // Add all appointment data
+    Object.keys(patientappointmentdata).forEach(key => {
+      submissionFormData.append(key, patientappointmentdata[key]);
+    });
+
+    // Add supporting documents
+    supportingdocuments.forEach((doc, index) => {
+      submissionFormData.append(`supportingdocuments`, doc.file);
+      submissionFormData.append(`supportingdocument_${index}_originalname`, doc.originalname);
+    });
 
     const response = await fetch(`/api/patientappointments/appointments`,{
       method: 'POST',
       headers: {
-        'Content-Type' : 'application/json',
         'Authorization' : `Bearer ${localStorage.getItem('patienttoken')}`
+        // Don't set Content-Type for FormData - let browser set it with boundary
       },
-      body: JSON.stringify(patientappointmentdata)
+      body: submissionFormData
     });
 
 
@@ -383,7 +395,14 @@ const patientsubmitappointment = async (formData) => {
     
     // Reset form state
     setadditionaldetails('');
-    setappointmentpreviewimage(defaultimageplaceholder);
+    setsupportingdocuments([]); // Clear supporting documents
+    
+    // Clean up preview URLs
+    supportingdocuments.forEach(doc => {
+      if (doc.previewUrl) {
+        URL.revokeObjectURL(doc.previewUrl);
+      }
+    });
     
     // Switch to appointment list AFTER refresh completes
     setactiveappointmenttable('appointmentlist');
@@ -838,99 +857,125 @@ const handledeleteappointment = async (appointmentId) => {
 
 
 
-  const [appointmentselectedimage, setappointmentselectedimage] = useState(null);
-  const [appointmentpreviewimage, setappointmentpreviewimage] = useState (null);
-  const appointmentimageinputref = useRef(null);
+  // Supporting documents/images (up to 5 files)
+  const [supportingdocuments, setsupportingdocuments] = useState([]);
+  const supportingdocumentsinputref = useRef(null);
+  const MAX_SUPPORTING_DOCUMENTS = 5;
 
 
-  //PROFILE IMAGE TYPE HANDLING
-  const appointmenthandleprofilechange = async (e) => {
-    const file = e.target.files[0];
+  // Supporting documents handling functions
+  const handlesupportingdocumentsupload = () => {
+    supportingdocumentsinputref.current.click();
+  };
 
-    if (!file) return;
-
-
-    const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
-    if(!imagefiletype.includes(file.type)) {
-      alert("Please select an image file (JPG or PNG)");
-      return;
-    }
-
-
-    const maximagefile = 2;
-    if(file.size > maximagefile * 1024 * 1024){
-      alert("Image is too large. Please select image under 2MB");
-      return;
-    }
-
-    setappointmentselectedimage(null);
-    setappointmentpreviewimage(null);
-
-    if(appointmentimageinputref.current){
-      appointmentimageinputref.current.value = "";
-    }
-
-
-
-
-
-
-    try{
-
-      const imageconfiguration = {
-        maximagemb: 1,
-        maxworh: 800,
-        useWebWorker: true,
-        initialQuality: 0.8
-      };
-
-
-      const compressedimageprofile = await imageCompression(file, imageconfiguration);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-
-        if(reader.error){
-          console.error("Error processing image file : ", reader.error);
-          alert("Error processing image file. Try again");
-          return;
-        }
-        setappointmentpreviewimage(reader.result);
-      };
-
-
-      reader.onerror = () => {
-        console.error("File Reader Error : ", reader.error);
-        alert("Error reading file. Try again");
-        return;
-      };
-
-      reader.readAsDataURL(compressedimageprofile);
-      setappointmentselectedimage(compressedimageprofile);
+  const handlesupportingdocumentschange = async (e) => {
+    const files = Array.from(e.target.files);
     
+    if (files.length === 0) return;
 
-    } catch (error) {
-
-      console.error("Image file compression failed : ", error.message);
-      alert("Image file compression failed. Try again");
+    // Check if adding these files would exceed the limit
+    if (supportingdocuments.length + files.length > MAX_SUPPORTING_DOCUMENTS) {
+      alert(`You can only upload up to ${MAX_SUPPORTING_DOCUMENTS} supporting documents/images.`);
       return;
-
     }
+
+    const validFiles = [];
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    for (const file of files) {
+      // Check file type (exclude videos)
+      if (!allowedTypes.includes(file.type)) {
+        alert(`File "${file.name}" is not supported. Please upload images or documents only (no videos).`);
+        continue;
+      }
+
+      // Check file size (max 10MB per file)
+      const maxFileSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large. Maximum file size is 10MB.`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    try {
+      const processedFiles = [];
       
+      for (const file of validFiles) {
+        let processedFile = file;
+        
+        // Compress images
+        if (file.type.startsWith('image/')) {
+          const imageConfig = {
+            maxSizeMB: 2,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+            initialQuality: 0.8
+          };
+          processedFile = await imageCompression(file, imageConfig);
+        }
 
-  };
+        // Create preview URL
+        const previewUrl = URL.createObjectURL(processedFile);
+        
+        processedFiles.push({
+          file: processedFile,
+          originalname: file.name,
+          size: processedFile.size,
+          type: processedFile.type,
+          previewUrl: previewUrl,
+          id: Date.now() + Math.random() // Temporary ID
+        });
+      }
 
-  //Handles the click event of upload button
-  const appointmenthandleuploadclick = () => {
-    appointmentimageinputref.current.click();
-  };
-
-  const appointmenthandleremoveprofile = () => {
-    setappointmentselectedimage(null);
-    setappointmentpreviewimage(null);
-    if(appointmentimageinputref.current){
-      appointmentimageinputref.current.value = "";
+      setsupportingdocuments(prev => [...prev, ...processedFiles]);
+      
+      // Clear the input
+      if (supportingdocumentsinputref.current) {
+        supportingdocumentsinputref.current.value = "";
+      }
+      
+    } catch (error) {
+      console.error("Error processing files:", error);
+      alert("Error processing files. Please try again.");
     }
-  }
+  };
+
+  const removesupportingdocument = (documentId) => {
+    setsupportingdocuments(prev => {
+      const updated = prev.filter(doc => doc.id !== documentId);
+      // Clean up preview URLs
+      const removedDoc = prev.find(doc => doc.id === documentId);
+      if (removedDoc && removedDoc.previewUrl) {
+        URL.revokeObjectURL(removedDoc.previewUrl);
+      }
+      return updated;
+    });
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (mimeType.startsWith('image/')) return 'bx-image';
+    if (mimeType === 'application/pdf') return 'bx-file-pdf';
+    if (mimeType.includes('word')) return 'bx-file-doc';
+    if (mimeType === 'text/plain') return 'bx-file-txt';
+    return 'bx-file';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
 
 
@@ -1392,7 +1437,7 @@ useEffect(() => {
                                 <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
                                 <div>
                                   <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
-                                  <p className="text-green-600 text-sm">Vision Care & Eye Wellness</p>
+                                  <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
                                 </div>
                               </div>
                             </div>
@@ -1526,7 +1571,7 @@ useEffect(() => {
                                 <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
                                 <div>
                                   <h2 className="text-xl font-bold text-blue-700 font-albertsans">Bautista Eye Center</h2>
-                                  <p className="text-blue-600 text-sm">Comprehensive Eye Care & Surgery</p>
+                                  <p className="text-gray-900 text-sm">Comprehensive Eye Care & Surgery</p>
                                 </div>
                               </div>
                             </div>
@@ -1689,7 +1734,7 @@ useEffect(() => {
                             Additional Information
                           </h3>
                           
-                          <div className="grid lg:grid-cols-2 gap-8">
+                          <div className="flex flex-col gap-8">
                             {/* Notes Section */}
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 mb-3" htmlFor="patientadditionalappointmentnotes">
@@ -1705,52 +1750,92 @@ useEffect(() => {
                               />
                             </div>
 
-                            {/* Image Upload Section */}
+                            {/* Supporting Documents Upload Section */}
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                Upload Supporting Documents/Images
+                                Supporting Documents/Images
                               </label>
                               <div className="space-y-4">
-                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white">
-                                  <img 
-                                    className="w-full h-48 object-cover rounded-lg mb-4" 
-                                    src={appointmentpreviewimage || defaultimageplaceholder}
-                                    alt="Preview"
-                                  />
-                                  
+                                {/* Multiple documents upload */}
+                                <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 bg-blue-50">
+                                  <div className="text-center mb-4">
+                                    <i className="bx bx-file-plus text-4xl text-blue-500 mb-2"></i>
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                                      Additional Supporting Documents
+                                    </h4>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                      Upload up to {MAX_SUPPORTING_DOCUMENTS} files
+                                    </p>
+                                  </div>
+
                                   <input 
                                     className="hidden" 
                                     type="file" 
-                                    onChange={appointmenthandleprofilechange} 
-                                    accept="image/jpeg, image/jpg, image/png" 
-                                    ref={appointmentimageinputref} 
+                                    multiple
+                                    onChange={handlesupportingdocumentschange} 
+                                    accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
+                                    ref={supportingdocumentsinputref} 
                                   />
                                   
-                                  <div className="space-y-3">
+                                  <div className="space-y-3 text-center">
                                     <button 
                                       type="button"
-                                      onClick={appointmenthandleuploadclick} 
-                                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                      onClick={handlesupportingdocumentsupload}
+                                      disabled={supportingdocuments.length >= MAX_SUPPORTING_DOCUMENTS}
+                                      className={`inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-colors duration-200 ${
+                                        supportingdocuments.length >= MAX_SUPPORTING_DOCUMENTS
+                                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                          : 'bg-green-600 text-white hover:bg-green-700'
+                                      }`}
                                     >
-                                      <i className="bx bx-cloud-upload text-lg"></i>
-                                      Upload Document
+                                      <i className="bx bx-plus text-lg"></i>
+                                      Add Documents/Images
                                     </button>
                                     
-                                    {appointmentselectedimage && (
-                                      <button 
-                                        type="button"
-                                        onClick={appointmenthandleremoveprofile} 
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200 ml-3"
-                                      >
-                                        <i className="bx bx-trash text-lg"></i>
-                                        Remove
-                                      </button>
-                                    )}
+                                    <p className="text-xs text-gray-500">
+                                      Supported: Images (JPEG, PNG, WebP), PDF, Word documents, Text files<br/>
+                                      Maximum file size: 10MB per file | No videos allowed
+                                    </p>
                                   </div>
-                                  
-                                  <p className="text-sm text-gray-500 mt-3">
-                                    Supported formats: JPEG, JPG, PNG (Max 5MB)
-                                  </p>
+
+                                  {/* Display uploaded supporting documents */}
+                                  {supportingdocuments.length > 0 && (
+                                    <div className="mt-6 space-y-3">
+                                      <h5 className="font-semibold text-gray-700 text-center">
+                                        Uploaded Files ({supportingdocuments.length}/{MAX_SUPPORTING_DOCUMENTS})
+                                      </h5>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {supportingdocuments.map((doc) => (
+                                          <div key={doc.id} className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                              <i className={`bx ${getFileIcon(doc.type)} text-2xl ${
+                                                doc.type.startsWith('image/') ? 'text-green-500' :
+                                                doc.type === 'application/pdf' ? 'text-red-500' :
+                                                doc.type.includes('word') ? 'text-blue-500' :
+                                                'text-gray-500'
+                                              }`}></i>
+                                              <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-800 truncate" title={doc.originalname}>
+                                                  {doc.originalname}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                  {formatFileSize(doc.size)}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <button 
+                                              type="button"
+                                              onClick={() => removesupportingdocument(doc.id)}
+                                              className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                              title="Remove file"
+                                            >
+                                              <i className="bx bx-trash text-lg"></i>
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1759,15 +1844,15 @@ useEffect(() => {
 
                         {/* Submit Section */}
                         <div className="flex justify-center pt-8">
-                          <button 
+                          <div 
                             type="submit" 
                             disabled={issubmitting} 
                             className={`
-                              px-12 py-4 text-lg font-semibold rounded-xl transition-all duration-300 
+                              rounded-3xl cursor-pointer px-12 py-4 text-lg font-semibold transition-all duration-300 
                               flex items-center gap-3 min-w-[280px] justify-center
                               ${issubmitting 
                                 ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
-                                : 'bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                                : ' bg-sky-800 text-white  transform hover:scale-105'
                               }
                             `}
                           >
@@ -1782,7 +1867,7 @@ useEffect(() => {
                                 <span>Submit Appointment Request</span>
                               </>
                             )}
-                          </button>
+                          </div>
                         </div>
                       </form>
                     </div>
@@ -2367,7 +2452,7 @@ useEffect(() => {
 
 
 
-<div className="w-full mt-5 p-3 flex flex-col mb-5 bg-[#ededed] rounded-2xl  ">
+                        <div className="w-full mt-5 p-3 flex flex-col mb-5 bg-[#ededed] rounded-2xl  ">
                           <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Patient Appointment Notes :</label>  
 
                            <div>{selectedpatientappointment.patientadditionalappointmentnotes ||"No additional notes"}
@@ -2375,9 +2460,65 @@ useEffect(() => {
                           <img className=" object-cover  rounded-2xl" src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}/>                 
                           </div>
                            </div>
+                        </div>
+
+                        {/* Supporting Documents Display */}
+                        {selectedpatientappointment.patientsupportingdocuments && selectedpatientappointment.patientsupportingdocuments.length > 0 && (
+                          <div className="w-full mt-5 p-3 flex flex-col mb-5 bg-[#f8f9fa] rounded-2xl border border-gray-200">
+                            <label className="text-[18px] font-semibold font-albertsans text-[#343436] mb-3">
+                              Supporting Documents ({selectedpatientappointment.patientsupportingdocuments.length})
+                            </label>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {selectedpatientappointment.patientsupportingdocuments.map((doc, index) => (
+                                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                                  <div className="flex items-center gap-3 mb-3">
+                                    <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
+                                      doc.mimetype.startsWith('image/') ? 'text-green-500' :
+                                      doc.mimetype === 'application/pdf' ? 'text-red-500' :
+                                      doc.mimetype.includes('word') ? 'text-blue-500' :
+                                      'text-gray-500'
+                                    }`}></i>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-800 truncate" title={doc.originalname}>
+                                        {doc.originalname}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {formatFileSize(doc.size)} • {new Date(doc.uploaddate).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Preview for images */}
+                                  {doc.mimetype.startsWith('image/') && (
+                                    <div className="mb-3">
+                                      <img 
+                                        src={`${_apiUrl}${doc.url}`} 
+                                        alt={doc.originalname}
+                                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                        onError={(e) => {
+                                          e.target.src = defaultimageplaceholder;
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  {/* Download link */}
+                                  <a 
+                                    href={`${_apiUrl}${doc.url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download={doc.originalname}
+                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                                  >
+                                    <i className="bx bx-download text-sm"></i>
+                                    Download
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-
-
+                        )}
 
 
 
