@@ -2153,507 +2153,607 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
                          <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-                           <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] mt-10 mb-10 animate-fadeInUp ">
-                                 <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                                   <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">View Appointment</h1></div>
-                                   <div onClick={() => setviewpatientappointment(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-100 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                           <div className="animate-fadeInUp w-full max-w-7xl mx-auto px-6 py-8 mt-10 mb-10">
+                             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                               
+                               {/* Header */}
+                               <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                                 <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-3">
+                                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                       <i className="bx bx-calendar-check text-blue-600 text-2xl"></i>
+                                     </div>
+                                     <div>
+                                       <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
+                                       <p className="text-gray-600 mt-1">View your scheduled appointment information</p>
+                                     </div>
+                                   </div>
+                                   <button 
+                                     onClick={() => setviewpatientappointment(false)} 
+                                     className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
+                                   >
+                                     <i className="bx bx-x text-gray-600 text-2xl"></i>
+                                   </button>
                                  </div>
+                               </div>
 
-                                 
-                  <div className="mt-3 flex justify-start items-start  w-full rounded-3xl ">
+                               <div className="p-8">
+                                 {/* Clinic Cards */}
+                                 <div className="grid lg:grid-cols-2 gap-8 mb-8">
 
 {selectedpatientappointment.patientambherappointmentdate && (
-
-
-<div className="flex flex-col mr-3 bg-[#fdfdfd]    h-auto w-full rounded-3xl">
-  <div className="flex p-3">
-  <img src={ambherlogo} className="w-15"/>  
-  <h1 className="font-albertsans font-bold text-[20px] text-[#237234] mt-1 ml-3">Ambher Optical</h1>
-  <span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-    selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-    selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-    selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-    'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientambherappointmentstatus}</span>
-  </div>
-
- <div className="flex ">     
-        
- <div className="flex flex-col w-full pr-3">           
-<div className=" flex flex-col h-fit form-group ml-3  mt-4 w-full ">
-       <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmentdate">Appointment Details : </label>     
-    {/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" required={!!ambherservicesselected}/>*/}
-    <div className="h-max w-full  flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-      {(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
-      selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
-
-        <h1>{selectedpatientappointment.patientambherappointmenteyespecialist}</h1>
-
-    )}
-     <h1>{formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} <span className="ml-2">({formatappointmenttimes(selectedpatientappointment.patientambherappointmenttime)})</span></h1>
-
-
-     {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-  <div id="patientambherappointmentpaymentotal" className="mt-5" >
-    <h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-    <p className="text-[#2d2d44] text-[18px]">
-      ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
-    </p>
-  </div>
-)}
-    </div>
-    
-     </div>
-
-
-
-
-
-
-</div>
-
- </div>
-
- <div className="p-4">
- <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcataractscreening} type="checkbox" name="patientambherappointmentcataractscreening" id="patientambherappointmentcataractscreening" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcataractscreening">Visual/Cataract Screening</label>   
-    </div>
-
- <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricassessment} type="checkbox" name="patientambherappointmentpediatricassessment" id="patientambherappointmentpediatricassessment" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricassessment">Pediatric Assessment</label>   
-    </div>   
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricoptometrist} type="checkbox" name="patientambherappointmentpediatricoptometrist" id="patientambherappointmentpediatricoptometrist" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricoptometrist">Pediatric Optometrist</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcolorvisiontesting} type="checkbox" name="patientambherappointmentcolorvisiontesting" id="patientambherappointmentcolorvisiontesting" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcolorvisiontesting">Color Vision Testing</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentlowvisionaid} type="checkbox" name="patientambherappointmentlowvisionaid" id="patientambherappointmentlowvisionaid" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentlowvisionaid">Low Vision Aid</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentrefraction} type="checkbox" name="patientambherappointmentrefraction" id="patientambherappointmentrefraction" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentrefraction">Refraction</label>   
-    </div>      
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcontactlensefitting} type="checkbox" name="patientambherappointmentcontactlensefitting" id="patientambherappointmentcontactlensefitting" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcontactlensefitting">Contact Lense Fitting</label>   
-    </div>  
-
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientambherappointmentotherservice} onChange={(e) => setshowotherpatientambherappointmentotherservice(e.target.checked)}  type="checkbox" name="patientambherappointmentotherservice" id="patientambherappointmentotherservice" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentotherservice">Other</label>   
-    </div>  
-     
-
-     {selectedpatientappointment.patientambherappointmentotherservice && (
-          <div className="mt-3 ml-17">
-              <p className="text-[18px]  font-medium font-albertsans  text-[#343436] ">- {selectedpatientappointment.patientambherappointmentotherservicenote}</p>
+  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
+    <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-green-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
+          <div>
+            <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
+            <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
           </div>
-      )}    
-
-
-
-    {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-  <div id="patientambherappointmentpaymentotal" className="mt-15" >
-
-
-    <div className="mt-3 w-full flex flex-col">
-      <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarkssubject">Consultation Subject :</label>  
-      <p>{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
+        </div>
+        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+            selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+            selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
+            selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
+            'bg-red-100 text-red-800'}`}>
+          {selectedpatientappointment.patientambherappointmentstatus}
+        </span>
+      </div>
     </div>
 
-    <div className="mt-3 w-full flex flex-col">
-      <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarks">Consultation Remarks :</label>  
-      <p>{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
+    <div className="p-6 space-y-6">
+      {/* Appointment Details */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <i className="bx bx-calendar text-green-600"></i>
+          Appointment Details
+        </h3>
+        <div className="bg-white rounded-xl p-4 border border-green-200">
+          {(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
+          selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
+            <div className="mb-3">
+              <span className="text-sm font-medium text-gray-500">Eye Specialist:</span>
+              <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmenteyespecialist}</p>
+            </div>
+          )}
+          
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Date & Time:</span>
+            <p className="text-gray-800 font-semibold">
+              {formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} 
+              <span className="ml-2">({formatappointmenttimes(selectedpatientappointment.patientambherappointmenttime)})</span>
+            </p>
+          </div>
+
+          {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+            <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
+              <span className="text-sm font-medium text-green-700">Payment Total:</span>
+              <p className="text-green-800 font-bold text-lg">
+                ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Services */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <i className="bx bx-list-check text-green-600"></i>
+          Selected Services
+        </h3>
+        <div className="bg-white rounded-xl p-4 border border-green-200">
+          <div className="space-y-3">
+            {selectedpatientappointment.patientambherappointmentcataractscreening && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Visual/Cataract Screening</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentpediatricassessment && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Pediatric Assessment</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentpediatricoptometrist && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Pediatric Optometrist</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Color Vision Testing</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentlowvisionaid && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Low Vision Aid</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentrefraction && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Refraction</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Contact Lens Fitting</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentotherservice && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Other Service</span>
+                </div>
+                <div className="ml-8 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                  <p className="text-green-800 text-sm">{selectedpatientappointment.patientambherappointmentotherservicenote}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Consultation Details - Only for Completed */}
+      {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-clipboard text-green-600"></i>
+            Consultation Details
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-green-200 space-y-4">
+            {selectedpatientappointment.patientambherappointmentconsultationremarkssubject && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Consultation Subject:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentconsultationremarks && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Consultation Remarks:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientambherappointmentprescription && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Prescription:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentprescription}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Section */}
+      {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-star text-green-600"></i>
+            Feedback
+          </h3>
+          
+          {selectedpatientappointment.patientambherappointmentrating === 0 && selectedpatientappointment.patientambherappointmentfeedback === "" ? (
+            <button  
+              onClick={() => setshowambherfeedbackdialog(true)}  
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <i className="bx bx-message-square-dots text-lg"></i>
+              Submit Feedback
+            </button>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-green-200">
+              <span className="text-sm font-medium text-gray-500">Your Feedback:</span>
+              <div className="mt-2">
+                <Stack spacing={1}>
+                  <Rating size="large" value={selectedpatientappointment.patientambherappointmentrating} readOnly /> 
+                </Stack>  
+                <p className="text-gray-700 mt-2">{selectedpatientappointment.patientambherappointmentfeedback}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
-
-
-    <div className="mt-3 w-full flex flex-col">
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentprescription">Presciption :</label>  
-    <p>{selectedpatientappointment.patientambherappointmentprescription}</p>
   </div>
-      
-
-
-    {selectedpatientappointment.patientambherappointmentrating === 0 && selectedpatientappointment.patientambherappointmentfeedback === "" && (
-      <div  onClick={() => setshowambherfeedbackdialog(true)}  className="bg-[#2d91cf]  hover:bg-[#1b6796] mt-4 h-[50px]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 hover:cursor-pointer rounded-[20px]"><h1 className="text-white font-albertsans font-semibold text-[20px]">Submit a Feedback</h1></div>
-
-
-   )}  
-
-    {selectedpatientappointment.patientambherappointmentrating != 0 && selectedpatientappointment.patientambherappointmentfeedback != "" && (
-      <div className="mt-10"> 
-
-      <h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-      <Stack spacing={1}>
-       <Rating size="large" value={selectedpatientappointment.patientambherappointmentrating} readOnly /> 
-      </Stack>  
-      <p>{selectedpatientappointment.patientambherappointmentfeedback}</p>
-     </div>
-     )} 
-
-
-{showambherfeedbackdialog &&(
-  <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-     <div className="flex flex-col items mt-60 mb-60 bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-     <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#08404d]"><i className="ml-3 bx bxs-message-square-dots text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[20px] font-albertsans font-bold text-[#f0f0f0]">Ambher Optical Appointment FeedBack</h1></div>
-   <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-       <div className="px-5 flex flex-col justify-center  h-full mt-4 w-full"><p className="font-albertsans font-semibold text-[20px] text-[#424242] ">Rate our service</p>
-       <Stack spacing={1}>
-                <Rating size="large" value={ambherappointmentrating}  onChange={(e) => setambherappointmentrating(Number(e.target.value))}  sx={{fontSize: '2rem'}} name="half-rating-read" defaultValue={0} precision={1} />
-        </Stack>  
-       </div>
-
-
-       <div className=" mt-4 px-5 w-full  flex flex-col">
-          <textarea className="w-full text-[20px] rounded-md p-2  bg-[#ededed]   text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentfeedback} onChange={(e) => {setambherappointmentfeedback(e.target.value); adjusttextareaheight();}} placeholder="How's your experience?"/>                   
-       </div>
-
-       <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-         <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {setshowambherfeedbackdialog(false); setambherappointmentfeedback(""); setambherappointmentrating(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-         <div className="hover:cursor-pointer bg-[#08404d]  ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {handlesubmitfeedback('ambher'); setshowambherfeedbackdialog(false);}}><p className=" text-[#ffffff]">Submit</p></div>
-       </div>
-       </div>
-     </div>
-    </div>
 )}
-
-
-
-
-
-  </div>
-)}
-
-
-
-
- </div>
-
-</div>
-)}
-
 
 {selectedpatientappointment.patientbautistaappointmentdate && (
-<div className="flex flex-col bg-[#fdfdfd]  h-auto w-full rounded-3xl">
-<div className="flex p-3 ">
-  <img src={bautistalogo} className="w-15"/>  
-  <h1 className="font-albertsans font-bold text-[20px] text-[#2387c5] mt-1 ml-3">Bautista Eye Center</h1>
-  <span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-    ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-      selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-      selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-      selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-      'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientbautistaappointmentstatus}</span>
-  </div>
-
-
-  
-<div className="flex flex-col mr-3 pr-8 bg-[#fdfdfd] h-auto  w-full rounded-3xl">
-
-
- <div className="flex flex-col  w-full">           
- <div className="mr-10 flex flex-col h-fit form-group ml-3 mt-4 w-full ">
-       <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientbautistaappointmentdate">Appointment Details : </label>     
-    {/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientbautistaappointmentdate" id="patientbautistaappointmentdate" placeholder="" required={!!bautistaservicesselected}/>*/}
-    <div className="h-max w-full flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-      {(selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" ||
-      selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
-
-        <h1>{selectedpatientappointment.patientbautistaappointmenteyespecialist}</h1>
-
-    )}
-     <h1>{formatappointmatedates(selectedpatientappointment.patientbautistaappointmentdate)} <span className="ml-2">({formatappointmenttimes(selectedpatientappointment.patientbautistaappointmenttime)})</span></h1>
-
-
-     {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-  <div id="patientbautistaappointmentpaymentotal" className="mt-5.5" >
-    <h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-    <p className="text-[#2d2d44] text-[18px]">
-      ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
-    </p>
-  </div>
-)}
-    </div>
-    
-     </div>
-
-
-
-
-
- </div>
-
-
-
- <div className="p-4">
- <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam} type="checkbox" name="patientbautistaappointmentcomprehensiveeyeexam" id="patientbautistaappointmentcomprehensiveeyeexam" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcomprehensiveeyeexam">Comprehensive Eye Exam</label>   
-    </div>
-
- <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy} type="checkbox" name="patientbautistaappointmentdiabeticretinopathy" id="patientbautistaappointmentdiabeticretinopathy" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentdiabeticretinopathy">Diabetic Retinopathy</label>   
-    </div>   
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentglaucoma} type="checkbox" name="patientbautistaappointmentglaucoma" id="patientbautistaappointmentglaucoma" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentglaucoma">Glaucoma</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy} type="checkbox" name="patientbautistaappointmenthypertensiveretinopathy" id="patientbautistaappointmenthypertensiveretinopathy" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmenthypertensiveretinopathy">Hypertensive Retinopathy</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentretinolproblem} type="checkbox" name="patientbautistaappointmentretinolproblem" id="patientbautistaappointmentretinolproblem" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentretinolproblem">Retinol Problem</label>   
-    </div>    
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery} type="checkbox" name="patientbautistaappointmentcataractsurgery" id="patientbautistaappointmentcataractsurgery" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcataractsurgery">Cataract Surgery</label>   
-    </div>      
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery} type="checkbox" name="patientbautistaappointmentpterygiumsurgery" id="patientbautistaappointmentpterygiumsurgery" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentpterygiumsurgery">Pterygium Surgery</label>   
-    </div> 
-
-
-  <div className="flex items-center mt-5 ml-7">
-    <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentotherservice} onChange={(e) => setshowotherpatientbautistaappointmentotherservice(e.target.checked)}  type="checkbox" name="patientbautistaappointmentotherservice" id="patientbautistaappointmentotherservice" />
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentotherservice">Other</label>   
-    
-    </div>  
-     
-     {selectedpatientappointment.patientbautistaappointmentotherservice && (
-          <div className="mt-3 ml-17">
-              <p className="font-albertsans text-[17px]">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
+  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 overflow-hidden">
+    <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-blue-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
+          <div>
+            <h2 className="text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
+            <p className="text-gray-900 text-sm">Comprehensive Eye Care & Surgery</p>
           </div>
-      )}    
-
-
-
-    {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-  <div id="patientbautistaappointmentpaymentotal" className="mt-15" >
-
-    <div className="mt-3 w-full flex flex-col">
-      <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarkssubject">Consultation Subject :</label>  
-      <p>{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
-    </div>
-
-    <div className="mt-3 w-full flex flex-col">
-      <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarks">Consultation Remarks :</label>  
-      <p>{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
-    </div>
-
-
-    <div className="mt-3 w-full flex flex-col">
-    <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentprescription">Presciption :</label>  
-    <p>{selectedpatientappointment.patientbautistaappointmentprescription}</p>
-  </div>
-
-  
-    {selectedpatientappointment.patientbautistaappointmentrating === 0 && selectedpatientappointment.patientbautistaappointmentfeedback === "" && (
-    <div  onClick={() => setshowbautistafeedbackdialog(true)}  className="bg-[#2d91cf]  hover:bg-[#1b6796] mt-4 h-[50px]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 hover:cursor-pointer rounded-[20px]"><h1 className="text-white font-albertsans font-semibold text-[20px]">Submit a Feedback</h1></div>
-
-
- )}  
-
-  {selectedpatientappointment.patientbautistaappointmentrating != 0 && selectedpatientappointment.patientbautistaappointmentfeedback != "" && (
-    <div className="mt-10"> 
-
-    <h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-    <Stack spacing={1}>
-     <Rating size="large" value={selectedpatientappointment.patientbautistaappointmentrating} readOnly /> 
-    </Stack>  
-    <p>{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
-   </div>
-   )} 
-
-
-
-  
-
-
-{showbautistafeedbackdialog &&(
-  <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-     <div className="flex flex-col items mt-60 mb-60 bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-     <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#08404d]"><i className="ml-3 bx bxs-message-square-dots text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[20px] font-albertsans font-bold text-[#f0f0f0]">Bautista Eye Center Appointment FeedBack</h1></div>
-   <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-       <div className="px-5 flex flex-col justify-center  h-full mt-4 w-full"><p className="font-albertsans font-semibold text-[20px] text-[#424242] ">Rate our service</p>
-       <Stack spacing={1}>
-                <Rating size="large" value={bautistaappointmentrating}  onChange={(e) => setbautistaappointmentrating(Number(e.target.value))}  sx={{fontSize: '2rem'}} name="half-rating-read" defaultValue={0} precision={1} />
-        </Stack>  
-       </div>
-
-
-       <div className=" mt-4 px-5 w-full  flex flex-col">
-          <textarea className="w-full text-[20px] rounded-md p-2  bg-[#ededed]   text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentfeedback} onChange={(e) => {setbautistaappointmentfeedback(e.target.value); adjusttextareaheight();}} placeholder="How's your experience?"/>                   
-       </div>
-
-       <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-         <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {setshowbautistafeedbackdialog(false); setbautistaappointmentfeedback(""); setbautistaappointmentrating(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-         <div className="hover:cursor-pointer bg-[#08404d]  ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {handlesubmitfeedback('bautista'); setshowbautistafeedbackdialog(false);}}><p className=" text-[#ffffff]">Submit</p></div>
-       </div>
-       </div>
-     </div>
-    </div>
-)}
-  </div>
-)}
-
-
-
-
- </div>
-
-</div>
-</div>
-)}
-</div>
-
-{(selectedpatientappointment.patientambherappointmentstatus === "Completed" &&
-  selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
-    <div className="bg-[#dbfac8] w-full p-3 mt-20 rounded-2xl">
-      <div className="  items-center  flex justify-between">
-          <h1 className=" text-[#237234] font-bold font-albertsans text-[20px] ">Combined Total Payment : </h1>
-          <p className="text-[#2b5910] text-[24px] font-albertsans font-semibold">
-             ₱{(selectedpatientappointment.patientambherappointmentpaymentotal + selectedpatientappointment.patientbautistaappointmentpaymentotal).toLocaleString()}
-          </p>
+        </div>
+        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
+            'bg-red-100 text-red-800'}`}>
+          {selectedpatientappointment.patientbautistaappointmentstatus}
+        </span>
       </div>
     </div>
 
+    <div className="p-6 space-y-6">
+      {/* Appointment Details */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <i className="bx bx-calendar text-blue-600"></i>
+          Appointment Details
+        </h3>
+        <div className="bg-white rounded-xl p-4 border border-blue-200">
+          {(selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" ||
+          selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
+            <div className="mb-3">
+              <span className="text-sm font-medium text-gray-500">Eye Specialist:</span>
+              <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientbautistaappointmenteyespecialist}</p>
+            </div>
+          )}
+          
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Date & Time:</span>
+            <p className="text-gray-800 font-semibold">
+              {formatappointmatedates(selectedpatientappointment.patientbautistaappointmentdate)} 
+              <span className="ml-2">({formatappointmenttimes(selectedpatientappointment.patientbautistaappointmenttime)})</span>
+            </p>
+          </div>
+
+          {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
+            <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
+              <span className="text-sm font-medium text-blue-700">Payment Total:</span>
+              <p className="text-blue-800 font-bold text-lg">
+                ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Services */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <i className="bx bx-list-check text-blue-600"></i>
+          Selected Services
+        </h3>
+        <div className="bg-white rounded-xl p-4 border border-blue-200">
+          <div className="space-y-3">
+            {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Comprehensive Eye Exam</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Diabetic Retinopathy</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentglaucoma && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Glaucoma</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Hypertensive Retinopathy</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Retinal Problem</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Cataract Surgery</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
+              <div className="flex items-center gap-3">
+                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                <span className="text-gray-700 font-medium">Pterygium Surgery</span>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentotherservice && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Other Service</span>
+                </div>
+                <div className="ml-8 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <p className="text-blue-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Consultation Details - Only for Completed */}
+      {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-clipboard text-blue-600"></i>
+            Consultation Details
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-blue-200 space-y-4">
+            {selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Consultation Subject:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentconsultationremarks && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Consultation Remarks:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
+              </div>
+            )}
+            
+            {selectedpatientappointment.patientbautistaappointmentprescription && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Prescription:</span>
+                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentprescription}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Section */}
+      {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-star text-blue-600"></i>
+            Feedback
+          </h3>
+          
+          {selectedpatientappointment.patientbautistaappointmentrating === 0 && selectedpatientappointment.patientbautistaappointmentfeedback === "" ? (
+            <button  
+              onClick={() => setshowbautistafeedbackdialog(true)}  
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <i className="bx bx-message-square-dots text-lg"></i>
+              Submit Feedback
+            </button>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-blue-200">
+              <span className="text-sm font-medium text-gray-500">Your Feedback:</span>
+              <div className="mt-2">
+                <Stack spacing={1}>
+                  <Rating size="large" value={selectedpatientappointment.patientbautistaappointmentrating} readOnly /> 
+                </Stack>  
+                <p className="text-gray-700 mt-2">{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
 )}
+                               </div>
 
+                               {/* Combined Payment Total */}
+                               {(selectedpatientappointment.patientambherappointmentstatus === "Completed" &&
+                                 selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
+                                 <div className="px-8 pb-6">
+                                   <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
+                                     <div className="flex items-center justify-between">
+                                       <div className="flex items-center gap-3">
+                                         <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                                           <i className="bx bx-receipt text-white text-xl"></i>
+                                         </div>
+                                         <div>
+                                           <h3 className="text-xl font-bold text-gray-800 font-albertsans">Combined Total Payment</h3>
+                                           <p className="text-gray-600">Total cost for both clinic appointments</p>
+                                         </div>
+                                       </div>
+                                       <div className="text-right">
+                                         <p className="text-3xl font-bold text-gray-800">
+                                           ₱{(selectedpatientappointment.patientambherappointmentpaymentotal + selectedpatientappointment.patientbautistaappointmentpaymentotal).toLocaleString()}
+                                         </p>
+                                         <p className="text-sm text-gray-500">Total Amount</p>
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+                               )}
 
+                               {/* Additional Information Section */}
+                               <div className="bg-gray-50 rounded-t-3xl px-8 py-6 border-t border-gray-100">
+                                 <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                                   <i className="bx bx-note text-gray-600"></i>
+                                   Additional Information
+                                 </h3>
+                                 
+                                 <div className="space-y-6">
+                                   {/* Patient Notes */}
+                                   <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                       <i className="bx bx-message-detail text-gray-600"></i>
+                                       Patient Appointment Notes
+                                     </h4>
+                                     <div className="space-y-4">
+                                       <div>
+                                         <p className="text-gray-700 leading-relaxed">
+                                           {selectedpatientappointment.patientadditionalappointmentnotes || "No additional notes provided"}
+                                         </p>
+                                       </div>
+                                       {selectedpatientappointment.patientadditionalappointmentnotesimage && (
+                                         <div>
+                                           <span className="text-sm font-medium text-gray-500 block mb-2">Attached Image:</span>
+                                           <div className="max-w-md">
+                                             <img 
+                                               className="w-full h-auto object-cover rounded-lg border border-gray-200 shadow-sm" 
+                                               src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}
+                                               alt="Patient appointment notes"
+                                             />
+                                           </div>
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
 
-
-
-
-                        <div className="w-full mt-5 p-3 flex flex-col mb-5 bg-[#ededed] rounded-2xl  ">
-                          <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Patient Appointment Notes :</label>  
-
-                           <div>{selectedpatientappointment.patientadditionalappointmentnotes ||"No additional notes"}
-                           <div className=" w-fit h-fit mt-5">
-                          <img className=" object-cover  rounded-2xl" src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}/>                 
-                          </div>
+                                   {/* Supporting Documents Display */}
+                                   {selectedpatientappointment.patientsupportingdocuments && selectedpatientappointment.patientsupportingdocuments.length > 0 && (
+                                     <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                       <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                         <i className="bx bx-file text-gray-600"></i>
+                                         Supporting Documents ({selectedpatientappointment.patientsupportingdocuments.length})
+                                       </h4>
+                                       
+                                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                         {selectedpatientappointment.patientsupportingdocuments.map((doc, index) => (
+                                           <div 
+                                             key={index} 
+                                             className="bg-gray-50 p-4 rounded-xl border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                                             onClick={() => handledocumentview(doc)}
+                                             title="Click to open/download document"
+                                           >
+                                             <div className="flex items-center gap-3 mb-3">
+                                               <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
+                                                 doc.mimetype.startsWith('image/') ? 'text-green-500' :
+                                                 doc.mimetype === 'application/pdf' ? 'text-red-500' :
+                                                 doc.mimetype.includes('word') ? 'text-blue-500' :
+                                                 'text-gray-500'
+                                               }`}></i>
+                                               <div className="flex-1 min-w-0">
+                                                 <p className="text-sm font-medium text-gray-800 truncate" title={doc.originalname}>
+                                                   {doc.originalname}
+                                                 </p>
+                                                 <p className="text-xs text-gray-500">
+                                                   {formatFileSize(doc.size)} • Click to open/download
+                                                 </p>
+                                               </div>
+                                             </div>
+                                             
+                                             {/* Preview for images */}
+                                             {doc.mimetype.startsWith('image/') && (
+                                               <div className="mb-3">
+                                                 <img 
+                                                   src={`${_apiUrl}${doc.url}`} 
+                                                   alt={doc.originalname}
+                                                   className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                                   onError={(e) => {
+                                                     e.target.src = defaultimageplaceholder;
+                                                   }}
+                                                 />
+                                               </div>
+                                             )}
+                                             
+                                             {/* Download button */}
+                                             <a 
+                                               href={`${_apiUrl}${doc.url}`}
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               download={doc.originalname}
+                                               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200 w-full justify-center"
+                                               onClick={(e) => e.stopPropagation()}
+                                             >
+                                               <i className="bx bx-download text-sm"></i>
+                                               Download
+                                             </a>
+                                           </div>
+                                         ))}
+                                       </div>
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
+                             </div>
                            </div>
-                        </div>
 
-                        {/* Supporting Documents Display */}
-                        {selectedpatientappointment.patientsupportingdocuments && selectedpatientappointment.patientsupportingdocuments.length > 0 && (
-                          <div className="w-full mt-5 p-3 flex flex-col mb-5 bg-[#f8f9fa] rounded-2xl border border-gray-200">
-                            <label className="text-[18px] font-semibold font-albertsans text-[#343436] mb-3">
-                              Supporting Documents ({selectedpatientappointment.patientsupportingdocuments.length})
-                            </label>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {selectedpatientappointment.patientsupportingdocuments.map((doc, index) => (
-                                <div 
-                                  key={index} 
-                                  className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
-                                  onClick={() => handledocumentview(doc)}
-                                  title="Click to open/download document"
-                                >
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
-                                      doc.mimetype.startsWith('image/') ? 'text-green-500' :
-                                      doc.mimetype === 'application/pdf' ? 'text-red-500' :
-                                      doc.mimetype.includes('word') ? 'text-blue-500' :
-                                      'text-gray-500'
-                                    }`}></i>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-gray-800 truncate" title={doc.originalname}>
-                                        {doc.originalname}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {formatFileSize(doc.size)} • Click to open/download
-                                      </p>
-                                    </div>
+                           {/* Feedback Dialogs - Keep the existing ones */}
+                           {showambherfeedbackdialog && (
+                             <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+                                <div className="flex flex-col items mt-60 mb-60 bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
+                                <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#08404d]"><i className="ml-3 bx bxs-message-square-dots text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[20px] font-albertsans font-bold text-[#f0f0f0]">Ambher Optical Appointment FeedBack</h1></div>
+                              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
+                                  <div className="px-5 flex flex-col justify-center  h-full mt-4 w-full"><p className="font-albertsans font-semibold text-[20px] text-[#424242] ">Rate our service</p>
+                                  <Stack spacing={1}>
+                                           <Rating size="large" value={ambherappointmentrating}  onChange={(e) => setambherappointmentrating(Number(e.target.value))}  sx={{fontSize: '2rem'}} name="half-rating-read" defaultValue={0} precision={1} />
+                                   </Stack>  
                                   </div>
-                                  
-                                  {/* Preview for images */}
-                                  {doc.mimetype.startsWith('image/') && (
-                                    <div className="mb-3">
-                                      <img 
-                                        src={`${_apiUrl}${doc.url}`} 
-                                        alt={doc.originalname}
-                                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                                        onError={(e) => {
-                                          e.target.src = defaultimageplaceholder;
-                                        }}
-                                      />
-                                    </div>
-                                  )}
-                                  
-                                  {/* Download link */}
-                                  <a 
-                                    href={`${_apiUrl}${doc.url}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download={doc.originalname}
-                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200"
-                                  >
-                                    <i className="bx bx-download text-sm"></i>
-                                    Download
-                                  </a>
+
+                                  <div className=" mt-4 px-5 w-full  flex flex-col">
+                                     <textarea className="w-full text-[20px] rounded-md p-2  bg-[#ededed]   text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentfeedback} onChange={(e) => {setambherappointmentfeedback(e.target.value); adjusttextareaheight();}} placeholder="How's your experience?"/>                   
+                                  </div>
+
+                                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
+                                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {setshowambherfeedbackdialog(false); setambherappointmentfeedback(""); setambherappointmentrating(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
+                                    <div className="hover:cursor-pointer bg-[#08404d]  ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {handlesubmitfeedback('ambher'); setshowambherfeedbackdialog(false);}}><p className=" text-[#ffffff]">Submit</p></div>
+                                  </div>
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                               </div>
+                           )}
 
+                           {showbautistafeedbackdialog && (
+                             <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+                                <div className="flex flex-col items mt-60 mb-60 bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
+                                <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#08404d]"><i className="ml-3 bx bxs-message-square-dots text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[20px] font-albertsans font-bold text-[#f0f0f0]">Bautista Eye Center Appointment FeedBack</h1></div>
+                              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
+                                  <div className="px-5 flex flex-col justify-center  h-full mt-4 w-full"><p className="font-albertsans font-semibold text-[20px] text-[#424242] ">Rate our service</p>
+                                  <Stack spacing={1}>
+                                           <Rating size="large" value={bautistaappointmentrating}  onChange={(e) => setbautistaappointmentrating(Number(e.target.value))}  sx={{fontSize: '2rem'}} name="half-rating-read" defaultValue={0} precision={1} />
+                                   </Stack>  
+                                  </div>
 
+                                  <div className=" mt-4 px-5 w-full  flex flex-col">
+                                     <textarea className="w-full text-[20px] rounded-md p-2  bg-[#ededed]   text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentfeedback} onChange={(e) => {setbautistaappointmentfeedback(e.target.value); adjusttextareaheight();}} placeholder="How's your experience?"/>                   
+                                  </div>
 
-                           </div>                         </div>
-                      )}
-
-
-
-
-
-
-
-
-
-                 </div>
-                 </div>
-      
+                                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
+                                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {setshowbautistafeedbackdialog(false); setbautistaappointmentfeedback(""); setbautistaappointmentrating(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
+                                    <div className="hover:cursor-pointer bg-[#08404d]  ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {handlesubmitfeedback('bautista'); setshowbautistafeedbackdialog(false);}}><p className=" text-[#ffffff]">Submit</p></div>
+                                  </div>
+                                  </div>
+                                </div>
+                               </div>
+                           )}
+                         </div>
+                      )}                 </div>
 
       </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      </div>
       
         </section>
 
