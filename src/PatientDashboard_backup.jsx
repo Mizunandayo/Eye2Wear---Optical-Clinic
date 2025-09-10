@@ -2153,51 +2153,199 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
                          <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-                           <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] mt-10 mb-10 animate-fadeInUp ">
-                                 <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                                   <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">View Appointment</h1></div>
-                                   <div onClick={() => setviewpatientappointment(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-100 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden w-full max-w-6xl mx-6 my-8 animate-fadeInUp">
+                             
+                             {/* Modal Header */}
+                             <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                               <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                     <i className="bx bx-calendar-check text-blue-600 text-2xl"></i>
+                                   </div>
+                                   <div>
+                                     <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
+                                     <p className="text-gray-600 mt-1">Review your scheduled consultation information</p>
+                                   </div>
                                  </div>
+                                 <button 
+                                   onClick={() => setviewpatientappointment(false)} 
+                                   className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105"
+                                 >
+                                   <i className="bx bx-x text-gray-600 text-2xl"></i>
+                                 </button>
+                               </div>
+                             </div>
 
-                                 
-                  <div className="mt-3 flex justify-start items-start  w-full rounded-3xl ">
+                             {/* Modal Content */}
+                             <div className="p-8">
+                               <div className="grid lg:grid-cols-2 gap-8">
 
-{selectedpatientappointment.patientambherappointmentdate && (
+                                 {/* Ambher Optical Section */}
+                                 {selectedpatientappointment.patientambherappointmentdate && (
+                                   <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
+                                     <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-green-200">
+                                       <div className="flex items-center justify-between">
+                                         <div className="flex items-center gap-4">
+                                           <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
+                                           <div>
+                                             <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
+                                             <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
+                                           </div>
+                                         </div>
+                                         <span className={`font-albertsans font-semibold rounded-full text-sm px-4 py-2 inline-flex
+                                           ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+                                             selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+                                             selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
+                                             selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
+                                             'bg-red-100 text-red-800'}`}>
+                                           {selectedpatientappointment.patientambherappointmentstatus}
+                                         </span>
+                                       </div>
+                                     </div>
 
+                                     <div className="p-6 space-y-6">
+                                       {/* Appointment Details */}
+                                       <div className="bg-white rounded-xl p-6 border border-green-200">
+                                         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                           <i className="bx bx-calendar text-green-600"></i>
+                                           Appointment Information
+                                         </h3>
+                                         
+                                         {(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
+                                           selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
+                                           <div className="mb-3">
+                                             <span className="text-sm font-medium text-gray-600">Eye Specialist:</span>
+                                             <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmenteyespecialist}</p>
+                                           </div>
+                                         )}
+                                         
+                                         <div className="mb-3">
+                                           <span className="text-sm font-medium text-gray-600">Date & Time:</span>
+                                           <p className="text-gray-800 font-semibold">
+                                             {formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} 
+                                             <span className="ml-2">at {formatappointmenttimes(selectedpatientappointment.patientambherappointmenttime)}</span>
+                                           </p>
+                                         </div>
 
-<div className="flex flex-col mr-3 bg-[#fdfdfd]    h-auto w-full rounded-3xl">
-  <div className="flex p-3">
-  <img src={ambherlogo} className="w-15"/>  
-  <h1 className="font-albertsans font-bold text-[20px] text-[#237234] mt-1 ml-3">Ambher Optical</h1>
-  <span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-    selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-    selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-    selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-    'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientambherappointmentstatus}</span>
-  </div>
+                                         <div className="mb-3">
+                                           <span className="text-sm font-medium text-gray-600">Location:</span>
+                                           <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmentlocationaddress}</p>
+                                         </div>
 
- <div className="flex ">     
-        
- <div className="flex flex-col w-full pr-3">           
-<div className=" flex flex-col h-fit form-group ml-3  mt-4 w-full ">
-       <label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmentdate">Appointment Details : </label>     
-    {/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" required={!!ambherservicesselected}/>*/}
-    <div className="h-max w-full  flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-      {(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
-      selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
+                                         {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+                                           <div className="mt-4 pt-4 border-t border-green-200">
+                                             <span className="text-sm font-medium text-gray-600">Payment Total:</span>
+                                             <p className="text-green-700 font-bold text-lg">₱{selectedpatientappointment.patientambherappointmentpaymentotal}</p>
+                                           </div>
+                                         )}
+                                       </div>
 
-        <h1>{selectedpatientappointment.patientambherappointmenteyespecialist}</h1>
+                                       {/* Services Section */}
+                                       <div className="bg-white rounded-xl p-6 border border-green-200">
+                                         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                           <i className="bx bx-list-check text-green-600"></i>
+                                           Selected Services
+                                         </h3>
+                                         
+                                         <div className="space-y-3">
+                                           {selectedpatientappointment.patientambherappointmentcataractscreening && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Visual/Cataract Screening</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentpediatricassessment && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Pediatric Assessment</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Color Vision Testing</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentlowvisionaid && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Low Vision Aid</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentrefraction && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Refraction</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
+                                             <div className="flex items-center gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500"></i>
+                                               <span>Contact Lens Fitting</span>
+                                             </div>
+                                           )}
+                                           {selectedpatientappointment.patientambherappointmentotherservice && (
+                                             <div className="flex items-start gap-3 text-gray-700">
+                                               <i className="bx bx-check-circle text-green-500 mt-0.5"></i>
+                                               <div>
+                                                 <span>Other Service</span>
+                                                 <p className="text-sm text-gray-600 mt-1">{selectedpatientappointment.patientambherappointmentotherservicenote}</p>
+                                               </div>
+                                             </div>
+                                           )}
+                                         </div>
+                                       </div>
 
-    )}
-     <h1>{formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} <span className="ml-2">({formatappointmenttimes(selectedpatientappointment.patientambherappointmenttime)})</span></h1>
+                                       {/* Completed Appointment Details */}
+                                       {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+                                         <div className="bg-white rounded-xl p-6 border border-green-200">
+                                           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                             <i className="bx bx-file-doc text-green-600"></i>
+                                             Consultation Results
+                                           </h3>
+                                           
+                                           <div className="space-y-4">
+                                             <div>
+                                               <span className="text-sm font-medium text-gray-600">Subject:</span>
+                                               <p className="text-gray-800 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
+                                             </div>
+                                             
+                                             <div>
+                                               <span className="text-sm font-medium text-gray-600">Remarks:</span>
+                                               <p className="text-gray-800 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
+                                             </div>
+                                             
+                                             <div>
+                                               <span className="text-sm font-medium text-gray-600">Prescription:</span>
+                                               <p className="text-gray-800 mt-1">{selectedpatientappointment.patientambherappointmentprescription}</p>
+                                             </div>
+                                           </div>
 
-
-     {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-  <div id="patientambherappointmentpaymentotal" className="mt-5" >
-    <h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-    <p className="text-[#2d2d44] text-[18px]">
-      ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
+                                           {/* Feedback Section */}
+                                           {selectedpatientappointment.patientambherappointmentrating === 0 && selectedpatientappointment.patientambherappointmentfeedback === "" ? (
+                                             <button 
+                                               onClick={() => setshowambherfeedbackdialog(true)}
+                                               className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                                             >
+                                               <i className="bx bx-star"></i>
+                                               Submit Feedback
+                                             </button>
+                                           ) : (
+                                             <div className="mt-6 pt-4 border-t border-green-200">
+                                               <span className="text-sm font-medium text-gray-600">Your Feedback:</span>
+                                               <div className="flex items-center gap-2 mt-2">
+                                                 <Stack spacing={1}>
+                                                   <Rating name="ambher-rating" value={selectedpatientappointment.patientambherappointmentrating} readOnly />
+                                                 </Stack>
+                                               </div>
+                                               <p className="text-gray-800 mt-2">{selectedpatientappointment.patientambherappointmentfeedback}</p>
+                                             </div>
+                                           )}
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
+                                 )}
     </p>
   </div>
 )}
