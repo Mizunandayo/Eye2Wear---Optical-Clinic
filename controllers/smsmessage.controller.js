@@ -8,11 +8,30 @@ import mongoose from 'mongoose';
 import iPragSMS from '../utils/iprogSMS.js';
 import process from 'process';
 
-// Initialize iProg SMS client
+// Default iProg SMS client (for backward compatibility)
 const iprogClient = new iPragSMS();
 
 // SMS deduplication tracking
 let recentSmsRequests = new Map();
+
+// Helper function to get clinic-specific iProg client
+function getClinicSMSClient(clinicName) {
+  if (!clinicName) {
+    console.warn('⚠️  No clinic specified, using default client');
+    return iprogClient;
+  }
+  
+  const normalizedClinic = clinicName.toLowerCase().trim();
+  
+  if (normalizedClinic.includes('ambher')) {
+    return iPragSMS.createForAmbher();
+  } else if (normalizedClinic.includes('bautista')) {
+    return iPragSMS.createForBautista();
+  }
+  
+  console.warn(`⚠️  Unknown clinic: ${clinicName}, using default client`);
+  return iprogClient;
+}
 
 // Helper function to format phone numbers
 function formatPhoneNumber(phone) {
@@ -73,6 +92,10 @@ class SmsController {
       if (isOrderCompletion && targetPhoneNumber) {
         console.log('📱 Processing order completion SMS to specific phone number:', targetPhoneNumber);
         
+        // Get clinic-specific iProg client
+        const clinicSmsClient = getClinicSMSClient(senderClinic);
+        console.log(`🏥 Using SMS client for clinic: ${senderClinic}`);
+        
         // SMS deduplication check for order completion
         const orderCompletionKey = `order-completion-${targetPhoneNumber}-${Date.now().toString().substring(0, 10)}`; // Include minute timestamp
         
@@ -123,7 +146,7 @@ class SmsController {
         // Try multiple times to get accurate credits before sending
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
-            const creditsBeforeResult = await iprogClient.checkSmsCredits();
+            const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
             if (creditsBeforeResult.success) {
               creditsBeforeSending = creditsBeforeResult.balance;
               console.log(`💳 Order SMS credits before (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -138,7 +161,7 @@ class SmsController {
         }
 
         // Use bulk SMS endpoint with single recipient (same as promotional SMS)
-        const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhone], fullMessage);
+        const bulkSmsResult = await clinicSmsClient.sendBulkSMS([formattedPhone], fullMessage);
         console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
 
         // Enhanced credits check after sending with multiple attempts
@@ -152,7 +175,7 @@ class SmsController {
               console.log(`💳 Waiting ${delays[attempt]/1000} seconds for order SMS API balance update...`);
               await new Promise(resolve => setTimeout(resolve, delays[attempt]));
               
-              const creditsAfterResult = await iprogClient.checkSmsCredits();
+              const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
               if (creditsAfterResult.success) {
                 const newCreditsAfter = creditsAfterResult.balance;
                 const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -237,6 +260,10 @@ class SmsController {
       }
 
       // Regular promotional SMS logic (send to all patients)
+      // Get clinic-specific iProg client
+      const clinicSmsClient = getClinicSMSClient(senderClinic);
+      console.log(`🏥 Using SMS client for clinic: ${senderClinic}`);
+      
       // Get all patients with contact numbers regardless of clinic
       const patients = await PatientDemographic.find({
         patientcontactnumber: { $exists: true, $ne: null }
@@ -284,7 +311,7 @@ class SmsController {
       await smsRecord.save();
 
       // Check iProg SMS configuration
-      const providerInfo = iprogClient.getProviderInfo();
+      const providerInfo = clinicSmsClient.getProviderInfo();
       console.log('📱 SMS Provider Configuration:', providerInfo);
 
       // Enhanced credits tracking with multiple checks for accuracy
@@ -295,7 +322,7 @@ class SmsController {
       // Try multiple times to get accurate credits before sending
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -315,7 +342,7 @@ class SmsController {
       // Send bulk SMS via iProg using the new bulk endpoint
       console.log(`📱 Sending promotional SMS to ${phoneNumbers.length} recipients via iProg bulk API`);
       
-      const bulkSmsResult = await iprogClient.sendBulkSMS(phoneNumbers, fullMessage);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS(phoneNumbers, fullMessage);
 
       // Enhanced credits check after sending with multiple attempts and longer delays
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -329,7 +356,7 @@ class SmsController {
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -409,7 +436,7 @@ class SmsController {
             const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
             // Send individual SMS via iProg
-            const smsResult = await iprogClient.sendSMS(phoneNumber, fullMessage);
+            const smsResult = await clinicSmsClient.sendSMS(phoneNumber, fullMessage);
             
             if (smsResult.success) {
               sendResults.push({
@@ -801,6 +828,10 @@ class SmsController {
       const appointmentTime = appointment.appointmenttime;
       const clinicName = appointment.cliniclocationid?.cliniclocationname || appointment.appointmentclinic;
 
+      // Get clinic-specific iProg client for appointment reminder
+      const clinicSmsClient = getClinicSMSClient(clinicName);
+      console.log(`🏥 Using SMS client for appointment reminder - clinic: ${clinicName}`);
+
       // Create SMS message
       const message = `Appointment Reminder
 
@@ -829,7 +860,7 @@ ${appointment.appointmentclinic}`;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`💳 Checking credits before sending appointment reminder SMS (attempt ${attempt})...`);
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -843,7 +874,7 @@ ${appointment.appointmentclinic}`;
         }
       }
 
-      const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([phoneNumber], message);
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -857,7 +888,7 @@ ${appointment.appointmentclinic}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -1282,6 +1313,10 @@ ${clinicName}`;
         clinicName: clinicName
       });
 
+      // Get clinic-specific iProg client for order status SMS
+      const clinicSmsClient = getClinicSMSClient(clinicName);
+      console.log(`🏥 Using SMS client for clinic: ${clinicName}`);
+
       // Enhanced credits tracking for order status SMS (same as promotional SMS)
       let creditsBeforeSending = null;
       let creditsAfterSending = null;
@@ -1291,7 +1326,7 @@ ${clinicName}`;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`💳 Checking credits before sending order status SMS (attempt ${attempt})...`);
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -1305,7 +1340,7 @@ ${clinicName}`;
         }
       }
 
-      const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([phoneNumber], message);
       console.log('📡 Bulk SMS Result for single recipient:', bulkSmsResult);
       console.log(`💰 POTENTIAL CREDIT USAGE: 1 SMS sent to iProg API for order ${orderId}`);
 
@@ -1321,7 +1356,7 @@ ${clinicName}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -1490,8 +1525,15 @@ ${clinicName}`;
     try {
       console.log('💳 Checking SMS credits balance...');
       
-      // Use iProg client to check credits
-      const creditsResult = await iprogClient.checkSmsCredits();
+      // Get clinic information from query parameters or request body
+      const clinicName = req.query.clinic || req.body.clinic || req.body.senderClinic;
+      
+      // Get clinic-specific iProg client
+      const clinicSmsClient = getClinicSMSClient(clinicName);
+      console.log(`🏥 Checking SMS credits for clinic: ${clinicName || 'Default'}`);
+      
+      // Use clinic-specific client to check credits
+      const creditsResult = await clinicSmsClient.checkSmsCredits();
       
       if (creditsResult.success) {
         console.log(`✅ SMS credits retrieved: ${creditsResult.balance} credits`);
@@ -1810,11 +1852,15 @@ ${clinicName}`;
       let creditsAfterSending = null;
       let actualCreditsDeducted = 0;
 
+      // Get clinic-specific iProg client based on clinic type
+      const clinicSmsClient = getClinicSMSClient(clinicName);
+      console.log(`🏥 Using SMS client for clinic: ${clinicName}`);
+
       // Try multiple times to get accurate credits before sending
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`💳 Checking credits before sending wishlist notification SMS (attempt ${attempt})...`);
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -1828,7 +1874,7 @@ ${clinicName}`;
         }
       }
 
-      const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([phoneNumber], message);
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -1842,7 +1888,7 @@ ${clinicName}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -1934,6 +1980,10 @@ ${clinicName}`;
       
       const clinicName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
 
+      // Get clinic-specific iProg client
+      const clinicSmsClient = getClinicSMSClient(clinicName);
+      console.log(`🏥 Using SMS client for restock notification: ${clinicName}`);
+
       // Create enhanced SMS message for restock notification
       const message = ` Great News! Your Wishlist Item is Back in Stock!
 
@@ -1963,7 +2013,7 @@ ${clinicName}`;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`💳 Checking credits before sending restock notification SMS (attempt ${attempt})...`);
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -1977,7 +2027,7 @@ ${clinicName}`;
         }
       }
 
-      const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhoneNumber], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([formattedPhoneNumber], message);
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -1991,7 +2041,7 @@ ${clinicName}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -2387,9 +2437,12 @@ Please reply "RECEIVED" if you get this message.
 
 Thank you!`;
 
-      // Send SMS using iProg
-      const iprogClient = new iPragSMS();
-      const result = await iprogClient.sendBulkSMS([{
+      // Send SMS using clinic-specific iProg client (default to Ambher for testing)
+      const testClinic = 'Ambher Optical'; // Default clinic for testing
+      const clinicSmsClient = getClinicSMSClient(testClinic);
+      console.log(`🏥 Using SMS client for testing: ${testClinic}`);
+      
+      const result = await clinicSmsClient.sendBulkSMS([{
         message: testMessage,
         phone_number: formattedPhone,
         sender_id: 'Eye2Wear'
@@ -2605,6 +2658,10 @@ Thank you!`;
       // Determine the clinic name if not provided
       const clinic = clinicName || (orderType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center');
 
+      // Get clinic-specific iProg client
+      const clinicSmsClient = getClinicSMSClient(clinic);
+      console.log(`🏥 Using SMS client for pickup notification: ${clinic}`);
+
       // Format the pickup date
       let formattedPickupDate = pickupDate;
       try {
@@ -2652,7 +2709,7 @@ ${clinic}`;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`💳 Checking credits before sending pickup notification SMS (attempt ${attempt})...`);
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Credits before sending (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -2667,7 +2724,7 @@ ${clinic}`;
       }
 
       // Send SMS via iProg using bulk endpoint for consistency
-      const bulkSmsResult = await iprogClient.sendBulkSMS([formattedPhone], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([formattedPhone], message);
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -2681,7 +2738,7 @@ ${clinic}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;

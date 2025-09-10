@@ -2,13 +2,44 @@ import axios from 'axios';
 import process from 'process';
 
 class iPragSMS {
-  constructor() {
-    this.apiToken = process.env.IPROG_API_TOKEN;
+  constructor(clinic = null, apiToken = null) {
+    // Use provided API token or determine from clinic
+    if (apiToken) {
+      this.apiToken = apiToken;
+    } else if (clinic) {
+      this.apiToken = this.getApiTokenForClinic(clinic);
+    } else {
+      // Fallback to default (for backward compatibility)
+      this.apiToken = process.env.IPROG_API_TOKEN || process.env.AMBHER_IPROG_API_TOKEN;
+    }
+    
+    this.clinic = clinic;
     this.baseUrl = 'https://sms.iprogtech.com/api/v1';
     
     if (!this.apiToken) {
       console.warn('⚠️  iProg API token not configured. SMS sending will be disabled.');
     }
+  }
+
+  /**
+   * Get the appropriate API token based on clinic
+   * @param {string} clinic - Clinic name ('Ambher Optical' or 'Bautista Eye Center')
+   * @returns {string} API token for the clinic
+   */
+  getApiTokenForClinic(clinic) {
+    if (!clinic) return null;
+    
+    const normalizedClinic = clinic.toLowerCase().trim();
+    
+    if (normalizedClinic.includes('ambher')) {
+      return process.env.AMBHER_IPROG_API_TOKEN;
+    } else if (normalizedClinic.includes('bautista')) {
+      return process.env.BAUTISTA_IPROG_API_TOKEN;
+    }
+    
+    // Default fallback
+    console.warn(`⚠️  Unknown clinic: ${clinic}, using Ambher token as fallback`);
+    return process.env.AMBHER_IPROG_API_TOKEN;
   }
 
   /**
@@ -345,6 +376,7 @@ class iPragSMS {
     return {
       provider: 'iProg SMS',
       configured: !!this.apiToken,
+      clinic: this.clinic || 'Default',
       baseUrl: this.baseUrl,
       endpoints: {
         singleSMS: `${this.baseUrl}/sms_messages`,
@@ -360,9 +392,35 @@ class iPragSMS {
         'SMS credits balance checking',
         'Multiple SMS providers (0 or 1)',
         'Queue-based message processing',
-        'Message tracking with unique IDs'
+        'Message tracking with unique IDs',
+        'Clinic-specific API tokens'
       ]
     };
+  }
+
+  /**
+   * Static method to create iProg client for Ambher Optical
+   * @returns {iPragSMS} iProg client configured for Ambher
+   */
+  static createForAmbher() {
+    return new iPragSMS('Ambher Optical');
+  }
+
+  /**
+   * Static method to create iProg client for Bautista Eye Center
+   * @returns {iPragSMS} iProg client configured for Bautista
+   */
+  static createForBautista() {
+    return new iPragSMS('Bautista Eye Center');
+  }
+
+  /**
+   * Static method to create iProg client for a specific clinic
+   * @param {string} clinicName - Name of the clinic
+   * @returns {iPragSMS} iProg client configured for the clinic
+   */
+  static createForClinic(clinicName) {
+    return new iPragSMS(clinicName);
   }
 }
 

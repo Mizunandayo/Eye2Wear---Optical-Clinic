@@ -6,8 +6,27 @@ import SmsMessage from '../models/smsmessage.js';
 import iPragSMS from './iprogSMS.js';
 import process from 'process';
 
-// Initialize iProg SMS client
+// Initialize default iProg SMS client (for backward compatibility)
 const iprogClient = new iPragSMS();
+
+// Helper function to get clinic-specific iProg client
+function getClinicSMSClient(clinicName) {
+  if (!clinicName) {
+    console.warn('⚠️  No clinic specified in scheduler, using default client');
+    return iprogClient;
+  }
+  
+  const normalizedClinic = clinicName.toLowerCase().trim();
+  
+  if (normalizedClinic.includes('ambher')) {
+    return iPragSMS.createForAmbher();
+  } else if (normalizedClinic.includes('bautista')) {
+    return iPragSMS.createForBautista();
+  }
+  
+  console.warn(`⚠️  Unknown clinic in scheduler: ${clinicName}, using default client`);
+  return iprogClient;
+}
 
 class SmsScheduler {
   static init() {

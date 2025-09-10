@@ -2072,8 +2072,8 @@ function AdminDashboard(){
 
   // Function to extract available years from order data
   const getAvailableYears = useCallback(() => {
-    const { ambherOrders, bautistaOrders } = reportsData;
-    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const { ambherOrders = [], bautistaOrders = [] } = reportsData;
+    const allOrders = [...(ambherOrders || []), ...(bautistaOrders || [])];
     
     const years = new Set();
     allOrders.forEach(order => {
@@ -2088,6 +2088,9 @@ function AdminDashboard(){
 
   // Filter function for order data based on date range
   const filterOrdersByDateRange = useCallback((orders, filterValue, selectedYear = null) => {
+    if (!orders || !Array.isArray(orders)) {
+      return [];
+    }
     const { start, end } = getDateRangeForFilter(filterValue, selectedYear);
     return orders.filter(order => {
       const orderDate = new Date(order.createdAt || order.patientorderambhercreateddate || order.patientorderbautistacreateddate);
@@ -11606,6 +11609,74 @@ try {
     console.log('✅ Manual refresh completed');
   }, [fetchReportsData]);
 
+  // Refresh appointment data function
+  const refreshAppointmentData = useCallback(async () => {
+    console.log('🔄 Manual refresh of appointment data triggered');
+    setloadingappointments(true);
+    try {
+      await fetchAppointmentData(true); // Force refresh bypassing cache
+      console.log('✅ Appointment refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing appointment data:', error);
+    } finally {
+      setloadingappointments(false);
+    }
+  }, [fetchAppointmentData]);
+
+  // Refresh medical records data function
+  const refreshMedicalRecordsData = useCallback(async () => {
+    console.log('🔄 Manual refresh of medical records data triggered');
+    setloadingpatientdemographics(true);
+    try {
+      await fetchDemographicsData(true); // Force refresh bypassing cache
+      console.log('✅ Medical records refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing medical records data:', error);
+    } finally {
+      setloadingpatientdemographics(false);
+    }
+  }, [fetchDemographicsData]);
+
+  // Refresh inventory data function
+  const refreshInventoryData = useCallback(async () => {
+    console.log('🔄 Manual refresh of inventory data triggered');
+    setloadingambherinventorycategorylist(true);
+    setloadingbautistainventorycategorylist(true);
+    setambherloadingproducts(true);
+    setbautistaloadingproducts(true);
+    try {
+      // Refresh inventory categories and products
+      await fetchambherinventorycategories();
+      await fetchbautistainventorycategories();
+      await fetchambherproducts();
+      await fetchbautistaproducts();
+      console.log('✅ Inventory refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing inventory data:', error);
+    } finally {
+      setloadingambherinventorycategorylist(false);
+      setloadingbautistainventorycategorylist(false);
+      setambherloadingproducts(false);
+      setbautistaloadingproducts(false);
+    }
+  }, []);
+
+  // Refresh billing and orders data function
+  const refreshBillingOrdersData = useCallback(async () => {
+    console.log('🔄 Manual refresh of billing and orders data triggered');
+    setLoadingAmbherOrders(true);
+    setLoadingBautistaOrders(true);
+    try {
+      await fetchAllOrdersOptimized(true); // Force refresh bypassing cache
+      console.log('✅ Billing and orders refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing billing and orders data:', error);
+    } finally {
+      setLoadingAmbherOrders(false);
+      setLoadingBautistaOrders(false);
+    }
+  }, [fetchAllOrdersOptimized]);
+
   // Helper functions for data processing - MOVED BEFORE useMemo
   const processMonthlyData = useCallback((data, dateField) => {
     if (!data || !data.length) return [];
@@ -11938,7 +12009,7 @@ try {
     }, 0);
     
     // Calculate appointment payment revenue - ONLY FROM COMPLETED APPOINTMENTS
-    const appointmentRevenue = reportsData.appointments.reduce((total, appointment) => {
+    const appointmentRevenue = (reportsData.appointments || []).reduce((total, appointment) => {
       // Only include completed appointments
       const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
       const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
@@ -12508,7 +12579,17 @@ const fetchSmsCredits = useCallback(async (forceRefresh = false) => {
   try {
     console.log('💳 Fetching SMS credits...');
     
-    const response = await fetch(`${apiUrl}/api/sms/credits`, {
+    // Get current user's clinic
+    const currentUserClinic = getCurrentUserClinic();
+    console.log('🏥 Fetching SMS credits for clinic:', currentUserClinic);
+    
+    // Build URL with clinic parameter
+    let creditsUrl = `${apiUrl}/api/sms/credits`;
+    if (currentUserClinic && currentUserClinic.trim()) {
+      creditsUrl += `?clinic=${encodeURIComponent(currentUserClinic)}`;
+    }
+    
+    const response = await fetch(creditsUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${currentusertoken}`,
@@ -12534,7 +12615,83 @@ const fetchSmsCredits = useCallback(async (forceRefresh = false) => {
   } finally {
     setLoadingSmsCredits(false);
   }
-}, [currentusertoken, apiUrl]);
+}, [currentusertoken, apiUrl, getCurrentUserClinic]);
+
+// Refresh SMS monitoring data function
+const refreshSmsData = useCallback(async () => {
+  console.log('🔄 Manual refresh of SMS data triggered');
+  setLoadingSmsMessages(true);
+  try {
+    await fetchSmsMessagesData(true); // Force refresh bypassing cache
+    await fetchSmsCredits(true); // Force refresh bypassing cache
+    console.log('✅ SMS monitoring refresh completed');
+  } catch (error) {
+    console.error('❌ Error refreshing SMS data:', error);
+  } finally {
+    setLoadingSmsMessages(false);
+  }
+}, [fetchSmsMessagesData, fetchSmsCredits]);
+
+// Refresh Profile Information data function
+const refreshProfileData = useCallback(async () => {
+  console.log('🔄 Manual refresh of profile data triggered');
+  setloadingpatients(true);
+  try {
+    // Refresh patient accounts
+    const fetchresponse = await fetch('/api/patientaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+    
+    if(!fetchresponse.ok){
+      throw new Error("Failed to fetch patient accounts");
+    }
+
+    const patientdata = await fetchresponse.json();
+    setpatients(patientdata);
+    
+    // Also refresh demographic data if it exists
+    await fetchDemographicsData(true);
+    
+    console.log('✅ Profile data refresh completed');
+  } catch (error) {
+    console.error('❌ Error refreshing profile data:', error);
+    setfailedloadingpatients(error.message);
+  } finally {
+    setloadingpatients(false);
+  }
+}, [currentusertoken, fetchDemographicsData]);
+
+// Refresh Account Management data function
+const refreshAccountData = useCallback(async () => {
+  console.log('🔄 Manual refresh of account data triggered');
+  
+  if (activeaccounttable === 'patientaccounttable') {
+    setloadingpatients(true);
+    try {
+      const fetchresponse = await fetch('/api/patientaccounts', {
+        headers: {
+          'Authorization': `Bearer ${currentusertoken}`
+        }
+      });
+      
+      if(!fetchresponse.ok){
+        throw new Error("Failed to fetch patient accounts");
+      }
+
+      const patientdata = await fetchresponse.json();
+      setpatients(patientdata);
+      console.log('✅ Patient account data refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing patient account data:', error);
+      setfailedloadingpatients(error.message);
+    } finally {
+      setloadingpatients(false);
+    }
+  }
+  // TODO: Add refresh logic for other account types (staff, owner, admin) when needed
+}, [activeaccounttable, currentusertoken]);
 
 // Initialize SMS data when component mounts
 useEffect(() => {
@@ -15772,7 +15929,20 @@ useEffect(() => {
 
 { (activedashboard === 'accountmanagement' || isAdminRole) && ( <div id="accountmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl" >   
 
-  <div className="flex items-center"><i className="bx bxs-user-account text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Account Management</h1></div>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center">
+      <i className="bx bxs-user-account text-[#184d85] text-[25px] mr-2"/> 
+      <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Account Management</h1>
+    </div>
+    <div
+      onClick={refreshAccountData}
+      disabled={loadingpatients}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
+      {loadingpatients ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
   <div className={`flex ${isAdminRole ? 'justify-start' : 'justify-between'} items-center mt-3 h-[60px] ${isAdminRole ? 'gap-4' : ''}`}>
     {/* Hide Patient and Staff tabs for admin users */}
     {!isAdminRole && (
@@ -16909,7 +17079,20 @@ useEffect(() => {
 { (activedashboard === 'profileinformation' && !isAdminRole) && ( <div id="profileinformation" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
 
 
-<div className="flex items-center"><i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1></div>
+<div className="flex items-center justify-between">
+  <div className="flex items-center">
+    <i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1>
+  </div>
+  <div
+    onClick={refreshProfileData}
+    disabled={loadingpatients}
+    className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+  >
+    <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
+    {loadingpatients ? 'Refreshing...' : 'Refresh'}
+  </div>
+</div>
 <div className="flex justify-between items-center mt-3 h-[60px]">
 <div onClick={() => showprofiletable('patientprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='patientprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='patientprofiletable' ? 'text-white' : ''}`}>Patients</h1></div>
 <div onClick={() => showprofiletable('staffprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='staffprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='staffprofiletable' ? 'text-white' : ''}`}>Staff</h1></div>
@@ -17302,7 +17485,24 @@ patientage: calculateAge(newBirthdate)
 
  { (activedashboard === 'appointmentmanagement' && !isAdminRole) && (<div id="appointmentmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl flex flex-col" >   
 
-<div className="flex items-center"><i className="bx bxs-calendar text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Appointment Management</h1></div>
+<div className="flex items-center justify-between mb-4">
+  <div className="flex items-center">
+    <i className="bx bxs-calendar text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Appointment Management</h1>
+    </div>
+  
+  {/* Refresh Button */}
+  <div className="flex space-x-3">
+    <div
+      onClick={refreshAppointmentData}
+      disabled={loadingappointmens}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${loadingappointmens ? 'animate-spin' : ''}`} />
+      {loadingappointmens ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
+</div>
 
 
 
@@ -18881,8 +19081,24 @@ className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[
 { (activedashboard === 'medicalrecords' && !isAdminRole) && (<div id="medicalrecords" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
   
 
-
-<div className="flex items-center"><i className="bx bxs-data text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Medical Records</h1></div>
+<div className="flex items-center justify-between mb-4">
+  <div className="flex items-center">
+    <i className="bx bxs-data text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Medical Records</h1>
+  </div>
+  
+  {/* Refresh Button */}
+  <div className="flex space-x-3">
+    <div
+      onClick={refreshMedicalRecordsData}
+      disabled={loadingpatientdemographics}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatientdemographics ? 'animate-spin' : ''}`} />
+      {loadingpatientdemographics ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
+</div>
 
 
 
@@ -19553,7 +19769,24 @@ className="max-w-full max-h-full"
 
 { (activedashboard === 'inventorymanagement' && !isAdminRole) && ( <div id="inventorymanagement" className="pl-5 pr-5 pb-26 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl flex flex-col" >   
 
-<div className="flex items-center"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Inventory Management</h1></div>
+<div className="flex items-center justify-between mb-4">
+  <div className="flex items-center">
+    <i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Inventory Management</h1>
+  </div>
+  
+  {/* Refresh Button */}
+  <div className="flex space-x-3">
+    <div
+      onClick={refreshInventoryData}
+      disabled={loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${(loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts) ? 'animate-spin' : ''}`} />
+      {(loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts) ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
+</div>
 
 <div className="flex justify-start items-center">
 {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
@@ -21068,7 +21301,24 @@ onError={(e) => {
 
 { (activedashboard === 'billingsandorders' && !isAdminRole) && ( <div id="billingsandorders"  className="pl-5 pr-5 pb-26 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl" >   
 
-  <div className="flex items-center"><i className="bx bxs-receipt text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Billings and Orders</h1></div>
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center">
+      <i className="bx bxs-receipt text-[#184d85] text-[25px] mr-2"/> 
+      <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Billings and Orders</h1>
+    </div>
+    
+    {/* Refresh Button */}
+    <div className="flex space-x-3">
+      <div
+        onClick={refreshBillingOrdersData}
+        disabled={loadingAmbherOrders || loadingBautistaOrders}
+        className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+      >
+        <RefreshCw className={`w-4 h-4 mr-2 ${(loadingAmbherOrders || loadingBautistaOrders) ? 'animate-spin' : ''}`} />
+        {(loadingAmbherOrders || loadingBautistaOrders) ? 'Refreshing...' : 'Refresh'}
+      </div>
+    </div>
+  </div>
   
   <div className="flex justify-start items-center ">
   
@@ -24016,6 +24266,18 @@ paginatedBautistaOrders.map((order) => (
      <div className="flex items-center">
        <i className="bx bxs-message text-[#184d85] text-[25px] mr-2"/>
        <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">SMS Monitoring</h1>
+     </div>
+     
+     {/* Refresh Button */}
+     <div className="flex space-x-3">
+       <div
+         onClick={refreshSmsData}
+         disabled={loadingSmsMessages}
+         className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+       >
+         <RefreshCw className={`w-4 h-4 mr-2 ${loadingSmsMessages ? 'animate-spin' : ''}`} />
+         {loadingSmsMessages ? 'Refreshing...' : 'Refresh'}
+       </div>
      </div>
    </div>
               
