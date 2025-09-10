@@ -24679,7 +24679,7 @@ paginatedBautistaOrders.map((order) => (
                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                maxLength={50}
              />
-             <p className="text-xs text-gray-500 mt-1">{promotionalSmsSubject.length}/50 characters</p>
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsSubject.length} characters</p>
            </div>
            
            <div>
@@ -24694,7 +24694,7 @@ paginatedBautistaOrders.map((order) => (
                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                maxLength={1500}
              />
-             <p className="text-xs text-gray-500 mt-1">{promotionalSmsMessage.length}/1500 characters</p>
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsMessage.length} characters</p>
            </div> 
            
            <div className="bg-blue-50 p-3 rounded-md">
