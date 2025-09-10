@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Deduplication Test - Eye2Wear</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .danger {
+            background-color: #dc3545;
+        }
+        .danger:hover {
+            background-color: #c82333;
+        }
+        .success {
+            background-color: #28a745;
+        }
+        .success:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 SMS Deduplication Test Suite</h1>
+        
+        <div class="test-section">
+            <h3>📱 Test Order Status SMS Deduplication</h3>
+            <div class="form-group">
+                <label for="testOrderId">Order ID:</label>
+                <input type="number" id="testOrderId" placeholder="e.g., 256" value="256">
+            </div>
+            <div class="form-group">
+                <label for="testOrderType">Order Type:</label>
+                <select id="testOrderType">
+                    <option value="ambher">Ambher</option>
+                    <option value="bautista">Bautista</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="testStatus">Status:</label>
+                <select id="testStatus">
+                    <option value="Ready for Pickup">Ready for Pickup</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <button onclick="testOrderStatusSMS()">Send SMS (Should Be Blocked)</button>
+            <button onclick="testOrderStatusSMS(true)" class="danger">Force Send SMS (Bypass Check)</button>
+            <div id="smsResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Check Existing SMS for Order</h3>
+            <div class="form-group">
+                <label for="checkOrderId">Order ID to Check:</label>
+                <input type="number" id="checkOrderId" placeholder="e.g., 256" value="256">
+            </div>
+            <button onclick="checkExistingSMS()">Check Existing SMS</button>
+            <div id="checkResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 SMS Statistics & Recent Messages</h3>
+            <button onclick="getSMSStats()">Get SMS Statistics</button>
+            <button onclick="getRecentSMS()" class="success">Get Recent SMS (Last 24 Hours)</button>
+            <div id="statsResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧹 Clean Test Data</h3>
+            <p><strong>Warning:</strong> This will delete SMS records for testing purposes only.</p>
+            <div class="form-group">
+                <label for="cleanOrderId">Order ID to Clean:</label>
+                <input type="number" id="cleanOrderId" placeholder="e.g., 256" value="256">
+            </div>
+            <button onclick="cleanTestSMS()" class="danger">Delete SMS Records for Order (Test Only)</button>
+            <div id="cleanResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testOrderStatusSMS(force = false) {
+            const orderId = document.getElementById('testOrderId').value;
+            const orderType = document.getElementById('testOrderType').value;
+            const newStatus = document.getElementById('testStatus').value;
+            
+            if (!orderId) {
+                showResult('smsResult', 'Please enter an Order ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('smsResult', '📱 Testing SMS send...', 'info');
+                
+                const body = {
+                    orderId: parseInt(orderId),
+                    orderType: orderType,
+                    newStatus: newStatus
+                };
+                
+                if (force) {
+                    body.requestId = `force-${Date.now()}`;
+                    body.bypassDeduplication = true;
+                }
+                
+                const response = await fetch('/api/sms/order-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const result = await response.json();
+                
+                let resultText = `Status: ${response.status}\\n`;
+                resultText += `Response: ${JSON.stringify(result, null, 2)}`;
+                
+                if (result.duplicatePrevented) {
+                    resultText += `\\n\\n✅ GOOD: Duplicate SMS was prevented!`;
+                    resultText += `\\nExisting SMS ID: ${result.existingSmsId}`;
+                    if (result.lastSentAt) {
+                        resultText += `\\nLast sent: ${new Date(result.lastSentAt).toLocaleString()}`;
+                    }
+                } else if (result.success) {
+                    resultText += `\\n\\n⚠️ SMS was sent successfully`;
+                    if (result.messageId) {
+                        resultText += `\\nMessage ID: ${result.messageId}`;
+                    }
+                } else {
+                    resultText += `\\n\\n❌ SMS failed to send`;
+                }
+                
+                showResult('smsResult', resultText, response.ok ? 'success' : 'error');
+                
+            } catch (error) {
+                showResult('smsResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkExistingSMS() {
+            const orderId = document.getElementById('checkOrderId').value;
+            
+            if (!orderId) {
+                showResult('checkResult', 'Please enter an Order ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('checkResult', '🔍 Checking existing SMS...', 'info');
+                
+                const response = await fetch(`/api/sms?limit=50`);
+                const data = await response.json();
+                
+                if (response.ok && data.messages) {
+                    // Filter messages for this specific order
+                    const orderSMS = data.messages.filter(sms => 
+                        sms.message.includes(`Order ID: ${orderId}`) ||
+                        sms.message.includes(`Order ${orderId}`) ||
+                        sms.recipients.includes(orderId)
+                    );
+                    
+                    let resultText = `Found ${orderSMS.length} SMS messages for Order ${orderId}:\\n\\n`;
+                    
+                    if (orderSMS.length > 0) {
+                        orderSMS.forEach((sms, index) => {
+                            resultText += `${index + 1}. Message ID: ${sms.messageId}\\n`;
+                            resultText += `   Status: ${sms.status}\\n`;
+                            resultText += `   Type: ${sms.type}\\n`;
+                            resultText += `   Sent: ${new Date(sms.createdAt).toLocaleString()}\\n`;
+                            resultText += `   Message Preview: ${sms.message.substring(0, 100)}...\\n`;
+                            resultText += `\\n`;
+                        });
+                    } else {
+                        resultText += 'No SMS messages found for this order.';
+                    }
+                    
+                    showResult('checkResult', resultText, 'success');
+                } else {
+                    showResult('checkResult', 'Failed to fetch SMS messages', 'error');
+                }
+                
+            } catch (error) {
+                showResult('checkResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getSMSStats() {
+            try {
+                showResult('statsResult', '📊 Getting SMS statistics...', 'info');
+                
+                const response = await fetch('/api/sms/stats');
+                const stats = await response.json();
+                
+                if (response.ok) {
+                    let resultText = 'SMS Statistics:\\n\\n';
+                    resultText += JSON.stringify(stats, null, 2);
+                    showResult('statsResult', resultText, 'success');
+                } else {
+                    showResult('statsResult', 'Failed to get SMS statistics', 'error');
+                }
+                
+            } catch (error) {
+                showResult('statsResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getRecentSMS() {
+            try {
+                showResult('statsResult', '📱 Getting recent SMS messages...', 'info');
+                
+                const response = await fetch('/api/sms?limit=20');
+                const data = await response.json();
+                
+                if (response.ok && data.messages) {
+                    let resultText = `Recent SMS Messages (${data.messages.length}):\\n\\n`;
+                    
+                    data.messages.forEach((sms, index) => {
+                        resultText += `${index + 1}. ${sms.messageId} - ${sms.type}\\n`;
+                        resultText += `   To: ${sms.recipients}\\n`;
+                        resultText += `   Status: ${sms.status}\\n`;
+                        resultText += `   Sent: ${new Date(sms.createdAt).toLocaleString()}\\n`;
+                        resultText += `   Preview: ${sms.message.substring(0, 80)}...\\n\\n`;
+                    });
+                    
+                    showResult('statsResult', resultText, 'success');
+                } else {
+                    showResult('statsResult', 'Failed to get recent SMS messages', 'error');
+                }
+                
+            } catch (error) {
+                showResult('statsResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function cleanTestSMS() {
+            const orderId = document.getElementById('cleanOrderId').value;
+            
+            if (!orderId) {
+                showResult('cleanResult', 'Please enter an Order ID', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete SMS records for Order ${orderId}? This is for testing purposes only.`)) {
+                return;
+            }
+            
+            try {
+                showResult('cleanResult', '🧹 Cleaning test SMS data...', 'info');
+                
+                // First, get the SMS records for this order
+                const getResponse = await fetch(`/api/sms?limit=50`);
+                const data = await getResponse.json();
+                
+                if (getResponse.ok && data.messages) {
+                    const orderSMS = data.messages.filter(sms => 
+                        sms.message.includes(`Order ID: ${orderId}`) ||
+                        sms.message.includes(`Order ${orderId}`) ||
+                        sms.recipients.includes(orderId)
+                    );
+                    
+                    let deleteCount = 0;
+                    for (const sms of orderSMS) {
+                        try {
+                            const deleteResponse = await fetch(`/api/sms/${sms._id}`, {
+                                method: 'DELETE'
+                            });
+                            if (deleteResponse.ok) {
+                                deleteCount++;
+                            }
+                        } catch (deleteError) {
+                            console.error('Error deleting SMS:', deleteError);
+                        }
+                    }
+                    
+                    showResult('cleanResult', `✅ Deleted ${deleteCount} SMS records for Order ${orderId}`, 'success');
+                } else {
+                    showResult('cleanResult', 'Failed to fetch SMS messages for cleanup', 'error');
+                }
+                
+            } catch (error) {
+                showResult('cleanResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function showResult(elementId, message, type) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+            
+            // Add some color coding
+            switch(type) {
+                case 'success':
+                    resultDiv.style.backgroundColor = '#d4edda';
+                    resultDiv.style.borderColor = '#c3e6cb';
+                    break;
+                case 'error':
+                    resultDiv.style.backgroundColor = '#f8d7da';
+                    resultDiv.style.borderColor = '#f5c6cb';
+                    break;
+                case 'info':
+                    resultDiv.style.backgroundColor = '#d1ecf1';
+                    resultDiv.style.borderColor = '#bee5eb';
+                    break;
+                default:
+                    resultDiv.style.backgroundColor = '#f8f9fa';
+                    resultDiv.style.borderColor = '#ddd';
+            }
+        }
+    </script>
+</body>
+</html>

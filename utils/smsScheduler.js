@@ -380,21 +380,28 @@ ${clinicName}`;
       
       console.log(`🔍 Checking ${clinicType} orders for status updates...`);
       
-      // Find pending orders with pickup dates that have reached today
+      // ONLY find orders with status "Pending" - don't touch orders that are already "Ready for Pickup", "Completed", etc.
       const pendingOrders = await OrderModel.find({
-        [statusField]: 'Pending',
+        [statusField]: 'Pending', // STRICT: Only Pending orders should be processed
         [pickupDateField]: { 
           $exists: true, 
           $nin: ['Later', 'Now', null, '']
         }
       });
       
-      console.log(`📋 Found ${pendingOrders.length} pending ${clinicType} orders to check`);
+      console.log(`📋 Found ${pendingOrders.length} PENDING ${clinicType} orders to check for auto-update`);
       
       let updatedCount = 0;
       
       for (const order of pendingOrders) {
         const pickupDate = order[pickupDateField];
+        const currentStatus = order[statusField];
+        
+        // Double-check: Skip if order is not Pending (safety check)
+        if (currentStatus !== 'Pending') {
+          console.log(`⚠️ Skipping Order ${order[idField]} - Status is "${currentStatus}", not "Pending"`);
+          continue;
+        }
         
         if (!pickupDate) continue;
         
@@ -407,18 +414,43 @@ ${clinicName}`;
           continue;
         }
         
-        console.log(`📦 Order ${order[idField]}: Pickup date ${pickupDateFormatted} vs Current date ${currentDate}`);
+        console.log(`📦 Order ${order[idField]}: Status="${currentStatus}", Pickup date ${pickupDateFormatted} vs Current date ${currentDate}`);
         
-        // If pickup date is today or has passed, update status
+        // If pickup date is today or has passed, update status ONLY if it's still Pending
         if (pickupDateFormatted <= currentDate) {
           try {
-            console.log(`✅ Updating order ${order[idField]} to "Ready for Pickup"`);
+            console.log(`✅ Attempting to update Order ${order[idField]} from "Pending" to "Ready for Pickup"`);
             
-            // Update the order status in database only if it's still "Pending"
+            // Enhanced SMS deduplication check BEFORE attempting any update
+            const enhancedSmsCheck = await SmsMessage.findOne({
+              $and: [
+                {
+                  $or: [
+                    { recipients: { $regex: `${order[idField]}` } },
+                    { message: { $regex: `Order ID: ${order[idField]}|Order.*${order[idField]}` } }
+                  ]
+                },
+                { type: 'Order Status' },
+                { status: { $in: ['Sent', 'Delivered'] } },
+                {
+                  $or: [
+                    { message: { $regex: `ready for pickup`, $options: 'i' } },
+                    { message: { $regex: `Status: Ready for Pickup`, $options: 'i' } }
+                  ]
+                }
+              ]
+            }).sort({ createdAt: -1 });
+            
+            if (enhancedSmsCheck) {
+              console.log(`🚫 SKIPPING Order ${order[idField]} - SMS already sent at ${enhancedSmsCheck.createdAt} (Message ID: ${enhancedSmsCheck.messageId})`);
+              continue; // Skip this order entirely
+            }
+            
+            // Update the order status in database with strict conditions
             const updateResult = await OrderModel.findOneAndUpdate(
               { 
                 _id: order._id,
-                [statusField]: 'Pending' // Only update if still Pending
+                [statusField]: 'Pending' // STRICT: Only update if still exactly "Pending"
               },
               {
                 [statusField]: 'Ready for Pickup'
@@ -427,8 +459,8 @@ ${clinicName}`;
             );
             
             if (updateResult) {
-              // Check if SMS was already sent for this order before sending
-              const existingSms = await SmsMessage.findOne({
+              // Double-check: Make sure no SMS was sent while we were processing
+              const finalSmsCheck = await SmsMessage.findOne({
                 $and: [
                   {
                     $or: [
@@ -438,21 +470,22 @@ ${clinicName}`;
                   },
                   { type: 'Order Status' },
                   { status: { $in: ['Sent', 'Delivered'] } },
-                  { message: { $regex: `ready for pickup`, $options: 'i' } }
+                  { message: { $regex: `ready for pickup`, $options: 'i' } },
+                  { createdAt: { $gte: new Date(Date.now() - 300000) } } // Last 5 minutes
                 ]
               });
               
-              if (!existingSms) {
-                // Send SMS notification only if no existing SMS found
+              if (!finalSmsCheck) {
+                // Send SMS notification only if absolutely no existing SMS found
                 await this.sendOrderStatusSMS(order[idField], clinicType, 'Ready for Pickup');
-                console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" with SMS sent`);
+                console.log(`✅ Order ${order[idField]} successfully updated to "Ready for Pickup" with SMS sent`);
               } else {
-                console.log(`✅ Order ${order[idField]} automatically updated to "Ready for Pickup" (SMS already sent at ${existingSms.createdAt})`);
+                console.log(`🚫 Order ${order[idField]} updated to "Ready for Pickup" but SMS NOT sent (SMS already exists: ${finalSmsCheck.messageId})`);
               }
               
               updatedCount++;
             } else {
-              console.log(`ℹ️ Order ${order[idField]} was already updated or no longer exists`);
+              console.log(`ℹ️ Order ${order[idField]} was NOT updated - either already updated by another process or no longer exists`);
             }
             
           } catch (error) {

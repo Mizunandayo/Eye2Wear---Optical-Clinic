@@ -240,24 +240,34 @@ export const createpatientorderambher = async (req, res) => {
                 try {
                     console.log(`📱 Checking if SMS should be sent for status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
                     
-                    // Only send SMS for "Ready for Pickup" status - "Completed" SMS is handled by frontend
+                    // CRITICAL FIX: Only send SMS for "Ready for Pickup" status
+                    // "Completed" status SMS should be handled separately when customer actually picks up
                     const statusesToSendSms = ['Ready for Pickup'];
                     
                     if (!statusesToSendSms.includes(updateData.patientorderambherstatus)) {
                         console.log(`📱 Skipping SMS for Ambher order status "${updateData.patientorderambherstatus}" - SMS only sent for: ${statusesToSendSms.join(', ')}`);
                     } else {
-                        console.log(`📱 Sending SMS for Ambher status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
+                        // Enhanced duplicate prevention
+                        console.log(`📱 Preparing SMS for Ambher status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
                         
-                        // Add delay to prevent duplicate SMS calls
+                        // Add stronger delay to prevent duplicate SMS calls
                         const now = Date.now();
-                        if (now - lastSmsTime < 30000) { // 30 second cooldown instead of 5 seconds
-                            console.warn('⚠️ SMS blocked due to recent SMS send, preventing duplicate');
+                        if (now - lastSmsTime < 60000) { // 60 second cooldown 
+                            console.warn(`⚠️ SMS blocked due to recent SMS send (${Math.round((now - lastSmsTime) / 1000)}s ago), preventing duplicate`);
                             return res.status(200).json(updatedorderambher);
                         }
                         lastSmsTime = now;
                         
-                        // Send SMS notification asynchronously (don't wait for it)
-                        sendOrderStatusSMS(updatedorderambher.patientorderambherid, 'ambher', updateData.patientorderambherstatus);
+                        // Check if this is a manual admin update (skip SMS for manual status fixes)
+                        const isManualUpdate = req.body.skipSMS || req.body.manualUpdate || req.headers['user-agent']?.includes('Mozilla');
+                        
+                        if (isManualUpdate) {
+                            console.log(`📱 Skipping SMS for manual Ambher order update (Order ${id})`);
+                        } else {
+                            console.log(`📱 Sending SMS for automatic Ambher status change: ${originalStatus} -> ${updateData.patientorderambherstatus}`);
+                            // Send SMS notification asynchronously (don't wait for it)
+                            sendOrderStatusSMS(updatedorderambher.patientorderambherid, 'ambher', updateData.patientorderambherstatus);
+                        }
                     }
                 } catch (smsError) {
                     console.error('Error sending order status SMS:', smsError);

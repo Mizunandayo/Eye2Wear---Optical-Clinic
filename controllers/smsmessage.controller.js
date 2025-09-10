@@ -1025,6 +1025,7 @@ ${appointment.appointmentclinic}`;
       const deduplicationWindow = newStatus === 'Completed' ? 10800000 : (newStatus === 'Ready for Pickup' ? 7200000 : 1800000); // 3 hours for Completed, 2 hours for Ready for Pickup, 30 minutes for others
       
       // Enhanced database check - look for any SMS sent for this specific order with Ready for Pickup or Completed status
+      // More comprehensive search to prevent any duplicate SMS
       const existingSms = await SmsMessage.findOne({
         $and: [
           {
@@ -1035,11 +1036,13 @@ ${appointment.appointmentclinic}`;
             ]
           },
           { type: 'Order Status' },
-          { status: { $in: ['Sent', 'Delivered'] } },
+          { status: { $in: ['Sent', 'Delivered', 'Pending'] } }, // Include Pending status too
           {
             $or: [
               { message: { $regex: `ready for pickup`, $options: 'i' } },
+              { message: { $regex: `Status: Ready for Pickup`, $options: 'i' } },
               { message: { $regex: `completed`, $options: 'i' } },
+              { message: { $regex: `Status: Completed`, $options: 'i' } },
               { message: { $regex: newStatus.toLowerCase() } }
             ]
           }
@@ -1048,17 +1051,24 @@ ${appointment.appointmentclinic}`;
       
       if (existingSms) {
         const timeSinceLastSms = now - existingSms.createdAt.getTime();
-        if (timeSinceLastSms < deduplicationWindow) {
+        // For Ready for Pickup and Completed, use stricter deduplication (24 hours)
+        const strictStatuses = ['Ready for Pickup', 'Completed'];
+        const isStrictStatus = strictStatuses.includes(newStatus);
+        const strictWindow = isStrictStatus ? 86400000 : deduplicationWindow; // 24 hours for critical statuses
+        
+        if (timeSinceLastSms < strictWindow) {
           console.warn(`⚠️ SMS already sent for order ${orderId} with status "${newStatus}" at ${existingSms.createdAt}`);
           console.warn(`📊 Found existing SMS record: ID=${existingSms.messageId}, Recipients="${existingSms.recipients}", Message preview="${existingSms.message.substring(0, 100)}..."`);
+          console.warn(`📊 Time since last SMS: ${Math.round(timeSinceLastSms / 60000)} minutes (Window: ${Math.round(strictWindow / 60000)} minutes)`);
           return res.status(200).json({
             success: false,
             message: `SMS for order ${orderId} with status "${newStatus}" already sent recently`,
             lastSentAt: existingSms.createdAt,
             minutesSinceLastSms: Math.round(timeSinceLastSms / 60000),
-            deduplicationWindow: Math.round(deduplicationWindow / 60000),
+            deduplicationWindow: Math.round(strictWindow / 60000),
             duplicatePrevented: true,
-            existingSmsId: existingSms.messageId
+            existingSmsId: existingSms.messageId,
+            isStrictStatus: isStrictStatus
           });
         }
       }
