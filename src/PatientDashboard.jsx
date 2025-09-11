@@ -358,10 +358,39 @@ const patientsubmitappointment = async (formData) => {
     });
 
     // Add supporting documents
+    console.log('Supporting documents before submission:', supportingdocuments);
     supportingdocuments.forEach((doc, index) => {
-      submissionFormData.append(`supportingdocuments`, doc.file);
+      console.log(`Adding supporting document ${index}:`, {
+        originalname: doc.originalname,
+        size: doc.size,
+        type: doc.type
+      });
+      
+      // Create a new File object with the correct name to ensure it's preserved
+      const renamedFile = new File([doc.file], doc.originalname, {
+        type: doc.file.type,
+        lastModified: doc.file.lastModified
+      });
+      
+      submissionFormData.append(`supportingdocuments`, renamedFile, doc.originalname);
       submissionFormData.append(`supportingdocument_${index}_originalname`, doc.originalname);
+      submissionFormData.append(`supportingdocument_${index}_size`, doc.size.toString());
+      submissionFormData.append(`supportingdocument_${index}_type`, doc.type);
     });
+
+    // Debug: Log FormData contents
+    console.log('FormData entries:');
+    for (const [key, value] of submissionFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, {
+          name: value.name,
+          size: value.size,
+          type: value.type
+        });
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
 
     const response = await fetch(`/api/patientappointments/appointments`,{
       method: 'POST',
@@ -680,6 +709,8 @@ const handleviewappointment = (appointment) => {
  const [selectedpatientappointment, setselectedpatientappointment] = useState(null);
  const [viewpatientappointment, setviewpatientappointment] = useState(false);
  const [deletepatientappointment, setdeletepatientappointment] = useState(false);
+ const [deletingappointment, setdeletingappointment] = useState(false); // Loading state for delete operation
+ const [justDeletedAppointment, setjustDeletedAppointment] = useState(false); // Flag to prevent refetch after deletion
  const [hasInitialLoad, sethasInitialLoad] = useState(false); // Track if we've loaded at least once
  const [justSubmittedAppointment, setjustSubmittedAppointment] = useState(false); // Flag to prevent cache interference after submission
  const [lastRefreshTime, setlastRefreshTime] = useState(0); // Track when we last refreshed
@@ -799,7 +830,7 @@ const handleviewappointment = (appointment) => {
      }
      
      // Only fetch if we don't have data and aren't already loading
-     if (patientappointments.length === 0 && !hasInitialLoad && !loadingappointmens && !isFetchingRef.current) {
+     if (patientappointments.length === 0 && !hasInitialLoad && !loadingappointmens && !isFetchingRef.current && !justDeletedAppointment) {
        console.log('📅 No appointments data, fetching...');
        fetchAppointmentData();
      } else {
@@ -811,7 +842,7 @@ const handleviewappointment = (appointment) => {
      seterrorloadingappointments(null);
      setjustSubmittedAppointment(false); // Reset the flag when leaving
    }
- }, [activeappointmenttable, loadingappointmens, fetchAppointmentData, hasInitialLoad, patientappointments.length, justSubmittedAppointment]);
+ }, [activeappointmenttable, loadingappointmens, fetchAppointmentData, hasInitialLoad, patientappointments.length, justSubmittedAppointment, justDeletedAppointment]);
 
  // Listen for real-time appointment updates with debounce
  useEffect(() => {
@@ -819,9 +850,9 @@ const handleviewappointment = (appointment) => {
      return;
    }
 
-   // Don't override fresh data if we just submitted an appointment or recently refreshed
-   if (justSubmittedAppointment || (Date.now() - lastRefreshTime < 5000)) {
-     console.log('📅 Real-time update detected but skipping - recent refresh or submission');
+   // Don't override fresh data if we just submitted an appointment or recently refreshed or just deleted
+   if (justSubmittedAppointment || justDeletedAppointment || (Date.now() - lastRefreshTime < 5000)) {
+     console.log('📅 Real-time update detected but skipping - recent refresh, submission, or deletion');
      return;
    }
 
@@ -833,7 +864,7 @@ const handleviewappointment = (appointment) => {
    }, 500); // 500ms debounce
 
    return () => clearTimeout(debounceTimer);
- }, [realtimeUpdates, fetchAppointmentData, activeappointmenttable, justSubmittedAppointment, lastRefreshTime]);
+ }, [realtimeUpdates, fetchAppointmentData, activeappointmenttable, justSubmittedAppointment, justDeletedAppointment, lastRefreshTime]);
  
 
  
@@ -867,46 +898,67 @@ const formatappointmenttimes = (formattedtimestring) => {
 //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT
 //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT //DELETE PATIENT APPOINTMENT
 const handledeleteappointment = async (appointmentId) => {
+  setdeletingappointment(true); // Start loading state
+  console.log('🗑️ Attempting to delete appointment with ID:', appointmentId);
+  
   try{
-    const response = await fetch(`/api/patientappointments/appointments/${appointmentId}`,{
+    const deleteUrl = `/api/patientappointments/appointments/${appointmentId}`;
+    console.log('🌐 DELETE URL:', deleteUrl);
+    
+    const response = await fetch(deleteUrl, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('patienttoken')}`
+        'Authorization': `Bearer ${localStorage.getItem('patienttoken')}`,
+        'Content-Type': 'application/json'
       }
     });
 
-      if(!response.ok) throw new Error('Failed to Delete Appointment');
- 
-    // Get patient email for cache invalidation
-    const email = localStorage.getItem("patientemail");
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response ok:', response.ok);
+
+    if(!response.ok) {
+      const errorText = await response.text();
+      console.log('❌ Error response:', errorText);
+      throw new Error(`Failed to Delete Appointment: ${response.status} ${response.statusText}`);
+    }
+
+    console.log('✅ Appointment deleted successfully');
     
-    // Invalidate smart cache for this user's appointments
+    // Set flag to prevent automatic refetch
+    setjustDeletedAppointment(true);
+    
+    // Remove from local state immediately for instant UI update
+    setpatientappointments(prev => {
+      const updatedAppointments = prev.filter(appt => appt.patientappointmentid !== appointmentId);
+      console.log('🔄 Updated appointments list:', updatedAppointments.length, 'appointments remaining');
+      return updatedAppointments;
+    });
+
+    // Clear cache and trigger updates
+    const email = localStorage.getItem("patientemail");
     if (email) {
       const cacheKey = `appointmentData_${email}`;
-      console.log('🔄 Invalidating smart cache after appointment deletion:', cacheKey);
+      console.log('🔄 Invalidating cache:', cacheKey);
       invalidateCache([cacheKey]);
     }
     
-    // Trigger real-time update to notify all components
+    // Trigger real-time updates
     triggerRealtimeUpdate('appointments');
-    
-    // Also invalidate the old cache system for compatibility
     invalidateAppointmentData();
 
-    // Remove from local state immediately for instant UI update
-    setpatientappointments(prev =>
-      prev.filter(appt => appt.patientappointmentid !== appointmentId)
-    );
-
-    // Refresh cached data to ensure consistency
-    console.log('📅 Appointment deleted, refreshing cache...');
+    // Close the modal after successful deletion
+    setdeletepatientappointment(false);
+    
+    // Reset the flag after a short delay
     setTimeout(() => {
-      fetchAppointmentData(true);
-    }, 100);
+      setjustDeletedAppointment(false);
+    }, 2000);
 
     }catch(error){
       console.error("Appointment deletion failed: ", error);
       seterrorloadingappointments(error.message);
+    } finally {
+      setdeletingappointment(false); // End loading state
     }
 }
 
@@ -993,6 +1045,12 @@ const handledeleteappointment = async (appointmentId) => {
           previewUrl: previewUrl,
           id: Date.now() + Math.random() // Temporary ID
         });
+        
+        console.log(`Processed supporting document:`, {
+          originalname: file.name,
+          size: processedFile.size,
+          type: processedFile.type
+        });
       }
 
       setsupportingdocuments(prev => [...prev, ...processedFiles]);
@@ -1042,9 +1100,18 @@ const handledeleteappointment = async (appointmentId) => {
     if (document.url) {
       const fileUrl = `${_apiUrl}${document.url}`;
       
-      // For images and PDFs, open in new tab
+      // For images, show in modal instead of opening new tab
       const mimeType = document.type || document.mimetype;
-      if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+      if (mimeType.startsWith('image/')) {
+        setSelectedImage({
+          url: fileUrl,
+          name: document.originalname,
+          mimeType: mimeType,
+          originalDocument: document
+        });
+        setShowImageModal(true);
+      } else if (mimeType === 'application/pdf') {
+        // For PDFs, open in new tab
         window.open(fileUrl, '_blank', 'noopener,noreferrer');
       } else {
         // For other file types, trigger download
@@ -1059,11 +1126,75 @@ const handledeleteappointment = async (appointmentId) => {
       // For form upload documents (before submission), open preview in new tab
       const mimeType = document.type;
       if (mimeType.startsWith('image/')) {
-        window.open(document.previewUrl, '_blank', 'noopener,noreferrer');
+        setSelectedImage({
+          url: document.previewUrl,
+          name: document.originalname,
+          mimeType: mimeType,
+          originalDocument: document
+        });
+        setShowImageModal(true);
       } else {
         // For non-image files in form upload, show info that file will be downloadable after submission
         alert(`${document.originalname} will be available for download after appointment submission.`);
       }
+    }
+  };
+
+  // Function to handle proper image download with correct MIME type
+  const handleImageDownload = async (imageData) => {
+    setIsDownloading(true);
+    try {
+      // Fetch the image as a blob to preserve MIME type
+      const response = await fetch(imageData.url);
+      const blob = await response.blob();
+      
+      // Ensure filename has proper extension based on MIME type
+      let filename = imageData.name;
+      const mimeToExtension = {
+        'image/jpeg': '.jpg',
+        'image/jpg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif',
+        'image/webp': '.webp',
+        'image/bmp': '.bmp',
+        'image/tiff': '.tiff'
+      };
+      
+      // Check if filename already has an extension
+      const hasExtension = /\.[a-zA-Z]{2,4}$/.test(filename);
+      if (!hasExtension && imageData.mimeType) {
+        const extension = mimeToExtension[imageData.mimeType.toLowerCase()];
+        if (extension) {
+          filename += extension;
+        }
+      }
+      
+      // Create object URL with proper MIME type
+      const url = window.URL.createObjectURL(new Blob([blob], { type: imageData.mimeType }));
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback to simple download
+      const link = document.createElement('a');
+      link.href = imageData.url;
+      link.download = imageData.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -1078,6 +1209,32 @@ const handledeleteappointment = async (appointmentId) => {
  const [bautistaappointmentfeedback, setbautistaappointmentfeedback] = useState("");
  const [ambherappointmentrating, setambherappointmentrating] = useState(null);
  const [ambherappointmentfeedback, setambherappointmentfeedback] = useState("");
+
+ // Image modal states
+ const [showImageModal, setShowImageModal] = useState(false);
+ const [selectedImage, setSelectedImage] = useState(null);
+ const [isDownloading, setIsDownloading] = useState(false);
+
+ // Keyboard support for image modal
+ useEffect(() => {
+   const handleKeyDown = (event) => {
+     if (event.key === 'Escape' && showImageModal) {
+       setShowImageModal(false);
+       setSelectedImage(null);
+     }
+   };
+
+   if (showImageModal) {
+     document.addEventListener('keydown', handleKeyDown);
+     // Prevent body scroll when modal is open
+     document.body.style.overflow = 'hidden';
+   }
+
+   return () => {
+     document.removeEventListener('keydown', handleKeyDown);
+     document.body.style.overflow = 'unset';
+   };
+ }, [showImageModal]);
 
 
 
@@ -1308,6 +1465,19 @@ useEffect(() => {
 
   return (
     <>
+      {/* CSS for animations */}
+      <style>
+        {`
+          @keyframes spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}
+      </style>
 
      {/* NavBar */}
       <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
@@ -1908,7 +2078,18 @@ useEffect(() => {
                                             <button 
                                               type="button"
                                               onClick={() => removesupportingdocument(doc.id)}
-                                              className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                              style={{
+                                                marginLeft: '8px',
+                                                padding: '8px',
+                                                color: '#ef4444',
+                                                backgroundColor: 'transparent',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                transition: 'background-color 0.2s ease-in-out',
+                                              }}
+                                              onMouseEnter={(e) => e.target.style.backgroundColor = '#fef2f2'}
+                                              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                               title="Remove file"
                                             >
                                               <i className="bx bx-trash text-lg"></i>
@@ -2009,7 +2190,7 @@ useEffect(() => {
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
       { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-35 animate-fadeInUp flex flex-col items-start border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl" >
                 
-                <div className=" flex justify-center items-start h-[500px] w-full rounded-3xl ">
+                <div className="mb-40 flex justify-center items-start h-[500px] w-full rounded-3xl ">
 
       {loadingappointmens && !hasInitialLoad ? (
         <AppointmentTableSkeleton />
@@ -2038,7 +2219,7 @@ useEffect(() => {
     
 
   ) : (
-    <div className="rounded-2xl shadow-lg w-full h-full overflow-hidden">
+    <div className=" rounded-2xl shadow-lg w-full h-full overflow-hidden">
       <div className="h-full overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-[#2781af] sticky top-0 z-10">
@@ -2119,7 +2300,26 @@ useEffect(() => {
                                   </div>        
                                   <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
                                     <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                                    <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => {handledeleteappointment(selectedpatientappointment.patientappointmentid);setdeletepatientappointment(false); }}><p className=" text-[#ffffff]">Delete</p></div>
+                                    <div 
+                                      className={`${deletingappointment ? 'cursor-not-allowed opacity-70' : 'hover:cursor-pointer hover:bg-[#7f1a1a] hover:scale-105'} bg-[#4e0f0f] ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-100 ease-in-out flex items-center justify-center`} 
+                                      onClick={() => {
+                                        if (!deletingappointment) {
+                                          handledeleteappointment(selectedpatientappointment.patientappointmentid);
+                                        }
+                                      }}
+                                    >
+                                      {deletingappointment ? (
+                                        <>
+                                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>
+                                          <p className="text-[#ffffff]">Deleting...</p>
+                                        </>
+                                      ) : (
+                                        <p className="text-[#ffffff]">Delete</p>
+                                      )}
+                                    </div>
                                   </div>
                               </div>
 
@@ -2152,9 +2352,9 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
-                         <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-                           <div className="animate-fadeInUp w-full max-w-7xl mx-auto px-6 py-8 mt-10 mb-10">
-                             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                         <div id="viewpatientappointment" className="h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-8">
+                           <div className="animate-fadeInUp w-full max-w-7xl mx-auto max-h-full flex flex-col">
+                             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
                                
                                {/* Header */}
                                <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
@@ -2170,14 +2370,39 @@ useEffect(() => {
                                    </div>
                                    <button 
                                      onClick={() => setviewpatientappointment(false)} 
-                                     className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
+                                     style={{
+                                       width: '48px',
+                                       height: '48px',
+                                       backgroundColor: '#f3f4f6',
+                                       borderRadius: '12px',
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       justifyContent: 'center',
+                                       transition: 'all 0.2s ease-in-out',
+                                       border: 'none',
+                                       cursor: 'pointer'
+                                     }}
+                                     onMouseEnter={(e) => {
+                                       e.target.style.backgroundColor = '#e5e7eb';
+                                       e.target.style.transform = 'scale(1.05)';
+                                     }}
+                                     onMouseLeave={(e) => {
+                                       e.target.style.backgroundColor = '#f3f4f6';
+                                       e.target.style.transform = 'scale(1)';
+                                     }}
                                    >
-                                     <i className="bx bx-x text-gray-600 text-2xl"></i>
+                                     <i 
+                                       className="bx bx-x" 
+                                       style={{
+                                         color: '#4b5563',
+                                         fontSize: '24px'
+                                       }}
+                                     ></i>
                                    </button>
                                  </div>
                                </div>
 
-                               <div className="p-8">
+                               <div className="p-8 overflow-y-auto flex-1">
                                  {/* Clinic Cards */}
                                  <div className="grid lg:grid-cols-2 gap-8 mb-8">
 
@@ -2227,6 +2452,11 @@ useEffect(() => {
             </p>
           </div>
 
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Clinic Location Address:</span>
+            <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmentlocationaddress}</p>
+          </div>
+
           {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
             <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
               <span className="text-sm font-medium text-green-700">Payment Total:</span>
@@ -2238,77 +2468,79 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Services */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <i className="bx bx-list-check text-green-600"></i>
-          Selected Services
-        </h3>
-        <div className="bg-white rounded-xl p-4 border border-green-200">
-          <div className="space-y-3">
-            {selectedpatientappointment.patientambherappointmentcataractscreening && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Visual/Cataract Screening</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentpediatricassessment && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Pediatric Assessment</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentpediatricoptometrist && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Pediatric Optometrist</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Color Vision Testing</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentlowvisionaid && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Low Vision Aid</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentrefraction && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Refraction</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Contact Lens Fitting</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientambherappointmentotherservice && (
-              <div className="space-y-2">
+      {/* Services - Only show if not Pending */}
+      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-list-check text-green-600"></i>
+            Selected Services
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-green-200">
+            <div className="space-y-3">
+              {selectedpatientappointment.patientambherappointmentcataractscreening && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Other Service</span>
+                  <span className="text-gray-700 font-medium">Visual/Cataract Screening</span>
                 </div>
-                <div className="ml-8 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                  <p className="text-green-800 text-sm">{selectedpatientappointment.patientambherappointmentotherservicenote}</p>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentpediatricassessment && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Pediatric Assessment</span>
                 </div>
-              </div>
-            )}
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentpediatricoptometrist && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Pediatric Optometrist</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Color Vision Testing</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentlowvisionaid && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Low Vision Aid</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentrefraction && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Refraction</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Contact Lens Fitting</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientambherappointmentotherservice && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                    <span className="text-gray-700 font-medium">Other Service</span>
+                  </div>
+                  <div className="ml-8 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                    <p className="text-green-800 text-sm">{selectedpatientappointment.patientambherappointmentotherservicenote}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Consultation Details - Only for Completed */}
       {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
@@ -2421,6 +2653,11 @@ useEffect(() => {
             </p>
           </div>
 
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Clinic Location Address:</span>
+            <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientbautistaappointmentlocationaddress}</p>
+          </div>
+
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
               <span className="text-sm font-medium text-blue-700">Payment Total:</span>
@@ -2432,77 +2669,79 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Services */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <i className="bx bx-list-check text-blue-600"></i>
-          Selected Services
-        </h3>
-        <div className="bg-white rounded-xl p-4 border border-blue-200">
-          <div className="space-y-3">
-            {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Comprehensive Eye Exam</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Diabetic Retinopathy</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentglaucoma && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Glaucoma</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Hypertensive Retinopathy</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Retinal Problem</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Cataract Surgery</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
-              <div className="flex items-center gap-3">
-                <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                <span className="text-gray-700 font-medium">Pterygium Surgery</span>
-              </div>
-            )}
-            
-            {selectedpatientappointment.patientbautistaappointmentotherservice && (
-              <div className="space-y-2">
+      {/* Services - Only show if not Pending */}
+      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-list-check text-blue-600"></i>
+            Selected Services
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-blue-200">
+            <div className="space-y-3">
+              {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-blue-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Other Service</span>
+                  <span className="text-gray-700 font-medium">Comprehensive Eye Exam</span>
                 </div>
-                <div className="ml-8 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                  <p className="text-blue-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Diabetic Retinopathy</span>
                 </div>
-              </div>
-            )}
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentglaucoma && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Glaucoma</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Hypertensive Retinopathy</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Retinal Problem</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Cataract Surgery</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
+                <div className="flex items-center gap-3">
+                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <span className="text-gray-700 font-medium">Pterygium Surgery</span>
+                </div>
+              )}
+              
+              {selectedpatientappointment.patientbautistaappointmentotherservice && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                    <span className="text-gray-700 font-medium">Other Service</span>
+                  </div>
+                  <div className="ml-8 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-blue-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Consultation Details - Only for Completed */}
       {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
@@ -2612,22 +2851,10 @@ useEffect(() => {
                                      </h4>
                                      <div className="space-y-4">
                                        <div>
-                                         <p className="text-gray-700 leading-relaxed">
+                                         <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
                                            {selectedpatientappointment.patientadditionalappointmentnotes || "No additional notes provided"}
                                          </p>
                                        </div>
-                                       {selectedpatientappointment.patientadditionalappointmentnotesimage && (
-                                         <div>
-                                           <span className="text-sm font-medium text-gray-500 block mb-2">Attached Image:</span>
-                                           <div className="max-w-md">
-                                             <img 
-                                               className="w-full h-auto object-cover rounded-lg border border-gray-200 shadow-sm" 
-                                               src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}
-                                               alt="Patient appointment notes"
-                                             />
-                                           </div>
-                                         </div>
-                                       )}
                                      </div>
                                    </div>
 
@@ -2645,7 +2872,7 @@ useEffect(() => {
                                              key={index} 
                                              className="bg-gray-50 p-4 rounded-xl border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
                                              onClick={() => handledocumentview(doc)}
-                                             title="Click to open/download document"
+                                             title={doc.mimetype.startsWith('image/') ? "Click to view image" : "Click to open/download document"}
                                            >
                                              <div className="flex items-center gap-3 mb-3">
                                                <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
@@ -2659,7 +2886,7 @@ useEffect(() => {
                                                    {doc.originalname}
                                                  </p>
                                                  <p className="text-xs text-gray-500">
-                                                   {formatFileSize(doc.size)} • Click to open/download
+                                                   {formatFileSize(doc.size)} • {doc.mimetype.startsWith('image/') ? 'Click to view' : 'Click to open/download'}
                                                  </p>
                                                </div>
                                              </div>
@@ -2771,6 +2998,112 @@ useEffect(() => {
             <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${appointmentIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: appointmentProgressWidth, transition: 'width 4s linear'}}/>
           </div>
         </div>  
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && selectedImage && (
+        <div className="fixed inset-0 bg-[#00000075] flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setShowImageModal(false);
+                setSelectedImage(null);
+              }}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                zIndex: 10,
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                borderRadius: '50%',
+                padding: '8px',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease-in-out',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <i className="bx bx-x text-black" style={{ fontSize: '24px' }}></i>
+            </button>
+            
+            {/* Image container */}
+            <div className="bg-white rounded-lg p-4 max-h-full overflow-auto">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">{selectedImage.name}</h3>
+              </div>
+              
+              <div className="flex justify-center">
+                <img
+                  src={selectedImage.url}
+                  alt={selectedImage.name}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.src = defaultimageplaceholder;
+                  }}
+                />
+              </div>
+              
+              {/* Download button in modal */}
+              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                <button
+                  onClick={() => handleImageDownload(selectedImage)}
+                  disabled={isDownloading}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    transition: 'all 0.2s ease-in-out',
+                    cursor: isDownloading ? 'not-allowed' : 'pointer',
+                    color: isDownloading ? '#6b7280' : '#2563eb',
+                    backgroundColor: isDownloading ? '#f3f4f6' : '#eff6ff',
+                    borderColor: isDownloading ? '#d1d5db' : '#bfdbfe',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDownloading) {
+                      e.target.style.backgroundColor = '#dbeafe';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDownloading) {
+                      e.target.style.backgroundColor = '#eff6ff';
+                    }
+                  }}
+                >
+                  {isDownloading ? (
+                    <>
+                      <i 
+                        className="bx bx-loader-alt"
+                        style={{
+                          fontSize: '14px',
+                          animation: 'spin 1s linear infinite',
+                          transformOrigin: 'center',
+                        }}
+                      ></i>
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-download" style={{ fontSize: '14px' }}></i>
+                      Download Image
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <Footer />
