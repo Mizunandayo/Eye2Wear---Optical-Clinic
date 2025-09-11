@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -12,6 +12,7 @@ import axios from "axios";
 
 export const useAuth = () => {
     const navigate = useNavigate();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
 
 
@@ -19,22 +20,29 @@ export const useAuth = () => {
 
     const handlelogout = useCallback(() => {
         if(localStorage.getItem("patienttoken")){
-            if (window.confirm("Are you sure you want to log out?")){
-                localStorage.removeItem('patienttoken');
-                localStorage.removeItem('patientdetails');
-                localStorage.removeItem('patientid');
-                localStorage.removeItem('patientemail');
-                localStorage.removeItem('patientfirstname');
-                localStorage.removeItem('patientlastname');
-                localStorage.removeItem('patientname');
-                localStorage.removeItem('role');
-                localStorage.removeItem('token');
-                navigate('/userlogin');
-            }
+            setShowLogoutModal(true);
         } else {
             navigate("/userlogin");
         }
     }, [navigate]);
+
+    const confirmLogout = useCallback(() => {
+        localStorage.removeItem('patienttoken');
+        localStorage.removeItem('patientdetails');
+        localStorage.removeItem('patientid');
+        localStorage.removeItem('patientemail');
+        localStorage.removeItem('patientfirstname');
+        localStorage.removeItem('patientlastname');
+        localStorage.removeItem('patientname');
+        localStorage.removeItem('role');
+        localStorage.removeItem('token');
+        setShowLogoutModal(false);
+        navigate('/userlogin');
+    }, [navigate]);
+
+    const cancelLogout = useCallback(() => {
+        setShowLogoutModal(false);
+    }, []);
 
 
 
@@ -196,7 +204,15 @@ export const useAuth = () => {
 
     },);
 
-    return {/*monitortokenexpiration*/fetchpatientdetails, fetchpatientdemographicbyemail, handlelogout};
+    return {
+        /*monitortokenexpiration*/
+        fetchpatientdetails, 
+        fetchpatientdemographicbyemail, 
+        handlelogout,
+        showLogoutModal,
+        confirmLogout,
+        cancelLogout
+    };
 
 
 
