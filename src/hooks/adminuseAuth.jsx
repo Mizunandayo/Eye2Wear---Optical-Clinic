@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -7,19 +7,31 @@ import axios from "axios";
 
 export const useAuth = () => {
     const navigate = useNavigate();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
 
 
     
 
     const adminlogout = useCallback(() => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem("admintoken");
-            localStorage.removeItem("admindetails");
-            localStorage.removeItem("currentuser");
+        if(localStorage.getItem("admintoken")){
+            setShowLogoutModal(true);
+        } else {
             navigate("/userlogin");
         }
     }, [navigate]);
+
+    const confirmLogout = useCallback(() => {
+        localStorage.removeItem("admintoken");
+        localStorage.removeItem("admindetails");
+        localStorage.removeItem("currentuser");
+        setShowLogoutModal(false);
+        navigate("/userlogin");
+    }, [navigate]);
+
+    const cancelLogout = useCallback(() => {
+        setShowLogoutModal(false);
+    }, []);
 
 
 
@@ -128,7 +140,14 @@ export const useAuth = () => {
 
     },);
 
-    return {/*monitortokenexpiration,*/fetchadmindetails, adminlogout};
+    return {
+        /*monitortokenexpiration,*/
+        fetchadmindetails, 
+        adminlogout,
+        showLogoutModal,
+        confirmLogout,
+        cancelLogout
+    };
 
 
 

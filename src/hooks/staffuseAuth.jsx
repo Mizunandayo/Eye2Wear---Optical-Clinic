@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -7,24 +7,36 @@ import axios from "axios";
 
 export const useAuth = () => {
     const navigate = useNavigate();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
 
 
     
 
     const stafflogout = useCallback(() => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem("stafftoken");
-            localStorage.removeItem("staffdetails");
-            localStorage.removeItem("currentuser");
-            localStorage.removeItem("staffclinic");
-            localStorage.removeItem("staffemail");
-            localStorage.removeItem("staffname");
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
+        if(localStorage.getItem("stafftoken")){
+            setShowLogoutModal(true);
+        } else {
             navigate("/userlogin");
         }
     }, [navigate]);
+
+    const confirmLogout = useCallback(() => {
+        localStorage.removeItem("stafftoken");
+        localStorage.removeItem("staffdetails");
+        localStorage.removeItem("currentuser");
+        localStorage.removeItem("staffclinic");
+        localStorage.removeItem("staffemail");
+        localStorage.removeItem("staffname");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        setShowLogoutModal(false);
+        navigate("/userlogin");
+    }, [navigate]);
+
+    const cancelLogout = useCallback(() => {
+        setShowLogoutModal(false);
+    }, []);
 
 
 
@@ -134,7 +146,14 @@ export const useAuth = () => {
 
     },);
 
-    return {/*monitortokenexpiration,*/fetchstaffdetails, stafflogout};
+    return {
+        /*monitortokenexpiration,*/
+        fetchstaffdetails, 
+        stafflogout,
+        showLogoutModal,
+        confirmLogout,
+        cancelLogout
+    };
 
 
 

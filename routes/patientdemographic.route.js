@@ -13,6 +13,7 @@
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
     import {verifyloggedinstaffacc} from "../controllers/staffaccount.controller.js";
     import {verifyloggedinowneracc} from "../controllers/owneraccount.controller.js";
+    import {verifyloggedinadminacc} from "../controllers/adminaccount.controller.js";
     
     // Middleware to verify Staff, Owner, or Patient access for demographics
     const verifyStaffOwnerOrPatientAccess = async (req, res, next) => {
@@ -44,6 +45,18 @@
           });
           return;
         } catch (ownerError) {
+          // Continue to try Admin
+        }
+
+        // Try to verify as Admin
+        try {
+          req.header = () => `Bearer ${token}`;
+          await verifyloggedinadminacc(req, res, () => {
+            req.userType = 'Admin';
+            next();
+          });
+          return;
+        } catch (adminError) {
           // Continue to try Patient
         }
 

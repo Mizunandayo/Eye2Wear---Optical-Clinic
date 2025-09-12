@@ -85,6 +85,7 @@ export function AmbhereyespecialistBox({ value, onChange }) {
         });
 
         setOptometrists(formattedOptometrists);
+        console.log('Ambher - Loaded optometrists:', formattedOptometrists);
       } catch (error) {
         console.error('Error fetching optometrists:', error)
       } finally {
@@ -96,10 +97,11 @@ export function AmbhereyespecialistBox({ value, onChange }) {
   }, [])
 
   const handleSelect = (currentValue) => {
+    console.log('Ambher - Selecting value:', currentValue);
     const newValue = currentValue === value ? "" : currentValue
+    console.log('Ambher - New value to set:', newValue);
     onChange({
       target: {
-        name: "staffiseyespecialist",
         value: newValue
       }
     })
@@ -117,12 +119,16 @@ export function AmbhereyespecialistBox({ value, onChange }) {
           className="w-full justify-between !bg-[#2d2d44] text-white"
           role="combobox"
           aria-expanded={open}
+          onClick={() => {
+            console.log('Ambher - Button clicked, current open state:', open);
+            setOpen(!open);
+          }}
         >
           {value || "Select Optometrist"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0 !bg-[#2d2d44] text-white rounded-3xl">
+      <PopoverContent className="w-[400px] p-0 !bg-[#2d2d44] text-white rounded-3xl z-[9999]">
         <Command>
           <CommandGroup>
             {loading ? (
@@ -139,7 +145,7 @@ export function AmbhereyespecialistBox({ value, onChange }) {
                   key={`optometrist-${index}-${optometrist.firstname}-${optometrist.lastname}-${optometrist.type}`}
                   value={formatName(optometrist)}
                   onSelect={handleSelect}
-                  className="font-semibold text-1xl"
+                  className="font-semibold text-1xl cursor-pointer hover:bg-gray-600"
                 >
                   <Check
                     className={cn(

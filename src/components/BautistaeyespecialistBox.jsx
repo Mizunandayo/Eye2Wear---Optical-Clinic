@@ -89,6 +89,7 @@ export function BautistaeyespecialistBox({ value, onChange }) {
         });
 
         setOphthalmologists(formattedOphthalmologists);
+        console.log('Bautista - Loaded ophthalmologists:', formattedOphthalmologists);
       } catch (error) {
         console.error('Error fetching ophthalmologists:', error)
       } finally {
@@ -100,10 +101,11 @@ export function BautistaeyespecialistBox({ value, onChange }) {
   }, [])
 
   const handleSelect = (currentValue) => {
+    console.log('Bautista - Selecting value:', currentValue);
     const newValue = currentValue === value ? "" : currentValue
+    console.log('Bautista - New value to set:', newValue);
     onChange({
       target: {
-        name: "staffiseyespecialist",
         value: newValue
       }
     })
@@ -121,12 +123,16 @@ export function BautistaeyespecialistBox({ value, onChange }) {
           className="w-full justify-between !bg-[#2d2d44] text-white"
           role="combobox"
           aria-expanded={open}
+          onClick={() => {
+            console.log('Bautista - Button clicked, current open state:', open);
+            setOpen(!open);
+          }}
         >
           {value || "Select Ophthalmologist"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0 !bg-[#2d2d44] text-white rounded-3xl">
+      <PopoverContent className="w-[400px] p-0 !bg-[#2d2d44] text-white rounded-3xl z-[9999]">
         <Command>
           <CommandGroup>
             {loading ? (
@@ -143,7 +149,7 @@ export function BautistaeyespecialistBox({ value, onChange }) {
                   key={`ophthalmologist-${index}-${ophthalmologist.firstname}-${ophthalmologist.lastname}-${ophthalmologist.type}`}
                   value={formatName(ophthalmologist)}
                   onSelect={handleSelect}
-                  className="font-semibold text-1xl"
+                  className="font-semibold text-1xl cursor-pointer hover:bg-gray-600"
                 >
                   <Check
                     className={cn(

@@ -307,7 +307,7 @@ const patientsubmitappointment = async (formData) => {
       patientambherappointmentotherservice: formData.has('patientambherappointmentotherservice'),
       patientambherappointmentotherservicenote: patientambherappointmentotherservicenote || '',
       patientambherappointmentstatus: "Pending",
-      patientambherappointmentpaymentotal: 1000,
+      patientambherappointmentpaymentotal: 0,
       patientambherappointmentconsultationremarkssubject: "",
       patientambherappointmentconsultationremarks:"",
       patientambherappointmentprescription: "",
@@ -335,7 +335,7 @@ const patientsubmitappointment = async (formData) => {
       patientbautistaappointmentotherservice: formData.has('patientbautistaappointmentotherservice'),
       patientbautistaappointmentotherservicenote: patientambherappointmentotherservicenote || '',
       patientbautistaappointmentstatus: "Pending",
-      patientbautistaappointmentpaymentotal: 1000,
+      patientbautistaappointmentpaymentotal: 0,
       patientbautistaappointmentconsultationremarkssubject: "",
       patientbautistaappointmentconsultationremarks: "",
       patientbautistaappointmentprescription: "",
@@ -346,7 +346,7 @@ const patientsubmitappointment = async (formData) => {
 
       patientadditionalappointmentnotes: additionaldetails,
       patientadditionalappointmentnotesimage: defaultimageplaceholder,
-      patientappointmentpaymentotal: 1000,
+      patientappointmentpaymentotal: 0,
     }
 
     // Create FormData for file uploads
@@ -2977,8 +2977,24 @@ useEffect(() => {
                                </div>
                            )}
                          </div>
-                      )}                 </div>
+                      )}                 
 
+
+
+
+
+
+
+
+
+
+
+
+                      
+                      
+                      
+                      
+       </div>
       </div>
       </div>
       

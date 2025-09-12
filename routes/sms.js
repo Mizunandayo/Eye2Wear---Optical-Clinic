@@ -9,6 +9,9 @@ smsrouter.post('/promotional', SmsController.sendPromotionalSms);
 // POST /api/sms/appointment-reminder - Send appointment reminder SMS
 smsrouter.post('/appointment-reminder', SmsController.sendAppointmentReminder);
 
+// POST /api/sms/appointment-acceptance - Send appointment acceptance SMS
+smsrouter.post('/appointment-acceptance', SmsController.sendAppointmentAcceptance);
+
 // POST /api/sms/order-status - Send order status update SMS
 smsrouter.post('/order-status', SmsController.sendOrderStatusUpdate);
 

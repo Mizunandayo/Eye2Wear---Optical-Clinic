@@ -313,12 +313,31 @@
                 (updateData.patientbautistaappointmentstatus === 'Confirmed' && originalBautistaStatus !== 'Confirmed')
             );
 
+            // Send SMS notification for appointment acceptance
+            const shouldSendAcceptanceSMS = (
+                (updateData.patientambherappointmentstatus === 'Accepted' && originalAmbherStatus !== 'Accepted') ||
+                (updateData.patientbautistaappointmentstatus === 'Accepted' && originalBautistaStatus !== 'Accepted')
+            );
+
             if (shouldSendSMS) {
                 try {
                     // Send SMS notification asynchronously (don't wait for it)
                     sendAppointmentConfirmationSMS(updatedAppointment._id);
                 } catch (smsError) {
                     console.error('Error sending appointment confirmation SMS:', smsError);
+                    // Don't fail the appointment update if SMS fails
+                }
+            }
+
+            if (shouldSendAcceptanceSMS) {
+                try {
+                    // Determine clinic type based on which status was updated
+                    const clinicType = updateData.patientambherappointmentstatus === 'Accepted' ? 'ambher' : 'bautista';
+                    
+                    // Send SMS notification asynchronously (don't wait for it)
+                    sendAppointmentAcceptanceSMS(updatedAppointment._id, clinicType);
+                } catch (smsError) {
+                    console.error('Error sending appointment acceptance SMS:', smsError);
                     // Don't fail the appointment update if SMS fails
                 }
             }
@@ -350,6 +369,30 @@
             console.log('Appointment confirmation SMS sent successfully');
         } catch (error) {
             console.error('Failed to send appointment confirmation SMS:', error);
+        }
+    }
+
+    // Helper function to send appointment acceptance SMS
+    async function sendAppointmentAcceptanceSMS(appointmentId, clinicType) {
+        try {
+            const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/appointment-acceptance`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    appointmentId: appointmentId,
+                    clinicType: clinicType
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMS API returned ${response.status}`);
+            }
+
+            console.log('Appointment acceptance SMS sent successfully');
+        } catch (error) {
+            console.error('Failed to send appointment acceptance SMS:', error);
         }
     }
 

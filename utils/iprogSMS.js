@@ -149,8 +149,11 @@ class iPragSMS {
       console.log(`📡 iProg Bulk SMS Response Data:`, response.data);
 
       if (response.data.status === 200) {
-        // Parse message IDs from comma-separated string
-        const messageIds = response.data.message_ids ? response.data.message_ids.split(',') : [];
+        // Parse message IDs from comma-separated string - handle empty strings properly
+        let messageIds = [];
+        if (response.data.message_ids && response.data.message_ids.trim() !== '') {
+          messageIds = response.data.message_ids.split(',').filter(id => id.trim() !== '');
+        }
         
         console.log(`✅ Bulk SMS sent successfully via iProg: ${messageIds.length} messages queued`);
         return {

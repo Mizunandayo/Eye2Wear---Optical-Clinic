@@ -3,9 +3,6 @@
 
 
 
-
-
-
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -85,7 +82,20 @@
 
 { (activedashboard === 'accountmanagement' || isAdminRole) && ( <div id="accountmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl" >   
 
-  <div className="flex items-center"><i className="bx bxs-user-account text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Account Management</h1></div>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center">
+      <i className="bx bxs-user-account text-[#184d85] text-[25px] mr-2"/> 
+      <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Account Management</h1>
+    </div>
+    <div
+      onClick={refreshAccountData}
+      disabled={loadingpatients}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
+      {loadingpatients ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
   <div className={`flex ${isAdminRole ? 'justify-start' : 'justify-between'} items-center mt-3 h-[60px] ${isAdminRole ? 'gap-4' : ''}`}>
     {/* Hide Patient and Staff tabs for admin users */}
     {!isAdminRole && (
@@ -1222,7 +1232,20 @@
 { (activedashboard === 'profileinformation' && !isAdminRole) && ( <div id="profileinformation" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
 
 
-<div className="flex items-center"><i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1></div>
+<div className="flex items-center justify-between">
+  <div className="flex items-center">
+    <i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1>
+  </div>
+  <div
+    onClick={refreshProfileData}
+    disabled={loadingpatients}
+    className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+  >
+    <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
+    {loadingpatients ? 'Refreshing...' : 'Refresh'}
+  </div>
+</div>
 <div className="flex justify-between items-center mt-3 h-[60px]">
 <div onClick={() => showprofiletable('patientprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='patientprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='patientprofiletable' ? 'text-white' : ''}`}>Patients</h1></div>
 <div onClick={() => showprofiletable('staffprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='staffprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='staffprofiletable' ? 'text-white' : ''}`}>Staff</h1></div>
@@ -1607,462 +1630,46 @@ patientage: calculateAge(newBirthdate)
 
 
 
-{/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
-{/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
-{/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
-{/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
-{/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
 
- { (activedashboard === 'appointmentmanagement' && !isAdminRole) && (<div id="appointmentmanagement" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl flex flex-col" >   
 
-<div className="flex items-center"><i className="bx bxs-calendar text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Appointment Management</h1></div>
 
 
 
 
 
-{loggedinusertype?.type === "Admin"&& (
 
-<div className="flex justify-between items-center mt-3 h-[60px]">
-<div onClick={() => showappointmentstable('allappointmentstable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmentstable ==='allappointmentstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmentstable ==='allappointmentstable' ? 'text-white' : ''}`}>All</h1></div>
-<div onClick={() => showappointmentstable('ambherappointmentstable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmentstable ==='ambherappointmentstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmentstable ==='ambherappointmentstable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
-<div onClick={() => showappointmentstable('bautistaappointmentstable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmentstable ==='bautistaappointmentstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmentstable ==='bautistaappointmentstable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
-</div>
-)} 
 
 
 
 
-{(loggedinusertype?.type === "Owner" || loggedinusertype?.type === "Staff") && loggedinusertype?.clinic === "Bautista Eye Center" && (
-<div className="flex justify-between items-center mt-3 h-[60px]">
-<div onClick={() => showappointmentstable('bautistaappointmentstable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmentstable ==='bautistaappointmentstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmentstable ==='bautistaappointmentstable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
-</div>
-)}
 
 
-
-{(loggedinusertype?.type === "Owner" || loggedinusertype?.type === "Staff") && loggedinusertype?.clinic === "Ambher Optical" && (
-<div className="flex justify-between items-center mt-3 h-[60px]">
-<div onClick={() => showappointmentstable('ambherappointmentstable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmentstable ==='ambherappointmentstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmentstable ==='ambherappointmentstable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
-</div>
-)} 
-
-
-
-
-
-
-
-
-
-
-
-{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}
-{ activeappointmentstable === 'allappointmentstable' && ( <div id="allappointmentstable" className="animate-fadeInUp flex flex-col border-t-2 border-[#909090] w-[100%] flex-1 rounded-2xl mt-5 min-h-0" ref={appointmentTableRef}>
-
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter appointment details..." value={searchAppointments} onChange={(e) => {setSearchAppointments(e.target.value); filterAppointments(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-</div>
-
-{loadingappointmens ? (
-<div className="space-y-4 p-4 flex-1">
-{[...Array(4)].map((_, index) => (
-<AppointmentSkeleton key={index} />
-))}
-</div>
-) : errorloadingappointments ? (
-<div className="rounded-lg p-4 bg-red-50 text-red-600 flex-1 flex items-center justify-center">
-Error: {errorloadingappointments}
-</div>
-) : (filteredAppointments.length === 0 && searchAppointments.trim()) ? (
-<div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6 flex-1 flex items-center justify-center">
-No appointments found matching "{searchAppointments}".
-</div>
-) : patientappointments.length === 0 ? (
-<div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6 flex-1 flex items-center justify-center">No patient appointments found.</div>
-
-) :(<div className="flex flex-col flex-1 rounded-3xl w-full mt-2 bg-[#f7f7f7] min-h-0">
-<div className="flex-1 overflow-auto">
-<table className="min-w-full divide-y divide-gray-200 h-full">
-<thead className="bg- sticky top-0 z-10">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">ID</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Patient</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Ambher Appoinment</th>
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Bautista Appoinment</th>
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
-
-
-<tbody className="divide-y divide-gray-200 bg-white">
-{(() => {
-const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
-const paginatedAppointments = getPaginatedData(dataToDisplay, 'appointments');
-return paginatedAppointments.map((appointment) => (
-<tr 
-key={appointment._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-<td className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">
-  #{appointment.patientappointmentid}
-</td>
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-       <div className="flex  items-center whitespace-nowrap">
-    <img 
-      src={appointment.patientappointmentprofilepicture}
-      alt="Profile" 
-      className=" rounded-full h-12 mr-3 w-12 object-cover"
-      onError={(e) => {
-        e.target.src = 'default-profile-url';
-      }}
-    />
-    <h1 className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">{appointment.patientappointmentfirstname} {appointment.patientappointmentlastname}</h1>
-    </div>
-</td>
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-    <span className="py-3 px-6 text-[#171717] text-[15px]  text-center font-albertsans font-medium whitespace-nowrap">
-      {new Date(appointment.createdAt).toLocaleDateString('en-US',{
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })}  
-    </span>          
-</td>
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-  {appointment.patientambherappointmentdate && (
-    <div className="font-albertsans text-[#171717] font-medium flex  justify-center items-center whitespace-nowrap">
-      <span className="font-albertsans text-[#171717] text-[15px] font-medium whitespace-nowrap">{formatappointmatedates(appointment.patientambherappointmentdate)} </span> 
-      <span className="ml-1 font-albertsans text-[#171717] text-[15px] font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientambherappointmenttime)})</span> 
-      <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{appointment.patientambherappointmentstatus}</span>
-    </div>
-  )}
-</td>
-
-<td className="py-3 px-6 w-auto  text-center font-albertsans text-[#171717] font-medium whitespace-nowrap">
-  {appointment.patientbautistaappointmentdate && (
-    <div className="font-albertsans text-[#171717] font-medium flex justify-center items-center whitespace-nowrap">
-      <span className="font-albertsans text-[15px]  text-[#171717] font-medium whitespace-nowrap">{formatappointmatedates(appointment.patientbautistaappointmentdate)}</span> 
-      <span className="ml-1 font-albertsans  text-[15px] text-[#171717] font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientbautistaappointmenttime)})</span> 
-      
-<span className={` ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#103d4a]':
-'bg-red-100 text-red-800'}`}>{appointment.patientbautistaappointmentstatus}</span>
-    </div>
-  )}
-</td>
-
-
-
-<td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
- 
-<div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-    className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white ">View</h1></div>
-
-<div onClick={() =>  {setdeletepatientappointment(true);
-                  setselectedpatientappointment(appointment);
-}}
-  className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-
-        {deletepatientappointment && (
-           <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
-
-             <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-   
-
-                <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1></div>
-                <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                    <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
-                    {selectedpatientappointment && ( <>
-                              <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientappointmentid}</p> </>)}  
-                    </div>        
-                    <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                      <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                      <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {handledeleteappointment(selectedpatientappointment.patientappointmentid);setdeletepatientappointment(false); }}><p className=" text-[#ffffff]">Delete</p></div>
-                    </div>
-                </div>
-
-             </div>
-           </div>
-        )}
-
-
-        
-
-</td>
-</tr>
-));
-})()}
-</tbody>
-</table>
-</div>
-
-{/* Pagination Component for Appointments */}
-{(() => {
-const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
-const totalAppointments = dataToDisplay.length;
-const totalPages = Math.ceil(totalAppointments / appointmentsPerPage);
-
-return totalAppointments > 0 && (
-<PaginationComponent
-currentPage={currentPage.appointments}
-totalPages={totalPages}
-onPageChange={(page) => handlePageChange('appointments', page)}
-totalItems={totalAppointments}
-itemsPerPage={appointmentsPerPage}
-itemName="appointments"
-/>
-);
-})()}
-</div>
-)}
-
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-           {viewpatientappointment && selectedpatientappointment && (
-           <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] mt-10  animate-fadeInUp ">
-                   <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                   <Link to=""><div id="patientcard"  className=" flex justify-center items-start mt-5 ml-3 hover:scale-105 hover:cursor-pointer bg-white transition-all duration-300 ease-in-out  rounded-2xl w-[500px] h-[80px]">
-          <div className="w-max mr-3 h-full  rounded-2xl flex justify-center items-center">
-          <img  src={selectedpatientappointment?.patientappointmentprofilepicture || defaultprofilepic}  alt="Profile" className="h-20 w-20 rounded-full object-cover"></img>
-          </div>
-          <div className="bg-white  flex flex-col justify-center items-start pl-2 pr-2 w-[500px] h-full  rounded-3xl">
-            <h1 className="font-albertsans font-bold text-[20px] w-full text-[#2d3744]"> {selectedpatientappointment?.patientappointmentfirstname || ''} {selectedpatientappointment?.patientappointmentlastname || ''}</h1>
-            <p className="text-[15px]  w-full text-[#535354]">{selectedpatientappointment?.patientappointmentemail || ''}</p>
-          </div>
-      </div>
-      </Link> 
-                     <div onClick={() => {setviewpatientappointment(false); setbautistaeyespecialist(''); setambhereyespecialist('');}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                   </div>
-
-
-
-
-
-
-    <div className="mt-10 flex justify-start items-start  w-full rounded-3xl ">
-{selectedpatientappointment.patientambherappointmentdate && (
-
-
-<div className="flex flex-col mr-3 bg-[#fdfdfd]    h-auto w-full rounded-3xl">
-<div className="flex p-3">
-<img src={ambherlogo} className="w-15"/>  
-<h1 className="font-albertsans font-bold text-[20px] text-[#237234] mt-1 ml-3">Ambher Optical</h1>
-<span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientambherappointmentstatus}</span>
-</div>
-
-<div className="flex ">     
-
-<div className="flex flex-col w-full pr-3">           
-<div className=" flex flex-col h-fit form-group ml-3  mt-4 w-full ">
-<label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmentdate">Appointment Details : </label>     
-{/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" required={!!ambherservicesselected}/>*/}
-<div className="h-max w-full  flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-{(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
-selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
-
-<h1>{selectedpatientappointment.patientambherappointmenteyespecialist}</h1>
-
-)}
-<h1>{formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} <span className="ml-2">({formatappointmenttime(selectedpatientappointment.patientambherappointmenttime)})</span></h1>
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-<div id="patientambherappointmentpaymentotal" className="mt-5" >
-<h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-<p className="text-[#2d2d44] text-[18px]">
-₱{selectedpatientappointment.patientambherappointmentpaymentotal}
-</p>
-
-</div>
-)}
-</div>
-
-</div>
-
-
-
-
-
-
-</div>
-
-</div>
-
-<div className="p-4">
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcataractscreening} type="checkbox" name="patientambherappointmentcataractscreening" id="patientambherappointmentcataractscreening" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcataractscreening">Visual/Cataract Screening</label>   
-</div>
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricassessment} type="checkbox" name="patientambherappointmentpediatricassessment" id="patientambherappointmentpediatricassessment" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricassessment">Pediatric Assessment</label>   
-</div>   
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricoptometrist} type="checkbox" name="patientambherappointmentpediatricoptometrist" id="patientambherappointmentpediatricoptometrist" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricoptometrist">Pediatric Optometrist</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcolorvisiontesting} type="checkbox" name="patientambherappointmentcolorvisiontesting" id="patientambherappointmentcolorvisiontesting" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcolorvisiontesting">Color Vision Testing</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentlowvisionaid} type="checkbox" name="patientambherappointmentlowvisionaid" id="patientambherappointmentlowvisionaid" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentlowvisionaid">Low Vision Aid</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentrefraction} type="checkbox" name="patientambherappointmentrefraction" id="patientambherappointmentrefraction" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentrefraction">Refraction</label>   
-</div>      
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcontactlensefitting} type="checkbox" name="patientambherappointmentcontactlensefitting" id="patientambherappointmentcontactlensefitting" />
-<label className="text-[18px]   font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcontactlensefitting">Contact Lense Fitting</label>   
-</div>  
-
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientambherappointmentotherservice} onChange={(e) => setshowotherpatientambherappointmentotherservice(e.target.checked)}  type="checkbox" name="patientambherappointmentotherservice" id="patientambherappointmentotherservice" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentotherservice">Other</label>   
-</div>  
-
-{selectedpatientappointment.patientambherappointmentotherservice && (
-<div className="mt-3 ml-17">
-<p className="text-[18px]  font-medium font-albertsans  text-[#343436] ">- {selectedpatientappointment.patientambherappointmentotherservicenote}</p>
-</div>
-)}    
-
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Pending" && (
-<div id="patientambherappointmentpaymentotal" className="mt-7 ml-6 mr-4" >
-<h1 className="font-bold text-[17px] text-[#343436] mb-3">Eye Specialist : </h1>
-<div className=""><AmbhereyespecialistBox value={ambhereyespecialist} onChange={(e) => setambhereyespecialist(e.target.value)} /></div>  
-
-{ambhereyespecialist && (
-<div 
-onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
-className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5f9e1b] hover:bg-[#55871f] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isAcceptingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accepting...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accept Ambher Appointment</h1>
-)}
-</div>
-)} 
-</div>
-
 
-)}
 
 
 
-{selectedpatientappointment.patientambherappointmentstatus === "Accepted" && (
-<div id="patientambherappointmentpaymentotal" className="mt-7 ml-6" >
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436]mb-3">Total Payment for Ambher Optical  : </h1>
-<input className="w-full border-b-2 border-gray-600  text-[18px]  font-semibold font-albertsans  text-[#343436]"  value={ambherappointmentpaymentotal} onChange={(e) => setambherappointmentpaymentotal(Number(e.target.value))}  type="number" name="patientambherappointmentpaymentotal" id="patientambherappointmentpaymentotal" placeholder="Total Payment"/>
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentconsultationremarkssubject} onChange={(e) => {setambherappointmentconsultationremarkssubject(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarks">Consultation Remarks :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentconsultationremarks} onChange={(e) => {setambherappointmentconsultationremarks(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
 
 
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentprescription">Prescription :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentprescription} onChange={(e) => {setambherappointmentprescription(e.target.value); adjusttextareaheight();}} placeholder="Specify prescription if available..."/>
-</div>
 
 
-{ambherappointmentpaymentotal && ambherappointmentconsultationremarks && (
-<div 
-onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
-className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2d91cf] hover:bg-[#1b6796] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isCompletingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Completing...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Complete Ambher Appointment</h1>
-)}
-</div>
-)}
 
 
-</div>
-)}
 
 
 
-{selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-<div id="patientambherappointmentpaymentotal" className="mt-15" >
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<p>{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
-</div>
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarks">Consultation Remarks :</label>  
-<p>{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
-</div>
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentprescription">Presciption :</label>  
-<p>{selectedpatientappointment.patientambherappointmentprescription}</p>
-</div>
-{selectedpatientappointment.patientambherappointmentrating != 0 && selectedpatientappointment.patientambherappointmentfeedback != "" && (
-<div className="mt-10"> 
 
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-<Stack spacing={1}>
-<Rating size="large" value={selectedpatientappointment.patientambherappointmentrating} readOnly /> 
-</Stack>  
-<p>{selectedpatientappointment.patientambherappointmentfeedback}</p>
-</div>
-)} 
 
-</div>
-)}
 
 
 
@@ -2073,10 +1680,7 @@ className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[
 
 
 
-</div>
 
-</div>
-)}
 
 
 
@@ -2084,214 +1688,63 @@ className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[
 
 
 
-{selectedpatientappointment.patientbautistaappointmentdate && (
-<div className="flex flex-col bg-[#fdfdfd]  h-auto w-full rounded-3xl">
-<div className="flex p-3 ">
-<img src={bautistalogo} className="w-15"/>  
-<h1 className="font-albertsans font-bold text-[20px] text-[#2387c5] mt-1 ml-3">Bautista Eye Center</h1>
-<span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientbautistaappointmentstatus}</span>
-</div>
 
 
 
-<div className="flex flex-col mr-3 pr-8 bg-[#fdfdfd] h-auto  w-full rounded-3xl">
 
 
-<div className="flex flex-col  w-full">           
-<div className="mr-10 flex flex-col h-fit form-group ml-3 mt-4 w-full ">
-<label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientbautistaappointmentdate">Appointment Details : </label>     
-{/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientbautistaappointmentdate" id="patientbautistaappointmentdate" placeholder="" required={!!bautistaservicesselected}/>*/}
-<div className="h-max w-full flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-{(selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" ||
-selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
 
-<h1>{selectedpatientappointment.patientbautistaappointmenteyespecialist}</h1>
 
-)}
-<h1>{formatappointmatedates(selectedpatientappointment.patientbautistaappointmentdate)} <span className="ml-2">({formatappointmenttime(selectedpatientappointment.patientbautistaappointmenttime)})</span></h1>
 
 
-{selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-5.5" >
-<h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-<p className="text-[#2d2d44] text-[18px]">
-₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
-</p>
-</div>
-)}
-</div>
 
-</div>
 
 
 
 
 
-</div>
 
 
 
-<div className="p-4">
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam} type="checkbox" name="patientbautistaappointmentcomprehensiveeyeexam" id="patientbautistaappointmentcomprehensiveeyeexam" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcomprehensiveeyeexam">Comprehensive Eye Exam</label>   
-</div>
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy} type="checkbox" name="patientbautistaappointmentdiabeticretinopathy" id="patientbautistaappointmentdiabeticretinopathy" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentdiabeticretinopathy">Diabetic Retinopathy</label>   
-</div>   
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentglaucoma} type="checkbox" name="patientbautistaappointmentglaucoma" id="patientbautistaappointmentglaucoma" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentglaucoma">Glaucoma</label>   
-</div>    
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy} type="checkbox" name="patientbautistaappointmenthypertensiveretinopathy" id="patientbautistaappointmenthypertensiveretinopathy" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmenthypertensiveretinopathy">Hypertensive Retinopathy</label>   
-</div>    
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentretinolproblem} type="checkbox" name="patientbautistaappointmentretinolproblem" id="patientbautistaappointmentretinolproblem" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentretinolproblem">Retinol Problem</label>   
-</div>    
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery} type="checkbox" name="patientbautistaappointmentcataractsurgery" id="patientbautistaappointmentcataractsurgery" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcataractsurgery">Cataract Surgery</label>   
-</div>      
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery} type="checkbox" name="patientbautistaappointmentpterygiumsurgery" id="patientbautistaappointmentpterygiumsurgery" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentpterygiumsurgery">Pterygium Surgery</label>   
-</div>  
 
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentotherservice}  type="checkbox" name="patientbautistaappointmentotherservice" id="patientbautistaappointmentotherservice" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentotherservice">Other</label>   
-</div>  
 
 
-{selectedpatientappointment.patientbautistaappointmentotherservice && (
-<div className="mt-3 ml-17">
-<p className="text-[18px]  font-medium font-albertsans  text-[#343436] ">- {selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
-</div>
-)}    
 
 
 
 
 
 
-{selectedpatientappointment.patientbautistaappointmentstatus === "Pending" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-7 ml-6" >
-<h1 className="font-bold text-[17px] text-[#343436] mb-3">Eye Specialist : </h1>
-<div className=""><BautistaeyespecialistBox value={bautistaeyespecialist} onChange={(e) => setbautistaeyespecialist(e.target.value)}/></div>
-{bautistaeyespecialist && (
-<div 
-onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
-className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5f9e1b] hover:bg-[#55871f] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isAcceptingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accepting...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accept Bautista Appointment</h1>
-)}
-</div>
-)}
-</div>
-)}
 
 
 
-{selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-7 ml-6" >
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436]mb-3">Total Payment for Bautista Eye Center  : </h1>
-<input className="w-full border-b-2 border-gray-600  text-[18px]  font-semibold font-albertsans  text-[#343436]"  value={bautistaappointmentpaymentotal} onChange={(e) => setbautistaappointmentpaymentotal(Number(e.target.value))}  type="number" name="patientbautistaappointmentpaymentotal" id="patientbautistaappointmentpaymentotal" placeholder="Total Payment"/>
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentconsultationremarkssubject} onChange={(e) => {setbautistaappointmentconsultationremarkssubject(e.target.value); adjusttextareaheight();}} placeholder="Specify consultation subject..."/>
-</div>
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarks">Consultation Remarks :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentconsultationremarks} onChange={(e) => {setbautistaappointmentconsultationremarks(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
 
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentprescription">Prescription :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentprescription} onChange={(e) => {setbautistaappointmentprescription(e.target.value); adjusttextareaheight();}} placeholder="Specify prescription if available..."/>
-</div>
 
 
-{bautistaappointmentpaymentotal && bautistaappointmentconsultationremarks && (
-<div 
-onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
-className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2d91cf] hover:bg-[#1b6796] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isCompletingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Completing...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Complete Bautista Appointment</h1>
-)}
-</div>
-)}
 
-</div>
-)}
 
 
-{selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-15" >
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
-</div>
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarks">Consultation Remarks :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
-</div>
 
 
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentprescription">Presciption :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentprescription}</p>
-</div>
 
 
 
-{selectedpatientappointment.patientbautistaappointmentrating != 0 && selectedpatientappointment.patientbautistaappointmentfeedback != "" && (
-<div className="mt-10"> 
 
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-<Stack spacing={1}>
-<Rating size="large" value={selectedpatientappointment.patientbautistaappointmentrating} readOnly /> 
-</Stack>  
-<p>{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
-</div>
-)} 
 
 
-</div>
-)}
 
 
 
@@ -2300,46 +1753,19 @@ className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[
 
 
 
-</div>
 
-</div>
-</div>
-)}
-</div>
 
-{(selectedpatientappointment.patientambherappointmentstatus === "Completed" &&
-selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
-<div className="bg-[#dbfac8] w-full p-3 mt-20 rounded-2xl">
-<div className="  items-center  flex justify-between">
-<h1 className=" text-[#237234] font-bold font-albertsans text-[20px] ">Combined Total Payment : </h1>
-<p className="text-[#2b5910] text-[24px] font-albertsans font-semibold">
-₱{(selectedpatientappointment.patientambherappointmentpaymentotal + selectedpatientappointment.patientbautistaappointmentpaymentotal).toLocaleString()}
-</p>
-</div>
-</div>
 
-)}
 
 
 
 
 
 
-<div className="w-full mt-5 p-3 flex flex-col mb-7 bg-[#e5e7eb] rounded-2xl  ">
-            <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Patient Appointment Notes :</label>  
 
-             <div>{selectedpatientappointment.patientadditionalappointmentnotes ||"No additional notes"}</div>
-                                   <div className=" w-fit h-fit mt-5 mb-5">
-                                   <img className=" object-cover  rounded-2xl" src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}/>                 
-                                   </div>
-            </div>
-             </div>
 
-           </div>
-        )}
 
 
-</div> )}
 
 
 
@@ -2359,821 +1785,38 @@ selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && 
 
 
 
-{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}{/*Ambher Appointments Table*/}
-{ activeappointmentstable === 'ambherappointmentstable' && ( <div id="ambherappointmentstable" className="animate-fadeInUp flex flex-col border-t-2 border-[#909090] w-[100%] flex-1 rounded-2xl mt-5 min-h-0" ref={appointmentTableRef}>
 
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter appointment details..." className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-</div>
 
-{loadingappointmens ? (
-<div className="space-y-4 p-4">
-{[...Array(4)].map((_, index) => (
-<AppointmentSkeleton key={index} />
-))}
-</div>
-) : errorloadingappointments ? (
-<div className="rounded-lg p-4 bg-red-50 text-red-600">
-Error: {errorloadingappointments}
-</div>
-) : patientappointments.length === 0 ? (
-<div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6">No patient appointments found.</div>
 
-) :(<div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
-<table className="min-w-full divide-y divide-gray-200">
-<thead className="bg-">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">ID</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Patient</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Ambher Appoinment</th>
 
 
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
 
 
-<tbody className="divide-y divide-gray-200 bg-white">
 
-{patientappointments.filter(appointment =>{
-if(activeappointmentstable === 'ambherappointmentstable'){
-return appointment.patientambherappointmentdate !== "" &&
-   appointment.patientambherappointmenttime !== "" &&
-   appointment.patientambherappointmentid !== null;
-}
-return true;
-}).map((appointment) => (
-<tr 
-key={appointment._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-#{appointment.patientappointmentid}
-</td>
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-     <div className="flex  items-center whitespace-nowrap">
-  <img 
-    src={appointment.patientappointmentprofilepicture} 
-    alt="Profile" 
-    className=" rounded-full h-12 mr-3 w-12 object-cover"
-    onError={(e) => {
-      e.target.src = 'default-profile-url';
-    }}
-  />
-  <h1 className="font-albertsans text-[#171717]font-medium whitespace-nowrap">{appointment.patientappointmentfirstname} {appointment.patientappointmentlastname}</h1>
-  </div>
-</td>
 
-<td className="py-3 px-6  text-center font-albertsans text-[#171717] font-medium whitespace-nowrap">
-  <span className="font-albertsans text-[#171717]font-medium whitespace-nowrap">
-    {new Date(appointment.createdAt).toLocaleDateString('en-US',{
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })}  
-  </span>          
-</td>
 
-<td className="whitespace-nowrap">
-{appointment.patientambherappointmentdate && (
-  <div className=" font-albertsans text-[#171717] font-medium flex  justify-center items-center whitespace-nowrap">
-    <span className="font-albertsans text-[#171717]font-medium whitespace-nowrap">{formatappointmatedates(appointment.patientambherappointmentdate)} </span> 
-    <span className="ml-1 font-albertsans text-[#171717]font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientambherappointmenttime)})</span> 
-    <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{appointment.patientambherappointmentstatus}</span>
-  </div>
-)}
-</td>
 
 
 
 
 
-<td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
 
-<div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-  className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white">View</h1></div>
 
-<div onClick={() =>  {setdeletepatientappointment(true);
-                setselectedpatientappointment(appointment);
-}}
-className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
 
-      {deletepatientappointment && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
 
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
 
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
-                  {selectedpatientappointment && ( <>
-                            <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientambherappointmentid}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                    <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {handledeleteappointmentbyclinic(selectedpatientappointment.patientappointmentid, 'ambher');setdeletepatientappointment(false); }}><p className=" text-[#ffffff]">Delete</p></div>
-                  </div>
-              </div>
 
-           </div>
-         </div>
-      )}
 
 
-      
 
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-)}
 
 
 
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-         {viewpatientappointment && selectedpatientappointment && (
-         <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-           <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] mt-10  animate-fadeInUp ">
-                 <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                 <Link to=""><div id="patientcard"  className=" flex justify-center items-start mt-5 ml-3 hover:scale-105 hover:cursor-pointer bg-white transition-all duration-300 ease-in-out  rounded-2xl w-[500px] h-[80px]">
-        <div className="w-max mr-3 h-full  rounded-2xl flex justify-center items-center">
-        <img  src={selectedpatientappointment?.patientappointmentprofilepicture || defaultprofilepic}  alt="Profile" className="h-20 w-20 rounded-full object-cover"></img>
-        </div>
-        <div className="bg-white  flex flex-col justify-center items-start pl-2 pr-2 w-[500px] h-full  rounded-3xl">
-          <h1 className="font-albertsans font-bold text-[20px] w-full text-[#2d3744]"> {selectedpatientappointment?.patientappointmentfirstname || ''} {selectedpatientappointment?.patientappointmentlastname || ''}</h1>
-          <p className="text-[15px]  w-full text-[#535354]">{selectedpatientappointment?.patientappointmentemail || ''}</p>
-        </div>
-    </div>
-    </Link> 
-                   <div onClick={() => {setviewpatientappointment(false); setambhereyespecialist('');}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                 </div>
 
 
 
 
 
-
-  <div className="mt-10 flex justify-start items-start  w-full rounded-3xl ">
-{selectedpatientappointment.patientambherappointmentdate && (
-
-
-<div className="flex flex-col mr-3 bg-[#fdfdfd]    h-auto w-full rounded-3xl">
-<div className="flex p-3">
-<img src={ambherlogo} className="w-15"/>  
-<h1 className="font-albertsans font-bold text-[20px] text-[#237234] mt-1 ml-3">Ambher Optical</h1>
-<span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientambherappointmentstatus}</span>
-</div>
-
-<div className="flex ">     
-
-<div className="flex flex-col w-full pr-3">           
-<div className=" flex flex-col h-fit form-group ml-3  mt-4 w-full ">
-<label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientambherappointmentdate">Appointment Details : </label>     
-{/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" required={!!ambherservicesselected}/>*/}
-<div className="h-max w-full  flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-{(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
-selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
-
-<h1>{selectedpatientappointment.patientambherappointmenteyespecialist}</h1>
-
-)}
-<h1>{formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)} <span className="ml-2">({formatappointmenttime(selectedpatientappointment.patientambherappointmenttime)})</span></h1>
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-<div id="patientambherappointmentpaymentotal" className="mt-5" >
-<h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-<p className="text-[#2d2d44] text-[18px]">
-₱{selectedpatientappointment.patientambherappointmentpaymentotal}
-</p>
-
-</div>
-)}
-</div>
-
-</div>
-
-
-
-
-
-</div>
-
-</div>
-
-<div className="p-4">
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcataractscreening} type="checkbox" name="patientambherappointmentcataractscreening" id="patientambherappointmentcataractscreening" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcataractscreening">Visual/Cataract Screening</label>   
-</div>
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricassessment} type="checkbox" name="patientambherappointmentpediatricassessment" id="patientambherappointmentpediatricassessment" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricassessment">Pediatric Assessment</label>   
-</div>   
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentpediatricoptometrist} type="checkbox" name="patientambherappointmentpediatricoptometrist" id="patientambherappointmentpediatricoptometrist" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentpediatricoptometrist">Pediatric Optometrist</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcolorvisiontesting} type="checkbox" name="patientambherappointmentcolorvisiontesting" id="patientambherappointmentcolorvisiontesting" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcolorvisiontesting">Color Vision Testing</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentlowvisionaid} type="checkbox" name="patientambherappointmentlowvisionaid" id="patientambherappointmentlowvisionaid" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentlowvisionaid">Low Vision Aid</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentrefraction} type="checkbox" name="patientambherappointmentrefraction" id="patientambherappointmentrefraction" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentrefraction">Refraction</label>   
-</div>      
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientambherappointmentcontactlensefitting} type="checkbox" name="patientambherappointmentcontactlensefitting" id="patientambherappointmentcontactlensefitting" />
-<label className="text-[18px]   font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentcontactlensefitting">Contact Lense Fitting</label>   
-</div>  
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientambherappointmentotherservice}  type="checkbox" name="patientambherappointmentotherservice" id="patientambherappointmentotherservice" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentotherservice">Other</label>   
-</div>  
-
-
-{selectedpatientappointment.patientambherappointmentotherservice && (
-<div className="mt-3 ml-17 flex">
- <p className="text-[18px]  font-medium font-albertsans  text-[#343436] ">- {selectedpatientappointment.patientambherappointmentotherservicenote}</p>
-</div>
-)}   
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Pending" && (
-<div id="patientambherappointmentpaymentotal" className="mt-7 ml-6 mr-4" >
-<h1 className="font-bold text-[17px] text-[#343436] mb-3">Eye Specialist : </h1>
-<div className=""><AmbhereyespecialistBox value={ambhereyespecialist} onChange={(e) => setambhereyespecialist(e.target.value)} /></div>  
-
-{ambhereyespecialist && (
-<div 
-onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
-className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5f9e1b] hover:bg-[#55871f] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isAcceptingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accepting...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accept Ambher Appointment</h1>
-)}
-</div>
-)} 
-</div>
-
-
-)}
-
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Accepted" && (
-<div id="patientambherappointmentpaymentotal" className="mt-7 ml-6 " >
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436]mb-3">Total Payment for Ambher Optical  : </h1>
-<input className="w-full border-b-2 border-gray-600  text-[18px]  font-semibold font-albertsans  text-[#343436]"  value={ambherappointmentpaymentotal} onChange={(e) => setambherappointmentpaymentotal(Number(e.target.value))}  type="number" name="patientambherappointmentpaymentotal" id="patientambherappointmentpaymentotal" placeholder="Total Payment"/>
-
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentconsultationremarkssubject} onChange={(e) => {setambherappointmentconsultationremarkssubject(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarks">Consultation Remarks :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentconsultationremarks} onChange={(e) => {setambherappointmentconsultationremarks(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentprescription">Prescription :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={ambherappointmentprescription} onChange={(e) => {setambherappointmentprescription(e.target.value); adjusttextareaheight();}} placeholder="Specify prescription if available..."/>
-</div>
-
-
-{ambherappointmentpaymentotal && ambherappointmentconsultationremarks && (
-<div 
-onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
-className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2d91cf] hover:bg-[#1b6796] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isCompletingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Completing...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Complete Ambher Appointment</h1>
-)}
-</div>
-)}
-
-
-</div>
-)}
-
-
-
-{selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-<div id="patientambherappointmentpaymentotal" className="mt-15" >
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<p>{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
-</div>
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentconsultationremarks">Consultation Remarks :</label>  
-<p>{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
-</div>
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientambherappointmentprescription">Presciption :</label>  
-<p>{selectedpatientappointment.patientambherappointmentprescription}</p>
-</div>
-
-
-{selectedpatientappointment.patientambherappointmentrating != 0 && selectedpatientappointment.patientambherappointmentfeedback != "" && (
-<div className="mt-10"> 
-
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-<Stack spacing={1}>
-<Rating size="large" value={selectedpatientappointment.patientambherappointmentrating} readOnly /> 
-</Stack>  
-<p>{selectedpatientappointment.patientambherappointmentfeedback}</p>
-</div>
-)} 
-
-</div>
-)}
-
-
-
-</div>
-
-</div>
-)}
-
-
-
-</div>
-
-
-<div className="w-full mt-5 p-3 flex flex-col mb-7 bg-[#e5e7eb] rounded-2xl  ">
-          <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Patient Appointment Notes :</label>  
-
-           <div>{selectedpatientappointment.patientadditionalappointmentnotes ||"No additional notes"}</div>
-                                 <div className=" w-fit h-fit mt-5 mb-5">
-                                 <img className=" object-cover  rounded-2xl" src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}/>                 
-                                 </div>
-          </div>
-           </div>
-
-         </div>
-      )}
-
-
-</div>)}
-
-
-
-
-
-
-
-{/*Bautista Appointments Table*/}{/*Bautista Appointments Table*/}{/*Bautista Appointments Table*/}{/*Bautista Appointments Table*/}{/*Bautista Appointments Table*/}{/*Bautista Appointments Table*/}
-{ activeappointmentstable === 'bautistaappointmentstable' && ( <div id="bautistaappointmentstable" className="animate-fadeInUp flex flex-col border-t-2 border-[#909090] w-[100%] flex-1 rounded-2xl mt-5 min-h-0" ref={appointmentTableRef}>
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter appointment details..." className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-</div>
-
-{loadingappointmens ? (
-<div className="space-y-4 p-4">
-{[...Array(4)].map((_, index) => (
-<AppointmentSkeleton key={index} />
-))}
-</div>
-) : errorloadingappointments ? (
-<div className="rounded-lg p-4 bg-red-50 text-red-600">
-Error: {errorloadingappointments}
-</div>
-) : patientappointments.length === 0 ? (
-<div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6">No patient appointments found.</div>
-
-) :(<div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
-<table className="min-w-full divide-y divide-gray-200">
-<thead className="bg-">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">ID</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Patient</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Bautista Appoinment</th>
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
-
-
-<tbody className="divide-y divide-gray-200 bg-white">
-{patientappointments.filter(appointment =>{
-if(activeappointmentstable === 'bautistaappointmentstable'){
-return appointment.patientbautistaappointmentdate !== "" &&
-   appointment.patientbautistaappointmenttime !== "" &&
-   appointment.patientbautistaappointmentid !== null;
-}
-return true;
-}).map((appointment) => (
-<tr 
-key={appointment._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-<td className="py-3 px-6  text-center font-albertsans text-[#171717]font-medium whitespace-nowrap">
-#{appointment.patientappointmentid}
-</td>
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-     <div className="flex  items-center whitespace-nowrap">
-  <img 
-    src={appointment.patientappointmentprofilepicture} 
-    alt="Profile" 
-    className=" rounded-full h-12 mr-3 w-12 object-cover"
-    onError={(e) => {
-      e.target.src = 'default-profile-url';
-    }}
-  />
-  <h1 className="font-albertsans text-[#171717]font-medium whitespace-nowrap">{appointment.patientappointmentfirstname} {appointment.patientappointmentlastname}</h1>
-  </div>
-</td>
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-  <span className="font-albertsans text-[#171717]font-medium whitespace-nowrap">
-    {new Date(appointment.createdAt).toLocaleDateString('en-US',{
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })}  
-  </span>          
-</td>
-
-
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
-{appointment.patientbautistaappointmentdate && (
-  <div className="font-albertsans text-[#171717] font-medium flex justify-center items-center whitespace-nowrap">
-    <span className="font-albertsans text-[#171717] font-medium whitespace-nowrap">{formatappointmatedates(appointment.patientbautistaappointmentdate)}</span> 
-    <span className="ml-1 font-albertsans text-[#171717] font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientbautistaappointmenttime)})</span> 
-    
-<span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#103d4a]':
-'bg-red-100 text-red-800'}`}>{appointment.patientbautistaappointmentstatus}</span>
-  </div>
-)}
-</td>
-
-
-
-<td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
-
-<div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-  className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white">View</h1></div>
-
-<div onClick={() =>  {setdeletepatientappointment(true);
-                setselectedpatientappointment(appointment);
-}}
-className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-
-      {deletepatientappointment && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
-
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
-
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
-                  {selectedpatientappointment && ( <>
-                            <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientbautistaappointmentid}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                    <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {handledeleteappointmentbyclinic(selectedpatientappointment.patientappointmentid, 'bautista') ;setdeletepatientappointment(false); }}><p className=" text-[#ffffff]">Delete</p></div>
-                  </div>
-              </div>
-
-           </div>
-         </div>
-      )}
-
-
-      
-
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-)}
-
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-{/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
-         {viewpatientappointment && selectedpatientappointment && (
-         <div id="viewpatientappointment" className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-           <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] mt-10  animate-fadeInUp ">
-                 <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                 <Link to=""><div id="patientcard"  className=" flex justify-center items-start mt-5 ml-3 hover:scale-105 hover:cursor-pointer bg-white transition-all duration-300 ease-in-out  rounded-2xl w-[500px] h-[80px]">
-        <div className="w-max mr-3 h-full  rounded-2xl flex justify-center items-center">
-        <img  src={selectedpatientappointment?.patientappointmentprofilepicture || defaultprofilepic}  alt="Profile" className="h-20 w-20 rounded-full object-cover"></img>
-        </div>
-        <div className="bg-white  flex flex-col justify-center items-start pl-2 pr-2 w-[500px] h-full  rounded-3xl">
-          <h1 className="font-albertsans font-bold text-[20px] w-full text-[#2d3744]"> {selectedpatientappointment?.patientappointmentfirstname || ''} {selectedpatientappointment?.patientappointmentlastname || ''}</h1>
-          <p className="text-[15px]  w-full text-[#535354]">{selectedpatientappointment?.patientappointmentemail || ''}</p>
-        </div>
-    </div>
-    </Link> 
-                   <div onClick={() => {setviewpatientappointment(false); setbautistaeyespecialist('');}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                 </div>
-
-
-
-
-
-
-  <div className="mt-10 flex justify-start items-start  w-full rounded-3xl ">
-
-
-
-
-
-
-
-
-{selectedpatientappointment.patientbautistaappointmentdate && (
-<div className="flex flex-col bg-[#fdfdfd]  h-auto w-full rounded-3xl">
-<div className="flex p-3 ">
-<img src={bautistalogo} className="w-15"/>  
-<h1 className="font-albertsans font-bold text-[20px] text-[#2387c5] mt-1 ml-3">Bautista Eye Center</h1>
-<span className={`ml-5 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-'bg-red-100 text-red-800'}`}>{selectedpatientappointment.patientbautistaappointmentstatus}</span>
-</div>
-
-
-
-<div className="flex flex-col mr-3 pr-8 bg-[#fdfdfd] h-auto  w-full rounded-3xl">
-
-
-<div className="flex flex-col  w-full">           
-<div className="mr-10 flex flex-col h-fit form-group ml-3 mt-4 w-full ">
-<label className="text-[18px]  font-bold  text-[#434343] "htmlFor="patientbautistaappointmentdate">Appointment Details : </label>     
-{/*<input className="h-10 w-60 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold"   type="date" name="patientbautistaappointmentdate" id="patientbautistaappointmentdate" placeholder="" required={!!bautistaservicesselected}/>*/}
-<div className="h-max w-full flex flex-col items-start p-3 mt-2 justify-start border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold">
-{(selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" ||
-selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
-
-<h1>{selectedpatientappointment.patientbautistaappointmenteyespecialist}</h1>
-
-)}
-<h1>{formatappointmatedates(selectedpatientappointment.patientbautistaappointmentdate)} <span className="ml-2">({formatappointmenttime(selectedpatientappointment.patientbautistaappointmenttime)})</span></h1>
-
-
-{selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-5.5" >
-<h3 className="font-bold text-[15px] text-[#1a690e]">Payment Total:</h3>
-<p className="text-[#2d2d44] text-[18px]">
-₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
-</p>
-</div>
-)}
-</div>
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-<div className="p-4">
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam} type="checkbox" name="patientbautistaappointmentcomprehensiveeyeexam" id="patientbautistaappointmentcomprehensiveeyeexam" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcomprehensiveeyeexam">Comprehensive Eye Exam</label>   
-</div>
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy} type="checkbox" name="patientbautistaappointmentdiabeticretinopathy" id="patientbautistaappointmentdiabeticretinopathy" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentdiabeticretinopathy">Diabetic Retinopathy</label>   
-</div>   
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentglaucoma} type="checkbox" name="patientbautistaappointmentglaucoma" id="patientbautistaappointmentglaucoma" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentglaucoma">Glaucoma</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy} type="checkbox" name="patientbautistaappointmenthypertensiveretinopathy" id="patientbautistaappointmenthypertensiveretinopathy" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmenthypertensiveretinopathy">Hypertensive Retinopathy</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentretinolproblem} type="checkbox" name="patientbautistaappointmentretinolproblem" id="patientbautistaappointmentretinolproblem" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentretinolproblem">Retinol Problem</label>   
-</div>    
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery} type="checkbox" name="patientbautistaappointmentcataractsurgery" id="patientbautistaappointmentcataractsurgery" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentcataractsurgery">Cataract Surgery</label>   
-</div>      
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all" checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery} type="checkbox" name="patientbautistaappointmentpterygiumsurgery" id="patientbautistaappointmentpterygiumsurgery" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentpterygiumsurgery">Pterygium Surgery</label>   
-</div>  
-
-
-<div className="flex items-center mt-5 ml-7">
-<input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  checked={selectedpatientappointment.patientbautistaappointmentotherservice} onChange={(e) => setshowotherpatientbautistaappointmentotherservice(e.target.checked)}  type="checkbox" name="patientbautistaappointmentotherservice" id="patientbautistaappointmentotherservice" />
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentotherservice">Other</label>   
-</div>  
-
-
-{selectedpatientappointment.patientbautistaappointmentotherservice && (
-<div className="mt-3 ml-17">
-<p className="text-[18px]  font-medium font-albertsans  text-[#343436] ">- {selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
-</div>
-)}    
-
-
-
-{selectedpatientappointment.patientbautistaappointmentstatus === "Pending" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-7 ml-6" >
-<h1 className="font-bold text-[17px] text-[#343436] mb-3">Eye Specialist : </h1>
-<div className=""><BautistaeyespecialistBox value={bautistaeyespecialist} onChange={(e) => setbautistaeyespecialist(e.target.value)}/></div>
-{bautistaeyespecialist && (
-<div 
-onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
-className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5f9e1b] hover:bg-[#55871f] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isAcceptingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accepting...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Accept Bautista Appointment</h1>
-)}
-</div>
-)}
-</div>
-)}
-
-
-
-{selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-7 ml-6" >
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436]mb-3">Total Payment for Bautista Eye Center  : </h1>
-<input className="w-full border-b-2 border-gray-600  text-[18px]  font-semibold font-albertsans  text-[#343436]"  value={bautistaappointmentpaymentotal} onChange={(e) => setbautistaappointmentpaymentotal(Number(e.target.value))}  type="number" name="patientbautistaappointmentpaymentotal" id="patientbautistaappointmentpaymentotal" placeholder="Total Payment"/>
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentconsultationremarkssubject} onChange={(e) => {setbautistaappointmentconsultationremarkssubject(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarks">Consultation Remarks :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentconsultationremarks} onChange={(e) => {setbautistaappointmentconsultationremarks(e.target.value); adjusttextareaheight();}} placeholder="Specify findings or remarks..."/>
-</div>
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentprescription">Prescription :</label>  
-<textarea className="w-full text-[18px]  font-semibold font-albertsans  text-[#343436] rounded-md border-2 border-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={bautistaappointmentprescription} onChange={(e) => {setbautistaappointmentprescription(e.target.value); adjusttextareaheight();}} placeholder="Specify prescription if available..."/>
-</div>
-
-
-{bautistaappointmentpaymentotal && bautistaappointmentconsultationremarks && (
-<div 
-onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
-className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2d91cf] hover:bg-[#1b6796] hover:cursor-pointer'} mt-4 h-[50px] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-[20px]`}
->
-{isCompletingAppointment ? (
-<div className="flex items-center">
-<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Completing...</h1>
-</div>
-) : (
-<h1 className="text-white font-albertsans font-semibold text-[20px]">Complete Bautista Appointment</h1>
-)}
-</div>
-)}
-
-</div>
-)}
-
-
-{selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-<div id="patientbautistaappointmentpaymentotal" className="mt-15" >
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarkssubject">Consultation Subject :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
-</div>
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentconsultationremarks">Consultation Remarks :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
-</div>
-
-
-<div className="mt-3 w-full flex flex-col">
-<label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientbautistaappointmentprescription">Presciption :</label>  
-<p>{selectedpatientappointment.patientbautistaappointmentprescription}</p>
-</div>
-
-
-{selectedpatientappointment.patientbautistaappointmentrating != 0 && selectedpatientappointment.patientbautistaappointmentfeedback != "" && (
-<div className="mt-10"> 
-
-<h1 className="text-[18px]  font-semibold font-albertsans  text-[#343436] ">Patient Feedback :</h1>           
-<Stack spacing={1}>
-<Rating size="large" value={selectedpatientappointment.patientbautistaappointmentrating} readOnly /> 
-</Stack>  
-<p>{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
-</div>
-)} 
-
-
-</div>
-)}
-
-
-
-</div>
-
-</div>
-</div>
-)}
-</div>
-
-
-
-
-<div className="w-full mt-5 p-3 flex flex-col mb-7 bg-[#e5e7eb] rounded-2xl  ">
-          <label className="text-[18px]  font-semibold font-albertsans  text-[#343436] "htmlFor="patientadditionalappointmentnotes">Patient Appointment Notes :</label>  
-
-           <div>{selectedpatientappointment.patientadditionalappointmentnotes ||"No additional notes"}</div>
-                                 <div className=" w-fit h-fit mt-5 mb-5">
-                                 <img className=" object-cover  rounded-2xl" src={selectedpatientappointment.patientadditionalappointmentnotesimage || defaultimageplaceholder}/>                 
-                                 </div>
-          </div>
-           </div>
-
-         </div>
-      )}
-
-
-</div> )}
-
- </div>)}
-
-{/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
-{/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
-{/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
-{/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
-{/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
 
 
 
@@ -3194,8 +1837,24 @@ className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-[
 { (activedashboard === 'medicalrecords' && !isAdminRole) && (<div id="medicalrecords" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
   
 
-
-<div className="flex items-center"><i className="bx bxs-data text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Medical Records</h1></div>
+<div className="flex items-center justify-between mb-4">
+  <div className="flex items-center">
+    <i className="bx bxs-data text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Medical Records</h1>
+  </div>
+  
+  {/* Refresh Button */}
+  <div className="flex space-x-3">
+    <div
+      onClick={refreshMedicalRecordsData}
+      disabled={loadingpatientdemographics}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatientdemographics ? 'animate-spin' : ''}`} />
+      {loadingpatientdemographics ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
+</div>
 
 
 
@@ -3845,19 +2504,6 @@ className="max-w-full max-h-full"
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
@@ -3866,7 +2512,24 @@ className="max-w-full max-h-full"
 
 { (activedashboard === 'inventorymanagement' && !isAdminRole) && ( <div id="inventorymanagement" className="pl-5 pr-5 pb-26 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl flex flex-col" >   
 
-<div className="flex items-center"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Inventory Management</h1></div>
+<div className="flex items-center justify-between mb-4">
+  <div className="flex items-center">
+    <i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> 
+    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Inventory Management</h1>
+  </div>
+  
+  {/* Refresh Button */}
+  <div className="flex space-x-3">
+    <div
+      onClick={refreshInventoryData}
+      disabled={loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts}
+      className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${(loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts) ? 'animate-spin' : ''}`} />
+      {(loadingambherinventorycategorylist || loadingbautistainventorycategorylist || ambherloadingproducts || bautistaloadingproducts) ? 'Refreshing...' : 'Refresh'}
+    </div>
+  </div>
+</div>
 
 <div className="flex justify-start items-center">
 {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
@@ -5381,7 +4044,24 @@ onError={(e) => {
 
 { (activedashboard === 'billingsandorders' && !isAdminRole) && ( <div id="billingsandorders"  className="pl-5 pr-5 pb-26 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl" >   
 
-  <div className="flex items-center"><i className="bx bxs-receipt text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Billings and Orders</h1></div>
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center">
+      <i className="bx bxs-receipt text-[#184d85] text-[25px] mr-2"/> 
+      <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Billings and Orders</h1>
+    </div>
+    
+    {/* Refresh Button */}
+    <div className="flex space-x-3">
+      <div
+        onClick={refreshBillingOrdersData}
+        disabled={loadingAmbherOrders || loadingBautistaOrders}
+        className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+      >
+        <RefreshCw className={`w-4 h-4 mr-2 ${(loadingAmbherOrders || loadingBautistaOrders) ? 'animate-spin' : ''}`} />
+        {(loadingAmbherOrders || loadingBautistaOrders) ? 'Refreshing...' : 'Refresh'}
+      </div>
+    </div>
+  </div>
   
   <div className="flex justify-start items-center ">
   
@@ -7205,18 +5885,35 @@ paginatedBautistaOrders.map((order) => (
 
             {/* View Order Details Modal */}
 {showViewOrderModal && selectedOrderForView && (
-  <div className="fixed inset-0 bg-[#000000b1] flex items-center justify-center z-20 p-4">
+  <div className="fixed inset-0 bg-[#000000b1] flex items-center justify-center z-99999 p-4">
     <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
       <div className="sticky z-99 top-0 bg-white border-b px-8 py-6 flex justify-between items-center rounded-t-2xl">
         <div className="flex justify-center items-center">
           <img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all p-1" />
           <h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Billing Details</h1>
         </div>
-        <div 
-          onClick={closeViewOrderModal}
-          className="cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"
-        >
-          ×
+        <div className="flex items-center justify-center gap-7">
+          {(() => {
+            const orderStatus = selectedOrderForView.patientorderambherid 
+              ? selectedOrderForView.patientorderambherstatus 
+              : selectedOrderForView.patientorderbautistastatus;
+            
+            return orderStatus === 'Completed' && (
+              <div
+                onClick={() => exportBillingToPDF(selectedOrderForView)}
+                className="cursor-pointer bg-[#184d85] hover:bg-[#0f3a6b] text-white px-5 py-3 rounded-lg font-medium font-albertsans transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <i className="bx bx-download text-lg"></i>
+                Export PDF
+              </div>
+            );
+          })()}
+          <div 
+            onClick={closeViewOrderModal}
+            className="cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"
+          >
+            ×
+          </div>
         </div>
       </div>
       
@@ -7683,68 +6380,6 @@ paginatedBautistaOrders.map((order) => (
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -8289,179 +6924,530 @@ paginatedBautistaOrders.map((order) => (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+{/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} {/*Start of SMS Monitoring*/} 
+
+ { (activedashboard === 'smsmonitoring' && !isAdminRole) && ( <div id="smsmonitoring" className="flex flex-col pl-5 pr-5 pb-3 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] min-h-full h-auto rounded-2xl" >
+   <div className="flex items-center justify-between mb-4">
+     <div className="flex items-center">
+       <i className="bx bxs-message text-[#184d85] text-[25px] mr-2"/>
+       <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">SMS Monitoring</h1>
+     </div>
+     
+     {/* Refresh Button */}
+     <div className="flex space-x-3">
+       <div
+         onClick={refreshSmsData}
+         disabled={loadingSmsMessages}
+         className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+       >
+         <RefreshCw className={`w-4 h-4 mr-2 ${loadingSmsMessages ? 'animate-spin' : ''}`} />
+         {loadingSmsMessages ? 'Refreshing...' : 'Refresh'}
+       </div>
+     </div>
+   </div>
+              
+
+
+
+
+    <div id="recentsmsmessagestablelist">
+      <div className="animate-fadeInUp flex flex-col  w-[100%] flex-1 rounded-2xl mt-5 min-h-0">
+        
+        {/* Search and Filter Section */}
+        <div className="mt-5 w-full h-auto flex flex-col gap-4 px-2">
+          {/* Search Bar */}
+          <div className="w-full flex items-center">
+            <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+            <div className="relative w-full flex items-center justify-center gap-3">
+              <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+              <input 
+                type="text" 
+                placeholder="Enter message details, recipients, or content..." 
+                value={searchSmsMessages} 
+                onChange={(e) => {
+                  setSearchSmsMessages(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when search changes
+                  filterSmsMessages(e.target.value);
+                }} 
+                className="mr-1 transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+              />
+            </div>
+
+
+          </div>
+
+          {/* Filter Section */}
+          <div className="w-full flex justify-between items-center gap-6 mb-5">
+
+            <div className="flex justify-center items-center gap-4">
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <h3 className="font-albertsans font-bold text-[16px] text-[#383838]">Status:</h3>
+              <select 
+                value={smsStatusFilter} 
+                onChange={(e) => {
+                  setSmsStatusFilter(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when filter changes
+                }}
+                className="px-3 py-2 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500 font-albertsans"
+              >
+                <option value="all">All Status</option>
+                <option value="Sent">Sent</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Pending">Pending</option>
+                <option value="Failed">Failed</option>
+              </select>
+            </div>
+
+            {/* Type Filter */}
+            <div className="flex items-center gap-2">
+              <h3 className="font-albertsans font-bold text-[16px] text-[#383838]">Type:</h3>
+              <select 
+                value={smsTypeFilter} 
+                onChange={(e) => {
+                  setSmsTypeFilter(e.target.value);
+                  setCurrentSmsPage(1); // Reset to page 1 when filter changes
+                }}
+                className="px-3 py-2 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500 font-albertsans"
+              >
+                <option value="all">All Types</option>
+                <option value="Appointment">Appointment</option>
+                <option value="Order Status">Order Status</option>
+                <option value="Promotional">Promotional</option>
+                <option value="Wishlist">Wishlist</option>
+              </select>
+            </div>
+            </div>
+
+            {/* SMS Credits and Send Button Section */}
+            <div className="flex items-center gap-4">
+              {/* SMS Credits Display */}
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-200">
+     
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-blue-800 font-semibold text-[17px]">SMS Credits</span>
+                  {loadingSmsCredits ? (
+                    <div className="animate-pulse bg-blue-200 h-4 w-12 rounded"></div>
+                  ) : smsCreditsError ? (
+                    <span className="text-red-500 text-xs cursor-pointer" onClick={() => fetchSmsCredits(true)} title="Click to retry">
+                      Error - Retry
+                    </span>
+                  ) : smsCredits !== null ? (
+                    <span className={`font-bold text-lg ${smsCredits < 10 ? 'text-red-600' : smsCredits < 50 ? 'text-orange-600' : 'text-green-600'}`}>
+                      {smsCredits.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 text-sm">--</span>
+                  )}
+                </div>
+                <div
+                  onClick={() => fetchSmsCredits(true)}
+                  className="text-blue-600 hover:text-blue-800 transition-colors ml-1"
+                  title="Refresh credits"
+                >
+                  <i className="bx bx-refresh text-[17px]"></i>
+                </div>
+              </div>
+
+              {/* Send Promotional SMS Button */}
+              <div onClick={() => setShowPromotionalSmsModal(true)} id="sendsmspromotionalbutton" className="ml-1 w-75 h-10 bg-[#4ca22b] transition-all duration-300 ease-in-out hover:scale-105 rounded-2xl cursor-pointer flex justify-center items-center text-white font-semibold gap-2 text-[17px]">
+                <i className="bx bxs-paper-plane"/> 
+                <h1>Send Promotional SMS</h1> 
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* SMS Messages Table */}
+        {loadingSmsMessages ? (
+          <div className="overflow-hidden bg-white rounded-2xl shadow-md flex-1">
+            <table className="min-w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Message ID</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Recipients</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Count</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
+                  <th className="pb-3 pt-3 pl-2 pr-2 text-center">Credits</th>
+                  <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {[...Array(4)].map((_, index) => (
+                  <SmsRowSkeleton key={index} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : errorLoadingSmsMessages ? (
+          <div className="rounded-lg p-4 bg-red-50 text-red-600 flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <i className="bx bxs-error-alt text-3xl mb-2"></i>
+              <p>Error: {errorLoadingSmsMessages}</p>
+            </div>
+          </div>
+        ) : (filteredSmsMessages.length === 0 && (searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all')) ? (
+          <div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6 flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <i className="bx bx-search-alt text-3xl mb-2"></i>
+              <p>No SMS messages found matching your filters.</p>
+            </div>
+          </div>
+        ) : smsMessages.length === 0 ? (
+          <div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6 flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <i className="bx bx-message text-3xl mb-2"></i>
+              <p>No SMS messages found.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col flex-1 rounded-3xl w-full mt-2 bg-[#f7f7f7] min-h-0">
+            <div className="flex-1 overflow-auto">
+              <table className="min-w-full divide-y divide-gray-200 h-full">
+                <thead className="bg- sticky top-0 z-10">
+                  <tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
+                    <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Message ID</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Recipients</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Count</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Sender Clinic</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Type</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Message</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
+                    <th className="pb-3 pt-3 pl-2 pr-2 text-center">Credits</th>
+                    <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Sent At</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {(() => {
+                    const paginatedSmsMessages = getPaginatedSmsData();
+                    return paginatedSmsMessages.map((sms) => (
+                      <tr 
+                        key={sms._id || sms.messageId}
+                        className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
+                      >
+                        <td className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">
+                          #{sms.messageId}
+                        </td>
+                        
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+                          <div className="max-w-48 truncate">
+                            {sms.recipients === 'All Users' ? (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-semibold">
+                                All Users
+                              </span>
+                            ) : (
+                              <span className="text-[15px]">{sms.recipients}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          {sms.type === 'Promotional' ? (
+                            <div className="flex flex-col items-center">
+                              <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm font-semibold">
+                                {sms.recipientPhones ? sms.recipientPhones.length : 0}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-1">recipients</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          <div className="flex justify-center items-center">
+                            {sms.senderClinic === 'Ambher Optical' ? (
+                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                Ambher Optical
+                              </span>
+                            ) : sms.senderClinic === 'Bautista Eye Center' ? (
+                              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                Bautista Eye Center
+                              </span>
+                            ) : (
+                              <span className="text-[15px]">{sms.senderClinic}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                            sms.type === 'Appointment' ? 'bg-purple-100 text-purple-800' :
+                            sms.type === 'Order Status' ? 'bg-orange-100 text-orange-800' :
+                            sms.type === 'Promotional' ? 'bg-pink-100 text-pink-800' :
+                            sms.type === 'Wishlist' ? 'bg-indigo-100 text-indigo-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {sms.type}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+                          <div className="max-w-64 truncate" title={sms.message}>
+                            {sms.message}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                            sms.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                            sms.status === 'Sent' ? 'bg-blue-100 text-blue-800' :
+                            sms.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            sms.status === 'Failed' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {sms.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+                          <div className="flex flex-col items-center">
+                            <span className={`text-sm font-semibold ${
+                              sms.smsCreditsDeducted > 0 ? 'text-red-600' : 'text-gray-400'
+                            }`}>
+                              {sms.smsCreditsDeducted > 0 ? `-${sms.smsCreditsDeducted}` : '0'}
+                            </span>
+                            {sms.smsCreditsBalance !== null && sms.smsCreditsBalance !== undefined && (
+                              <span className="text-xs text-gray-500 mt-1">
+                                Bal: {sms.smsCreditsBalance}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-6 text-[#171717] text-[15px] text-center font-albertsans font-medium whitespace-nowrap">
+                          {formatSmsDate(sms.sentAt)}
+                        </td>
+
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>        
+          <div id="smspagination">
+            
+            {/* SMS Pagination Controls - Separate dedicated container */}
+            {(() => {
+              // Use the same logic as getPaginatedSmsData to ensure consistency
+              const dataToDisplay = searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all' 
+                ? filteredSmsMessages 
+                : smsMessages;
+              
+              // Ensure dataToDisplay is an array
+              const totalSmsMessages = Array.isArray(dataToDisplay) ? dataToDisplay.length : 0;
+              const totalPages = Math.ceil(totalSmsMessages / smsMessagesPerPage);
+              
+              // Ensure current page doesn't exceed total pages
+              if (currentSmsPage > totalPages && totalPages > 0) {
+                setCurrentSmsPage(totalPages);
+              }
+              
+              // Show pagination logic:
+              // - Always show if there's data and multiple pages
+              // - For default state (no filters), show even with 1 page to indicate pagination is available
+              // - For filtered state, only show if there are multiple pages
+              const isDefaultState = !searchSmsMessages.trim() && smsStatusFilter === 'all' && smsTypeFilter === 'all';
+              const shouldShowPagination = totalSmsMessages > 0 && (
+                isDefaultState ? totalPages >= 1 : totalPages > 1
+              );
+
+              return !loadingSmsMessages && !errorLoadingSmsMessages && shouldShowPagination && (
+                <div className="flex items-center justify-start gap-5 mt-4 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600 font-albertsans">
+                    Page {currentSmsPage} of {totalPages} ({totalSmsMessages} total messages)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      onClick={() => setCurrentSmsPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentSmsPage === 1}
+                      className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </div>
+                    
+                    {/* Page Numbers */}
+                    <div className="cursor-pointer flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const current = currentSmsPage;
+                          return page === 1 || page === totalPages || 
+                                 (page >= current - 1 && page <= current + 1);
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsis = index > 0 && array[index - 1] !== page - 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && <span className="px-2 text-gray-400">...</span>}
+                              <div
+                                onClick={() => setCurrentSmsPage(page)}
+                                className={`cursor-pointer px-3 py-1 rounded-md text-sm font-albertsans transition-colors ${
+                                  page === currentSmsPage
+                                    ? 'bg-[#184d85] text-white'
+                                    : 'bg-white border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+                    
+                    <div
+                      onClick={() => setCurrentSmsPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentSmsPage === totalPages}
+                      className="cursor-pointer px-3 py-1 border border-gray-300 rounded-md text-sm font-albertsans bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>    
+   </div> )}
+
+   {/* Promotional SMS Modal */}
+   {showPromotionalSmsModal && (
+     <div className="fixed inset-0 bg-[#000000b1] bg-opacity-50 flex items-center justify-center z-50">
+       <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+         <div className="flex items-center justify-between mb-4">
+           <h3 className="text-lg font-semibold text-gray-800">Send Promotional SMS</h3>
+           <div
+             onClick={handleClosePromotionalSmsModal}
+             className="text-gray-400 hover:text-gray-600 cursor-pointer"
+           >
+             <i className="bx bx-x text-[20px] font-semibold"></i>
+           </div>
+         </div>
+         
+         <div className="space-y-4">
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               Subject
+             </label>
+             <input
+               type="text"
+               value={promotionalSmsSubject}
+               onChange={(e) => setPromotionalSmsSubject(e.target.value)}
+               placeholder="Enter SMS subject..."
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+               maxLength={50}
+             />
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsSubject.length} characters</p>
+           </div>
+           
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               Message
+             </label>
+             <textarea
+               value={promotionalSmsMessage}
+               onChange={(e) => setPromotionalSmsMessage(e.target.value)}
+               placeholder="Enter your promotional message..."
+               rows={4}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+               maxLength={1500}
+             />
+             <p className="text-xs text-gray-500 mt-1">{promotionalSmsMessage.length} characters</p>
+           </div> 
+           
+           <div className="bg-blue-50 p-3 rounded-md">
+             <p className="text-sm text-blue-700">
+               <i className="bx bx-info-circle mr-1"></i>
+               This SMS will be sent to all patients in {localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'your clinic'}.
+             </p>
+           </div>
+         </div>
+         
+         <div className="flex gap-3 mt-6">
+           <div
+             onClick={handleClosePromotionalSmsModal}
+             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+             disabled={sendingSms}
+           >
+             Cancel
+           </div>
+           <div
+             onClick={sendPromotionalSms}
+             disabled={sendingSms || !promotionalSmsSubject.trim() || !promotionalSmsMessage.trim()}
+             className="bg-[#4ca22b] cursor-pointer flex-1 px-4 py-2 text-white rounded-md h disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+           >
+             {sendingSms ? (
+               <>
+                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                 Sending...
+               </>
+             ) : (
+               <>
+                 <i className="bx bxs-send text-sm"></i>
+                 Send SMS
+               </>
+             )}
+           </div>
+         </div>
+       </div>
+     </div>
+   )}
+
+   {/* SMS Toast Notification */}
+   {smsToast && (
+     <div className="bottom-4 right-8 z-101 transform fixed">
+       <div key={smsToastType} className={`${smsToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {smsToastType === 'success' ? (          
+           <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : smsToastType === 'warning' ? (
+           <span className="text-yellow-600 font-semibold text-[20px]"><i className="mr-2 bx bx-error-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {smsToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${
+           smsToastType === 'success' ? 'bg-green-500' : 
+           smsToastType === 'warning' ? 'bg-yellow-500' : 
+           'bg-red-500'
+         }`} style={{width: smsProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
+
+   {/* PDF Export Toast Notification */}
+   {pdfToast && (
+     <div className={`${smsToast ? 'bottom-20' : 'bottom-4'} right-8 z-101 transform fixed`}>
+       <div key={pdfIsClicked ? 'success' : 'error'} className={`${pdfToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {pdfIsClicked ? (          
+           <span className="text-blue-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {pdfToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: pdfProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
+
+{/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
+{/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
+{/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
+{/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
+{/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
 
 
 
@@ -9425,3 +8411,258 @@ paginatedBautistaOrders.map((order) => (
 
 
 
+
+
+
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#111827'
+            }}>
+              Confirm Logout
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#6b7280',
+              marginBottom: '24px'
+            }}>
+              Are you sure you want to log out? You will need to sign in again to access your account.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Logout Confirmation Modal */}
+      {showStaffLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#111827'
+            }}>
+              Confirm Staff Logout
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#6b7280',
+              marginBottom: '24px'
+            }}>
+              Are you sure you want to log out? You will need to sign in again to access your account.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelStaffLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStaffLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Owner Logout Confirmation Modal */}
+      {showOwnerLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#111827'
+            }}>
+              Confirm Owner Logout
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#6b7280',
+              marginBottom: '24px'
+            }}>
+              Are you sure you want to log out? You will need to sign in again to access your account.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelOwnerLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmOwnerLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}

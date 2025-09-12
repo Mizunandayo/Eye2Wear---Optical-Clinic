@@ -133,66 +133,50 @@ import PatientDemographic from "../models/patientdemographic.js";
                 return;
             }
 
-            // Send SMS to each customer
+            // Collect all valid phone numbers and customer info
+            const validCustomers = [];
             for (const wishlistItem of wishlistCustomers) {
                 try {
                     // Get customer phone number from patient demographics
                     const patient = await PatientDemographic.findOne({
-                        patientemail: wishlistItem.patientaccount
+                        patientemail: wishlistItem.patientwishlistemail
                     });
 
-                    if (!patient || !patient.patientcontactnumber) {
-                        console.warn(`⚠️ No phone number found for customer: ${wishlistItem.patientaccount}`);
-                        continue;
+                    if (patient && patient.patientcontactnumber) {
+                        validCustomers.push({
+                            phone: patient.patientcontactnumber,
+                            name: `${patient.patientfirstname} ${patient.patientlastname}`,
+                            email: wishlistItem.patientwishlistemail
+                        });
+                    } else {
+                        console.warn(`⚠️ No phone number found for customer: ${wishlistItem.patientwishlistemail}`);
                     }
-
-                    // Send SMS notification
-                    await sendRestockSMS(
-                        patient.patientcontactnumber,
-                        `${patient.patientfirstname} ${patient.patientlastname}`,
-                        product,
-                        clinicType
-                    );
-
-                    console.log(`📱 SMS sent to ${patient.patientfirstname} ${patient.patientlastname} (${patient.patientcontactnumber})`);
-
-                } catch (smsError) {
-                    console.error(`❌ Failed to send SMS to customer ${wishlistItem.patientaccount}:`, smsError);
+                } catch (error) {
+                    console.error(`❌ Error fetching patient data for ${wishlistItem.patientwishlistemail}:`, error);
                 }
             }
+
+            if (validCustomers.length === 0) {
+                console.log('📭 No valid phone numbers found for wishlist customers');
+                return;
+            }
+
+            console.log(`📱 Sending bulk restock SMS to ${validCustomers.length} customers`);
+
+            // Send bulk SMS notification using the SMS controller
+            const SmsController = (await import('./smsmessage.controller.js')).default;
+            const result = await SmsController.sendBulkWishlistRestockNotification(
+                validCustomers,
+                product,
+                clinicType
+            );
+            
+            console.log(`✅ Bulk restock SMS result:`, result);
 
         } catch (error) {
             console.error('❌ Error in sendWishlistRestockNotifications:', error);
         }
     }
-
-    // Helper function to send individual restock SMS
-    async function sendRestockSMS(phoneNumber, customerName, product, clinicType) {
-        try {
-            // Dynamic import to avoid circular dependencies
-            const SmsController = (await import('./smsmessage.controller.js')).default;
-            
-            // Call the new restock notification method directly
-            const result = await SmsController.sendRestockNotification(
-                phoneNumber, 
-                customerName, 
-                product, 
-                clinicType
-            );
-            
-            console.log(`✅ Restock SMS sent successfully:`, result);
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Failed to send restock SMS:', error);
-            throw error;
-        }
-    }
-
-
-
-
-
 
     //Delete ambherinventoryproductId Details
     export const deleteambherinventoryproductbyid = async (req, res) => {
