@@ -7,7 +7,11 @@
         createpatientdemographic,
         updatepatientdemographic,
         getpatientdemographicbyemail,
-        deletepatientdemographic
+        deletepatientdemographic,
+        syncProfilePicture,
+        syncAllProfilePictures,
+        debugProfileSync,
+        testValidation
         } from "../controllers/patientdemographic.controller.js";
 
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
@@ -110,6 +114,16 @@
 
     //Delete Patient Demographic Data Route
     patientdemographicrouter.delete("/:id", deletepatientdemographic);
+
+    //Sync Profile Picture Routes
+    patientdemographicrouter.post("/sync-profile/:patientemail", verifyStaffOwnerOrPatientAccess, syncProfilePicture);
+    patientdemographicrouter.post("/sync-all-profiles", verifyStaffOwnerOrPatientAccess, syncAllProfilePictures);
+
+    //Debug Profile Sync Route
+    patientdemographicrouter.post("/debug-sync/:patientemail", verifyStaffOwnerOrPatientAccess, debugProfileSync);
+
+    //Test Validation Route
+    patientdemographicrouter.put("/test-validation/:id", verifyStaffOwnerOrPatientAccess, testValidation);
 
 
 

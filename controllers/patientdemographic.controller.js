@@ -254,9 +254,48 @@
       const { id } = req.params;
       const updateddata = req.body;
 
+      // Validate required fields including profile picture
+      const requiredFields = [
+        'patientemail',
+        'patientlastname', 
+        'patientfirstname',
+        'patientmiddlename',
+        'patientage',
+        'patientbirthdate',
+        'patientgender',
+        'patientcontactnumber',
+        'patienthomeaddress',
+        'patientemergencycontactname',
+        'patientemergencycontactnumber',
+        'patientprofilepicture'
+      ];
+
+      // Check for missing or empty required fields
+      for (const field of requiredFields) {
+        if (!updateddata[field] || (typeof updateddata[field] === 'string' && updateddata[field].trim() === '')) {
+          let fieldName = field.replace('patient', '').replace(/([A-Z])/g, ' $1').toLowerCase();
+          fieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+          
+          // Special case for profile picture
+          if (field === 'patientprofilepicture') {
+            return res.status(400).json({
+              message: "Profile picture is required",
+              field: field,
+              error: "VALIDATION_ERROR"
+            });
+          }
+          
+          return res.status(400).json({
+            message: `${fieldName} is required`,
+            field: field,
+            error: "VALIDATION_ERROR"
+          });
+        }
+      }
+
       const existingdemo = await Patientdemographic.findById(id);
       if(!existingdemo){
-        return res.status(404).json({message: "Patient Demographc data not found"});
+        return res.status(404).json({message: "Patient Demographic data not found"});
       }
 
       const updateddemographic = await Patientdemographic.findByIdAndUpdate(
@@ -265,18 +304,181 @@
         {new: true, runValidators: true}
       );
 
-
       if(!updateddemographic){
-        return res.status(404).json({message: "Patient Demographc data not found"});
+        return res.status(404).json({message: "Patient Demographic data not found"});
       }
 
       res.status(200).json(updateddemographic);
     }catch(error){
+      // Handle specific validation errors
+      if (error.name === 'ValidationError') {
+        const validationErrors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({
+          message: validationErrors[0] || "Validation failed",
+          error: "VALIDATION_ERROR",
+          details: validationErrors
+        });
+      }
+
+      // Handle profile picture specific errors
+      if (error.message.includes('patientprofilepicture')) {
+        return res.status(400).json({
+          message: "Profile picture is required",
+          error: "VALIDATION_ERROR",
+          details: error.message
+        });
+      }
+
       res.status(500).json({
         message: error.message.includes("validation")
         ? "Invalid format"
         : "Server Error",
         details: error.message
+      });
+    }
+  };
+
+  // Sync profile picture between demographic and account models
+  export const syncProfilePicture = async (req, res) => {
+    try {
+      const { patientemail } = req.params;
+      
+      if (!patientemail) {
+        return res.status(400).json({ 
+          message: "Patient email is required" 
+        });
+      }
+
+      const result = await Patientdemographic.syncProfilePicture(patientemail);
+      
+      if (result.success) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Error syncing profile picture",
+        error: error.message
+      });
+    }
+  };
+
+  // Sync all profile pictures (for data migration)
+  export const syncAllProfilePictures = async (req, res) => {
+    try {
+      const result = await Patientdemographic.syncAllProfilePictures();
+      
+      if (result.success) {
+        res.status(200).json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Error syncing all profile pictures",
+        error: error.message
+      });
+    }
+  };
+
+  // Debug endpoint to test profile picture sync
+  export const debugProfileSync = async (req, res) => {
+    try {
+      const { patientemail } = req.params;
+      const { newProfilePicture } = req.body;
+      
+      if (!patientemail || !newProfilePicture) {
+        return res.status(400).json({ 
+          message: "Patient email and new profile picture are required" 
+        });
+      }
+
+      console.log(`🔧 DEBUG: Testing profile sync for ${patientemail} with ${newProfilePicture}`);
+
+      // Update the demographic record
+      const updatedDemographic = await Patientdemographic.findOneAndUpdate(
+        { patientemail: patientemail },
+        { patientprofilepicture: newProfilePicture },
+        { new: true }
+      );
+
+      if (!updatedDemographic) {
+        return res.status(404).json({ 
+          message: "Demographic record not found" 
+        });
+      }
+
+      // Wait a moment for middleware to execute
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Check if the account was updated
+      const accountRecord = await Patientaccount.findOne({ patientemail: patientemail });
+      
+      const syncSuccess = accountRecord && accountRecord.patientprofilepicture === newProfilePicture;
+
+      res.status(200).json({
+        success: syncSuccess,
+        message: syncSuccess ? "Profile picture synced successfully" : "Profile picture sync failed",
+        demographic: {
+          email: updatedDemographic.patientemail,
+          profilePicture: updatedDemographic.patientprofilepicture
+        },
+        account: {
+          email: accountRecord?.patientemail,
+          profilePicture: accountRecord?.patientprofilepicture
+        },
+        synced: syncSuccess
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        message: "Error in debug profile sync",
+        error: error.message
+      });
+    }
+  };
+
+  // Test validation endpoint
+  export const testValidation = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const testData = req.body;
+
+      console.log(`🔧 VALIDATION TEST: Testing update for ID ${id}`);
+      console.log(`📋 Test data:`, testData);
+
+      // Attempt the update with validation
+      const result = await Patientdemographic.findByIdAndUpdate(
+        id,
+        testData,
+        { new: true, runValidators: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Validation passed successfully",
+        result: result
+      });
+
+    } catch (error) {
+      console.log(`❌ Validation failed:`, error.message);
+      
+      // Return specific validation error message
+      if (error.name === 'ValidationError') {
+        const validationErrors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({
+          success: false,
+          message: validationErrors[0] || "Validation failed", 
+          error: "VALIDATION_ERROR",
+          details: validationErrors
+        });
+      }
+
+      res.status(400).json({
+        success: false,
+        message: error.message,
+        error: "VALIDATION_ERROR"
       });
     }
   };

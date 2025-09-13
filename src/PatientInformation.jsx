@@ -197,6 +197,7 @@ function PatientInformation(){
   const [patientprofilepicture, setpatientprofilepicture] = useState('');
 
   const [showlogoutbtn, setshowlogoutbtn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   }
@@ -290,6 +291,25 @@ function PatientInformation(){
     };
       loadpatientaccount();
   }, [fetchpatientdetails, fetchpatientdemographicbyemail]);
+
+  // Mobile menu click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mobileMenuOpen && 
+          !event.target.closest('.mobile-menu-container') && 
+          !event.target.closest('.mobile-menu-button')) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   // Toast state variables - moved here to be declared before useEffect
   const [profileToast, setProfileToast] = useState(false);
@@ -551,6 +571,25 @@ const submitpatientdemographic = async (e) => {
               />
             </div>
 
+            {/* Mobile menu button */}
+            <div
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="mobile-menu-button lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+            >
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </div>
+
             {/* Navigation Links - Hidden on mobile */}
             <nav className="hidden lg:flex space-x-1">
               <Link 
@@ -593,7 +632,7 @@ const submitpatientdemographic = async (e) => {
 
             {/* Profile Section */}
             {localStorage.getItem("patienttoken") ? (
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <div 
                   onClick={showlogout}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
@@ -640,7 +679,7 @@ const submitpatientdemographic = async (e) => {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-sky-600 bg-sky-50 hover:bg-sky-50 transition-colors font-semibold"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -657,14 +696,116 @@ const submitpatientdemographic = async (e) => {
                 )}
               </div>
             ) : (
-              <Link to="/userlogin">
-                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link to="/userlogin" className="hidden lg:block">
+                <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
                   <FontAwesomeIcon icon={faUser} className="mr-2" />
                   Login
-                </button>
+                </div>
               </Link>
             )}
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="mobile-menu-container lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
+              <div className="px-4 py-2 space-y-1">
+                <Link 
+                  to="/patientlandingpage" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Home
+                </Link>
+                <Link 
+                  to="/patientdashboard" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Appointments
+                </Link>
+                <Link 
+                  to="/patientproducts" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Store
+                </Link>
+                <Link 
+                  to="/patientwishlist" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Wishlist
+                </Link>
+                <Link 
+                  to="/patientorders" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Orders
+                </Link>
+                <Link 
+                  to="/aboutpage" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  About
+                </Link>
+
+                {/* Mobile Profile Section */}
+                {localStorage.getItem("patienttoken") ? (
+                  <div className="border-t border-gray-200 pt-2 mt-2">
+                    <div className="flex items-center px-3 py-2 space-x-3">
+                      {!patientprofilepicture ? (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                          <FontAwesomeIcon icon={faUser} className="text-white" />
+                        </div>
+                      ) : (
+                        <img 
+                          src={patientprofilepicture} 
+                          alt="Profile" 
+                          className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-200"
+                        />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                        <p className="text-xs text-gray-500">Patient Account</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center px-3 py-2 text-sm text-sky-600 bg-sky-50 rounded-lg transition-all duration-200 mx-0 font-semibold">
+                      <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                      Demographic Profile
+                    </div>
+                    
+                    <div
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handlelogout();
+                      }}
+                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    >
+                      <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                      Logout
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-t border-gray-200 pt-2 mt-2">
+                    <Link 
+                      to="/userlogin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block"
+                    >
+                      <button className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
+                        <FontAwesomeIcon icon={faUser} className="mr-2" />
+                        Login
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -684,7 +825,7 @@ const submitpatientdemographic = async (e) => {
           <div className="max-w-6xl mx-auto">
             <div className="mb-20 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               {/* Header */}
-              <div className="bg-sky-600 px-8 py-6">
+              <div className="bg-sky-800 px-8 py-6">
                 <div className="flex items-center justify-center">
                   <div className="bg-white/20 p-3 rounded-full mr-4">
                     <FontAwesomeIcon icon={faEye} className="text-white text-2xl" />
@@ -999,7 +1140,7 @@ const submitpatientdemographic = async (e) => {
                                 issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
                               }`}
                             >
-                              <div className="absolute inset-0 bg-gradient-to-r from-sky-700 to-indigo-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-200"></div>
+                              <div className=" ease-in-out absolute inset-0 bg-sky-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-200"></div>
                               <div className="relative flex items-center">
                                 {issubmitting ? (
                                   <>

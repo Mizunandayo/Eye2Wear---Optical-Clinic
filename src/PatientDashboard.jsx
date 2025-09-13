@@ -305,6 +305,25 @@ function PatientDashboard(){
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle clicking outside mobile menu to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mobileMenuOpen && !event.target.closest('.mobile-menu-container') && !event.target.closest('.mobile-menu-button')) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
+
 
 
 
@@ -1671,9 +1690,25 @@ useEffect(() => {
               </Link>
             </nav>
 
-            {/* Profile Section */}
+            {/* Mobile menu button */}
+            <div className="lg:hidden flex items-center space-x-4">
+              <div
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </div>
+            </div>
+
+            {/* Profile Section - Hidden on mobile */}
             {localStorage.getItem("patienttoken") ? (
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <div 
                   onClick={showlogout}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
@@ -1737,16 +1772,122 @@ useEffect(() => {
                 )}
               </div>
             ) : (
-              <Link to="/userlogin">
-                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link to="/userlogin" className="hidden lg:block">
+                <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
                   <FontAwesomeIcon icon={faUser} className="mr-2" />
                   Login
-                </button>
+                </div>
               </Link>
             )}
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-container lg:hidden fixed top-[52px] left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-40 animate-in slide-in-from-top duration-200">
+          <div className="px-4 py-2 space-y-1">
+            {/* Mobile Navigation Links */}
+            <Link 
+              to="/patientlandingpage" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/patientdashboard" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Appointments
+            </Link>
+            <Link 
+              to="/patientproducts" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Store
+            </Link>
+            <Link 
+              to="/patientwishlist" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Wishlist
+            </Link>
+            <Link 
+              to="/patientorders" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Orders
+            </Link>
+            <Link 
+              to="/aboutpage" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
+            </Link>
+            
+            {/* Mobile Profile Section */}
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              {localStorage.getItem("patienttoken") ? (
+                <>
+                  <div className="flex items-center px-4 py-3 bg-gray-50 rounded-lg mb-2">
+                    {!patientprofilepicture ? (
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faUser} className="text-white" />
+                      </div>
+                    ) : (
+                      <img 
+                        src={patientprofilepicture} 
+                        alt="Profile" 
+                        className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-200"
+                      />
+                    )}
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                      <p className="text-xs text-gray-500">Patient Account</p>
+                    </div>
+                  </div>
+                  
+                  <Link 
+                    to="/patientinformation" 
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                    Demographic Profile
+                  </Link>
+                  
+                  <div
+                    onClick={() => {
+                      handlelogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                    Logout
+                  </div>
+                </>
+              ) : (
+                <Link 
+                  to="/userlogin"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-3 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    Login
+                  </div>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
 
 

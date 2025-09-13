@@ -3,6 +3,8 @@
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
   import navlogo from  "../src/assets/images/navlogo.png";
+  import bautistalogo from"../src/assets/images/bautistalogo.png";
+  import ambherlogo from"../src/assets/images/ambherlogo.png";
   import heart from "../src/assets/images/heart.png";
   import { useAuth } from "./hooks/patientuseAuth";
   import useApiService from "./hooks/useApiService";
@@ -127,17 +129,19 @@ const WishlistGridSkeleton = () => (
     // Handle clicking outside mobile menu to close it
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (mobileMenuOpen && !event.target.closest('#header')) {
+        if (mobileMenuOpen && !event.target.closest('.mobile-menu-container') && !event.target.closest('.mobile-menu-button')) {
           setMobileMenuOpen(false);
         }
       };
 
       if (mobileMenuOpen) {
-        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
       }
 
       return () => {
-        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
       };
     }, [mobileMenuOpen]);
 
@@ -1050,9 +1054,25 @@ const WishlistGridSkeleton = () => (
               </Link>
             </nav>
 
-            {/* Profile Section */}
+            {/* Mobile menu button */}
+            <div className="lg:hidden flex items-center space-x-4">
+              <div
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </div>
+            </div>
+
+            {/* Profile Section - Hidden on mobile */}
             {localStorage.getItem("patienttoken") ? (
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <div 
                   onClick={showlogout}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
@@ -1116,16 +1136,122 @@ const WishlistGridSkeleton = () => (
                 )}
               </div>
             ) : (
-              <Link to="/userlogin">
-                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link to="/userlogin" className="hidden lg:block">
+                <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
                   <FontAwesomeIcon icon={faUser} className="mr-2" />
                   Login
-                </button>
+                </div>
               </Link>
             )}
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-container lg:hidden fixed top-[52px] left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-40 animate-in slide-in-from-top duration-200">
+          <div className="px-4 py-2 space-y-1">
+            {/* Mobile Navigation Links */}
+            <Link 
+              to="/patientlandingpage" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/patientdashboard" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Appointments
+            </Link>
+            <Link 
+              to="/patientproducts" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Store
+            </Link>
+            <Link 
+              to="/patientwishlist" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Wishlist
+            </Link>
+            <Link 
+              to="/patientorders" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Orders
+            </Link>
+            <Link 
+              to="/aboutpage" 
+              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
+            </Link>
+            
+            {/* Mobile Profile Section */}
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              {localStorage.getItem("patienttoken") ? (
+                <>
+                  <div className="flex items-center px-4 py-3 bg-gray-50 rounded-lg mb-2">
+                    {!patientprofilepicture ? (
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faUser} className="text-white" />
+                      </div>
+                    ) : (
+                      <img 
+                        src={patientprofilepicture} 
+                        alt="Profile" 
+                        className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-200"
+                      />
+                    )}
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                      <p className="text-xs text-gray-500">Patient Account</p>
+                    </div>
+                  </div>
+                  
+                  <Link 
+                    to="/patientinformation" 
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                    Demographic Profile
+                  </Link>
+                  
+                  <div
+                    onClick={() => {
+                      handlelogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                    Logout
+                  </div>
+                </>
+              ) : (
+                <Link 
+                  to="/userlogin"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-3 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    Login
+                  </div>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
@@ -1151,12 +1277,14 @@ const WishlistGridSkeleton = () => (
 
     <div className="flex flex-col sm:flex-row justify-start items-center mt-3 gap-2 sm:gap-0 sm:h-[60px] px-2">
   {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
-    <div onClick={() => showinventorytable('ambherinventorytable')} className={`w-full sm:w-auto sm:mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}>
+    <div onClick={() => showinventorytable('ambherinventorytable')} className={`w-full sm:w-auto sm:mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
+      <img src={ambherlogo} className="w-5 h-5"/>      
       <h1 className={`font-albertsans font-semibold text-[14px] sm:text-[16px] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : 'text-[#5d5d5d]'}`}>
         Ambher Optical <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{ambherWishlist.length}</span>
       </h1>
     </div>
-    <div onClick={() => showinventorytable('bautistainventorytable')} className={`w-full sm:w-auto sm:ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}>
+    <div onClick={() => showinventorytable('bautistainventorytable')} className={`w-full sm:w-auto sm:ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
+      <img src={bautistalogo} className ="w-5 h-5"/>
       <h1 className={`font-albertsans font-semibold text-[14px] sm:text-[16px] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : 'text-[#5d5d5d]'}`}>
         Bautista Eye Center <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{bautistaWishlist.length}</span>
       </h1>
@@ -1466,13 +1594,20 @@ const WishlistGridSkeleton = () => (
                 <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
                   
 
-                <div className="p-2 sm:p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 p-2 sm:p-4 w-full">
           {loadingWishlist ? (
             <WishlistGridSkeleton />
           ) : bautistaWishlist.length === 0 ? (
-            <div className="w-full h-[50vh] flex justify-center flex-col items-center"><img src={heartempty} className="w-17 h-17 mb-3"/><h1 className="font-semibold text-lg sm:text-xl md:text-2xl">Your wishlist is empty</h1><p className="text-[#4e4e4e] mb-5 text-sm sm:text-base text-center px-4">Start adding items you love to keep track of them</p><Link to="/patientproducts"><div className="text-sm sm:text-base p-3 bg-[#2781af] text-white hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div></Link></div>
+            <div className="col-span-full w-full h-[50vh] flex justify-center flex-col items-center">
+              <img src={heartempty} className="w-17 h-17 mb-3"/>
+              <h1 className="font-semibold text-[20px] sm:text-[25px] text-center">Your wishlist is empty</h1>
+              <p className="text-[#4e4e4e] mb-5 text-center text-sm sm:text-base">Start adding items you love to keep track of them</p>
+              <Link to="/patientproducts">
+                <div className="text-[14px] sm:text-[15px] p-3 bg-[#2781af] text-white hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div>
+              </Link>
+            </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+            <>
               {[...bautistaWishlist]
                 .sort((a, b) => {
                   if (a.patientwishlistinventoryproductquantity === 0 && b.patientwishlistinventoryproductquantity !== 0) return 1;
@@ -1504,7 +1639,7 @@ const WishlistGridSkeleton = () => (
                 </div>
                     ))
               }
-            </div>
+            </>
                   )}
                 </div>
 

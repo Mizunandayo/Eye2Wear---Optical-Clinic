@@ -3,6 +3,8 @@ import {Link} from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import navlogo from  "../src/assets/images/navlogo.png";
+import bautistalogo from"../src/assets/images/bautistalogo.png";
+import ambherlogo from"../src/assets/images/ambherlogo.png";
 import { useAuth } from "./hooks/patientuseAuth";
 import useApiService from "./hooks/useApiService";
 import useSmartCache from "./hooks/useSmartCache";
@@ -159,6 +161,25 @@ function PatientOrders(){
  
  // Smart caching with real-time updates
  const { smartFetch, realtimeUpdates, CACHE_DURATIONS } = useSmartCache();
+
+  // Mobile menu click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mobileMenuOpen && 
+          !event.target.closest('.mobile-menu-container') && 
+          !event.target.closest('.mobile-menu-button')) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   //Retrieveing Data from useAuth Hook
   useEffect(() => {
@@ -751,6 +772,25 @@ useEffect(() => {
               />
             </div>
 
+            {/* Mobile menu button */}
+            <div
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="mobile-menu-button lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+            >
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </div>
+
             {/* Navigation Links - Hidden on mobile */}
             <nav className="hidden lg:flex space-x-1">
               <Link 
@@ -793,7 +833,7 @@ useEffect(() => {
 
             {/* Profile Section */}
             {localStorage.getItem("patienttoken") ? (
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <div 
                   onClick={showlogout}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
@@ -857,14 +897,120 @@ useEffect(() => {
                 )}
               </div>
             ) : (
-              <Link to="/userlogin">
-                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link to="/userlogin" className="hidden lg:block">
+                <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
                   <FontAwesomeIcon icon={faUser} className="mr-2" />
                   Login
-                </button>
+                </div>
               </Link>
             )}
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="mobile-menu-container lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
+              <div className="px-4 py-2 space-y-1">
+                <Link 
+                  to="/patientlandingpage" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Home
+                </Link>
+                <Link 
+                  to="/patientdashboard" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Appointments
+                </Link>
+                <Link 
+                  to="/patientproducts" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Store
+                </Link>
+                <Link 
+                  to="/patientwishlist" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Wishlist
+                </Link>
+                <Link 
+                  to="/patientorders" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-semibold text-sky-600 bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Orders
+                </Link>
+                <Link 
+                  to="/aboutpage" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  About
+                </Link>
+
+                {/* Mobile Profile Section */}
+                {localStorage.getItem("patienttoken") ? (
+                  <div className="border-t border-gray-200 pt-2 mt-2">
+                    <div className="flex items-center px-3 py-2 space-x-3">
+                      {!patientprofilepicture ? (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                          <FontAwesomeIcon icon={faUser} className="text-white" />
+                        </div>
+                      ) : (
+                        <img 
+                          src={patientprofilepicture} 
+                          alt="Profile" 
+                          className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-200"
+                        />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                        <p className="text-xs text-gray-500">Patient Account</p>
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      to="/patientinformation"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 mx-0"
+                    >
+                      <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                      Demographic Profile
+                    </Link>
+                    
+                    <div
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handlelogout();
+                      }}
+                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    >
+                      <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                      Logout
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-t border-gray-200 pt-2 mt-2">
+                    <Link 
+                      to="/userlogin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block"
+                    >
+                      <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
+                        <FontAwesomeIcon icon={faUser} className="mr-2" />
+                        Login
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -884,8 +1030,14 @@ useEffect(() => {
               <div className="flex items-center mt-8"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">My Orders</h1></div>
 
   <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mt-3 gap-3 sm:gap-0 sm:h-[60px]">
-  <div onClick={() => showorderstable('ambherorderstable')} className={`w-full sm:w-auto mr-0 sm:mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='ambherorderstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='ambherorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Ambher Optical <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {ambherOrders.length} </span></h1></div>
-  <div onClick={() => showorderstable('bautistaorderstable')} className={`w-full sm:w-auto ml-0 sm:ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='bautistaorderstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='bautistaorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Bautista Eye Center <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {bautistaOrders.length} </span></h1></div>
+  <div onClick={() => showorderstable('ambherorderstable')} className={`w-full sm:w-auto mr-0 sm:mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='ambherorderstable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
+    <img src={ambherlogo} className="w-5 h-5"/>        
+    <h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='ambherorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Ambher Optical <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {ambherOrders.length} </span></h1>
+  </div>
+  <div onClick={() => showorderstable('bautistaorderstable')} className={`w-full sm:w-auto ml-0 sm:ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='bautistaorderstable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
+    <img src={bautistalogo} className="w-5 h-5"/>        
+    <h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='bautistaorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Bautista Eye Center <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {bautistaOrders.length} </span></h1>
+  </div>
   
   </div>
 
