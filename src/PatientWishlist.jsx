@@ -33,33 +33,33 @@ import Footer from "./Footer";
 
 // Skeleton component for wishlist items
 const WishlistSkeleton = () => (
-  <div className="motion-preset-slide-up flex flex-col items-start justify-start w-full h-auto shadow-md bg-white rounded-2xl animate-pulse relative">
-    {/* Product image skeleton - responsive height */}
-    <div className="w-full h-32 sm:h-36 md:h-40 lg:h-45 bg-gray-300 rounded-t-2xl"></div>
+  <div className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl animate-pulse relative">
+    {/* Product image skeleton - matches h-45 */}
+    <div className="w-full h-45 bg-gray-300 rounded-t-2xl"></div>
     
     {/* Heart icon skeleton in top-right */}
-    <div className="absolute right-2 top-2 w-8 h-8 sm:w-10 sm:h-10 p-1.5 sm:p-2 rounded-2xl bg-gray-300"></div>
+    <div className="absolute right-0 w-10 h-10 p-2 rounded-2xl bg-gray-300"></div>
     
     {/* Category tag skeleton - matches bg-[#F0F6FF] style */}
-    <div className="mx-1 w-fit rounded-md py-1 px-2 mt-2 bg-gray-200 h-4 sm:h-6 min-w-[60px]"></div>
+    <div className="mx-1 w-fit rounded-md py-1 px-2 mt-2 bg-gray-200 h-6 min-w-[60px]"></div>
     
     {/* Product name skeleton - matches ml-2 mt-2 layout */}
     <div className="w-full h-auto ml-2 mt-2 mr-2">
-      <div className="h-4 sm:h-5 bg-gray-300 rounded w-full max-w-[180px]"></div>
+      <div className="h-5 bg-gray-300 rounded w-full max-w-[180px]"></div>
     </div>
     
-    {/* Price skeleton - responsive text sizing */}
+    {/* Price skeleton - matches font-bold text-[18px] */}
     <div className="w-fit h-auto ml-2 mt-1">
-      <div className="h-5 sm:h-6 bg-gray-300 rounded w-16 sm:w-20"></div>
+      <div className="h-6 bg-gray-300 rounded w-20"></div>
     </div>
     
     {/* Bottom padding to match layout */}
-    <div className="mb-3 sm:mb-5"></div>
+    <div className="mb-5"></div>
   </div>
 );
 
 const WishlistGridSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 p-2 w-full">
+  <div className="flex flex-wrap p-4">
     {[...Array(6)].map((_, index) => (
       <WishlistSkeleton key={index} />
     ))}
@@ -979,23 +979,24 @@ const WishlistGridSkeleton = () => (
       <>
 
       {/* NavBar */}
-        <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 w-full drop-shadow-md z-50">
+        <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
           <a id:logocontain href="#">
-            <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
+            <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
           </a>
 
-          {/* Desktop Navigation */}
-          <ul id:listcontain className="hidden xl:flex items-center gap-12 font-semibold text-base">
-          <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li></Link>
+          <ul id:listcontain  className="hidden xl:flex items-center gap-12 font-semibold text-base">
+          <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black  rounded-md transition-all cursor-pointer">Home</li></Link>
           <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
           <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
           <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
           <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
           <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-          </ul>
+  
 
-        {/* Mobile Navigation Menu Button - Hidden on XL screens */}
-        <div className="xl:hidden flex items-center gap-2">{/* Mobile nav placeholder for future hamburger menu */}</div>
+
+
+
+          </ul>
 
         {/* Search 
         
@@ -1114,10 +1115,10 @@ const WishlistGridSkeleton = () => (
                   <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">My Wishlist</h1>
                 </div>
 
-    <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mt-3 gap-2 sm:gap-0 sm:h-[60px]">
+    <div className="flex justify-start items-center mt-3 h-[60px]">
   {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
-    <div onClick={() => showinventorytable('ambherinventorytable')}  className={`w-full sm:w-auto sm:mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 py-3 text-center flex justify-center items-center touch-manipulation ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-sm sm:text-base text-[#5d5d5d] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical   <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{ambherWishlist.length}</span></h1></div>
-    <div onClick={() => showinventorytable('bautistainventorytable')}  className={`w-full sm:w-auto sm:ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 py-3 text-center flex justify-center items-center touch-manipulation ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-sm sm:text-base text-[#5d5d5d] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{bautistaWishlist.length}</span></h1></div>
+    <div onClick={() => showinventorytable('ambherinventorytable')}  className={`mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical   <span className="rounded-full text-sm px-2 bg-gray-200 text-gray-500 font-semibold   ml-2 ">{ambherWishlist.length}</span></h1></div>
+    <div onClick={() => showinventorytable('bautistainventorytable')}  className={`ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans  font-semibold text-[#5d5d5d] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center <span className="rounded-full text-sm px-2 bg-gray-200 text-gray-500 font-semibold   ml-2 ">{bautistaWishlist.length}</span></h1></div>
     
     </div>
 
@@ -1129,18 +1130,18 @@ const WishlistGridSkeleton = () => (
 
 
 
-            { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2 animate-fadeInUp flex items-start w-full h-auto rounded-2xl mt-5" >
+            { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
 
-            <div className="flex flex-col justify-start mx-2 md:mx-2 rounded-2xl w-full min-h-[540px] max-h-auto h-auto shadow-b-lg">
+            <div className=" flex flex-col justify-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
 
-                <div className="w-full rounded-2xl h-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 p-2">
+                <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
                   
 
-                <div className="col-span-full">
+                <div className="flex flex-wrap p-4">
           {loadingWishlist ? (
             <WishlistGridSkeleton />
           ) : ambherWishlist.length === 0 ? (
-            <div className="w-full h-[50vh] flex justify-center flex-col items-center px-4"><img src={heartempty} className="w-17 h-17 mb-3"/><h1 className="font-semibold text-xl sm:text-2xl text-center">Your wishlist is empty</h1><p className="text-[#4e4e4e] mb-5 text-center text-sm sm:text-base">Start adding items you love to keep track of them</p><Link to="/patientproducts"><div className="text-[15px] p-3 bg-[#2781af] text-white hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div></Link></div>
+            <div className="w-[90vw] h-[50vh] flex justify-center flex-col items-center "><img src={heartempty} className="w-17 h-17 mb-3"/><h1 className="font-semibold text-[25px]">Your wishlist is empty</h1><p className="text-[#4e4e4e] mb-5">Start adding items you love to keep track of them</p><Link to="/patientproducts"><div className="text-[15px] p-3 bg-[#2781af] text-white  hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div></Link></div>
           ) : (
                 [...ambherWishlist]
                 .sort((a, b) => {
@@ -1158,16 +1159,16 @@ const WishlistGridSkeleton = () => (
                                                                             setaddambherinventoryproductprice(item.patientwishlistinventoryproductprice || 0);
                                                                             setaddambherinventoryproductquantity(item.patientwishlistinventoryproductquantity || 0);
                                                                             setaddambherinventoryproductimagepreviewimages(item.patientwishlistinventoryproductimagepreviewimages || []);
-                }} className="motion-preset-slide-up flex flex-col items-start justify-start w-full pb-3 h-auto shadow-md bg-white rounded-2xl cursor-pointer touch-manipulation">
-                  <img src={item.patientwishlistinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={item.patientwishlistinventoryproductname} className={`w-full h-32 sm:h-36 md:h-40 lg:h-45 object-cover rounded-t-2xl ${item.patientwishlistinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
-                  <img  src={heartfilled} onClick={(e) =>  { e.stopPropagation(); handleRemoveFromWishlist(item._id, 'ambher');  }} onMouseEnter={() => !ambherheartisClicked && setambherheartisHovered(true)} onMouseLeave={() => !ambherheartisClicked && setambherheartisHovered(false)}  className={`absolute right-2 top-2 ease-in-out duration-300 transition-all border-1 w-8 h-8 sm:w-10 sm:h-10 p-1.5 sm:p-2 rounded-2xl cursor-pointer bg-red-400 hover:bg-red-500 touch-manipulation`}/>
-                  <div className="mx-1 w-fit rounded-md py-1 px-2 rounded-1xl h-fit mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className= {`font-medium text-[#0d0d0d] text-xs sm:text-[13px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductcategory}</h1></div>
-                      <div className="w-full h-auto ml-2 mt-2"><h1 className={`font-semibold text-sm sm:text-[15px] min-w-0 break-words line-clamp-2 ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductname}</h1></div>
-                      <div className="w-fit h-auto ml-2 mt-1"><h1 className={`font-albertsans text-[#1f8126] font-bold text-base sm:text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1></div>
+                }} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] pb-3 h-auto shadow-md bg-white rounded-2xl">
+                  <img src={item.patientwishlistinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={item.patientwishlistinventoryproductname} className={`w-full h-45 ${item.patientwishlistinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+                  <img  src={heartfilled} onClick={(e) =>  { e.stopPropagation(); handleRemoveFromWishlist(item._id, 'ambher');  }} onMouseEnter={() => !ambherheartisClicked && setambherheartisHovered(true)} onMouseLeave={() => !ambherheartisClicked && setambherheartisHovered(false)}  className={`absolute right-0 ease-in-out duration-300 transition-all  border-1  w-10 h-10 p-2 rounded-2xl cursor-pointer  bg-red-400 hover:bg-red-500`}/>
+                  <div className=" mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className= {`font-medium   text-[#0d0d0d] text-[13px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductcategory}</h1></div>
+                      <div className="w-full h-auto ml-2 mt-2 "><h1 className={` font-semibold  text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductname}</h1></div>
+                      <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans text-[#1f8126] font-bold text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1></div>
                   {/*<div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>0 Sold</h1></div>*/}
 
                   {item.patientwishlistinventoryproductquantity === 0 ? (
-                    <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl"><h1 className="font-semibold text-white text-sm sm:text-base">Out of Stock</h1></div>
+                    <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl"><h1 className="font-semibold text-white">Out of Stock</h1></div>
                   ): null}
 
 
@@ -1400,18 +1401,18 @@ const WishlistGridSkeleton = () => (
 
 
 
-          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2 animate-fadeInUp flex items-start w-full h-auto rounded-2xl mt-5" >
+          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
 
-            <div className="flex flex-col justify-start mx-2 md:mx-2 rounded-2xl w-full min-h-[540px] max-h-auto h-auto shadow-b-lg">
+            <div className=" flex flex-col justify-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
 
-                <div className="w-full rounded-2xl h-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 p-2">
+                <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
                   
 
-                <div className="col-span-full">
+                <div className="flex flex-wrap p-4">
           {loadingWishlist ? (
             <WishlistGridSkeleton />
           ) : bautistaWishlist.length === 0 ? (
-            <div className="w-full h-[50vh] flex justify-center flex-col items-center px-4"><img src={heartempty} className="w-17 h-17 mb-3"/><h1 className="font-semibold text-xl sm:text-2xl text-center">Your wishlist is empty</h1><p className="text-[#4e4e4e] mb-5 text-center text-sm sm:text-base">Start adding items you love to keep track of them</p><Link to="/patientproducts"><div className="text-[15px] p-3 bg-[#2781af] text-white hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div></Link></div>
+            <div className="w-[90vw] h-[50vh] flex justify-center flex-col items-center "><img src={heartempty} className="w-17 h-17 mb-3"/><h1 className="font-semibold text-[25px]">Your wishlist is empty</h1><p className="text-[#4e4e4e] mb-5">Start adding items you love to keep track of them</p><Link to="/patientproducts"><div className="text-[15px] p-3 bg-[#2781af] text-white  hover:scale-105 rounded-md transition-all cursor-pointer">Continue Shopping</div></Link></div>
           ) : (
                 [...bautistaWishlist]
                 .sort((a, b) => {
@@ -1429,16 +1430,16 @@ const WishlistGridSkeleton = () => (
                                                                             setaddbautistainventoryproductprice(item.patientwishlistinventoryproductprice || 0);
                                                                             setaddbautistainventoryproductquantity(item.patientwishlistinventoryproductquantity || 0);
                                                                             setaddbautistainventoryproductimagepreviewimages(item.patientwishlistinventoryproductimagepreviewimages || []);
-                }} className="motion-preset-slide-up flex flex-col items-start justify-start w-full pb-3 h-auto shadow-md bg-white rounded-2xl cursor-pointer touch-manipulation">
-                  <img src={item.patientwishlistinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={item.patientwishlistinventoryproductname} className={`w-full h-32 sm:h-36 md:h-40 lg:h-45 object-cover rounded-t-2xl ${item.patientwishlistinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
-                  <img  src={heartfilled} onClick={(e) =>  { e.stopPropagation(); handleRemoveFromWishlist(item._id, 'bautista');  }} onMouseEnter={() => !bautistaheartisClicked && setbautistaheartisHovered(true)} onMouseLeave={() => !bautistaheartisClicked && setbautistaheartisHovered(false)}  className={`absolute right-2 top-2 ease-in-out duration-300 transition-all border-1 w-8 h-8 sm:w-10 sm:h-10 p-1.5 sm:p-2 rounded-2xl cursor-pointer bg-red-400 hover:bg-red-500 touch-manipulation`}/>
-                  <div className="mx-1 w-fit rounded-md py-1 px-2 rounded-1xl h-fit mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className= {`font-medium text-[#0d0d0d] text-xs sm:text-[13px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductcategory}</h1></div>
-                      <div className="w-full h-auto ml-2 mt-2"><h1 className={`font-semibold text-sm sm:text-[15px] min-w-0 break-words line-clamp-2 ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductname}</h1></div>
-                      <div className="text-[#1f8126] w-fit h-auto ml-2 mt-1"><h1 className={`font-albertsans font-bold text-base sm:text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1></div>
+                }} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl">
+                  <img src={item.patientwishlistinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={item.patientwishlistinventoryproductname} className={`w-full h-45 ${item.patientwishlistinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+                  <img  src={heartfilled} onClick={(e) =>  { e.stopPropagation(); handleRemoveFromWishlist(item._id, 'bautista');  }} onMouseEnter={() => !bautistaheartisClicked && setbautistaheartisHovered(true)} onMouseLeave={() => !bautistaheartisClicked && setbautistaheartisHovered(false)}  className={`absolute right-0 ease-in-out duration-300 transition-all  border-1  w-10 h-10 p-2 rounded-2xl cursor-pointer  bg-red-400 hover:bg-red-500`}/>
+                  <div className=" mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className= {`font-medium   text-[#0d0d0d] text-[13px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductcategory}</h1></div>
+                      <div className="w-full h-auto ml-2 mt-2 "><h1 className={` font-semibold  text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductname}</h1></div>
+                      <div className="text-[#1f8126] w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1></div>
                   {/*<div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>0 Sold</h1></div>*/}
 
                   {item.patientwishlistinventoryproductquantity === 0 ? (
-                    <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl"><h1 className="font-semibold text-white text-sm sm:text-base">Out of Stock</h1></div>
+                    <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl"><h1 className="font-semibold text-white">Out of Stock</h1></div>
                   ): null}
 
 
