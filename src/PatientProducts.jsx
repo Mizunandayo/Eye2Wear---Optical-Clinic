@@ -98,6 +98,7 @@ function PatientProducts(){
   const [patientemail, setpatientemail] = useState('');
   const [patientprofilepicture, setpatientprofilepicture] = useState('');
   const [showlogoutbtn, setshowlogoutbtn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   }
@@ -167,6 +168,9 @@ function PatientProducts(){
  //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
 
 const [activeinventorytable, setactiveinventorytable] = useState('ambherinventorytable');
+
+// Mobile filter states
+const [showMobileFilters, setShowMobileFilters] = useState(false);
 
 // View Order Modal states
 const [selectedOrderForView, setSelectedOrderForView] = useState(null);
@@ -1623,7 +1627,7 @@ useEffect(() => {
     <>
 
      {/* NavBar */}
-  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
+  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
         <a id:logocontain href="#">
           <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
         </a>
@@ -1635,11 +1639,40 @@ useEffect(() => {
          <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
         <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
          <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-
-
-
-
         </ul>
+
+        {/* Mobile Menu Button */}
+        <div className="xl:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <div className="w-6 h-0.5 bg-black"></div>
+          <div className="w-6 h-0.5 bg-black"></div>
+          <div className="w-6 h-0.5 bg-black"></div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="xl:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t z-40">
+            <ul className="flex flex-col p-4 gap-2 font-semibold text-base">
+              <Link to="/patientlandingpage" className="text-[#000000] no-underline" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li>
+              </Link>
+              <Link to="/patientdashboard" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li>
+              </Link>
+              <Link to="/patientproducts" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li>
+              </Link>
+              <Link to="/patientwishlist" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li>
+              </Link>
+              <Link to="/patientorders" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li>
+              </Link>
+              <Link to="/aboutpage" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li>
+              </Link>
+            </ul>
+          </div>
+        )}
 
       {/* Search 
       
@@ -1733,10 +1766,10 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
+    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center" >
     <div className="bg-cover bg-center h-auto w-full flex justify-center " >
 
-      <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-3">
+      <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-2 sm:p-3">
 
 
 
@@ -1747,10 +1780,10 @@ useEffect(() => {
 
               <div className=" flex items-center mt-8"><i className="bx bxs-shopping-bag text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Browse our Products</h1></div>
 
-  <div className="flex justify-start items-center mt-3 h-[60px]">
+  <div className="flex flex-col sm:flex-row justify-start items-center mt-3 gap-3 h-auto">
  {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
-  <div onClick={() => showinventorytable('ambherinventorytable')}  className={`cursor-pointer mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
-  <div onClick={() => showinventorytable('bautistainventorytable')}  className={`cusror-pointer ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
+  <div onClick={() => showinventorytable('ambherinventorytable')}  className={`cursor-pointer w-full sm:w-auto hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl px-6 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
+  <div onClick={() => showinventorytable('bautistainventorytable')}  className={`cursor-pointer w-full sm:w-auto hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl px-6 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
   
   </div>
 
@@ -1762,9 +1795,9 @@ useEffect(() => {
 
 
 
-          { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
+          { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2  animate-fadeInUp flex flex-col lg:flex-row items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
 
-          <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
+          <div className="p-3 rounded-2xl w-full lg:w-[20%] h-auto mb-4 lg:mb-0 lg:mr-2 overflow-y-auto overflow-x-hidden hidden lg:block">
                 <div className="border-b-2 pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by category</h1></div>
                 {activeambherinventorycategorytable !== 'all' && (
                   <div
@@ -1963,10 +1996,51 @@ useEffect(() => {
             
 
           </div>
-          <div className=" flex flex-col justify-start items-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
-              <div className="ml-6 flex justify-center items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-250 rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-              <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
-              <div className="flex flex-wrap p-4">
+          <div className=" flex flex-col justify-start items-start  lg:ml-2 rounded-2xl w-full lg:w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
+              {/* Mobile Filter Button - Only show on small screens */}
+              <div style={{ width: '100%', padding: '8px 16px' }} className="lg:hidden">
+                <button 
+                  onClick={() => setShowMobileFilters(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: '#2781af',
+                    color: 'white',
+                    borderRadius: '16px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#1e6a8f'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#2781af'}
+                >
+                  <i className="bx bx-filter" style={{ fontSize: '20px' }}></i>
+                  Filters & Categories
+                </button>
+              </div>
+              
+              <div className="ml-2 lg:ml-6 flex flex-col sm:flex-row justify-center items-start sm:items-center mb-4">
+                <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3 mb-2 sm:mb-0">Search: </h2>
+                <div className="relative flex items-center justify-center gap-3 w-full  sm:flex-1">
+                  <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+                  <input 
+                    value={searchProducts} 
+                    onChange={(e) => setsearchProducts(e.target.value)} 
+                    type="text" 
+                    placeholder="Enter product name here..."   
+                    className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                  />
+                </div>
+              </div>
+              <div className=" w-full rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
+              {/* Updated product grid - 2 columns on mobile, flexible on larger screens */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 p-2 sm:p-4 w-full">
                 {ambherloadingproducts ? (
                   <ProductGridSkeleton />
                 ): ambherinventoryproducts.length === 0 ? (
@@ -1994,17 +2068,27 @@ useEffect(() => {
               const isInWishList = wishlistItems.some(item => item.patientwishlistinventoryproductid === product.ambherinventoryproductid);
               setambherheartisClicked(isInWishList);    
 
-                 }}  className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl">
-                <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`w-full h-45 ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+                 }}  className="motion-preset-slide-up flex flex-col items-start justify-start w-full h-auto shadow-md bg-white rounded-2xl cursor-pointer hover:shadow-lg transition-all duration-200 relative">
+                <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`w-full h-32 sm:h-40 md:h-45 object-cover rounded-t-2xl ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
                 
-               {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
-                 product.ambherinventoryproductquantity >= 1 && product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
-                 product.ambherinventoryproductquantity >= 4 && product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+               {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900 text-xs">Out of Stock</h1></div>): 
+                 product.ambherinventoryproductquantity >= 1 && product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900 text-xs">Critical Stock</h1></div>):
+                 product.ambherinventoryproductquantity >= 4 && product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900 text-xs">Low Stock</h1></div>): null}
                  
-                <div className=" mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className={`font-medium   text-[#0d0d0d] text-[13px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductcategory}</h1></div>
-                    <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductname}</h1></div>
-                    <div className="text-[#1f8126] w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {product.ambherinventoryproductprice?.toLocaleString()}</h1></div>
-                <div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{ambherproductsoldCounts[product.ambherinventoryproductid] ?? 0} Sold</h1></div>
+                <div className="p-2 sm:p-3 w-full flex flex-col">
+                  <div className="w-fit rounded-md py-1 px-2 mb-2 bg-[#F0F6FF]">
+                    <h1 className={`font-medium text-[#0d0d0d] text-xs sm:text-[13px] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductcategory}</h1>
+                  </div>
+                  <div className="mb-1">
+                    <h1 className={`font-semibold text-sm sm:text-[15px] line-clamp-2 ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductname}</h1>
+                  </div>
+                  <div className="mb-2">
+                    <h1 className={`font-albertsans font-bold text-[#1f8126] text-sm sm:text-[18px] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {product.ambherinventoryproductprice?.toLocaleString()}</h1>
+                  </div>
+                  <div className="mt-auto">
+                    <h1 className={`font-albertsans font-medium text-[#4e4f4f] text-xs sm:text-[15px] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{ambherproductsoldCounts[product.ambherinventoryproductid] ?? 0} Sold</h1>
+                  </div>
+                </div>
               </div>
                   ))
                 )}
@@ -2058,51 +2142,51 @@ useEffect(() => {
 
           {showpatientambherviewproduct && (
 
-                         <div className="overflow-y-auto h-auto  bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-                           <div className="motion-opacity-in-0 mt-10 pl-5 pr-5 bg-[#fefefe] rounded-2xl w-[1300px] h-auto mb-10 animate-fadeInUp ">
-                                <div className=" mt-5  flex justify-end items-center left-0 w-[100%] h-[70px]">
+                         <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-4">
+                           <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
+                                <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
                    
-                                  <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                                  <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}} className="bg-[#333232] px-6 sm:px-10 py-2 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[30px] sm:text-[40px]"/></div>
                                 </div>
 
 
-                          <form className="flex flex-col  ml-15 mr-15 mt-5    pb-10" >
-                                <div className=" flex justify-center items-start rounded-2xl w-full h-auto">
-                                  <div className=" pb-10 w-full h-full mr-15 rounded-2xl flex justify-center mb-20">
+                          <form className="flex flex-col px-2 sm:px-4 lg:px-15 mt-2 sm:mt-5 pb-6 sm:pb-10">
+                                <div className="flex flex-col lg:flex-row justify-center items-start rounded-2xl w-full h-auto gap-4 lg:gap-6">
+                                  <div className="w-full lg:w-auto flex justify-center">
 
 
 
-                                      <div className=" h-fit w-fit flex-none">
+                                      <div className="h-fit w-fit flex-none">
   
-                                <div className=" relative">
+                                <div className="relative">
                                 
 
 
                                  {addambherinventoryproductquantity === 0 &&(
 
-                                <div className="flex items-center justify-end">
-                                 <img  src={getambherHeartImage()} onClick={ambherhearthandleClick} onMouseEnter={() => !ambherheartisClicked && setambherheartisHovered(true)} onMouseLeave={() => !ambherheartisClicked && setambherheartisHovered(false)}  className={` ease-in-out duration-300 transition-all  border-1  w-10 h-10 p-2 rounded-2xl cursor-pointer ${ambherheartisClicked ? "bg-red-400" : "hover:bg-red-400"}`}/>
-                                 <h1 className="ml-2 text-[17px] font-semibold text-[#383838]">Wishlist</h1>     
+                                <div className="flex items-center justify-end mb-2">
+                                 <img  src={getambherHeartImage()} onClick={ambherhearthandleClick} onMouseEnter={() => !ambherheartisClicked && setambherheartisHovered(true)} onMouseLeave={() => !ambherheartisClicked && setambherheartisHovered(false)}  className={` ease-in-out duration-300 transition-all  border-1  w-8 h-8 sm:w-10 sm:h-10 p-2 rounded-2xl cursor-pointer ${ambherheartisClicked ? "bg-red-400" : "hover:bg-red-400"}`}/>
+                                 <h1 className="ml-2 text-[15px] sm:text-[17px] font-semibold text-[#383838]">Wishlist</h1>     
                                 </div>
                                  )}
 
-                                <img  className="mt-2 w-120 object-cover rounded-2xl h-120" src={(selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || (addambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || defaultimageplaceholder}/>
+                                <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || (addambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || defaultimageplaceholder}/>
 
                                      {((selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1 || 
                                        addambherinventoryproductimagepreviewimages?.length > 1) && (
                                          <>
-                                           <div type="button" onClick={ambherhandlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-2xl" /></div>
+                                           <div type="button" onClick={ambherhandlepreviousimage} className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-1 sm:p-2 absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-lg sm:text-2xl" /></div>
 
-                                           <div type="button" onClick={ambherhandlenextimage}  className="rounded-2xl absolute bg-opacity-50 text-white p-2 transform -translate-y-1/2 bg-gray-500 hover:bg-opacity-75 right-2 top-1/2">  <i className="bx bx-chevron-right text-2xl" /></div>
+                                           <div type="button" onClick={ambherhandlenextimage} className="rounded-2xl absolute bg-opacity-50 text-white p-1 sm:p-2 transform -translate-y-1/2 bg-gray-500 hover:bg-opacity-75 right-1 sm:right-2 top-1/2"><i className="bx bx-chevron-right text-lg sm:text-2xl" /></div>
 
                                          </>
                                        )}
 
                                       {addambherinventoryproductimagepreviewimages.length > 0 && (
-                                          <div className="overflow-x-auto flex gap-2 mt-2 p-4 border-y-1 rounded-2xl bg-[#fbfbfb]  items-center ">
+                                          <div className="overflow-x-auto flex gap-2 mt-2 p-2 sm:p-4 border-y-1 rounded-2xl bg-[#fbfbfb] items-center">
                                             {addambherinventoryproductimagepreviewimages.map((preview, index) => (
                                                 <div key={index} className="relative">
-                                                <img onClick={() => setambhercurrentimageindex(index)} src={preview} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${ambhercurrentimageindex === index ? 'border-2 border-[#78b0d4]' : ''}`} />
+                                                <img onClick={() => setambhercurrentimageindex(index)} src={preview} className={`rounded-lg cursor-pointer object-cover w-16 h-16 sm:w-20 sm:h-20 ${ambhercurrentimageindex === index ? 'border-2 border-[#78b0d4]' : ''}`} />
                                               </div>
                                             ))}
                                           </div>
@@ -2118,36 +2202,36 @@ useEffect(() => {
 
                                   </div>
 
-                                  <div className="  w-full h-auto flex items-start mb-10 rounded-2xl min-w-0">
-                                        <div className=" w-[100%] h-auto  rounded-4xl">
+                                  <div className="w-full h-auto flex items-start mb-6 lg:mb-10 rounded-2xl min-w-0">
+                                        <div className="w-[100%] h-auto rounded-4xl">
                                   
                                   
               
-                                        <div className=" w-[100%] registration-container">
+                                        <div className="w-[100%] registration-container">
 
                                     
-                                        <div className="flex items-center mx-1  w-fit  h-fit  mt-2 break-words min-w-0 "><h1 className="font-albertsans rounded-md py-1 px-2  rounded-1xl bg-[#F0F6FF] font-medium   text-[#0d0d0d]  min-w-0 break-words ">{ambherinventorycategorynamebox}</h1>
-                                        <p className="font-albertsans ml-1">by</p>
-                                        <p className="font-albertsans ml-1 font-semibold  ">{addambherinventoryproductbrand}</p>
+                                        <div className="flex flex-wrap items-center mx-1 w-fit h-fit mt-2 break-words min-w-0"><h1 className="font-albertsans rounded-md py-1 px-2 rounded-1xl bg-[#F0F6FF] font-medium text-[#0d0d0d] min-w-0 break-words text-sm sm:text-base">{ambherinventorycategorynamebox}</h1>
+                                        <p className="font-albertsans ml-1 text-sm sm:text-base">by</p>
+                                        <p className="font-albertsans ml-1 font-semibold text-sm sm:text-base">{addambherinventoryproductbrand}</p>
                                         </div>
                                         
                                      
 
-                                        <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{addambherinventoryproductname}</h1>
+                                        <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-bold text-[#212121] text-[20px] sm:text-[24px] lg:text-[29px]">{addambherinventoryproductname}</h1>
                          
                                         <div className="mt-1 flex items-center">
                                           {/*
                                           <img src={starimage} className="w-5 h-5"/>
                                           <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
                                           */}
-                                          <p className="mt-1 font-albertsans border-[#8c8c8c] pl-3  text-[13px]">{ambherproductsoldCount} sold</p>
+                                          <p className="mt-1 font-albertsans border-[#8c8c8c] pl-3 text-[12px] sm:text-[13px]">{ambherproductsoldCount} sold</p>
                                         </div>
                         
                                   
-                                        <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(addambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
+                                        <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[28px] sm:text-[35px] lg:text-[40px]">₱{Number(addambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
                                   
-                                        <p className="font-albertsans mt-6  font-medium text-[#020202] text-[18px]">Description</p>
-                                        <p className="font-albertsans font-semibold text-[#4b4b4b] mt-3">{addambherinventoryproductdescription}</p>
+                                        <p className="font-albertsans mt-6 font-medium text-[#020202] text-[16px] sm:text-[18px]">Description</p>
+                                        <p className="font-albertsans font-semibold text-[#4b4b4b] mt-3 text-sm sm:text-base">{addambherinventoryproductdescription}</p>
                                       
                                        
 
@@ -2165,12 +2249,12 @@ useEffect(() => {
 
 
 
-                                           <div className="flex w-auto items-center justify-between mt-10 h-22 w-full bg-[#fbfbfb] rounded-2xl">
-                                              <div className="gap-2 h-full w-40 flex items-center flex-col justify-center"><img src={find} className="w-8 h-8"/><p className="font-albertsans text-[13px] font-medium">Browse Products</p></div>
-                                              <div className="gap-2 h-full w-30 flex items-center flex-col justify-center"><img src={nextimage} className="w-8 h-8"/></div>
-                                              <div className="gap-2 h-full w-auto min-w-[160px] flex items-center flex-col justify-center"><img src={storeimage} className="w-8 h-8"/> <p className="font-albertsans text-[13px] font-medium whitespace-nowrap">Go to Ambher Optical</p></div>
-                                              <div className="gap-2 h-full w-30 flex items-center flex-col justify-center"><img src={nextimage} className="w-8 h-8"/></div>
-                                              <div className="gap-2 h-full w-40 flex items-center flex-col justify-center"><img src={inquire} className="w-8 h-8"/><p className=" font-albertsans text-[13px] font-medium">Inquire</p></div>
+                                           <div className="flex flex-col sm:flex-row w-full items-center justify-between mt-6 sm:mt-10 gap-2 sm:gap-0 p-3 sm:h-22 bg-[#fbfbfb] rounded-2xl">
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-40 flex items-center flex-col justify-center"><img src={find} className="w-6 h-6 sm:w-8 sm:h-8"/><p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center">Browse Products</p></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-auto sm:w-30 hidden sm:flex items-center flex-col justify-center"><img src={nextimage} className="w-6 h-6 sm:w-8 sm:h-8"/></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-auto sm:min-w-[160px] flex items-center flex-col justify-center"><img src={storeimage} className="w-6 h-6 sm:w-8 sm:h-8"/> <p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center whitespace-nowrap">Go to Ambher Optical</p></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-auto sm:w-30 hidden sm:flex items-center flex-col justify-center"><img src={nextimage} className="w-6 h-6 sm:w-8 sm:h-8"/></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-40 flex items-center flex-col justify-center"><img src={inquire} className="w-6 h-6 sm:w-8 sm:h-8"/><p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center">Inquire</p></div>
                                            </div>
                                    
                                         </div>
@@ -2247,9 +2331,9 @@ useEffect(() => {
 
 
 
-          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
+          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2  animate-fadeInUp flex flex-col lg:flex-row items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
 
-          <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
+          <div className="p-3 rounded-2xl w-full lg:w-[20%] h-auto mb-4 lg:mb-0 lg:mr-2 overflow-y-auto overflow-x-hidden hidden lg:block">
         
                 <div className="border-b-2 pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by category</h1></div>
                 {activebautistainventorycategorytable !== 'all' && (
@@ -2453,13 +2537,54 @@ useEffect(() => {
             {/*<div className=""> <bautistainventorycategoryBox value={bautistainventorycategorynamebox} loading={loadingbautistainventorycategorylist} onChange={(e) => setbautistainventorycategorynamebox(e.target.value)} categories={bautistainventorycategorylist}/></div>*/}
 
           </div>
-          <div className=" flex flex-col justify-start items-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
-              <div className="ml-6 flex justify-center items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-250 rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+          <div className=" flex flex-col justify-start items-start  lg:ml-2 rounded-2xl w-full lg:w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
+              {/* Mobile Filter Button - Only show on small screens */}
+              <div style={{ width: '100%', padding: '8px 16px' }} className="lg:hidden">
+                <button 
+                  onClick={() => setShowMobileFilters(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: '#2781af',
+                    color: 'white',
+                    borderRadius: '16px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#1e6a8f'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#2781af'}
+                >
+                  <i className="bx bx-filter" style={{ fontSize: '20px' }}></i>
+                  Filters & Categories
+                </button>
+              </div>
+              
+              <div className="ml-2 lg:ml-6 flex flex-col sm:flex-row justify-center items-start sm:items-center mb-4">
+                <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3 mb-2 sm:mb-0">Search: </h2>
+                <div className="relative flex items-center justify-center gap-3 w-full sm:flex-1">
+                  <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+                  <input 
+                    value={searchProducts} 
+                    onChange={(e) => setsearchProducts(e.target.value)} 
+                    type="text" 
+                    placeholder="Enter product name here..."   
+                    className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                  />
+                </div>
+              </div>
 
               <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
                 
 
-              <div className="flex flex-wrap p-4">
+              {/* Updated product grid - 2 columns on mobile, flexible on larger screens */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 p-2 sm:p-4 w-full">
                 {bautistaloadingproducts ? (
                   <ProductGridSkeleton />
                 ): bautistainventoryproducts.length === 0 ? (
@@ -2486,17 +2611,27 @@ useEffect(() => {
               const isInWishList = wishlistItems.some(item => item.patientwishlistinventoryproductid === product.bautistainventoryproductid);
               setbautistaheartisClicked(isInWishList);    
               
-              }} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl">
-                <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`w-full h-45 ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+              }} className="motion-preset-slide-up flex flex-col items-start justify-start w-full h-auto shadow-md bg-white rounded-2xl cursor-pointer hover:shadow-lg transition-all duration-200 relative">
+                <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`w-full h-32 sm:h-40 md:h-45 object-cover rounded-t-2xl ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
                 
-               {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
-                 product.bautistainventoryproductquantity >= 1 && product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
-                 product.bautistainventoryproductquantity >= 4 && product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+               {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900 text-xs">Out of Stock</h1></div>): 
+                 product.bautistainventoryproductquantity >= 1 && product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900 text-xs">Critical Stock</h1></div>):
+                 product.bautistainventoryproductquantity >= 4 && product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-1 sm:px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900 text-xs">Low Stock</h1></div>): null}
                  
-                <div className=" mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className={`font-medium   text-[#0d0d0d] text-[13px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductcategory}</h1></div>
-                    <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductname}</h1></div>
-                    <div className="text-[#1f8126] w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {product.bautistainventoryproductprice?.toLocaleString()}</h1></div>
-                <div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{bautistaproductsoldCounts[product.bautistainventoryproductid] ?? 0} Sold</h1></div>
+                <div className="p-2 sm:p-3 w-full flex flex-col">
+                  <div className="w-fit rounded-md py-1 px-2 mb-2 bg-[#F0F6FF]">
+                    <h1 className={`font-medium text-[#0d0d0d] text-xs sm:text-[13px] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductcategory}</h1>
+                  </div>
+                  <div className="mb-1">
+                    <h1 className={`font-semibold text-sm sm:text-[15px] line-clamp-2 ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductname}</h1>
+                  </div>
+                  <div className="mb-2">
+                    <h1 className={`font-albertsans font-bold text-[#1f8126] text-sm sm:text-[18px] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {product.bautistainventoryproductprice?.toLocaleString()}</h1>
+                  </div>
+                  <div className="mt-auto">
+                    <h1 className={`font-albertsans font-medium text-[#4e4f4f] text-xs sm:text-[15px] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{bautistaproductsoldCounts[product.bautistainventoryproductid] ?? 0} Sold</h1>
+                  </div>
+                </div>
               </div>
                   ))
                 )}
@@ -2531,31 +2666,31 @@ useEffect(() => {
 
           {showpatientbautistaviewproduct && (
 
-                         <div className="overflow-y-auto h-auto  bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-                           <div className="motion-opacity-in-0 mt-10 pl-5 pr-5 bg-[#fefefe] rounded-2xl w-[1300px] h-auto mb-10 animate-fadeInUp ">
-                                <div className=" mt-5  flex justify-end items-center left-0 w-[100%] h-[70px]">
+                         <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-4">
+                           <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
+                                <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
                    
-                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="bg-[#333232] px-6 sm:px-10 py-2 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[30px] sm:text-[40px]"/></div>
                                 </div>
 
 
-                          <form className="flex flex-col  ml-15 mr-15 mt-5    pb-10" >
-                                <div className=" flex justify-center items-start rounded-2xl w-full h-auto">
-                                  <div className=" pb-10 w-full h-full mr-15 rounded-2xl flex justify-center mb-20">
+                          <form className="flex flex-col px-2 sm:px-4 lg:px-15 mt-2 sm:mt-5 pb-6 sm:pb-10">
+                                <div className="flex flex-col lg:flex-row justify-center items-start rounded-2xl w-full h-auto gap-4 lg:gap-6">
+                                  <div className="w-full lg:w-auto flex justify-center">
 
 
 
-                                      <div className=" h-fit w-fit flex-none">
+                                      <div className="h-fit w-fit flex-none">
   
-                                <div className=" relative">
+                                <div className="relative">
                                 
 
 
-                                <div className="flex items-center justify-end">
+                                <div className="flex items-center justify-end mb-2">
                                  {addbautistainventoryproductquantity === 0 && (
                                    <>
-                                     <img  src={getbautistaHeartImage()} onClick={bautistahearthandleClick} onMouseEnter={() => !bautistaheartisClicked && setbautistaheartisHovered(true)} onMouseLeave={() => !bautistaheartisClicked && setbautistaheartisHovered(false)}  className={` ease-in-out duration-300 transition-all  border-1  w-10 h-10 p-2 rounded-2xl cursor-pointer ${bautistaheartisClicked ? "bg-red-400" : "hover:bg-red-400"}`}/>
-                                     <h1 className="ml-2 text-[17px] font-semibold text-[#383838]">Wishlist</h1>
+                                     <img src={getbautistaHeartImage()} onClick={bautistahearthandleClick} onMouseEnter={() => !bautistaheartisClicked && setbautistaheartisHovered(true)} onMouseLeave={() => !bautistaheartisClicked && setbautistaheartisHovered(false)} className={`ease-in-out duration-300 transition-all border-1 w-8 h-8 sm:w-10 sm:h-10 p-2 rounded-2xl cursor-pointer ${bautistaheartisClicked ? "bg-red-400" : "hover:bg-red-400"}`}/>
+                                     <h1 className="ml-2 text-[15px] sm:text-[17px] font-semibold text-[#383838]">Wishlist</h1>
                                    </>
                                  )}
                                 </div>
@@ -2563,23 +2698,23 @@ useEffect(() => {
 
 
 
-                                <img  className="mt-2 w-120 object-cover rounded-2xl h-120" src={(selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
+                                <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
 
                                      {((selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1 || 
                                        addbautistainventoryproductimagepreviewimages?.length > 1) && (
                                          <>
-                                           <div type="button" onClick={bautistahandlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-2xl" /></div>
+                                           <div type="button" onClick={bautistahandlepreviousimage} className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-1 sm:p-2 absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-lg sm:text-2xl" /></div>
 
-                                           <div type="button" onClick={bautistahandlenextimage}  className="rounded-2xl absolute bg-opacity-50 text-white p-2 transform -translate-y-1/2 bg-gray-500 hover:bg-opacity-75 right-2 top-1/2">  <i className="bx bx-chevron-right text-2xl" /></div>
+                                           <div type="button" onClick={bautistahandlenextimage} className="rounded-2xl absolute bg-opacity-50 text-white p-1 sm:p-2 transform -translate-y-1/2 bg-gray-500 hover:bg-opacity-75 right-1 sm:right-2 top-1/2"><i className="bx bx-chevron-right text-lg sm:text-2xl" /></div>
 
                                          </>
                                        )}
 
                                       {addbautistainventoryproductimagepreviewimages.length > 0 && (
-                                          <div className="overflow-x-auto flex gap-2 mt-2 p-4 border-y-1 rounded-2xl bg-[#fbfbfb]  items-center ">
+                                          <div className="overflow-x-auto flex gap-2 mt-2 p-2 sm:p-4 border-y-1 rounded-2xl bg-[#fbfbfb] items-center">
                                             {addbautistainventoryproductimagepreviewimages.map((preview, index) => (
                                                 <div key={index} className="relative">
-                                                <img onClick={() => setbautistacurrentimageindex(index)} src={preview} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${bautistacurrentimageindex === index ? 'border-2 border-[#78b0d4]' : ''}`} />
+                                                <img onClick={() => setbautistacurrentimageindex(index)} src={preview} className={`rounded-lg cursor-pointer object-cover w-16 h-16 sm:w-20 sm:h-20 ${bautistacurrentimageindex === index ? 'border-2 border-[#78b0d4]' : ''}`} />
                                               </div>
                                             ))}
                                           </div>
@@ -2595,59 +2730,59 @@ useEffect(() => {
 
                                   </div>
 
-                                  <div className="  w-full h-auto flex items-start mb-10 rounded-2xl min-w-0">
-                                        <div className=" w-[100%] h-auto  rounded-4xl">
+                                  <div className="w-full h-auto flex items-start mb-6 lg:mb-10 rounded-2xl min-w-0">
+                                        <div className="w-[100%] h-auto rounded-4xl">
                                   
                                   
               
-                                               <div className=" w-[100%] registration-container">
+                                               <div className="w-[100%] registration-container">
 
                                     
-                                        <div className="flex items-center mx-1  w-fit  h-fit  mt-2 break-words min-w-0 "><h1 className="font-albertsans rounded-md py-1 px-2  rounded-1xl bg-[#F0F6FF] font-medium   text-[#0d0d0d]  min-w-0 break-words ">{bautistainventorycategorynamebox}</h1>
-                                        <p className="font-albertsans ml-1">by</p>
-                                        <p className="font-albertsans ml-1 font-semibold  ">{addbautistainventoryproductbrand}</p>
+                                        <div className="flex flex-wrap items-center mx-1 w-fit h-fit mt-2 break-words min-w-0"><h1 className="font-albertsans rounded-md py-1 px-2 rounded-1xl bg-[#F0F6FF] font-medium text-[#0d0d0d] min-w-0 break-words text-sm sm:text-base">{bautistainventorycategorynamebox}</h1>
+                                        <p className="font-albertsans ml-1 text-sm sm:text-base">by</p>
+                                        <p className="font-albertsans ml-1 font-semibold text-sm sm:text-base">{addbautistainventoryproductbrand}</p>
                                         </div>
                                         
                                      
 
-                                        <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{addbautistainventoryproductname}</h1>
+                                        <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-bold text-[#212121] text-[20px] sm:text-[24px] lg:text-[29px]">{addbautistainventoryproductname}</h1>
                          
                                         <div className="mt-1 flex items-center">
                                           {/* 
                                           <img src={starimage} className="w-5 h-5"/>
                                           <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
                                           */} 
-                                          <p className="mt-1 font-albertsans border-l-2  border-[#8c8c8c] pl-3  text-[13px]">{bautistaproductsoldCount} sold</p>
+                                          <p className="mt-1 font-albertsans border-l-2 border-[#8c8c8c] pl-3 text-[12px] sm:text-[13px]">{bautistaproductsoldCount} sold</p>
                                         </div>
                         
                                   
-                                        <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(addbautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
+                                        <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[28px] sm:text-[35px] lg:text-[40px]">₱{Number(addbautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
                                   
-                                        <p className="font-albertsans mt-6  font-medium text-[#020202] text-[18px]">Description</p>
-                                        <p className="font-albertsans font-semibold text-[#4b4b4b] mt-3">{addbautistainventoryproductdescription}</p>
+                                        <p className="font-albertsans mt-6 font-medium text-[#020202] text-[16px] sm:text-[18px]">Description</p>
+                                        <p className="font-albertsans font-semibold text-[#4b4b4b] mt-3 text-sm sm:text-base">{addbautistainventoryproductdescription}</p>
                                       
                                        
 
                                       {addbautistainventoryproductquantity === 0 ? ( 
-                                        <div className="bg-gray-400 py-2 px-3 rounded-md justify-center  gap-4 mt-15 flex items-center">
-                                          <p className="font-albertsans font-semibold ">Out of Stock</p>
+                                        <div className="bg-gray-400 py-2 px-3 rounded-md justify-center gap-4 mt-6 sm:mt-15 flex items-center">
+                                          <p className="font-albertsans font-semibold">Out of Stock</p>
                                          </div>
                                        
                                       ):(
-                                        <div className="gap-4 mt-15 flex items-center">
-                                          <p className="font-albertsans font-semibold ">In Stock:</p>
-                                          <p className="font-albertsans font-semibold text-[#616161] text-[14px]">{addbautistainventoryproductquantity} pieces available </p>
+                                        <div className="gap-4 mt-6 sm:mt-15 flex items-center">
+                                          <p className="font-albertsans font-semibold">In Stock:</p>
+                                          <p className="font-albertsans font-semibold text-[#616161] text-[13px] sm:text-[14px]">{addbautistainventoryproductquantity} pieces available</p>
                                          </div>
                                       )}    
 
 
 
-                                           <div className="flex w-auto items-center justify-between mt-10 h-22 w-full bg-[#fbfbfb] rounded-2xl">
-                                              <div className="gap-2 h-full w-40 flex items-center flex-col justify-center"><img src={find} className="w-8 h-8"/><p className="font-albertsans text-[13px] font-medium">Browse Products</p></div>
-                                              <div className="gap-2 h-full w-30 flex items-center flex-col justify-center"><img src={nextimage} className="w-8 h-8"/></div>
-                                              <div className="gap-2 h-full w-auto min-w-[160px] flex items-center flex-col justify-center"><img src={storeimage} className="w-8 h-8"/> <p className="font-albertsans text-[13px] font-medium whitespace-nowrap">Go to Bautista Eye Center</p></div>
-                                              <div className="gap-2 h-full w-30 flex items-center flex-col justify-center"><img src={nextimage} className="w-8 h-8"/></div>
-                                              <div className="gap-2 h-full w-40 flex items-center flex-col justify-center"><img src={inquire} className="w-8 h-8"/><p className=" font-albertsans text-[13px] font-medium">Inquire</p></div>
+                                           <div className="flex flex-col sm:flex-row w-full items-center justify-between mt-6 sm:mt-10 gap-2 sm:gap-0 p-3 sm:h-22 bg-[#fbfbfb] rounded-2xl">
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-40 flex items-center flex-col justify-center"><img src={find} className="w-6 h-6 sm:w-8 sm:h-8"/><p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center">Browse Products</p></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-auto sm:w-30 hidden sm:flex items-center flex-col justify-center"><img src={nextimage} className="w-6 h-6 sm:w-8 sm:h-8"/></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-auto sm:min-w-[160px] flex items-center flex-col justify-center"><img src={storeimage} className="w-6 h-6 sm:w-8 sm:h-8"/> <p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center whitespace-nowrap">Go to Bautista Eye Center</p></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-auto sm:w-30 hidden sm:flex items-center flex-col justify-center"><img src={nextimage} className="w-6 h-6 sm:w-8 sm:h-8"/></div>
+                                              <div className="gap-1 sm:gap-2 h-auto sm:h-full w-full sm:w-40 flex items-center flex-col justify-center"><img src={inquire} className="w-6 h-6 sm:w-8 sm:h-8"/><p className="font-albertsans text-[11px] sm:text-[13px] font-medium text-center">Inquire</p></div>
                                            </div>
                                    
                                         </div>
@@ -3005,6 +3140,842 @@ useEffect(() => {
                 onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
               >
                 Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Filter Modal */}
+      {showMobileFilters && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          zIndex: 99
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxHeight: '80vh',
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+            paddingBottom: '16px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+
+            overflowY: 'auto',
+            animation: 'fadeIn 0.3s ease-out'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              position: 'sticky',
+              top: 0,
+              backgroundColor: 'white',
+              paddingBottom: '12px',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#363636',
+                margin: 0
+              }}>Filters & Categories</h2>
+              <button 
+                onClick={() => setShowMobileFilters(false)}
+                style={{
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <i className="bx bx-x" style={{ fontSize: '24px', color: '#6b7280' }}></i>
+              </button>
+            </div>
+            
+            {/* Filter content - Dynamic based on active inventory table */}
+            {activeinventorytable === 'ambherinventorytable' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Category Filter */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-category" style={{ marginRight: '8px' }}></i>
+                    Filter by Category
+                  </h3>
+                  
+                  {activeambherinventorycategorytable !== 'all' && (
+                    <button
+                      onClick={() => showambherinventorycategory('all')}
+                      style={{
+                        width: '100%',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        padding: '8px 16px',
+                        borderRadius: '16px',
+                        border: '2px solid #2781af',
+                        backgroundColor: 'white',
+                        color: '#2781af',
+                        fontWeight: '500',
+                        marginBottom: '12px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.backgroundColor = '#2781af';
+                        e.target.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.backgroundColor = 'white';
+                        e.target.style.color = '#2781af';
+                      }}
+                    >
+                      Clear filter
+                    </button>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => showambherinventorycategory('all')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: activeambherinventorycategorytable === 'all' ? '#2781af' : 'white',
+                        color: activeambherinventorycategorytable === 'all' ? 'white' : '#374151'
+                      }}
+                    >
+                      <span>All</span>
+                      <span style={{
+                        backgroundColor: '#e5e7eb',
+                        color: '#6b7280',
+                        fontWeight: '600',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '12px'
+                      }}>
+                        {ambherinventoryproducts.length}
+                      </span>
+                    </button>
+
+                    {ambherinventorycategorylist.map(category => {
+                      const productcount = ambherinventoryproducts.filter(product =>
+                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname).length;
+                      const isActive = activeambherinventorycategorytable === category.ambherinventorycategoryname;
+                      return(
+                        <button 
+                          key={category._id}
+                          onClick={() => setactiveambherinventorycategorytable(category.ambherinventorycategoryname)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: '16px',
+                            border: '1px solid #d1d5db',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            backgroundColor: isActive ? '#2781af' : 'white',
+                            color: isActive ? 'white' : '#374151'
+                          }}
+                        >
+                          <span>{category.ambherinventorycategoryname}</span>
+                          <span style={{
+                            backgroundColor: '#e5e7eb',
+                            color: '#6b7280',
+                            fontWeight: '600',
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            fontSize: '12px'
+                          }}>
+                            {productcount}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Advanced Filters */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-filter-alt" style={{ marginRight: '8px' }}></i>
+                    Advanced Filters
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setActiveAmbherProductFilter('all')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: activeAmbherProductFilter === 'all' ? '#2781af' : 'white',
+                        color: activeAmbherProductFilter === 'all' ? 'white' : '#374151'
+                      }}
+                    >
+                      All Products
+                    </button>
+
+                    {ambherProductFilters.map(filter => (
+                      <button 
+                        key={filter.id}
+                        onClick={() => setActiveAmbherProductFilter(filter.id)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '16px',
+                          border: '1px solid #d1d5db',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backgroundColor: activeAmbherProductFilter === filter.id ? '#2781af' : 'white',
+                          color: activeAmbherProductFilter === filter.id ? 'white' : '#374151'
+                        }}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter by Price */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-money" style={{ marginRight: '8px' }}></i>
+                    Filter by Price
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setpricesortingProducts('none')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'none' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'none' ? 'white' : '#374151'
+                      }}
+                    >
+                      No Sorting
+                    </button>
+
+                    <button
+                      onClick={() => setpricesortingProducts('Highesttolowest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'Highesttolowest' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'Highesttolowest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Highest to Lowest
+                    </button>
+
+                    <button
+                      onClick={() => setpricesortingProducts('Lowesttohighest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'Lowesttohighest' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'Lowesttohighest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Lowest to Highest
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter by Quantity */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-package" style={{ marginRight: '8px' }}></i>
+                    Filter by Quantity
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setQuantitySortingProducts('none')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'none' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'none' ? 'white' : '#374151'
+                      }}
+                    >
+                      No Sorting
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('Highesttolowest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'Highesttolowest' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'Highesttolowest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Highest to Lowest
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('Lowesttohighest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'Lowesttohighest' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'Lowesttohighest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Lowest to Highest
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('OutOfStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'OutOfStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'OutOfStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Out of Stock
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('CriticalStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'CriticalStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'CriticalStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Critical Stock (1-3)
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('LowStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'LowStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'LowStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Low Stock (4-6)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Bautista Category Filter */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-category" style={{ marginRight: '8px' }}></i>
+                    Filter by Category
+                  </h3>
+                  
+                  {activebautistainventorycategorytable !== 'all' && (
+                    <button
+                      onClick={() => showbautistainventorycategory('all')}
+                      style={{
+                        width: '100%',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        padding: '8px 16px',
+                        borderRadius: '16px',
+                        border: '2px solid #2781af',
+                        backgroundColor: 'white',
+                        color: '#2781af',
+                        fontWeight: '500',
+                        marginBottom: '12px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.backgroundColor = '#2781af';
+                        e.target.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.backgroundColor = 'white';
+                        e.target.style.color = '#2781af';
+                      }}
+                    >
+                      Clear filter
+                    </button>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => showbautistainventorycategory('all')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: activebautistainventorycategorytable === 'all' ? '#2781af' : 'white',
+                        color: activebautistainventorycategorytable === 'all' ? 'white' : '#374151'
+                      }}
+                    >
+                      <span>All</span>
+                      <span style={{
+                        backgroundColor: '#e5e7eb',
+                        color: '#6b7280',
+                        fontWeight: '600',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '12px'
+                      }}>
+                        {bautistainventoryproducts.length}
+                      </span>
+                    </button>
+
+                    {bautistainventorycategorylist.map(category => {
+                      const productcount = bautistainventoryproducts.filter(product =>
+                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname).length;
+                      const isActive = activebautistainventorycategorytable === category.bautistainventorycategoryname;
+                      return(
+                        <button 
+                          key={category._id}
+                          onClick={() => setactivebautistainventorycategorytable(category.bautistainventorycategoryname)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: '16px',
+                            border: '1px solid #d1d5db',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            backgroundColor: isActive ? '#2781af' : 'white',
+                            color: isActive ? 'white' : '#374151'
+                          }}
+                        >
+                          <span>{category.bautistainventorycategoryname}</span>
+                          <span style={{
+                            backgroundColor: '#e5e7eb',
+                            color: '#6b7280',
+                            fontWeight: '600',
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            fontSize: '12px'
+                          }}>
+                            {productcount}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Bautista Advanced Filters */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-filter-alt" style={{ marginRight: '8px' }}></i>
+                    Advanced Filters
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setActiveBautistaProductFilter('all')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: activeBautistaProductFilter === 'all' ? '#2781af' : 'white',
+                        color: activeBautistaProductFilter === 'all' ? 'white' : '#374151'
+                      }}
+                    >
+                      All Products
+                    </button>
+
+                    {bautistaProductFilters.map(filter => (
+                      <button 
+                        key={filter.id}
+                        onClick={() => setActiveBautistaProductFilter(filter.id)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '16px',
+                          border: '1px solid #d1d5db',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backgroundColor: activeBautistaProductFilter === filter.id ? '#2781af' : 'white',
+                          color: activeBautistaProductFilter === filter.id ? 'white' : '#374151'
+                        }}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter by Price */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-money" style={{ marginRight: '8px' }}></i>
+                    Filter by Price
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setpricesortingProducts('none')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'none' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'none' ? 'white' : '#374151'
+                      }}
+                    >
+                      No Sorting
+                    </button>
+
+                    <button
+                      onClick={() => setpricesortingProducts('Highesttolowest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'Highesttolowest' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'Highesttolowest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Highest to Lowest
+                    </button>
+
+                    <button
+                      onClick={() => setpricesortingProducts('Lowesttohighest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: pricesortingProducts === 'Lowesttohighest' ? '#2781af' : 'white',
+                        color: pricesortingProducts === 'Lowesttohighest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Lowest to Highest
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter by Quantity */}
+                <div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    color: '#363636',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '16px'
+                  }}>
+                    <i className="bx bx-package" style={{ marginRight: '8px' }}></i>
+                    Filter by Quantity
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      onClick={() => setQuantitySortingProducts('none')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'none' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'none' ? 'white' : '#374151'
+                      }}
+                    >
+                      No Sorting
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('Highesttolowest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'Highesttolowest' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'Highesttolowest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Highest to Lowest
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('Lowesttohighest')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'Lowesttohighest' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'Lowesttohighest' ? 'white' : '#374151'
+                      }}
+                    >
+                      Lowest to Highest
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('OutOfStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'OutOfStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'OutOfStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Out of Stock
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('CriticalStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'CriticalStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'CriticalStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Critical Stock (1-3)
+                    </button>
+
+                    <button
+                      onClick={() => setQuantitySortingProducts('LowStock')}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: quantitySortingProducts === 'LowStock' ? '#2781af' : 'white',
+                        color: quantitySortingProducts === 'LowStock' ? 'white' : '#374151'
+                      }}
+                    >
+                      Low Stock (4-6)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Apply Filters Button */}
+            <div style={{
+              position: 'sticky',
+              bottom: 0,
+              backgroundColor: 'white',
+              paddingTop: '16px',
+              marginTop: '24px',
+              borderTop: '1px solid #e5e7eb'
+            }}>
+              <button 
+                onClick={() => setShowMobileFilters(false)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  backgroundColor: '#2781af',
+                  color: 'white',
+                  borderRadius: '16px',
+                  fontWeight: '500',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#1e6a8f'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#2781af'}
+              >
+                Apply Filters
               </button>
             </div>
           </div>
