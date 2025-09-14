@@ -33,9 +33,9 @@ import Footer from "./Footer";
 
 // Skeleton Loading Components
 const ProductCardSkeleton = () => (
-  <div className="mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl animate-pulse">
+  <div className="mr-2 mb-3 sm:mr-3 flex flex-col items-start justify-start w-full sm:w-[200px] md:w-[220px] h-auto shadow-md bg-white rounded-2xl animate-pulse">
     {/* Product image skeleton - matches h-45 */}
-    <div className="w-full h-45 bg-gray-300 rounded-t-2xl"></div>
+    <div className="w-full h-32 sm:h-40 md:h-45 bg-gray-300 rounded-t-2xl"></div>
     
     {/* Category tag skeleton - matches bg-[#F0F6FF] rounded style */}
     <div className="mx-1 w-fit rounded-md py-1 px-2 mt-2 bg-gray-200 h-6 min-w-[60px]"></div>
@@ -70,7 +70,7 @@ const CategorySkeleton = () => (
 );
 
 const ProductGridSkeleton = () => (
-  <div className="flex flex-wrap p-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 w-full">
     {[...Array(8)].map((_, index) => (
       <ProductCardSkeleton key={index} />
     ))}
@@ -1623,23 +1623,23 @@ useEffect(() => {
     <>
 
      {/* NavBar */}
-  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
+  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 w-full drop-shadow-md z-50">
         <a id:logocontain href="#">
-          <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
+          <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
         </a>
 
-        <ul id:listcontain  className="hidden xl:flex items-center gap-12 font-semibold text-base">
-        <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black  rounded-md transition-all cursor-pointer">Home</li></Link>
+        {/* Desktop Navigation */}
+        <ul id:listcontain className="hidden xl:flex items-center gap-12 font-semibold text-base">
+        <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li></Link>
         <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
         <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
          <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
         <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
          <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-
-
-
-
         </ul>
+
+        {/* Mobile Navigation Menu Button - Hidden on XL screens */}
+        <div className="xl:hidden flex items-center gap-2">{/* Mobile nav placeholder for future hamburger menu */}</div>
 
       {/* Search 
       
@@ -1655,40 +1655,40 @@ useEffect(() => {
  
     {localStorage.getItem("patienttoken") ? (
       <div id="profilecard" className="relative items-center justify-center flex">
-        <div id="profile" onClick={showlogout} className="ml-3 flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200 shadow-lg rounded-full hover:cursor-pointer hover:scale-105 transition-all">
+        <div id="profile" onClick={showlogout} className="ml-2 sm:ml-3 flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200 shadow-lg rounded-full hover:cursor-pointer hover:scale-105 transition-all">
           {!patientprofilepicture ? (
             // Skeleton loading for navbar profile picture
-            <div className="h-13 w-13 rounded-full bg-gray-300 animate-pulse"></div>
+            <div className="h-10 w-10 sm:h-13 sm:w-13 rounded-full bg-gray-300 animate-pulse"></div>
           ) : (
-            <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-13 w-13 rounded-full"/>
+            <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-10 w-10 sm:h-13 sm:w-13 rounded-full"/>
           )}
         </div>
 
         {showlogoutbtn && (
-          <div className="w-75 flex-col p-5 motion-preset-fade absolute top-full mt-2 z-[9999] flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer transition-all shadow-lg">
+          <div className="w-64 sm:w-75 flex-col p-4 sm:p-5 motion-preset-fade absolute top-full mt-2 z-[9999] flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer transition-all shadow-lg right-0 sm:right-auto">
             <div className="hover:bg-[#f7f7f7] transition-all duration-300 ease-in-out py-2 px-1 rounded-2xl gap-3 flex items-center h-auto w-full">
               {!patientprofilepicture ? (
                 // Skeleton loading for dropdown profile picture
-                <div className="w-12 h-12 rounded-full bg-gray-300 animate-pulse"></div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-300 animate-pulse"></div>
               ) : (
-                <img src={patientprofilepicture} className="w-12 rounded-full"/>
+                <img src={patientprofilepicture} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"/>
               )}
-              <h1 className="font-albertsans font-semibold text-[19px]">{patientfirstname}</h1>
+              <h1 className="font-albertsans font-semibold text-base sm:text-[19px]">{patientfirstname}</h1>
             </div>
             <div className="border-b-2 rounded-full border-[#747474] h-1 w-full my-1"></div>
 
             {localStorage.getItem("patienttoken") && (
               <Link to="/patientinformation" className="w-full">
                 <div className="gap-2 flex items-center py-2 px-1 hover:bg-[#f7f7f7] duration-300 ease-in-out hover:text-[#000000] rounded-2xl transition-all cursor-pointer">
-                  <img src={profileuser} className="w-9 h-9"/>
-                  <h1 className="text-[16px] text-[#202020]">Demographic Profile</h1>
+                  <img src={profileuser} className="w-7 h-7 sm:w-9 sm:h-9"/>
+                  <h1 className="text-sm sm:text-[16px] text-[#202020]">Demographic Profile</h1>
                 </div>
               </Link>
             )}
 
             <div id="logoutdiv" className="mt-2 px-1 py-2 hover:bg-[#f7f7f7] flex items-center gap-2 w-full rounded-2xl hover:cursor-pointer transition-all" onClick={handlelogout}>
-              <img src={logout} className="w-9 h-9"/>
-              <p className="font-semibold text-[#E04F5F] text-[16px]">Logout</p>
+              <img src={logout} className="w-7 h-7 sm:w-9 sm:h-9"/>
+              <p className="font-semibold text-[#E04F5F] text-sm sm:text-[16px]">Logout</p>
             </div>
           </div>
         )}
@@ -1696,9 +1696,9 @@ useEffect(() => {
     ) : (
 
       <Link to="/userlogin">
-         <div className="ml-3  flex justify-center items-center p-3 bg-[#027bbf] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" onClick={handlelogout}>
-         <i className="bx bx-user-circle mt-1 pr-2 font-semibold text-white text-[17px]"/>
-         <p className="font-semibold text-white text-[17px]">Login</p>
+         <div className="ml-2 sm:ml-3 flex justify-center items-center p-2 sm:p-3 bg-[#027bbf] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" onClick={handlelogout}>
+         <i className="bx bx-user-circle mt-1 pr-1 sm:pr-2 font-semibold text-white text-sm sm:text-[17px]"/>
+         <p className="font-semibold text-white text-sm sm:text-[17px]">Login</p>
        </div>
       </Link>
     )
@@ -1743,14 +1743,14 @@ useEffect(() => {
 
 
 
-              <div id="inventorymanagement" className="  pl-5 pr-5 pb-4 pt-8  transition-all duration-300  ease-in-out  w-[100%] h-full bg-white " >   
+              <div id="inventorymanagement" className="px-2 sm:px-4 lg:px-5 pb-4 pt-8 transition-all duration-300 ease-in-out w-full h-full bg-white">   
 
-              <div className=" flex items-center mt-8"><i className="bx bxs-shopping-bag text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Browse our Products</h1></div>
+              <div className="flex items-center mt-8"><i className="bx bxs-shopping-bag text-[#184d85] text-[20px] sm:text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[20px] sm:text-[25px]">Browse our Products</h1></div>
 
-  <div className="flex justify-start items-center mt-3 h-[60px]">
+  <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mt-3 gap-2 sm:gap-0 sm:h-[60px]">
  {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
-  <div onClick={() => showinventorytable('ambherinventorytable')}  className={`cursor-pointer mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
-  <div onClick={() => showinventorytable('bautistainventorytable')}  className={`cusror-pointer ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#1f1f1f] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
+  <div onClick={() => showinventorytable('ambherinventorytable')} className={`cursor-pointer w-full sm:w-auto sm:mr-3 mb-2 sm:mb-0 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 md:px-8 lg:px-12 xl:px-25 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className={`font-albertsans font-semibold text-sm sm:text-base text-[#1f1f1f] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : ''}`}>Ambher Optical</h1></div>
+  <div onClick={() => showinventorytable('bautistainventorytable')} className={`cursor-pointer w-full sm:w-auto sm:ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 md:px-8 lg:px-12 xl:px-25 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className={`font-albertsans font-semibold text-sm sm:text-base text-[#1f1f1f] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : ''}`}>Bautista Eye Center</h1></div>
   
   </div>
 
@@ -1762,9 +1762,10 @@ useEffect(() => {
 
 
 
-          { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
+          { activeinventorytable === 'ambherinventorytable' && ( <div id="ambherinventorytable" className="p-2 animate-fadeInUp flex flex-col lg:flex-row items-start w-full h-auto lg:h-[83%] rounded-2xl mt-5" >
 
-          <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
+          {/* Sidebar - Full width on mobile, 20% on desktop */}
+          <div className="p-3 rounded-2xl w-full lg:w-[20%] h-auto mr-0 lg:mr-2 mb-4 lg:mb-0 overflow-y-auto overflow-x-hidden bg-gray-50 lg:bg-white">
                 <div className="border-b-2 pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by category</h1></div>
                 {activeambherinventorycategorytable !== 'all' && (
                   <div
@@ -1963,14 +1964,15 @@ useEffect(() => {
             
 
           </div>
-          <div className=" flex flex-col justify-start items-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
-              <div className="ml-6 flex justify-center items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-250 rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-              <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
-              <div className="flex flex-wrap p-4">
+          {/* Product Grid - Full width on mobile, 80% on desktop */}
+          <div className="flex flex-col justify-start items-start ml-0 lg:ml-2 rounded-2xl w-full lg:w-[80%] min-h-[540px] max-h-auto h-auto shadow-b-lg">
+              <div className="ml-2 lg:ml-6 flex flex-col lg:flex-row justify-start lg:justify-center items-start lg:items-center w-full"><h2 className="font-albertsans font-bold text-[16px] lg:text-[18px] text-[#383838] mr-0 lg:mr-3 mb-2 lg:mb-0">Search: </h2><div className="relative flex items-center justify-center gap-3 w-full lg:w-auto"><i className="bx bx-search absolute left-3 text-xl lg:text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..." className="transition-all duration-300 ease-in-out py-2 pl-10 w-full lg:w-250 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+              <div className="w-full rounded-2xl h-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2 lg:p-4 w-full">
                 {ambherloadingproducts ? (
                   <ProductGridSkeleton />
                 ): ambherinventoryproducts.length === 0 ? (
-                  <div className="w-full text-center py-8">
+                  <div className="col-span-full text-center py-8">
                     <p className="text-gray-500 text-lg">No Products Found...</p>
                   </div>
                 ):(
@@ -1994,8 +1996,8 @@ useEffect(() => {
               const isInWishList = wishlistItems.some(item => item.patientwishlistinventoryproductid === product.ambherinventoryproductid);
               setambherheartisClicked(isInWishList);    
 
-                 }}  className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl">
-                <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`w-full h-45 ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+                 }} className="motion-preset-slide-up flex flex-col items-start justify-start w-full h-auto shadow-md bg-white rounded-2xl cursor-pointer hover:shadow-lg transition-all">
+                <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder} alt={product.ambherinventoryproductname} className={`w-full h-32 sm:h-40 md:h-45 object-cover rounded-t-2xl ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
                 
                {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
                  product.ambherinventoryproductquantity >= 1 && product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
@@ -2247,9 +2249,10 @@ useEffect(() => {
 
 
 
-          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2  animate-fadeInUp flex  items-start  w-[100%] h-[83%] rounded-2xl mt-5" >
+          { activeinventorytable === 'bautistainventorytable' && ( <div id="bautistainventorytable" className="p-2 animate-fadeInUp flex flex-col lg:flex-row items-start w-full h-auto lg:h-[83%] rounded-2xl mt-5" >
 
-          <div className="p-3  rounded-2xl w-[20%] h-auto  mr-2 overflow-y-auto overflow-x-hidden">
+          {/* Sidebar - Full width on mobile, 20% on desktop */}
+          <div className="p-3 rounded-2xl w-full lg:w-[20%] h-auto mr-0 lg:mr-2 mb-4 lg:mb-0 overflow-y-auto overflow-x-hidden bg-gray-50 lg:bg-white">
         
                 <div className="border-b-2 pb-3 flex items center w-full mt-7"><i className="bx bx-filter font-albertsans font-semibold text-[#363636] text-[25px]" /><h1 className="ml-2 text-[16px] font-albertsans font-semibold text-[#363636]">Filter by category</h1></div>
                 {activebautistainventorycategorytable !== 'all' && (
@@ -2453,17 +2456,18 @@ useEffect(() => {
             {/*<div className=""> <bautistainventorycategoryBox value={bautistainventorycategorynamebox} loading={loadingbautistainventorycategorylist} onChange={(e) => setbautistainventorycategorynamebox(e.target.value)} categories={bautistainventorycategorylist}/></div>*/}
 
           </div>
-          <div className=" flex flex-col justify-start items-start  ml-2 rounded-2xl w-[90%]  min-h-[540px] max-h-auto h-auto shadow-b-lg ">
-              <div className="ml-6 flex justify-center items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-250 rounded-2xl  bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+          {/* Product Grid - Full width on mobile, 80% on desktop */}
+          <div className="flex flex-col justify-start items-start ml-0 lg:ml-2 rounded-2xl w-full lg:w-[80%] min-h-[540px] max-h-auto h-auto shadow-b-lg">
+              <div className="ml-2 lg:ml-6 flex flex-col lg:flex-row justify-start lg:justify-center items-start lg:items-center w-full"><h2 className="font-albertsans font-bold text-[16px] lg:text-[18px] text-[#383838] mr-0 lg:mr-3 mb-2 lg:mb-0">Search: </h2><div className="relative flex items-center justify-center gap-3 w-full lg:w-auto"><i className="bx bx-search absolute left-3 text-xl lg:text-2xl text-gray-500"></i><input value={searchProducts} onChange={(e) => setsearchProducts(e.target.value)} type="text" placeholder="Enter product name here..." className="transition-all duration-300 ease-in-out py-2 pl-10 w-full lg:w-250 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
 
-              <div className=" w-[100%] rounded-2xl h-auto  flex flex-wrap content-start gap-3 pl-2 pt-2 ">
+              <div className="w-full rounded-2xl h-auto">
                 
 
-              <div className="flex flex-wrap p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2 lg:p-4 w-full">
                 {bautistaloadingproducts ? (
                   <ProductGridSkeleton />
                 ): bautistainventoryproducts.length === 0 ? (
-                  <div className="w-full text-center py-8">
+                  <div className="col-span-full text-center py-8">
                     <p className="text-gray-500 text-lg">No Products Found...</p>
                   </div>
                 ):(
@@ -2486,8 +2490,8 @@ useEffect(() => {
               const isInWishList = wishlistItems.some(item => item.patientwishlistinventoryproductid === product.bautistainventoryproductid);
               setbautistaheartisClicked(isInWishList);    
               
-              }} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl">
-                <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`w-full h-45 ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+              }} className="motion-preset-slide-up flex flex-col items-start justify-start w-full h-auto shadow-md bg-white rounded-2xl cursor-pointer hover:shadow-lg transition-all">
+                <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder} alt={product.bautistainventoryproductname} className={`w-full h-32 sm:h-40 md:h-45 object-cover rounded-t-2xl ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
                 
                {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
                  product.bautistainventoryproductquantity >= 1 && product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
