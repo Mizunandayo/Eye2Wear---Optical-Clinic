@@ -74,10 +74,13 @@ function AboutPage() {
 
   return (
     <> 
-      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 w-full drop-shadow-md z-50">
+      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
         <a href="#">
           <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
         </a>
+
+
+
 
         {/* Desktop Navigation */}
         <ul className="hidden xl:flex items-center gap-12 font-semibold text-base">
@@ -89,8 +92,7 @@ function AboutPage() {
           <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
         </ul>
 
-        {/* Mobile Navigation - Hidden on XL screens */}
-        <div className="xl:hidden flex items-center gap-2">{/* Mobile nav placeholder for future hamburger menu */}</div>
+        {/* Mobile Navigation */}
 
         {localStorage.getItem("patienttoken") ? (
           <div id="profilecard" className="relative items-center justify-center flex">
@@ -157,26 +159,30 @@ function AboutPage() {
 
 
 
-      <section id="section1" className="motion-preset-slide-up min-h-[100vh] pt-8 sm:pt-12 bg-gradient-to-br from-green-50 via-violet-50 to-blue-100 sm:py-16 lg:py-20 xl:py-24 h-full w-full">
+      <section id="section1" className="motion-preset-slide-up min-h-[100vh] pt-12  bg-gradient-to-br from-green-50 via-violet-50 to-blue-100 sm:py-16 lg:py-20 xl:py-24 h-full w-full ">
 
           <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div className="max-w-3xl text-center lg:text-left">
-              <p className="text-base sm:text-lg text-[#1d1d1d] max-w-2xl">Comprehensive Eye Care Solutions</p>
-              <h2 className="text-2xl sm:text-3xl text-[#1d1d1d] md:text-4xl mt-4 sm:mt-6 lg:text-5xl xl:text-6xl font-albertsans font-bold">Everything you need to know about <span className="text-[#0a72b3]">Eye2Wear</span></h2>
-              <p className="text-sm sm:text-base lg:text-lg text-[#1d1d1d] max-w-2xl mt-3 sm:mt-4">Filling the communication gap between optometry and ophthalmology we are integrating two of the top clinics, Ambher Optical and Bautista Eye Center, to offer the complete spectrum of eye care services under a single roof.</p>
+            <div className="max-w-3xl  lg:text-left">
+            <p className="text-lg text-[#1d1d1d] max-w-2xl">Comprehensive Eye Care Solutions</p>
+              <h2 className="text-3xl text-[#1d1d1d] sm:text-4xl mt-6 lg:text-5xl xl:text-6xl font-albertsans font-bold">Everything you need to know about <span className="text-[#0a72b3]">Eye2Wear</span></h2>
+              <p className="text-lg text-[#1d1d1d] max-w-2xl mt-4">Filling the communication gap between optometry and ophthalmology we are integrating two of the top clinics, Ambher Optical and Bautista Eye Center, to offer the complete spectrum of eye care services under a single roof.</p>
             </div>
 
-            {/* Feature Cards Grid - Mobile Responsive */}
-            <div className="mt-8 sm:mt-14 rounded-2xl w-full flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
 
-              <div className="w-full h-auto flex flex-col items-center"><img src={compre} className="w-full h-32 sm:h-40 md:h-47 shadow-md rounded-2xl object-cover"/> <h1 className="mt-2 sm:mt-3 font-albertsans font-semibold text-sm sm:text-base text-[#0b66ac] text-center">Comprehensive Care</h1></div>
-              <div className="w-full h-auto flex flex-col items-center"><img src={modern} className="shadow-md w-full h-32 sm:h-40 md:h-47 rounded-2xl object-cover"/> <h1 className="mt-2 sm:mt-3 font-albertsans font-semibold text-sm sm:text-base text-[#078d2b] text-center">Modern Technology</h1></div>
-              <div className="w-full h-auto flex flex-col items-center"><img src={eyespecialistexpert} className="shadow-md w-full h-32 sm:h-40 md:h-47 rounded-2xl object-cover"/> <h1 className="mt-2 sm:mt-3 font-albertsans font-semibold text-sm sm:text-base text-[#522f94] text-center">Expert Eye Specialists</h1></div>
-              <div className="w-full h-auto flex flex-col items-center"><img src={digitalplatform} className="shadow-md w-full h-32 sm:h-40 md:h-47 rounded-2xl object-cover"/> <h1 className="mt-2 sm:mt-3 font-albertsans font-semibold text-sm sm:text-base text-[#d01a44] text-center">Digital Platform</h1></div>
 
-            </div>
+            
+          <div className="mt-14  rounded-2xl w-full h-50 flex justify-center items-center gap-6">
+
+              <div className="w-full  h-full"><img src={compre} className="w-full h-47 shadow-md rounded-2xl"/> <h1 className="mt-3 font-albertsans font-semibold text-[#0b66ac]">Comprehensive Care</h1></div>
+              <div className="w-full  h-full "><img src={modern}  className="shadow-md w-full h-47 rounded-2xl"/> <h1 className="mt-3 font-albertsans font-semibold text-[#078d2b]">Modern Technology</h1></div>
+              <div className="w-full h-full  "><img src={eyespecialistexpert}  className="shadow-md w-full h-47 rounded-2xl"/> <h1 className="mt-3 font-albertsans font-semibold text-[#522f94]">Expert Eye Specialists</h1></div>
+              <div className="w-full  h-full  "><img src={digitalplatform}  className="shadow-md w-full h-47 rounded-2xl"/> <h1 className="mt-3 font-albertsans font-semibold  text-[#d01a44]">Digital Platform</h1></div>
 
           </div>
+
+
+          </div>
+
 
       </section>
 
@@ -188,43 +194,52 @@ function AboutPage() {
 
 
 
-      <section id="section2" className="py-8 sm:py-16 bg-white lg:py-28 min-h-[80vh] sm:min-h-[160vh] w-full flex">
+      <section id="section2" className="py-16 bg-white sm:py-20 lg:py-28 min-h-[160vh] w-[99.5%] flex ">
            
-          <div className="w-full flex flex-col items-center px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl text-center lg:text-center">
-              <h2 className="text-2xl sm:text-3xl text-[#1d1d1d] md:text-4xl mt-4 sm:mt-6 lg:text-5xl xl:text-6xl font-albertsans font-bold">The <span className="text-[#eca025]">DevOps</span> Team</h2>
-              <p className="text-sm sm:text-base lg:text-lg text-[#1d1d1d] max-w-2xl mt-3 sm:mt-4">We make everything aligned with our goals and visions. Passionate in technology and innovation. Strive for the best!</p>
+          
+           <div className="w-full  flex flex-col items-center ">
+            <div className="max-w-3xl  lg:text-center">
+              <h2 className="text-3xl text-[#1d1d1d] sm:text-4xl mt-6 lg:text-5xl xl:text-6xl font-albertsans font-bold">The <span className="text-[#eca025]">DevOps</span> Team</h2>
+              <p className="text-lg text-[#1d1d1d] max-w-2xl mt-4">We make everything aligned with our goals and visions. Passionate in technology and innovation. Strive for the best!</p>
             </div>
 
-            {/* Team Grid - Mobile Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-10 mt-8 sm:mt-15 w-full max-w-6xl">
-                <div id="image1" className="p-4 sm:p-5 w-full h-64 sm:h-80 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 -rotate-1 hover:rotate-0 hover:scale-105 touch-manipulation">
+            <div className="px-30 gap-10 flex mt-15 w-full h-100 ">
+                <div id="image1" className="p-5 w-full h-full shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 -rotate-1 hover:rotate-0 hover:scale-105">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Francis Genese</h1>
-                        <p className="text-white text-xs sm:text-sm">Full-Stack Developer</p>
+                        <h1 className="font-albertsans font-semibold text-white">Francis Genese</h1>
+                        <p className="text-white">Full-Stack Developer</p>
                     </div> 
                 </div>
-                <div id="image2" className="p-4 sm:p-5 w-full h-64 sm:h-80 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 rotate-1 hover:rotate-0 hover:scale-105 touch-manipulation">
+                <div id="image2" className="p-5 w-full h-full shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 rotate-1 hover:rotate-0 hover:scale-105">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Johannes Aquino</h1>
-                        <p className="text-white text-xs sm:text-sm">Quality Analyst</p> 
+                        <h1 className="font-albertsans font-semibold text-white">Johannes Aquino</h1>
+                        <p className="text-white">Quality Analyst</p> 
                     </div> 
                 </div>
-                <div id="image3" className="p-4 sm:p-5 w-full h-64 sm:h-80 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 -rotate-1 hover:rotate-0 hover:scale-105 touch-manipulation">
+                <div id="image3" className="p-5 w-full h-full shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 -rotate-1 hover:rotate-0 hover:scale-105">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Aljhon Lopez</h1>
-                        <p className="text-white text-xs sm:text-sm">Documentation</p>
+                        <h1 className="font-albertsans font-semibold text-white">Aljhon Lopez</h1>
+                        <p className="text-white">Documentation</p>
                     </div> 
                 </div>
-                <div id="image4" className="p-4 sm:p-5 w-full h-64 sm:h-80 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 rotate-1 hover:rotate-0 hover:scale-105 touch-manipulation">
+                <div id="image4" className="p-5 w-full h-full shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 rotate-1 hover:rotate-0 hover:scale-105">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Gabriel Velasco</h1>
-                        <p className="text-white text-xs sm:text-sm">System Analyst</p> 
+                        <h1 className="font-albertsans font-semibold text-white">Gabriel Velasco</h1>
+                        <p className="text-white">System Analyst</p> 
                     </div>
                 </div>
             </div>
 
+
+
+
+
+
+
+
           </div>
+
+
 
       </section>
 
