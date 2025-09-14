@@ -4,7 +4,6 @@ import navlogo from  "../src/assets/images/navlogo.png";
 import defaultprofilepic from '../src/assets/images/defaulticon.png';
 import ambherlogo from '../src/assets/images/ambherlogo.png';
 import bautistalogo from '../src/assets/images/bautistalogo.png';
-import darklogo from "../src/assets/images/darklogo.png";
 import defaultimageplaceholder from "../src/assets/images/defaultimageplaceholder.png";
 import { useAuth } from "./hooks/patientuseAuth";
 import useApiService from "./hooks/useApiService";
@@ -61,9 +60,29 @@ const AppointmentRowSkeleton = () => (
   </tr>
 );
 
+// Mobile Card Skeleton for appointments
+const AppointmentCardSkeleton = () => (
+  <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 animate-pulse">
+    <div className="flex justify-between items-start mb-3">
+      <div className="h-4 bg-gray-300 rounded w-24"></div>
+      <div className="h-6 bg-gray-300 rounded-full w-16"></div>
+    </div>
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+      <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+    </div>
+    <div className="flex gap-2 mt-4">
+      <div className="h-8 bg-gray-300 rounded-lg w-16"></div>
+      <div className="h-8 bg-gray-300 rounded-lg w-20"></div>
+    </div>
+  </div>
+);
+
 const AppointmentTableSkeleton = () => (
   <div className="rounded-2xl shadow-lg w-full h-full overflow-hidden">
-    <div className="h-full overflow-y-auto">
+    {/* Desktop Table View */}
+    <div className="hidden md:block h-full overflow-y-auto">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-[#2781af] sticky top-0 z-10">
           <tr className="text-[#ffffff] font-albertsans font-bold">
@@ -80,6 +99,13 @@ const AppointmentTableSkeleton = () => (
           ))}
         </tbody>
       </table>
+    </div>
+    
+    {/* Mobile Card View */}
+    <div className="md:hidden p-4 h-full overflow-y-auto">
+      {[...Array(3)].map((_, index) => (
+        <AppointmentCardSkeleton key={index} />
+      ))}
     </div>
   </div>
 );
@@ -193,11 +219,12 @@ function PatientDashboard(){
 
 
 
-    const [showotherpatientbautistaappointmentotherservice, setshowotherpatientbautistaappointmentotherservice] = useState(false);
-    const [patientbautistaappointmentotherservicenote, setpatientbautistaappointmentotherservicenote] = useState("");
+    // Note: These states are commented out as they're not currently used
+    // const [showotherpatientbautistaappointmentotherservice, setshowotherpatientbautistaappointmentotherservice] = useState(false);
+    // const [patientbautistaappointmentotherservicenote, setpatientbautistaappointmentotherservicenote] = useState("");
 
-    const [showotherpatientambherappointmentotherservice, setshowotherpatientambherappointmentotherservice] = useState(false);
-    const [patientambherappointmentotherservicenote, setpatientambherappointmentotherservicenote] = useState("");
+    // const [showotherpatientambherappointmentotherservice, setshowotherpatientambherappointmentotherservice] = useState(false);
+    const [patientambherappointmentotherservicenote] = useState("");
 
     // Clinic location states
     const [ambherlocations, setambherlocations] = useState([]);
@@ -1465,7 +1492,7 @@ useEffect(() => {
 
   return (
     <>
-      {/* CSS for animations */}
+      {/* CSS for animations and mobile optimizations */}
       <style>
         {`
           @keyframes spin {
@@ -1476,17 +1503,62 @@ useEffect(() => {
               transform: rotate(360deg);
             }
           }
+          
+          /* Enhanced mobile-friendly scrollbars */
+          ::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 6px;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+          }
+
+          /* Ensure touch-friendly tap targets on mobile */
+          @media (max-width: 768px) {
+            button, [role="button"], input[type="submit"], input[type="button"] {
+              min-height: 44px;
+              min-width: 44px;
+            }
+            
+            /* Prevent zoom on inputs on iOS */
+            input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
+              font-size: 16px !important;
+            }
+            
+            /* Improve form control spacing on mobile */
+            select, input, textarea {
+              -webkit-appearance: none;
+              -moz-appearance: none;
+              appearance: none;
+            }
+          }
+
+          /* Smooth focus transitions */
+          input:focus, select:focus, textarea:focus {
+            outline: none;
+            transition: all 0.2s ease-in-out;
+          }
         `}
       </style>
 
      {/* NavBar */}
-      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
-        <a id:logocontain href="#">
-          <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
-        </a>
+      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-32 w-full drop-shadow-md z-50">
+        <Link to="/patientlandingpage">
+          <img src={navlogo} alt="" className="w-28 sm:w-33 hover:scale-105 transition-all"></img>
+        </Link>
 
-        <ul id:listcontain  className="hidden xl:flex items-center gap-12 font-semibold text-base">
-        <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black  rounded-md transition-all cursor-pointer">Home</li></Link>
+        <ul className="hidden xl:flex items-center gap-8 lg:gap-12 font-semibold text-base">
+        <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li></Link>
         <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
         <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
         <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
@@ -1515,44 +1587,42 @@ useEffect(() => {
 
       
     <div id="profilecard" className="relative items-center justify-center flex">
-    <div id="profile" onClick={showlogout}  className="ml-3  flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200  shadow-lg  rounded-full hover:cursor-pointer hover:scale-105 transition-all">
+    <div id="profile" onClick={showlogout}  className="ml-2 sm:ml-3 flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200 shadow-lg rounded-full hover:cursor-pointer hover:scale-105 transition-all">
      {!patientprofilepicture ? (
        // Skeleton loading for navbar profile picture
-       <div className="h-13 w-13 rounded-full bg-gray-300 animate-pulse"></div>
+       <div className="h-10 w-10 sm:h-13 sm:w-13 rounded-full bg-gray-300 animate-pulse"></div>
      ) : (
-       <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-13 w-13 rounded-full"></img>
+       <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-10 w-10 sm:h-13 sm:w-13 rounded-full"></img>
      )}
     </div>
 
 {showlogoutbtn && (
-    <div className="w-75 flex-col  p-5  motion-preset-fade absolute top-full mt-2  flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer  transition-all" >
+    <div className="w-64 sm:w-75 flex-col p-4 sm:p-5 motion-preset-fade absolute top-full mt-2 flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer transition-all right-0 sm:right-auto shadow-lg" >
 
-
-      <div className="hover:bg-[#f7f7f7] transition-all duration-300 ease-in-out py-2 px-1 rounded-2xl  gap-3 flex items-center h-auto w-full ">
+      <div className="hover:bg-[#f7f7f7] transition-all duration-300 ease-in-out py-2 px-1 rounded-2xl gap-3 flex items-center h-auto w-full ">
         {!patientprofilepicture ? (
           // Skeleton loading for dropdown profile picture
-          <div className="w-12 h-12 rounded-full bg-gray-300 animate-pulse"></div>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-300 animate-pulse"></div>
         ) : (
-          <img src={patientprofilepicture}  className="w-12 rounded-full"/>
+          <img src={patientprofilepicture} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"/>
         )}
-        <h1 className="font-albertsans font-semibold text-[19px]">{patientfirstname}</h1>
+        <h1 className="font-albertsans font-semibold text-[16px] sm:text-[19px] truncate">{patientfirstname}</h1>
       </div>
       <div className="border-b-2 rounded-full border-[#747474] h-1 w-full my-1">
 
       </div>
 
      {localStorage.getItem("patienttoken") && (
-      <Link to="/patientinformation" className="w-full"><div className="gap-2 flex items-center py-2 px-1 hover:bg-[#f7f7f7]  duration-300 ease-in-out  hover:text-[#000000] rounded-2xl transition-all cursor-pointer"> <img src={profileuser} className="w-9 h-9"/><h1 className="text-[16px] text-[#202020]">Demographic Profile</h1></div></Link>
+      <Link to="/patientinformation" className="w-full"><div className="gap-2 flex items-center py-2 px-1 hover:bg-[#f7f7f7] duration-300 ease-in-out hover:text-[#000000] rounded-2xl transition-all cursor-pointer"> <img src={profileuser} className="w-8 h-8 sm:w-9 sm:h-9"/><h1 className="text-[14px] sm:text-[16px] text-[#202020]">Demographic Profile</h1></div></Link>
      )}
-
 
      <div 
        id="logoutdiv" 
-       className="mt-2 px-1 py-2 hover:bg-[#f7f7f7]   flex items-center gap-2 w-full  rounded-2xl hover:cursor-pointer transition-all" 
+       className="mt-2 px-1 py-2 hover:bg-[#f7f7f7] flex items-center gap-2 w-full rounded-2xl hover:cursor-pointer transition-all" 
        onClick={handlelogout}
      >
-    <img src={logout} className="w-9 h-9"/>
-    <p className="font-semibold text-[#E04F5F] text-[16px]">Logout</p>
+    <img src={logout} className="w-8 h-8 sm:w-9 sm:h-9"/>
+    <p className="font-semibold text-[#E04F5F] text-[14px] sm:text-[16px]">Logout</p>
   </div> 
   </div>   
 )}
@@ -1599,29 +1669,23 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh]  w-[99vw] flex justify-center align-center" >
+    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center px-2 sm:px-4" >
     <div className="bg-cover bg-center h-full w-full flex items-center justify-center " >
 
       <div className="w-full h-full flex justify-start items-start pt-3 ">
 
-
-
-
-          
-
-       <div  className="  ml-3  h-auto  w-full flex flex-col items-center justify-center mr-3 mb-3" >
-
+       <div  className="h-auto w-full flex flex-col items-center justify-center mb-3" >
 
       
-      <div id="appointment" className=" bg-white w-full h-[100%] p-4 mt-12 rounded-2xl" >  
+      <div id="appointment" className="bg-white w-full h-[100%] p-2 sm:p-4 mt-12 rounded-2xl" >  
           
-                <div className="flex items-center justify-center w-full"><i className="bx bxs-calendar text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Appointments</h1></div>
+                <div className="flex items-center justify-center w-full"><i className="bx bxs-calendar text-[#184d85] text-[20px] sm:text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[20px] sm:text-[25px]">Appointments</h1></div>
 
-                                 <div className="flex flex-col gap-7 pt-3 justify-between items-center mt-8 h-[60px]">
+                                 <div className="flex flex-col gap-4 sm:gap-7 pt-3 justify-between items-center mt-4 sm:mt-8 h-auto">
                 <Link to="/patientinformation">
                 {!patientdemographics ? (
                   // Skeleton Loading State
-                  <div id="patientcard" className="flex justify-center items-start border-1 bg-white rounded-2xl shadow-md w-[290px] h-[80px] animate-pulse">
+                  <div id="patientcard" className="flex justify-center items-start border-1 bg-white rounded-2xl shadow-md w-full max-w-[290px] h-[80px] animate-pulse">
                     <div className="w-[125px] h-full rounded-2xl flex justify-center items-center">
                       <div className="h-18 w-18 rounded-full bg-gray-300"></div>
                     </div>
@@ -1632,20 +1696,20 @@ useEffect(() => {
                   </div>
                 ) : (
                   // Actual Patient Card
-                  <div id="patientcard" className="flex justify-center items-start border-1 hover:scale-105 hover:cursor-pointer bg-white transition-all duration-100 ease-in-out rounded-2xl shadow-md w-[290px] h-[80px]">
+                  <div id="patientcard" className="flex justify-center items-start border-1 hover:scale-105 hover:cursor-pointer bg-white transition-all duration-100 ease-in-out rounded-2xl shadow-md w-full max-w-[290px] h-[80px]">
                     <div className="w-[125px] h-full rounded-2xl flex justify-center items-center">
                       <img src={patientdemographics?.patientprofilepicture || defaultprofilepic} alt="Profile" className="h-18 w-18 rounded-full object-cover"></img>
                     </div>
                     <div className="bg-white min-w-0 flex flex-col justify-center items-start pl-2 pr-2 w-full h-full rounded-3xl">
-                      <h1 className="font-albertsans font-bold text-[17px] truncate w-full text-[#2d3744]">{patientdemographics?.patientfirstname || ''} {patientdemographics?.patientlastname || ''}</h1>
-                      <p className="text-[13px] truncate w-full text-[#535354]">{patientdemographics?.patientemail || ''}</p>
+                      <h1 className="font-albertsans font-bold text-[15px] sm:text-[17px] truncate w-full text-[#2d3744]">{patientdemographics?.patientfirstname || ''} {patientdemographics?.patientlastname || ''}</h1>
+                      <p className="text-[11px] sm:text-[13px] truncate w-full text-[#535354]">{patientdemographics?.patientemail || ''}</p>
                     </div>
                   </div>
                 )}
                 </Link> 
-                   <div className="flex justify-center items-center">
-                  <div onClick={() => showappointmenttable('bookappointment')}  className={`hover:cursor-pointer hover:rounded-2xl mr-5 transition-all duration-100 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmenttable==='bookappointment' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmenttable ==='bookappointment' ? 'text-white' : ''}`}>Book Appointment</h1></div>
-                  <div onClick={() => showappointmenttable('appointmentlist')}  className={`hover:cursor-pointer hover:rounded-2xl ml-5 transition-all duration-100 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeappointmenttable ==='appointmentlist' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeappointmenttable ==='appointmentlist' ? 'text-white' : ''}`}>Appointment List</h1></div>
+                   <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+                  <div onClick={() => showappointmenttable('bookappointment')}  className={`hover:cursor-pointer hover:rounded-2xl transition-all duration-100 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-2 sm:py-3 text-center flex justify-center items-center w-full sm:w-auto ${activeappointmenttable==='bookappointment' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[13px] sm:text-[15px] text-[#5d5d5d] ${activeappointmenttable ==='bookappointment' ? 'text-white' : ''}`}>Book Appointment</h1></div>
+                  <div onClick={() => showappointmenttable('appointmentlist')}  className={`hover:cursor-pointer hover:rounded-2xl transition-all duration-100 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-2 sm:py-3 text-center flex justify-center items-center w-full sm:w-auto ${activeappointmenttable ==='appointmentlist' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[13px] sm:text-[15px] text-[#5d5d5d] ${activeappointmenttable ==='appointmentlist' ? 'text-white' : ''}`}>Appointment List</h1></div>
                  </div> 
                  </div> 
                                  
@@ -1659,51 +1723,51 @@ useEffect(() => {
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
                  { activeappointmenttable === 'bookappointment' && ( 
-                  <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-6 py-8 mt-25">
+                  <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 mt-6 sm:mt-25">
                     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                       
                       {/* Form Header */}
-                      <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                      <div className="bg-gradient-to-r from-blue-50 to-green-50 px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i className="bx bx-calendar-plus text-blue-600 text-2xl"></i>
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i className="bx bx-calendar-plus text-blue-600 text-xl sm:text-2xl"></i>
                           </div>
                           <div>
-                            <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Book Your Appointment</h1>
-                            <p className="text-gray-600 mt-1">Schedule your consultation with our expert eye care professionals</p>
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 font-albertsans">Book Your Appointment</h1>
+                            <p className="text-gray-600 mt-1 text-sm sm:text-base">Schedule your consultation with our expert eye care professionals</p>
                           </div>
                         </div>
                       </div>
 
-                      <form onSubmit={handlesubmitpatientappointment} className="p-8">
+                      <form onSubmit={handlesubmitpatientappointment} className="p-4 sm:p-8">
                         
                         {/* Error messages now handled by toast notification */}
 
                         {/* Clinic Selection Cards */}
-                        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
                           
                           {/* Ambher Optical Card */}
                           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
-                            <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-green-200">
+                            <div className="bg-white bg-opacity-80 px-4 sm:px-6 py-3 sm:py-4 border-b border-green-200">
                               <div className="flex items-center gap-4">
-                                <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
+                                <img src={ambherlogo} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
                                 <div>
-                                  <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
-                                  <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
+                                  <h2 className="text-lg sm:text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
+                                  <p className="text-gray-900 text-xs sm:text-sm">Vision Care & Eye Wellness</p>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="p-6 space-y-6">
+                            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                               {/* Date, Time & Location Selection */}
                               <div className="flex flex-col items-center justify-center gap-4">
-                              <div className="grid md:grid-cols-2 gap-4 w-full">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <div>
                                   <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmentdate">
                                     Preferred Date
                                   </label>
                                   <input 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                     min={getdatetomorrow()} 
                                     max={getuptothreemonthsappointmentavailability()} 
                                     type="date" 
@@ -1719,7 +1783,7 @@ useEffect(() => {
                                   <select 
                                     name="patientambherappointmenttime" 
                                     id="patientambherappointmenttime" 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                   >
                                     <option value="">Select a time</option>
                                     {ambherappointmentschedules.map((time, index) => (
@@ -1735,7 +1799,7 @@ useEffect(() => {
                                   <select 
                                     name="patientambherappointmentlocation" 
                                     id="patientambherappointmentlocation" 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     disabled={loadinglocations}
                                   >
                                     <option value="">
@@ -1752,61 +1816,61 @@ useEffect(() => {
 
                               {/* Services Description */}
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
                                   <i className="bx bx-list-check text-green-600"></i>
                                   Our Services
                                 </h3>
-                                <div className="bg-white rounded-xl p-6 border border-green-200">
-                                  <p className="text-gray-700 leading-relaxed mb-4">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 border border-green-200">
+                                  <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-green-700">Ambher Optical</span> specializes in comprehensive vision care and eye wellness services. Our experienced optometrists provide:
                                   </p>
                                   
-                                  <div className="space-y-3 text-gray-600">
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                  <div className="space-y-2 sm:space-y-3 text-gray-600">
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Visual & Cataract Screening</span> - Early detection and assessment of cataracts and vision problems
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Pediatric Eye Care</span> - Specialized assessments and optometry services for children
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Color Vision Testing</span> - Comprehensive color blindness and vision deficiency evaluations
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Low Vision Solutions</span> - Assistive devices and rehabilitation for vision impairment
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Refraction Services</span> - Precise measurement for eyeglass and contact lens prescriptions
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Contact Lens Fitting</span> - Professional fitting and consultation for all contact lens types
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="mt-6 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                                    <p className="text-sm text-green-800">
+                                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                    <p className="text-xs sm:text-sm text-green-800">
                                       <i className="bx bx-info-circle mr-2"></i>
                                       <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
                                     </p>
@@ -1818,26 +1882,26 @@ useEffect(() => {
 
                           {/* Bautista Eye Center Card */}
                           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 overflow-hidden">
-                            <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-blue-200">
+                            <div className="bg-white bg-opacity-80 px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-200">
                               <div className="flex items-center gap-4">
-                                <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
+                                <img src={bautistalogo} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
                                 <div>
-                                  <h2 className="text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
-                                  <p className="text-gray-900 text-sm">Comprehensive Eye Care & Surgery</p>
+                                  <h2 className="text-lg sm:text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
+                                  <p className="text-gray-900 text-xs sm:text-sm">Comprehensive Eye Care & Surgery</p>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="p-6 space-y-6">
+                            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                               {/* Date, Time & Location Selection */}
                               <div className="flex flex-col items-center justify-center gap-4">
-                              <div className="grid md:grid-cols-2 gap-4 w-full">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <div>
                                   <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmentdate">
                                     Preferred Date
                                   </label>
                                   <input 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                     type="date" 
                                     name="patientbautistaappointmentdate" 
                                     id="patientbautistaappointmentdate" 
@@ -1863,7 +1927,7 @@ useEffect(() => {
                                   <select 
                                     name="patientbautistaappointmenttime" 
                                     id="patientbautistaappointmenttime" 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                   >
                                     <option value="">Select a time</option>
                                     {bautistaappointmentschedules.map((time, index) => (
@@ -1879,7 +1943,7 @@ useEffect(() => {
                                   <select 
                                     name="patientbautistaappointmentlocation" 
                                     id="patientbautistaappointmentlocation" 
-                                    className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     disabled={loadinglocations}
                                   >
                                     <option value="">
@@ -1898,76 +1962,76 @@ useEffect(() => {
                               {/* Weekend Toast */}
                               {bautistashownotavailweekendToast && (
                                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-                                  <div className={`${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border border-red-200 rounded-lg shadow-lg px-6 py-4 flex items-center gap-3`}>
-                                    <i className="bx bx-x-circle text-red-500 text-xl"></i>
-                                    <span className="text-red-800 font-medium">Bautista weekend dates are not available</span>
+                                  <div className={`${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border border-red-200 rounded-lg shadow-lg px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3`}>
+                                    <i className="bx bx-x-circle text-red-500 text-lg sm:text-xl"></i>
+                                    <span className="text-red-800 font-medium text-sm sm:text-base">Bautista weekend dates are not available</span>
                                   </div>
                                 </div>
                               )}
 
                               {/* Services Description */}
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
                                   <i className="bx bx-list-check text-blue-600"></i>
                                   Our Services
                                 </h3>
-                                <div className="bg-white rounded-xl p-6 border border-blue-200">
-                                  <p className="text-gray-700 leading-relaxed mb-4">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 border border-blue-200">
+                                  <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-blue-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
                                   </p>
                                   
-                                  <div className="space-y-3 text-gray-600">
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                  <div className="space-y-2 sm:space-y-3 text-gray-600">
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-start gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-lg mt-0.5 flex-shrink-0"></i>
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                                    <p className="text-sm text-blue-800">
+                                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                    <p className="text-xs sm:text-sm text-blue-800">
                                       <i className="bx bx-info-circle mr-2"></i>
                                       <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
                                     </p>
                                   </div>
                                   
-                                  <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                  <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-amber-50 rounded-lg border border-amber-200">
                                     <p className="text-xs text-amber-800 flex items-center gap-2">
                                       <i className="bx bx-calendar-x text-amber-600"></i>
                                       <span className="font-medium">Note:</span> Weekend appointments are not available at this location.
@@ -1980,20 +2044,20 @@ useEffect(() => {
                         </div>
 
                         {/* Additional Information Section */}
-                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                        <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
                             <i className="bx bx-note text-gray-600"></i>
                             Additional Information
                           </h3>
                           
-                          <div className="flex flex-col gap-8">
+                          <div className="flex flex-col gap-6 sm:gap-8">
                             {/* Notes Section */}
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 mb-3" htmlFor="patientadditionalappointmentnotes">
                                 Additional Appointment Notes
                               </label>
                               <textarea 
-                                className="w-full p-4 border border-gray-300 rounded-xl text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[120px]" 
+                                className="w-full p-3 sm:p-4 border border-gray-300 rounded-xl text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[100px] sm:min-h-[120px] text-sm sm:text-base" 
                                 ref={textarearef} 
                                 rows={4} 
                                 value={additionaldetails} 
@@ -2219,8 +2283,9 @@ useEffect(() => {
     
 
   ) : (
-    <div className=" rounded-2xl shadow-lg w-full h-full overflow-hidden">
-      <div className="h-full overflow-y-auto">
+    <div className="rounded-2xl shadow-lg w-full h-full overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block h-full overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-[#2781af] sticky top-0 z-10">
             <tr className="text-[#ffffff] font-albertsans font-bold">
@@ -2274,8 +2339,6 @@ useEffect(() => {
                 )}
               </td>
 
-
-
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
                
               <div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
@@ -2285,57 +2348,167 @@ useEffect(() => {
                                 setselectedpatientappointment(appointment);
               }}
                 className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-
-                      {deletepatientappointment && (
-                         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
-
-                           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-                 
-
-                              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1></div>
-                              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
-                                  {selectedpatientappointment && ( <>
-                                            <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientappointmentid}</p> </>)}  
-                                  </div>        
-                                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                                    <div 
-                                      className={`${deletingappointment ? 'cursor-not-allowed opacity-70' : 'hover:cursor-pointer hover:bg-[#7f1a1a] hover:scale-105'} bg-[#4e0f0f] ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-100 ease-in-out flex items-center justify-center`} 
-                                      onClick={() => {
-                                        if (!deletingappointment) {
-                                          handledeleteappointment(selectedpatientappointment.patientappointmentid);
-                                        }
-                                      }}
-                                    >
-                                      {deletingappointment ? (
-                                        <>
-                                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                          </svg>
-                                          <p className="text-[#ffffff]">Deleting...</p>
-                                        </>
-                                      ) : (
-                                        <p className="text-[#ffffff]">Delete</p>
-                                      )}
-                                    </div>
-                                  </div>
-                              </div>
-
-                           </div>
-                         </div>
-                      )}
-
-
-                      
-
               </td>
             </tr>
           ))}
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden p-4 h-full overflow-y-auto">
+        {patientappointments.map((appointment) => (
+          <div key={appointment._id} className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
+            {/* Card Header */}
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                <i className="bx bx-calendar text-[#2781af] text-lg"></i>
+                <span className="text-sm font-semibold text-gray-600">
+                  Created: {formatappointmatedates(appointment.createdAt)}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                ID: {appointment.patientappointmentid}
+              </span>
+            </div>
+
+            {/* Ambher Appointment Section */}
+            {appointment.patientambherappointmentdate && (
+              <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={ambherlogo} className="w-6 h-6 rounded" alt="Ambher"/>
+                  <h3 className="text-sm font-bold text-green-800">Ambher Optical</h3>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Date:</span>
+                    <span className="font-semibold">{formatappointmatedates(appointment.patientambherappointmentdate)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-semibold">{formatappointmenttimes(appointment.patientambherappointmenttime)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Location:</span>
+                    <span className="text-xs font-medium">{getLocationAddress(appointment.patientambherappointmentlocation, ambherlocations)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-gray-600">Status:</span>
+                    <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
+                      appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800' :
+                      appointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {appointment.patientambherappointmentstatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bautista Appointment Section */}
+            {appointment.patientbautistaappointmentdate && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={bautistalogo} className="w-6 h-6 rounded" alt="Bautista"/>
+                  <h3 className="text-sm font-bold text-blue-800">Bautista Eye Center</h3>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Date:</span>
+                    <span className="font-semibold">{formatappointmatedates(appointment.patientbautistaappointmentdate)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-semibold">{formatappointmenttimes(appointment.patientbautistaappointmenttime)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Location:</span>
+                    <span className="text-xs font-medium">{getLocationAddress(appointment.patientbautistaappointmentlocation, bautistalocations)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-gray-600">Status:</span>
+                    <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
+                      appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800' :
+                      appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {appointment.patientbautistaappointmentstatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <button 
+                onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
+                className="flex-1 bg-[#383838] hover:bg-[#595959] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <i className="bx bx-show text-lg"></i>
+                View
+              </button>
+              <button 
+                onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
+                className="flex-1 bg-[#8c3226] hover:bg-[#ab4f43] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <i className="bx bx-trash text-lg"></i>
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Delete Modal */}
+      {deletepatientappointment && (
+        <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50 px-4">
+          <div className="flex flex-col items bg-white rounded-2xl w-full max-w-md h-fit animate-fadeInUp">
+            <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
+              <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/>
+              <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1>
+            </div>
+            <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
+              <div className="px-5 flex flex-col justify-center h-[130px] w-full">
+                <p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
+                {selectedpatientappointment && (
+                  <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientappointmentid}</p>
+                )}  
+              </div>        
+              <div className="pr-5 pl-5 flex justify-end items-center h-[80px] w-full">
+                <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => setdeletepatientappointment(false)}>
+                  <p className="text-[#ffffff]">Cancel</p>
+                </div>
+                <div 
+                  className={`${deletingappointment ? 'cursor-not-allowed opacity-70' : 'hover:cursor-pointer hover:bg-[#7f1a1a] hover:scale-105'} bg-[#4e0f0f] ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-100 ease-in-out flex items-center justify-center`} 
+                  onClick={() => {
+                    if (!deletingappointment) {
+                      handledeleteappointment(selectedpatientappointment.patientappointmentid);
+                    }
+                  }}
+                >
+                  {deletingappointment ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p className="text-[#ffffff]">Deleting...</p>
+                    </>
+                  ) : (
+                    <p className="text-[#ffffff]">Delete</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )}
                 </div>
@@ -2352,52 +2525,27 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
-                         <div id="viewpatientappointment" className="h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-8">
+                         <div id="viewpatientappointment" className="h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-8">
                            <div className="animate-fadeInUp w-full max-w-7xl mx-auto max-h-full flex flex-col">
-                             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
+                             <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
                                
                                {/* Header */}
-                               <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                               <div className="bg-gradient-to-r from-blue-50 to-green-50 px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100">
                                  <div className="flex items-center justify-between">
                                    <div className="flex items-center gap-3">
-                                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                       <i className="bx bx-calendar-check text-blue-600 text-2xl"></i>
+                                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                       <i className="bx bx-calendar-check text-blue-600 text-xl sm:text-2xl"></i>
                                      </div>
                                      <div>
-                                       <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
-                                       <p className="text-gray-600 mt-1">View your scheduled appointment information</p>
+                                       <h1 className="text-lg sm:text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
+                                       <p className="text-gray-600 mt-1 text-sm sm:text-base">View your scheduled appointment information</p>
                                      </div>
                                    </div>
                                    <button 
                                      onClick={() => setviewpatientappointment(false)} 
-                                     style={{
-                                       width: '48px',
-                                       height: '48px',
-                                       backgroundColor: '#f3f4f6',
-                                       borderRadius: '12px',
-                                       display: 'flex',
-                                       alignItems: 'center',
-                                       justifyContent: 'center',
-                                       transition: 'all 0.2s ease-in-out',
-                                       border: 'none',
-                                       cursor: 'pointer'
-                                     }}
-                                     onMouseEnter={(e) => {
-                                       e.target.style.backgroundColor = '#e5e7eb';
-                                       e.target.style.transform = 'scale(1.05)';
-                                     }}
-                                     onMouseLeave={(e) => {
-                                       e.target.style.backgroundColor = '#f3f4f6';
-                                       e.target.style.transform = 'scale(1)';
-                                     }}
+                                     className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 hover:bg-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200 border-none cursor-pointer"
                                    >
-                                     <i 
-                                       className="bx bx-x" 
-                                       style={{
-                                         color: '#4b5563',
-                                         fontSize: '24px'
-                                       }}
-                                     ></i>
+                                     <i className="bx bx-x text-gray-600 text-xl sm:text-2xl"></i>
                                    </button>
                                  </div>
                                </div>
@@ -3125,80 +3273,24 @@ useEffect(() => {
       <Footer />
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '32px',
-            maxWidth: '400px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-          }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              marginBottom: '16px',
-              color: '#111827'
-            }}>
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl">
+            <h3 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">
               Confirm Logout
             </h3>
-            <p style={{
-              fontSize: '16px',
-              color: '#6b7280',
-              marginBottom: '24px'
-            }}>
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
               Are you sure you want to log out? You will need to sign in again to access your account.
             </p>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center'
-            }}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
                 onClick={cancelLogout}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmLogout}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#dc2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-200"
               >
                 Log Out
               </button>
