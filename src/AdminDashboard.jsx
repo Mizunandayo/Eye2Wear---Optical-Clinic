@@ -3294,6 +3294,18 @@ const totalPages = Math.ceil(totalStaffs / itemsPerPage);
 
 return (
   <div>
+    <style>
+      {`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}
+    </style>
     <div className="overflow-x-auto w-full h-full">
       <table className="w-full rounded-tl-2xl  rounded-tr-2xl shadow-lg">
         <thead className="rounded-tl-2xl rounded-tr-2xl">
@@ -18629,16 +18641,53 @@ itemName="appointments"
               <button 
                 onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
                 disabled={isAcceptingAppointment}
-                className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} w-full text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2`}
+                style={{
+                  backgroundColor: isAcceptingAppointment ? '#9CA3AF' : '#16A34A',
+                  cursor: isAcceptingAppointment ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  color: 'white',
+                  fontWeight: '600',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  paddingLeft: '24px',
+                  paddingRight: '24px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s ease-in-out',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isAcceptingAppointment) {
+                    e.target.style.backgroundColor = '#15803D';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isAcceptingAppointment) {
+                    e.target.style.backgroundColor = '#16A34A';
+                  }
+                }}
               >
                 {isAcceptingAppointment ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div style={{
+                      animation: 'spin 1s linear infinite',
+                      borderRadius: '50%',
+                      height: '20px',
+                      width: '20px',
+                      borderBottom: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderLeft: '2px solid transparent',
+                      borderRight: '2px solid transparent'
+                    }}></div>
                     <span>Accepting...</span>
                   </>
                 ) : (
                   <>
-                    <i className="bx bx-check text-lg"></i>
+                    <i className="bx bx-check" style={{ fontSize: '18px' }}></i>
                     Accept Ambher Appointment
                   </>
                 )}

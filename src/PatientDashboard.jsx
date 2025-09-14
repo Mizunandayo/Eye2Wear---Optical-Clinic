@@ -136,6 +136,10 @@ function PatientDashboard(){
   const [patientfirstname, setpatientfirstname] = useState('');
   const [patientprofilepicture, setpatientprofilepicture] = useState('');
   const [showlogoutbtn, setshowlogoutbtn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAmbherServices, setShowAmbherServices] = useState(false);
+  const [showBautistaServices, setShowBautistaServices] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   }
@@ -277,6 +281,27 @@ function PatientDashboard(){
   useEffect(() => {
     adjusttextareaheight();
   });
+
+  // Initialize services visibility based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 768; // md breakpoint
+      setIsMobile(!isDesktop);
+      if (isDesktop) {
+        setShowAmbherServices(true);
+        setShowBautistaServices(true);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 
 
@@ -1564,12 +1589,40 @@ useEffect(() => {
         <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
         <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
         <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-
-
-
-
-
         </ul>
+
+        {/* Mobile Menu Button */}
+        <div className="xl:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <div className="w-6 h-0.5 bg-black"></div>
+          <div className="w-6 h-0.5 bg-black"></div>
+          <div className="w-6 h-0.5 bg-black"></div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="xl:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t z-40">
+            <ul className="flex flex-col p-4 gap-2 font-semibold text-base">
+              <Link to="/patientlandingpage" className="text-[#000000] no-underline" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li>
+              </Link>
+              <Link to="/patientdashboard" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li>
+              </Link>
+              <Link to="/patientproducts" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li>
+              </Link>
+              <Link to="/patientwishlist" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li>
+              </Link>
+              <Link to="/patientorders" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li>
+              </Link>
+              <Link to="/aboutpage" onClick={() => setMobileMenuOpen(false)}>
+                <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li>
+              </Link>
+            </ul>
+          </div>
+        )}
 
       {/* Search 
       
@@ -1726,18 +1779,8 @@ useEffect(() => {
                   <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 mt-6 sm:mt-25">
                     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                       
-                      {/* Form Header */}
-                      <div className="bg-gradient-to-r from-blue-50 to-green-50 px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i className="bx bx-calendar-plus text-blue-600 text-xl sm:text-2xl"></i>
-                          </div>
-                          <div>
-                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 font-albertsans">Book Your Appointment</h1>
-                            <p className="text-gray-600 mt-1 text-sm sm:text-base">Schedule your consultation with our expert eye care professionals</p>
-                          </div>
-                        </div>
-                      </div>
+             
+
 
                       <form onSubmit={handlesubmitpatientappointment} className="p-4 sm:p-8">
                         
@@ -1816,10 +1859,37 @@ useEffect(() => {
 
                               {/* Services Description */}
                               <div>
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                                  <i className="bx bx-list-check text-green-600"></i>
-                                  Our Services
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <i className="bx bx-list-check text-green-600"></i>
+                                    Our Services
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowAmbherServices(!showAmbherServices)}
+                                    style={{
+                                      display: isMobile ? 'flex' : 'none',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.375rem 0.75rem',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      color: '#166534',
+                                      backgroundColor: '#dcfce7',
+                                      borderRadius: '0.5rem',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = '#bbf7d0'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dcfce7'}
+                                  >
+                                    {showAmbherServices ? 'Hide Services' : 'Show Services'}
+                                    <i className={`bx ${showAmbherServices ? 'bx-chevron-up' : 'bx-chevron-down'} text-sm`}></i>
+                                  </button>
                                 </h3>
+                                {/* Mobile: Show when toggled, Desktop: Always show */}
+                                <div className={`md:block ${showAmbherServices ? 'block' : 'hidden'}`}>
                                 <div className="bg-white rounded-xl p-4 sm:p-6 border border-green-200">
                                   <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-green-700">Ambher Optical</span> specializes in comprehensive vision care and eye wellness services. Our experienced optometrists provide:
@@ -1868,13 +1938,8 @@ useEffect(() => {
                                       </div>
                                     </div>
                                   </div>
-                                  
-                                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                                    <p className="text-xs sm:text-sm text-green-800">
-                                      <i className="bx bx-info-circle mr-2"></i>
-                                      <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
-                                    </p>
-                                  </div>
+
+                                </div>
                                 </div>
                               </div>
                             </div>
@@ -1971,10 +2036,37 @@ useEffect(() => {
 
                               {/* Services Description */}
                               <div>
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                                  <i className="bx bx-list-check text-blue-600"></i>
-                                  Our Services
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <i className="bx bx-list-check text-blue-600"></i>
+                                    Our Services
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowBautistaServices(!showBautistaServices)}
+                                    style={{
+                                      display: isMobile ? 'flex' : 'none',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.375rem 0.75rem',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      color: '#1e40af',
+                                      backgroundColor: '#dbeafe',
+                                      borderRadius: '0.5rem',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = '#bfdbfe'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dbeafe'}
+                                  >
+                                    {showBautistaServices ? 'Hide Services' : 'Show Services'}
+                                    <i className={`bx ${showBautistaServices ? 'bx-chevron-up' : 'bx-chevron-down'} text-sm`}></i>
+                                  </button>
                                 </h3>
+                                {/* Mobile: Show when toggled, Desktop: Always show */}
+                                <div className={`md:block ${showBautistaServices ? 'block' : 'hidden'}`}>
                                 <div className="bg-white rounded-xl p-4 sm:p-6 border border-blue-200">
                                   <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-blue-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
@@ -2024,19 +2116,10 @@ useEffect(() => {
                                     </div>
                                   </div>
                                   
-                                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                                    <p className="text-xs sm:text-sm text-blue-800">
-                                      <i className="bx bx-info-circle mr-2"></i>
-                                      <span className="font-medium">Please specify your preferred service</span> in the additional notes section below when booking your appointment.
-                                    </p>
-                                  </div>
+
                                   
-                                  <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-amber-50 rounded-lg border border-amber-200">
-                                    <p className="text-xs text-amber-800 flex items-center gap-2">
-                                      <i className="bx bx-calendar-x text-amber-600"></i>
-                                      <span className="font-medium">Note:</span> Weekend appointments are not available at this location.
-                                    </p>
-                                  </div>
+
+                                </div>
                                 </div>
                               </div>
                             </div>
@@ -2541,12 +2624,12 @@ useEffect(() => {
                                        <p className="text-gray-600 mt-1 text-sm sm:text-base">View your scheduled appointment information</p>
                                      </div>
                                    </div>
-                                   <button 
+                                   <div 
                                      onClick={() => setviewpatientappointment(false)} 
                                      className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 hover:bg-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200 border-none cursor-pointer"
                                    >
                                      <i className="bx bx-x text-gray-600 text-xl sm:text-2xl"></i>
-                                   </button>
+                                   </div>
                                  </div>
                                </div>
 
@@ -3272,32 +3355,89 @@ useEffect(() => {
 
       <Footer />
       {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-[9999] p-4">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">
-              Confirm Logout
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Are you sure you want to log out? You will need to sign in again to access your account.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <button
-                onClick={cancelLogout}
-                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-200"
-              >
-                Log Out
-              </button>
+        {/* Logout Confirmation Modal */}
+        {showLogoutModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                marginBottom: '16px',
+                color: '#111827'
+              }}>
+                Confirm Logout
+              </h3>
+              <p style={{
+                fontSize: '16px',
+                color: '#6b7280',
+                marginBottom: '24px'
+              }}>
+                Are you sure you want to log out? You will need to sign in again to access your account.
+              </p>
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center'
+              }}>
+                <button
+                  onClick={cancelLogout}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+                >
+                  Log Out
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
     </>
    )
