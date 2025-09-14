@@ -1627,9 +1627,9 @@ useEffect(() => {
     <>
 
      {/* NavBar */}
-  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
+  <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
         <a id:logocontain href="#">
-          <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
+          <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
         </a>
 
         <ul id:listcontain  className="hidden xl:flex items-center gap-12 font-semibold text-base">

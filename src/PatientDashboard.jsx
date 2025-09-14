@@ -1577,12 +1577,12 @@ useEffect(() => {
       </style>
 
      {/* NavBar */}
-      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-2 sm:px-4 md:px-32 w-full drop-shadow-md z-50">
+      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
         <Link to="/patientlandingpage">
-          <img src={navlogo} alt="" className="w-28 sm:w-33 hover:scale-105 transition-all"></img>
+          <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
         </Link>
 
-        <ul className="hidden xl:flex items-center gap-8 lg:gap-12 font-semibold text-base">
+        <ul className="hidden xl:flex items-center gap-12 font-semibold text-base">
         <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li></Link>
         <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
         <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
