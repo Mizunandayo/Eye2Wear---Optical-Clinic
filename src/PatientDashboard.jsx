@@ -618,6 +618,13 @@ const [appointmentToastClosing, setAppointmentToastClosing] = useState(false);
 const [appointmentIsClicked, setAppointmentIsClicked] = useState(false);
 const [appointmentProgressWidth, setAppointmentProgressWidth] = useState('0%');
 
+// Profile update toast states
+const [profileToast, setProfileToast] = useState(false);
+const [profileToastMessage, setProfileToastMessage] = useState("");
+const [profileToastClosing, setProfileToastClosing] = useState(false);
+const [profileIsClicked, setProfileIsClicked] = useState(false);
+const [profileProgressWidth, setProfileProgressWidth] = useState('0%');
+
 
 
 
@@ -727,6 +734,39 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [appointmentToast]);
+
+// Profile toast auto-hide functionality
+useEffect(() => {
+  if (profileToast) {
+    setProfileProgressWidth('0%');
+    setProfileToastClosing(false);
+    setTimeout(() => {
+      setProfileProgressWidth('100%');
+    }, 100);
+    
+    const timer = setTimeout(() => {
+      setProfileToastClosing(true);
+      setTimeout(() => {
+        setProfileToast(false);
+        setProfileProgressWidth('0%');
+      }, 300);
+    }, 4000);
+    
+    return () => clearTimeout(timer);
+  }
+}, [profileToast]);
+
+// Helper function to show profile update toast
+const showProfileToast = (isSuccess, message) => {
+  setProfileIsClicked(isSuccess);
+  setProfileToastMessage(message);
+  setProfileToast(true);
+  setProfileToastClosing(false);
+};
+
+// Example usage for profile updates:
+// For successful profile update: showProfileToast(true, "Profile updated successfully!");
+// For failed profile update: showProfileToast(false, "Failed to update profile. Please try again.");
 
 
 
@@ -1719,7 +1759,7 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center px-2 sm:px-4" >
+    <section className="pb-50 motion-preset-slide-up bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center px-2 sm:px-4" >
     <div className="bg-cover bg-center h-full w-full flex items-center justify-center " >
 
       <div className="w-full h-full flex justify-start items-start pt-3 ">
@@ -1727,7 +1767,7 @@ useEffect(() => {
        <div  className="h-auto w-full flex flex-col items-center justify-center mb-3" >
 
       
-      <div id="appointment" className="bg-white w-full h-[100%] p-2 sm:p-4 mt-12 rounded-2xl" >  
+      <div id="appointment" className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 w-full h-[100%] p-2 sm:p-4 mt-12 rounded-2xl" >  
           
                 <div className="flex items-center justify-center w-full"><i className="bx bxs-calendar text-[#184d85] text-[20px] sm:text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[20px] sm:text-[25px]">Appointments</h1></div>
 
@@ -1773,7 +1813,7 @@ useEffect(() => {
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
   {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/} {/*Patient Appointment Booking*/}
                  { activeappointmenttable === 'bookappointment' && ( 
-                  <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 mt-6 sm:mt-25">
+                  <div id="bookappointment" className="animate-fadeInUp w-full max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 mt-6 sm:mt-5">
                     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                       
              
@@ -2332,7 +2372,7 @@ useEffect(() => {
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
-      { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-35 animate-fadeInUp flex flex-col items-start border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl" >
+      { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-16 animate-fadeInUp flex flex-col items-start border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl" >
                 
                 <div className="mb-40 flex justify-center items-start h-[500px] w-full rounded-3xl ">
 
@@ -3240,6 +3280,22 @@ useEffect(() => {
             {appointmentToastMessage}
 
             <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${appointmentIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: appointmentProgressWidth, transition: 'width 4s linear'}}/>
+          </div>
+        </div>  
+      )}
+
+      {/* Profile Update Toast Component */}
+      {profileToast && (
+        <div className="bottom-4 right-8 z-101 transform fixed">
+          <div key={profileIsClicked ? 'success' : 'error'} className={`${profileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+            {profileIsClicked ? (          
+              <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+            ) : (
+              <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+            )}
+            {profileToastMessage}
+
+            <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${profileIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: profileProgressWidth, transition: 'width 4s linear'}}/>
           </div>
         </div>  
       )}

@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import landinglogo from "../src/assets/images/landinglogo.png";
 import ambherlogo from "../src/assets/images/ambherlogo.png";
 import bautistalogo from "../src/assets/images/bautistalogo.png";
+import devopsbanner from "../src/assets/images/devopsbanner.png";
+
+
 
 function Footer() {
   return (
@@ -154,13 +157,22 @@ function Footer() {
           <div className="w-full h-full bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20"></div>
         </div>
 
+
+
         {/* Bottom Bar */}
         <div className="relative z-10 border-t border-gray-800/70 py-6 text-center text-xs text-gray-500">
           <div className="max-w-[1300px] mx-auto px-6">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div>
-                © {new Date().getFullYear()}{" "}
-                <span className="text-gray-300 font-medium">Eye2Wear</span>. All rights reserved.
+              <div className="flex flex-col items-center gap-4">
+                <img
+                  src={devopsbanner}
+                  alt="DevOps Banner"
+                  className="w-auto h-auto sm:h-auto"
+                />
+                <div>
+                  © {new Date().getFullYear()}{" "}
+                  <span className="text-gray-300 font-medium">Eye2Wear</span>. All rights reserved.
+                </div>
               </div>
 
             </div>

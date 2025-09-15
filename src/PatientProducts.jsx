@@ -1768,7 +1768,7 @@ useEffect(() => {
 
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center" >
+    <section className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center" >
     <div className="bg-cover bg-center h-auto w-full flex justify-center " >
 
       <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-2 sm:p-3">
@@ -1778,7 +1778,7 @@ useEffect(() => {
 
 
 
-              <div id="inventorymanagement" className="  pl-5 pr-5 pb-4 pt-8  transition-all duration-300  ease-in-out  w-[100%] h-full bg-white " >   
+              <div id="inventorymanagement" className="  pl-5 pr-5 pb-4 pt-8  transition-all duration-300  ease-in-out  w-[100%] h-full bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 " >   
 
               <div className=" flex items-center mt-8"><i className="bx bxs-shopping-bag text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Browse our Products</h1></div>
 

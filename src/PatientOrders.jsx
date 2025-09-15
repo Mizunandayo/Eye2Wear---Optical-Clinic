@@ -869,7 +869,7 @@ useEffect(() => {
       </header>
 
     {/* First Section */}
-    <section className="motion-preset-slide-up bg-cover bg-center min-h-[100vh] h-auto w-[100vw] flex justify-center align-center pb-50" >
+    <section className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 motion-preset-slide-up bg-cover bg-center min-h-[100vh] h-auto w-[100vw] flex justify-center align-center pb-50" >
     <div className="bg-cover bg-center h-auto w-full flex  justify-center " >
 
       <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-3">
@@ -879,7 +879,7 @@ useEffect(() => {
 
 
 
-              <div id="patientordersmanagement" className="px-4 sm:px-5 pb-4 pt-8 transition-all duration-300 ease-in-out w-full h-full bg-white">   
+              <div id="patientordersmanagement" className="px-4 sm:px-5 pb-4 pt-8 transition-all duration-300 ease-in-out w-full h-full bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100">   
 
               <div className="flex items-center mt-8"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">My Orders</h1></div>
 

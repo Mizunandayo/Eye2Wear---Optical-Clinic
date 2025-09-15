@@ -1127,8 +1127,12 @@ const WishlistGridSkeleton = () => (
         </div>
       </header>
 
+
+
+
+
       {/* First Section */}
-      <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
+      <section className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
         <div className="bg-cover bg-center h-auto w-full flex justify-center " >
 
         <div className="w-full h-auto flex flex-col justify-start items-start pt-3 p-3">
@@ -1138,7 +1142,7 @@ const WishlistGridSkeleton = () => (
 
 
 
-                <div id="inventorymanagement" className="pl-5 pr-5 pb-4 pt-8   transition-all duration-300  ease-in-out  w-[100%] h-full bg-white " >   
+                <div id="inventorymanagement" className="pl-5 pr-5 pb-4 pt-8   transition-all duration-300  ease-in-out  w-[100%] h-full bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 " >   
 
                 <div className="flex items-center mt-8 px-2">
                   <img src={heart} className="w-6 sm:w-7 mr-2"/>

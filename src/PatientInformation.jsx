@@ -8,7 +8,7 @@ import Typewriter from "typewriter-effect";
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {faEye, faClock, faUser, faPhone, faHome, faCalendar, faUserShield, faCamera, faEdit} from "@fortawesome/free-solid-svg-icons";
+import {faEye, faClock, faUser, faPhone, faHome, faCalendar, faUserShield, faCamera, faEdit, faTrash} from "@fortawesome/free-solid-svg-icons";
 import {faEye as faEyeRegular} from "@fortawesome/free-regular-svg-icons";
 import defaultprofilepic from '../src/assets/images/defaulticon.png'
 import { GenderBox } from "./components/GenderBox";
@@ -116,7 +116,7 @@ function PatientInformation(){
     setpreviewimage(null);
     setdemographicformdata(prev => ({
       ...prev,
-      patientprofilepicture: 'default-profile-url'
+      patientprofilepicture: ''
     }))
     if(imageinputref.current){
       imageinputref.current.value = "";
@@ -130,6 +130,25 @@ function PatientInformation(){
   const handleprofilechange = (e) => {
     const file = e.target.files[0];
     if(file){
+      // Client-side validation
+      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB limit (more reasonable than 50MB)
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      
+      // Check file size
+      if (file.size > maxSizeInBytes) {
+        showProfileToast(false, "Image file is too large. Please choose an image smaller than 10MB.");
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        showProfileToast(false, "Invalid file format. Please choose a JPG, PNG, GIF, or WebP image.");
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      setselectedprofile(file);
       const reader = new FileReader();
       reader.onloadend = () =>{
         setdemographicformdata(prev => ({
@@ -138,6 +157,10 @@ function PatientInformation(){
         }));
 
         setpreviewimage(reader.result);
+      };
+      
+      reader.onerror = () => {
+        showProfileToast(false, "Error reading the image file. Please try again.");
       };
 
       reader.readAsDataURL(file);
@@ -178,7 +201,7 @@ function PatientInformation(){
     setshowlogoutbtn(!showlogoutbtn);
   }
 
-  const {handlelogout, fetchpatientdetails, fetchpatientdemographicbyemail} = useAuth();
+  const {handlelogout, fetchpatientdetails, fetchpatientdemographicbyemail, showLogoutModal, confirmLogout, cancelLogout} = useAuth();
   
 
 
@@ -268,26 +291,46 @@ function PatientInformation(){
       loadpatientaccount();
   }, [fetchpatientdetails, fetchpatientdemographicbyemail]);
 
+  // Toast state variables - moved here to be declared before useEffect
+  const [profileToast, setProfileToast] = useState(false);
+  const [profileToastMessage, setProfileToastMessage] = useState("");
+  const [profileToastClosing, setProfileToastClosing] = useState(false);
+  const [profileIsClicked, setProfileIsClicked] = useState(false);
+  const [profileProgressWidth, setProfileProgressWidth] = useState('0%');
 
+  // Toast auto-close effect
+  useEffect(() => {
+    if (profileToast) {
+      setProfileProgressWidth('0%');
+      setProfileToastClosing(false);
+      
+      // Start progress bar
+      setTimeout(() => {
+        setProfileProgressWidth('100%');
+      }, 100);
+      
+      // Close toast after 4 seconds
+      const timeout = setTimeout(() => {
+        setProfileToastClosing(true);
+        setTimeout(() => {
+          setProfileToast(false);
+        }, 3000); // 3s for closing animation
+      }, 4000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [profileToast]);
 
+  // Function to show profile toast
+  const showProfileToast = (isSuccess, message) => {
+    setProfileIsClicked(isSuccess);
+    setProfileToastMessage(message);
+    setProfileToast(true);
+    setProfileToastClosing(false);
+  };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const [message, setmessage] = useState('');
-    const [issubmitting, setissubmitting] = useState(false);
+  const [message, setmessage] = useState('');
+  const [issubmitting, setissubmitting] = useState(false);
    
 
 
@@ -378,19 +421,29 @@ const submitpatientdemographic = async (e) => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to save demographic data");
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse error response:", parseError);
+        // If response is not JSON, create a generic error based on status
+        errorData = { 
+          message: response.status === 413 
+            ? "Image file is too large. Please choose a smaller image." 
+            : `Server error (${response.status}). Please try again.` 
+        };
+      }
+      
+      throw new Error(errorData.message || `HTTP ${response.status}: Failed to save demographic data`);
     }
 
     const responsedata = await response.json();
     console.log("Success: ", responsedata);
     
-    setmessage({
-      text: isexistingdemographic 
-        ? "Updated Patient Demographic Successfully" 
-        : "Created Patient Demographic Successfully",
-      type: "success"
-    });
+    // Show success toast
+    showProfileToast(true, isexistingdemographic 
+      ? "Updated Patient Demographic Successfully" 
+      : "Created Patient Demographic Successfully");
 
     if(!isexistingdemographic && responsedata._id) {
       setisexistingdemographic(true);
@@ -399,10 +452,33 @@ const submitpatientdemographic = async (e) => {
 
   } catch(error) {
     console.error("Error: ", error);
-    setmessage({
-      text: error.message || "Failed, Please try again",
-      type: "error"
-    });
+    // Show error toast with specific error message
+    let errorMessage = "Failed to update profile. Please try again.";
+    
+    if (error.message) {
+      if (error.message.includes("413") || error.message.includes("file size") || error.message.includes("size limit") || error.message.includes("too large")) {
+        errorMessage = "Image file is too large. Please choose a smaller image (max 50MB).";
+      } else if (error.message.includes("file type") || error.message.includes("format") || error.message.includes("Invalid")) {
+        errorMessage = "Invalid file format. Please choose a valid image file.";
+      } else if (error.message.includes("400")) {
+        errorMessage = "Invalid data provided. Please check all required fields.";
+      } else if (error.message.includes("401") || error.message.includes("unauthorized")) {
+        errorMessage = "Session expired. Please log in again.";
+      } else if (error.message.includes("403") || error.message.includes("forbidden")) {
+        errorMessage = "You don't have permission to perform this action.";
+      } else if (error.message.includes("404") || error.message.includes("not found")) {
+        errorMessage = "Profile not found. Please refresh and try again.";
+      } else if (error.message.includes("500") || error.message.includes("Server error")) {
+        errorMessage = "Server error occurred. This might be due to a large image file or server issue. Please try with a smaller image or contact support.";
+      } else if (error.message.includes("Network")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else {
+        // Use the actual error message from server
+        errorMessage = error.message;
+      }
+    }
+    
+    showProfileToast(false, errorMessage);
   } finally {
     setissubmitting(false);
   }
@@ -465,7 +541,7 @@ const submitpatientdemographic = async (e) => {
     <>
       <header className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-lg z-50 transition-all duration-300">
         <div className=" max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className=" flex justify-between items-center h-16">
+          <div className=" flex justify-between items-center h-13">
             {/* Logo */}
             <div className="flex-shrink-0">
               <img 
@@ -570,13 +646,13 @@ const submitpatientdemographic = async (e) => {
                       Demographic Profile
                     </Link>
                     
-                    <button
+                    <div
                       onClick={handlelogout}
-                      className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      className="cursor-pointer w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
                       Logout
-                    </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -592,27 +668,23 @@ const submitpatientdemographic = async (e) => {
         </div>
       </header>
 
+
+
+
+
+
+
+
       {/* Main Content */}
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 pt-16">
         <div className="container mx-auto px-4 py-8">
-          {/* Back Button */}
-          <div className="mb-8">
-            <Link 
-              to="/patientlandingpage" 
-              className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Home
-            </Link>
-          </div>
+
 
           {/* Main Card */}
           <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="mb-20 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-8 py-6">
+              <div className="bg-sky-600 px-8 py-6">
                 <div className="flex items-center justify-center">
                   <div className="bg-white/20 p-3 rounded-full mr-4">
                     <FontAwesomeIcon icon={faEye} className="text-white text-2xl" />
@@ -665,10 +737,10 @@ const submitpatientdemographic = async (e) => {
                           <div className="flex flex-col items-center space-y-4">
                             <div className="relative group">
                               <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                              {previewimage || (defaultprofilepic && defaultprofilepic !== '') ? (
+                              {previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? (
                                 <img 
                                   className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                                  src={previewimage || defaultprofilepic}
+                                  src={demographicformdata.patientprofilepicture}
                                   alt="Profile"
                                   onError={(e) => {
                                     e.target.style.display = 'none';
@@ -679,9 +751,9 @@ const submitpatientdemographic = async (e) => {
                               {/* Fallback placeholder when no image */}
                               <div 
                                 className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                                  previewimage || (defaultprofilepic && defaultprofilepic !== '') ? 'hidden' : 'flex'
+                                  previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
                                 }`}
-                                style={{ display: previewimage || (defaultprofilepic && defaultprofilepic !== '') ? 'none' : 'flex' }}
+                                style={{ display: previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
                               >
                                 <div className="text-center">
                                   <FontAwesomeIcon 
@@ -691,7 +763,7 @@ const submitpatientdemographic = async (e) => {
                                   <p className="text-sky-600 text-sm font-medium">No Photo</p>
                                 </div>
                               </div>
-                              <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                                 <FontAwesomeIcon 
                                   icon={faCamera} 
                                   className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"
@@ -703,31 +775,31 @@ const submitpatientdemographic = async (e) => {
                               className="hidden" 
                               type="file" 
                               onChange={handleprofilechange} 
-                              accept="image/jpeg, image/jpg, image/png" 
+                              accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
                               ref={imageinputref} 
                             />
                             
-                            <button
-                              type="button"
-                              onClick={handleuploadclick}
-                              className="flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                            >
-                              <FontAwesomeIcon icon={faCamera} className="mr-2" />
-                              Upload Photo
-                            </button>
-                            
-                            {selectedprofile && (
-                              <button
+                            <div className="flex items-center gap-2">
+                              {(selectedprofile || previewimage) && (
+                                <button
+                                  type="button"
+                                  onClick={handleremoveprofile}
+                                  className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                  title="Remove Photo"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                                </button>
+                              )}
+                              
+                              <div
                                 type="button"
-                                onClick={handleremoveprofile}
-                                className="flex items-center px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                onClick={handleuploadclick}
+                                className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                               >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Remove
-                              </button>
-                            )}
+                                <FontAwesomeIcon icon={faCamera} className="mr-2" />
+                                Upload Photo
+                              </div>
+                            </div>
                           </div>
                         </div>
 
@@ -737,9 +809,7 @@ const submitpatientdemographic = async (e) => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <label className="flex items-center text-sm font-medium text-gray-700">
-                                <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
-                                  <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
-                                </div>
+
                                 Last Name
                               </label>
                               <input 
@@ -756,9 +826,7 @@ const submitpatientdemographic = async (e) => {
 
                             <div className="space-y-2">
                               <label className="flex items-center text-sm font-medium text-gray-700">
-                                <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
-                                  <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
-                                </div>
+
                                 First Name
                               </label>
                               <input 
@@ -776,9 +844,7 @@ const submitpatientdemographic = async (e) => {
 
                           <div className="space-y-2">
                             <label className="flex items-center text-sm font-medium text-gray-700">
-                              <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
-                                <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
-                              </div>
+
                               Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
                             </label>
                             <input 
@@ -796,9 +862,7 @@ const submitpatientdemographic = async (e) => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <label className="flex items-center text-sm font-medium text-gray-700">
-                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                  <FontAwesomeIcon icon={faCalendar} className="text-green-600 text-sm" />
-                                </div>
+
                                 Birthdate
                               </label>
                               <input 
@@ -814,9 +878,7 @@ const submitpatientdemographic = async (e) => {
 
                             <div className="space-y-2">
                               <label className="flex items-center text-sm font-medium text-gray-700">
-                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                                  <span className="text-gray-600 text-sm font-medium">#</span>
-                                </div>
+
                                 Age
                               </label>
                               <input 
@@ -834,11 +896,7 @@ const submitpatientdemographic = async (e) => {
                           {/* Gender */}
                           <div className="space-y-2">
                             <label className="flex items-center text-sm font-medium text-gray-700">
-                              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                </svg>
-                              </div>
+
                               Gender
                             </label>
                             <div className="mt-2">
@@ -849,9 +907,7 @@ const submitpatientdemographic = async (e) => {
                           {/* Contact Information */}
                           <div className="space-y-2">
                             <label className="flex items-center text-sm font-medium text-gray-700">
-                              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                                <FontAwesomeIcon icon={faPhone} className="text-indigo-600 text-sm" />
-                              </div>
+
                               Contact Number
                             </label>
                             <input 
@@ -868,9 +924,7 @@ const submitpatientdemographic = async (e) => {
 
                           <div className="space-y-2">
                             <label className="flex items-center text-sm font-medium text-gray-700">
-                              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                                <FontAwesomeIcon icon={faHome} className="text-orange-600 text-sm" />
-                              </div>
+
                               Home Address
                             </label>
                             <input 
@@ -902,9 +956,7 @@ const submitpatientdemographic = async (e) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                 <label className="flex items-center text-sm font-medium text-gray-700">
-                                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                                    <FontAwesomeIcon icon={faUser} className="text-red-600 text-sm" />
-                                  </div>
+
                                   Contact Name
                                 </label>
                                 <input 
@@ -921,9 +973,7 @@ const submitpatientdemographic = async (e) => {
 
                               <div className="space-y-2">
                                 <label className="flex items-center text-sm font-medium text-gray-700">
-                                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                                    <FontAwesomeIcon icon={faPhone} className="text-red-600 text-sm" />
-                                  </div>
+
                                   Contact Number
                                 </label>
                                 <input 
@@ -982,6 +1032,106 @@ const submitpatientdemographic = async (e) => {
       </div>
 
       <Footer />
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#111827'
+            }}>
+              Confirm Logout
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#6b7280',
+              marginBottom: '24px'
+            }}>
+              Are you sure you want to log out? You will need to sign in again to access your account.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Update Toast Component */}
+      {profileToast && (
+        <div className="bottom-4 right-8 z-101 transform fixed">
+          <div key={profileIsClicked ? 'success' : 'error'} className={`${profileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+            {profileIsClicked ? (          
+              <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+            ) : (
+              <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+            )}
+            {profileToastMessage}
+
+            <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${profileIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: profileProgressWidth, transition: 'width 4s linear'}}/>
+          </div>
+        </div>  
+      )}
     </>
   )
   }
