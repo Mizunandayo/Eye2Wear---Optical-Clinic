@@ -9,6 +9,7 @@ import PatientLandingpage from "./PatientLandingpage";
 import PatientInformation from "./PatientInformation";
 import AdminDashboard from "./AdminDashboard";
 import ResetPassword from "./ResetPassword";
+import EmailVerification from "./EmailVerification";
 import PatientDashboard from "./PatientDashboard";
 import PatientProducts from "./PatientProducts";
 import PatientWishlist from "./PatientWishlist";
@@ -3866,6 +3867,7 @@ export default function App() {
         <Route path="/patientinformation" element={<PatientInformation />} />
         <Route path="/admindashboard" element={<AdminDashboard />} />
         <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:id/:token" element={<EmailVerification />} />
         <Route path="/patientdashboard" element={<PatientDashboard />} />
         <Route path="/patientproducts" element={<PatientProducts />} />
         <Route path="/patientwishlist" element={<PatientWishlist />} />

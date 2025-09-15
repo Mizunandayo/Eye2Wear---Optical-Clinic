@@ -199,18 +199,17 @@ function PatientRegistration() {
 
   //If response is not ok
       if(!response.ok){
-        throw new Error("Registration Failed")
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Registration Failed")
       }
 
         //If response is success, it will send data to the api and to the database   
-       await response.json();
+       const result = await response.json();
 
-       setmessage({
-        text:"Registration Sucessful!",
-         type:"success"});
-
-
-
+       if(result.success){
+         setmessage({
+          text: result.message,
+           type:"success"});
 
          //Resets the input forms except the profile picture
         setformdata({
@@ -223,10 +222,16 @@ function PatientRegistration() {
           patientprofilepicture:defaultprofilepicbase64
         })
 
-                         //AUTOMATIC NAVIGATION AFTER SUCCESSFUL LOGIN
-                         setTimeout(() => {
-                          navigate("/userlogin");
-                      }, 2000);
+        //Navigate to login page after successful registration
+        setTimeout(() => {
+          navigate("/userlogin");
+        }, 3000);
+       } else {
+         setmessage({
+          text: result.message || "Registration failed. Please try again.",
+          type:"error"
+         });
+       }
       } 
       
       
@@ -235,15 +240,9 @@ function PatientRegistration() {
       catch(error){
         console.error("Error:", error)
         setmessage({
-          text:"Registration Failed. Try again", 
+          text: error.message || "Registration Failed. Try again", 
           type:"error"
         })
-
-
-
-
-
-        
       }finally{
         setissubmitting(false)
       }

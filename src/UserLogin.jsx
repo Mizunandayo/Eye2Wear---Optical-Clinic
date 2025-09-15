@@ -32,6 +32,8 @@ function UserLogin(){
          //VARIABLES
          const [islogin, setislogin] = useState(false);
          const [loginnotice, setloginnotice] = useState({text:'', type:''});
+         const [showResendVerification, setShowResendVerification] = useState(false);
+         const [isResendingVerification, setIsResendingVerification] = useState(false);
          const navigate = useNavigate();
 
 
@@ -240,15 +242,61 @@ else if(user === 'Owner'){
           //USES ERROR TO DISPLAY ERROR DATA
           catch (error){
               console.error("Error Login:", error);
+              const errorMessage = error.message || "Login Failed:";
+              
               setloginnotice({
-                  text:  error.message || "Login Failed:",
+                  text: errorMessage,
                   type: "error"
               });
+
+              // Show resend verification option if account is not verified
+              if (errorMessage.includes("not verified")) {
+                setShowResendVerification(true);
+              } else {
+                setShowResendVerification(false);
+              }
           }
           finally{
               setislogin(false);
           }
         };
+
+    // Handle resend verification email
+    const handleResendVerification = async () => {
+      setIsResendingVerification(true);
+      try {
+        const response = await fetch('/api/patientaccounts/resend-verification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ patientemail: logindetails.loginemail }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          setloginnotice({
+            text: 'Verification email sent successfully! Please check your inbox.',
+            type: 'success'
+          });
+          setShowResendVerification(false);
+        } else {
+          setloginnotice({
+            text: result.message || 'Failed to resend verification email.',
+            type: 'error'
+          });
+        }
+      } catch (error) {
+        console.error('Error resending verification:', error);
+        setloginnotice({
+          text: 'An error occurred while resending verification email.',
+          type: 'error'
+        });
+      } finally {
+        setIsResendingVerification(false);
+      }
+    };
 
     
 
@@ -350,6 +398,21 @@ else if(user === 'Owner'){
              {loginnotice.text}
           </div>
          )}
+         
+         {/* Resend Verification Button */}
+         {showResendVerification && (
+           <div className="mt-2 text-center lg:text-left">
+             <button
+               type="button"
+               onClick={handleResendVerification}
+               disabled={isResendingVerification}
+               className="text-[#125c99] hover:text-[#0f4a7a] font-medium text-sm underline disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
+             </button>
+           </div>
+         )}
+         
               <h1 className="font-albertsans italic text-[#060606] text-base lg:text-[20px] text-center lg:text-left">Hi there nice to see you again.</h1>
 
 

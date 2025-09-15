@@ -14,11 +14,11 @@ import {
       getpatientbyemail,
       //forgotpassword,
       deletePatient,
+      verifyEmail,
+      resendVerificationEmail,
+      verifyManagementAuth,
      } from "../controllers/patientaccount.controller.js";
       
-
-
-import {verifyloggedinadminacc} from "../controllers/adminaccount.controller.js";
 
 const patientrouter = express.Router();
 
@@ -51,7 +51,7 @@ patientrouter.post("/", createPatient);
 patientrouter.put("/:id", updatePatient);
 
 //Delete Patient data
-patientrouter.delete("/:id", verifyloggedinadminacc, deletePatient);
+patientrouter.delete("/:id", verifyManagementAuth, deletePatient);
 
 
 
@@ -59,6 +59,10 @@ patientrouter.delete("/:id", verifyloggedinadminacc, deletePatient);
 patientrouter.post("/login", patientlogin);
 //patientrouter.post('/forgot-password', forgotpassword );
 //patientrouter.post('/reset-password/:id/:token', resetpassword );
+
+//Email Verification Routes
+patientrouter.get("/verify-email/:id/:token", verifyEmail);
+patientrouter.post("/resend-verification", resendVerificationEmail);
 
 
 

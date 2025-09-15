@@ -2,6 +2,8 @@
 import Patientaccount from "../models/patientaccount.js";
 import bcrypt  from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 import dotenv from "dotenv";
 
 
@@ -22,6 +24,62 @@ const generateAuthToken = (patient) => {
     name: `${patient.patientfirstname} ${patient.patientlastname}`
   },
   process.env.JWT_SECRET, { expiresIn: "30d" }); // Increased expiration
+}
+
+// Unified middleware to verify admin, staff, or owner authentication for patient management
+export const verifyManagementAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization required' });
+    }
+
+    // Try to verify with JWT_SECRET first (staff/owner tokens)
+    try {
+      const tokendecoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Check if it's a staff or owner token
+      if (tokendecoded.role === 'staff' || tokendecoded.role === 'owner') {
+        req.user = {
+          id: tokendecoded.id,
+          email: tokendecoded.email,
+          role: tokendecoded.role,
+          clinic: tokendecoded.clinic
+        };
+        return next();
+      }
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      // If JWT_SECRET fails, try JWT_KEY (admin tokens)
+      try {
+        const tokendecoded = jwt.verify(token, process.env.JWT_KEY);
+        req.user = {
+          id: tokendecoded.id,
+          role: 'admin'
+        };
+        return next();
+      } catch (adminError) {
+        console.error("Token verification failed for both JWT_SECRET and JWT_KEY:", adminError);
+        return res.status(401).json({
+          message: "Invalid token",
+          error: adminError.message
+        });
+      }
+    }
+
+    // If we get here, the token was valid but the role wasn't authorized
+    return res.status(403).json({
+      message: "Insufficient permissions. Only admin, staff, or owner can perform this action."
+    });
+
+  } catch (error) {
+    console.error("Authorization error:", error);
+    res.status(401).json({
+      message: "Invalid token",
+      error: error.message
+    });
+  }
 }
 
 // In verifyloggedinpatientacc:
@@ -194,10 +252,39 @@ export const existingemail = async (req, res) => {
 //Create (Patient) Controller
 export const createPatient = async (req, res) => {
   try {
-    const patientacc = await Patientaccount.create(req.body);
-    res.status(200).json(patientacc);
+    // Ensure the account is created as unverified
+    const patientData = {
+      ...req.body,
+      isVerified: false
+    };
+
+    const patientacc = await Patientaccount.create(patientData);
+    
+    // Send verification email
+    const emailResult = await sendVerificationEmail(patientacc);
+    
+    if (emailResult.success) {
+      // Return success without sensitive data
+      const { patientpassword: _, verificationtoken: __, ...safePatientData } = patientacc.toObject();
+      
+      res.status(201).json({
+        success: true,
+        message: "Account created successfully! Please check your email to verify your account.",
+        patient: safePatientData
+      });
+    } else {
+      // If email fails, we should still create the account but inform the user
+      res.status(201).json({
+        success: true,
+        message: "Account created successfully, but there was an issue sending the verification email. Please try to resend it later.",
+        emailError: true
+      });
+    }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
   }
 };
 
@@ -295,5 +382,175 @@ export const patientlogin = async(req, res) => {
     res.status(500).json({message:"Server Failed"});
   }
 };
+
+// Email verification functions
+const sendVerificationEmail = async (patient) => {
+  try {
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update patient with verification token
+    await Patientaccount.findByIdAndUpdate(patient._id, {
+      verificationtoken: verificationToken,
+      verificationtokenexpires: verificationTokenExpires
+    });
+
+    // Configure nodemailer
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    // Create verification link
+    const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${patient._id}/${verificationToken}`;
+
+    // Email template
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: patient.patientemail,
+      subject: "Eye2Wear - Email Verification",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #125c99; margin: 0;">Eye2Wear</h1>
+            <h2 style="color: #333; margin: 10px 0;">Welcome to Eye2Wear!</h2>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              Dear ${patient.patientfirstname} ${patient.patientlastname},
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              Thank you for registering with Eye2Wear! To complete your registration and activate your account, 
+              please click the verification button below:
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" 
+               style="background-color: #125c99; color: white; padding: 15px 30px; text-decoration: none; 
+                      border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+              Verify Your Email
+            </a>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 14px; line-height: 1.5;">
+              If the button above doesn't work, you can copy and paste this link into your browser:
+            </p>
+            <p style="color: #125c99; font-size: 14px; word-break: break-all;">
+              ${verificationLink}
+            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+              This verification link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 12px;">
+              © 2024 Eye2Wear. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Verify email controller
+export const verifyEmail = async (req, res) => {
+  try {
+    const { id, token } = req.params;
+
+    // Find patient with matching ID and valid token
+    const patient = await Patientaccount.findOne({
+      _id: id,
+      verificationtoken: token,
+      verificationtokenexpires: { $gt: new Date() }
+    });
+
+    if (!patient) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification link"
+      });
+    }
+
+    // Update patient as verified and remove verification token
+    await Patientaccount.findByIdAndUpdate(id, {
+      isVerified: true,
+      verificationtoken: undefined,
+      verificationtokenexpires: undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully! You can now log in to your account."
+    });
+
+  } catch (error) {
+    console.error("Email verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during email verification"
+    });
+  }
+};
+
+// Resend verification email controller
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { patientemail } = req.body;
+
+    const patient = await Patientaccount.findOne({ patientemail });
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Account not found"
+      });
+    }
+
+    if (patient.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Account is already verified"
+      });
+    }
+
+    const emailResult = await sendVerificationEmail(patient);
+
+    if (emailResult.success) {
+      res.status(200).json({
+        success: true,
+        message: "Verification email sent successfully"
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "Failed to send verification email"
+      });
+    }
+
+  } catch (error) {
+    console.error("Error resending verification email:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+export { sendVerificationEmail };
 
 
