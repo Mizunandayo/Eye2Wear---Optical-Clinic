@@ -3318,7 +3318,6 @@ return (
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Eye Specialist</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center rounded-tr-2xl">Actions</th>
 
@@ -3383,11 +3382,7 @@ return (
             </td>
             <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">{staff.staffclinic}</td>
             <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.staffiseyespecialist}</td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
-              <span className={`rounded-2xl text-xs px-5 py-4 ${staff.isVerified ? 'text-green-800 bg-green-100' : 'text-yellow-800 bg-yellow-100'}`}>
-                {staff.isVerified ? 'Active' : 'Pending'}
-              </span>
-            </td>
+
             <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
               {new Date(staff.createdAt).toLocaleDateString('en-US',{
                 month: 'short',
@@ -3960,7 +3955,6 @@ const staffhandlechange = (e) => {
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Eye Specialist</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
             <th className={`pb-3 pt-3 pl-2 pr-2 text-center ${currentuserloggedin === "Staff" ? "rounded-tr-2xl" : ""}`}>Date Created</th>
             {currentuserloggedin !== "Staff" && (
               <>
@@ -4023,11 +4017,6 @@ const staffhandlechange = (e) => {
               </td>
               <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">{owner.ownerclinic}</td>
               <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{owner.owneriseyespecialist}</td>
-              <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
-                <span className={`rounded-2xl text-xs px-5 py-4 ${owner.isVerified ? 'text-green-800 bg-green-100' : 'text-yellow-800 bg-yellow-100'}`}>
-                  {owner.isVerified ? 'Active' : 'Pending'}
-                </span>
-              </td>
               <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
                 {new Date(owner.createdAt).toLocaleDateString('en-US',{
                   month: 'short',
@@ -4580,7 +4569,6 @@ return (
         <th className="pb-3 pt-3 pl-2 pr-2 text-center">Firstname</th>
         <th className="pb-3 pt-3 pl-2 pr-2 text-center">Middlename</th>
         <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
-        <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
         <th className={`pb-3 pt-3 pl-2 pr-2 text-center ${currentuserloggedin === "Staff" ? "rounded-tr-2xl" : ""}`}>Date Created</th>
         {currentuserloggedin !== "Staff" && (
           <>
@@ -4641,11 +4629,7 @@ return (
             </a>
 
           </td>
-          <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
-            <span className={`rounded-2xl text-xs px-5 py-4 ${admin.isVerified ? 'text-green-800 bg-green-100' : 'text-yellow-800 bg-yellow-100'}`}>
-              {admin.isVerified ? 'Active' : 'Pending'}
-            </span>
-          </td>
+
           <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
             {new Date(admin.createdAt).toLocaleDateString('en-US',{
               month: 'short',
@@ -12922,33 +12906,151 @@ const refreshProfileData = useCallback(async () => {
 
 // Refresh Account Management data function
 const refreshAccountData = useCallback(async () => {
-  console.log('🔄 Manual refresh of account data triggered');
+  console.log('🔄 Manual refresh of all account data triggered');
   
-  if (activeaccounttable === 'patientaccounttable') {
-    setloadingpatients(true);
-    try {
-      const fetchresponse = await fetch('/api/patientaccounts', {
-        headers: {
-          'Authorization': `Bearer ${currentusertoken}`
-        }
-      });
-      
-      if(!fetchresponse.ok){
+  // Set all loading states to true
+  setloadingpatients(true);
+  setloadingstaffs(true);
+  setloadingowners(true);
+  setloadingadmins(true);
+  
+  // Clear any previous error states
+  setfailedloadingpatients(null);
+  setfailedloadingstaffs(null);
+  setfailedloadingowners(null);
+  setfailedloadingadmins(null);
+
+  // Fetch all account types in parallel
+  const fetchPromises = [];
+
+  // Fetch patients
+  fetchPromises.push(
+    fetch('/api/patientaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
         throw new Error("Failed to fetch patient accounts");
       }
-
-      const patientdata = await fetchresponse.json();
+      return response.json();
+    })
+    .then(patientdata => {
       setpatients(patientdata);
       console.log('✅ Patient account data refresh completed');
-    } catch (error) {
+    })
+    .catch(error => {
       console.error('❌ Error refreshing patient account data:', error);
       setfailedloadingpatients(error.message);
-    } finally {
+    })
+    .finally(() => {
       setloadingpatients(false);
-    }
+    })
+  );
+
+  // Fetch staffs
+  fetchPromises.push(
+    fetch('/api/staffaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch staff accounts");
+      }
+      return response.json();
+    })
+    .then(staffdata => {
+      // Apply clinic filtering (except for Admin)
+      if (currentuserloggedin !== "Admin") {
+        if (isAmbherOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Ambher Optical");
+        } else if (isBautistaOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Bautista Eye Center");
+        }
+      }
+      setstaffs(staffdata);
+      console.log('✅ Staff account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing staff account data:', error);
+      setfailedloadingstaffs(error.message);
+    })
+    .finally(() => {
+      setloadingstaffs(false);
+    })
+  );
+
+  // Fetch owners
+  fetchPromises.push(
+    fetch('/api/owneraccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch owner accounts");
+      }
+      return response.json();
+    })
+    .then(ownerdata => {
+      // Apply clinic filtering (except for Admin)
+      if (currentuserloggedin !== "Admin") {
+        if (isAmbherOnlyUser()) {
+          ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Ambher Optical");
+        } else if (isBautistaOnlyUser()) {
+          ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Bautista Eye Center");
+        }
+      }
+      setowners(ownerdata);
+      console.log('✅ Owner account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing owner account data:', error);
+      setfailedloadingowners(error.message);
+    })
+    .finally(() => {
+      setloadingowners(false);
+    })
+  );
+
+  // Fetch admins
+  fetchPromises.push(
+    fetch('/api/adminaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch admin accounts");
+      }
+      return response.json();
+    })
+    .then(admindata => {
+      setadmins(admindata);
+      console.log('✅ Admin account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing admin account data:', error);
+      setfailedloadingadmins(error.message);
+    })
+    .finally(() => {
+      setloadingadmins(false);
+    })
+  );
+
+  // Wait for all fetches to complete
+  try {
+    await Promise.allSettled(fetchPromises);
+    console.log('🎉 All account data refresh operations completed');
+  } catch (error) {
+    console.error('❌ Unexpected error during account data refresh:', error);
   }
-  // TODO: Add refresh logic for other account types (staff, owner, admin) when needed
-}, [activeaccounttable, currentusertoken]);
+}, [currentusertoken, currentuserloggedin, isAmbherOnlyUser, isBautistaOnlyUser]);
 
 // Initialize SMS data when component mounts
 useEffect(() => {
@@ -16195,11 +16297,11 @@ useEffect(() => {
     </div>
     <div
       onClick={refreshAccountData}
-      disabled={loadingpatients}
+      disabled={loadingpatients || loadingstaffs || loadingowners || loadingadmins}
       className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
     >
-      <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
-      {loadingpatients ? 'Refreshing...' : 'Refresh'}
+      <RefreshCw className={`w-4 h-4 mr-2 ${(loadingpatients || loadingstaffs || loadingowners || loadingadmins) ? 'animate-spin' : ''}`} />
+      {(loadingpatients || loadingstaffs || loadingowners || loadingadmins) ? 'Refreshing...' : 'Refresh'}
     </div>
   </div>
   <div className={`flex ${isAdminRole ? 'justify-start' : 'justify-between'} items-center mt-3 h-[60px] ${isAdminRole ? 'gap-4' : ''}`}>
