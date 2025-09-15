@@ -8,7 +8,8 @@ import Typewriter from "typewriter-effect";
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {faEye, faClock} from "@fortawesome/free-regular-svg-icons";
+import {faEye, faClock, faUser, faPhone, faHome, faCalendar, faUserShield, faCamera, faEdit} from "@fortawesome/free-solid-svg-icons";
+import {faEye as faEyeRegular} from "@fortawesome/free-regular-svg-icons";
 import defaultprofilepic from '../src/assets/images/defaulticon.png'
 import { GenderBox } from "./components/GenderBox";
 import { useAuth } from "./hooks/patientuseAuth";
@@ -462,834 +463,527 @@ const submitpatientdemographic = async (e) => {
 
   return (
     <>
-
-     {/* NavBar */}
-      <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32  w-[99vw] drop-shadow-md z-50">
-        <a id:logocontain href="#">
-          <img src={navlogo} alt="" className="w-33  hover:scale-105 transition-all"></img>
-        </a>
-
-        <ul id:listcontain  className="hidden xl:flex items-center gap-12 font-semibold text-base">
-        <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black  rounded-md transition-all cursor-pointer">Home</li></Link>
-        <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
-        <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
-         <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
-        <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
-        <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-
-
-
-
-        </ul>
-
-      {/* Search 
-      
-              <div className="relative hidden md:flex items-center justify-center gap-3">
-          <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
-          <input type="text" placeholder="Search..." className="py-2 pl-10 rounded-xl border-2 border-blue-300 focus:bg-slate-100 focus:outline-sky-500"></input>
-        </div>
-        
-      */}
-
-
-
- 
-    {localStorage.getItem ("patienttoken")? (
-
-      
-    <div id="profilecard" className="relative items-center justify-center flex">
-    <div id="profile" onClick={showlogout}  className="ml-3  flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200  shadow-lg  rounded-full hover:cursor-pointer hover:scale-105 transition-all">
-     {!patientprofilepicture ? (
-       // Skeleton loading for navbar profile picture
-       <div className="h-13 w-13 rounded-full bg-gray-300 animate-pulse"></div>
-     ) : (
-       <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-13 w-13 rounded-full"></img>
-     )}
-    </div>
-
-{showlogoutbtn && (
-    <div className="w-75 flex-col  p-5  motion-preset-fade absolute top-full mt-2  flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer  transition-all" >
-
-
-      <div className="hover:bg-[#f7f7f7] transition-all duration-300 ease-in-out py-2 px-1 rounded-2xl  gap-3 flex items-center h-auto w-full ">
-        {!patientprofilepicture ? (
-          // Skeleton loading for dropdown profile picture
-          <div className="w-12 h-12 rounded-full bg-gray-300 animate-pulse"></div>
-        ) : (
-          <img src={patientprofilepicture}  className="w-12 rounded-full"/>
-        )}
-        <h1 className="font-albertsans font-semibold text-[19px]">{patientfirstname}</h1>
-      </div>
-      <div className="border-b-2 rounded-full border-[#747474] h-1 w-full my-1">
-
-      </div>
-
-     {localStorage.getItem("patienttoken") && (
-      <Link to="/patientinformation" className="w-full"><div className="gap-2 flex items-center py-2 px-1 hover:bg-[#f7f7f7]  duration-300 ease-in-out  hover:text-[#000000] rounded-2xl transition-all cursor-pointer"> <img src={profileuser} className="w-9 h-9"/><h1 className="text-[16px] text-[#202020]">Demographic Profile</h1></div></Link>
-     )}
-
-
-     <div 
-       id="logoutdiv" 
-       className="mt-2 px-1 py-2 hover:bg-[#f7f7f7]   flex items-center gap-2 w-full  rounded-2xl hover:cursor-pointer transition-all" 
-       onClick={handlelogout}
-     >
-    <img src={logout} className="w-9 h-9"/>
-    <p className="font-semibold text-[#E04F5F] text-[16px]">Logout</p>
-  </div> 
-  </div>   
-)}
-    </div>
-
-    
-       
-    ):(
-      <Link to="/userlogin">
-         <div className="ml-3  flex justify-center items-center p-3 bg-[#027bbf] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" onClick={handlelogout}>
-         <i className="bx bx-user-circle mt-1 pr-2 font-semibold text-white text-[17px]"/>
-         <p className="font-semibold text-white text-[17px]">Login</p>
-       </div>
-      </Link>
-    )
-  
-  }
-     
-
-     {/* Dropdown menu 
-             <div className="bx bx-menu block  sm:opacity-100 text-5xl cursor-pointer" onClick={() => setismenuopen(!ismenuopen)}></div>
-        <div className={`absolute xl:hidden top-24 left-0 w-full text-white bg-sky-700 rounded-3xl mt-5 mr-5 ml-5 flex flex-col items-center gap-6 font-semibold text-lg transform transition-transform
-          ${ismenuopen ? "opacity-100" : "opacity-0"}`} style={{transition: "transform 0.3s ease, opacity 0.3s ease"}}>
-
-
-          <li className="list-none w-full text-center p-4 hover:bg-sky-400 hover:text-white transition-all cursor-p">Home</li>
-          <li className="list-none w-full text-center p-4 hover:bg-sky-400 hover:text-white transition-all cursor-pointer">Product</li>
-          <li className="list-none w-full text-center p-4 hover:bg-sky-400 hover:text-white transition-all cursor-pointer">Explore</li>
-          <li className="list-none w-full text-center p-4 hover:bg-sky-400 hover:text-white transition-all cursor-pointer">Contact</li>
-          </div>
- */}
-
-
-      </header>
-
-
-
-
-
-
-
-
-
-
-
-    {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
-    <section className="bg-cover bg-fixed bg-center min-h-screen w-screen flex justify-center items-start" style={{ backgroundImage: `url(${landingbg2})` }}>
-          <div className=" h-full w-full flex flex-col items-center  " >
-            
-
-            <div className=" w-screen h-full flex justify-center items-center" >
-                <div className=" w-[1400px] min-h-[1000px] mt-10 flex justify-center">
-                <div className=" w-[300px] flex flex-col">
-                    <Link to="/patientlandingpage" className="group relative h-15 \ flex justify-center items-center p-3  shadow-lg bg-gray-800 rounded-3xl hover:cursor-pointer hover:scale-105 transition-all duration-300 "><i className="bx bx-arrow-back  pr-2 font-bold text-[22px] text-white"/><span className="font-semibold text-white text-[20px]">Back</span></Link>
-          
-                    <div className="flex flex-col p-5 h-max mt-10 rounded-4xl bg-[#2d2d44] shadow-lg">
-                          <p className=" font-semibold text-white text-[16px]">Your Profile :</p>
-                          <div className={`pl-5 w-full h-12 mt-5 flex items-center  hover:cursor-pointer hover:scale-105 transition-all  ${activeForm === `patientdemographic` ? `bg-sky-700 rounded-4xl` : ``}`}  onClick={() => setactiveForm(`patientdemographic`)} ><i className="bx bxs-user  pr-2 font-bold text-[22px] text-white"/><span className="font-semibold text-white text-[20px]">Patient Demographic</span></div>
-                          <p className="mt-8 font-semibold text-white text-[16px]">*On Development*</p>
-                          <div className={`pl-5 w-full h-12 mt-5 flex items-center hover:cursor-pointer hover:scale-105 transition-all ${activeForm === `medicalhistory` ? `bg-sky-700 rounded-4xl` : ``}`}  onClick={() => setactiveForm(`medicalhistory`)}><FontAwesomeIcon icon={faClock}  className="pr-2 font-bold text-[22px] text-white"/><span className="font-semibold text-white text-[20px]">Medical History</span></div>
-                          <div className={`pl-5 w-full h-12 mt-5 flex items-center xhover:cursor-pointer hover:scale-105 transition-all ${activeForm === `ocularhistory` ? `bg-sky-700 rounded-4xl` : ``}`}  onClick={() => setactiveForm(`ocularhistory`)}><FontAwesomeIcon icon={faEye}  className="pr-2 font-bold text-[22px] text-white"/><span className="font-semibold text-white text-[20px]">Ocular History</span></div>
-                          <div className={`pl-5 w-full h-12 mt-5 flex items-center hover:cursor-pointer hover:scale-105 transition-all ${activeForm === `lifestylevisual` ? `bg-sky-700 rounded-4xl` : ``}`}  onClick={() => setactiveForm(`lifestylevisual`)}><i className="bx bx-run  pr-2 font-bold text-[22px] text-white"/><span className="font-semibold text-white text-[20px]">Lifestyle & Visual</span></div>
-                         {/* <div className="mt-5 flex justify-center align-middle p-3 bg-[#1cad11] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><p className="font-semibold text-[20px] text-white">Save</p></div> */}
-                       
-
-
-                    </div>
-                </div>
-                <div className="bg-white border-3 h-max pb-10 border-gray-100 shadow-lg w-[1000px] rounded-4xl flex flex-col  ml-10">
-                    <div className="bg-[#2d2d44] h-[100px] flex items-center justify-center rounded-tl-4xl rounded-tr-4xl ">
-                    <i className="bx bx-clipboard 0 text-[50px] font-albertsans font-extrabold italic text-white"/>
-                    <h1 className="text-[40px]  pl-5 font-bold  text-white ">Patient Information Form</h1>
-          
-                    </div>
-                     <div className="flex items-center justify-center mt-10"> <h1 className="text-[25px]  pl-5 font-league  text-[#2d2d44] ">{formtitles[activeForm]}</h1></div>
-
-
-
-
-
-
-
-
-
-{/* Patient Demographic Form */} {/* Patient Demographic Form */}  {/* Patient Demographic Form */}  {/* Patient Demographic Form */}  {/* Patient Demographic Form */} 
-
-                    <div id="patientdemographicform" className=" h-[760px] mt-5 overflow-y-auto max-h-[750px]" style={{display: activeForm === "patientdemographic" ? "block" : "none"}}>
-                    
-                    {isloadingdemographic ? (
-                      // Skeleton Loading State
-                      <div className="animate-pulse">
-                        <div className="mt-5 flex">
-                          {/* Profile Picture Skeleton */}
-                          <div className="w-60 h-60 ml-10">
-                            <div className="h-60 w-60 bg-gray-300 rounded-full"></div>
-                            <div className="mt-5 h-12 bg-gray-300 rounded-2xl"></div>
-                          </div>
-
-                          {/* Form Fields Skeleton */}
-                          <div className="ml-15 flex-1">
-                            {/* Last Name Field */}
-                            <div className="h-fit form-group">
-                              <div className="h-6 w-32 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-120 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* First Name Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-32 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-120 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Middle Name Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-36 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-112 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Birthdate and Age Fields */}
-                            <div className="mt-5 flex items-center">
-                              <div className="">
-                                <div className="h-6 w-24 bg-gray-300 rounded mb-2"></div>
-                                <div className="w-38 h-8 bg-gray-200 rounded"></div>
-                              </div>
-                              <div className="ml-15">
-                                <div className="h-6 w-16 bg-gray-300 rounded mb-2"></div>
-                                <div className="w-32 h-8 bg-gray-200 rounded"></div>
-                              </div>
-                            </div>
-
-                            {/* Gender Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-20 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-48 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Contact Number Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-40 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-104 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Home Address Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-36 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-104 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Emergency Contact Name Field */}
-                            <div className="h-fit form-group mt-20">
-                              <div className="h-6 w-52 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-90 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Emergency Contact Number Field */}
-                            <div className="h-fit form-group mt-5">
-                              <div className="h-6 w-56 bg-gray-300 rounded mb-2"></div>
-                              <div className="w-84 h-8 bg-gray-200 rounded"></div>
-                            </div>
-
-                            {/* Submit Button Skeleton */}
-                            <div className="mt-15">
-                              <div className="w-full h-12 bg-gray-300 rounded-2xl mt-12"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // Actual Form
-                    <form onSubmit={submitpatientdemographic}>
-                    
-                      <div className=" mt-5 flex ">
-
-
-                      <div className=" w-60 h-60 ml-10">
-                        <img className=" object-cover h-60 w-full rounded-full" src={previewimage || defaultprofilepic}/>
-
-                        <input  className="hidden" type="file" onChange={handleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={imageinputref} />
-                        <div onClick={handleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                        
-                        {selectedprofile && (<div onClick={handleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-                      </div>
-
-                      <div className=" ml-15">
-                       <div className=" h-fit form-group  ">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientlastname">Last Name :</label>     
-                        <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientlastname} onChange={handleinputchange} type="text" name="patientlastname" id="patientlastname" placeholder="Patient Last Name..."/></div>
-
-                        <div className=" h-fit form-group  mt-5">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientfirstname">First Name :</label>     
-                        <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientfirstname} onChange={handleinputchange}  type="text" name="patientfirstname" id="patientfirstname" placeholder="Patient First Name..."/></div>
-
-                        <div className=" h-fit form-group  mt-5 flex">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientmiddlename">Middle Name :</label>     
-                        <input className="w-112 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientmiddlename} onChange={handleinputchange}  type="text" name="patientmiddlename" id="patientmiddlename" placeholder="Patient Middle Name.."/></div>
-
-
-
-                        <div className=" mt-5 flex items-center">
-
-                            <div className="">
-                              
-                            <div className=" h-fit form-group ">
-                           <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientbirthdate">Birthdate :</label>     
-                           <input className="w-38 justify-center border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientbirthdate} onChange={handleinputchange}  type="date" name="patientbirthdate" id="patientbirthdate" placeholder=""/> </div>
-
-                            </div>
-
-                            
-                        <div className="ml-15">
-
-                        <div className=" h-fit form-group">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientage">Age :</label>     
-                        <input className="bg-[#eeeeee]  pl-2 rounded-md w-32 border-b-2  ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientage}  readOnly onChange={handleinputchange}  type="number" name="patientage" id="patientage" placeholder="Age..."/></div>
-
-                            </div>
-
-
-
-
-                        </div>
-
-
-
-
-                        <div className=" h-fit form-group  mt-5 flex">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientgender">Gender :</label>     
-                        <div className="ml-3"><GenderBox value={demographicformdata.patientgender} onChange={handleinputchange} /></div>  </div>
-
-
-                        <div className=" h-fit form-group  mt-5 flex">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientcontactnumber">Contact Number :</label>     
-                        <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientcontactnumber} onChange={handleinputchange}  type="text" name="patientcontactnumber" id="patientcontactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-                        <div className=" h-fit form-group  mt-5 flex">
-                        <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patienthomeaddress">Home Address :</label>     
-                        <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patienthomeaddress} onChange={handleinputchange}  type="text" name="patienthomeaddress" id="patienthomeaddress" placeholder="Ex: #001 Sison St., Townsite, Limay, Bataan"/> </div>
-
-
-                        <div className=" h-fit form-group  mt-20 flex">
-                        <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactname">Emergency Contact Name :</label>     
-                        <input className="w-90 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientemergencycontactname} onChange={handleinputchange}  type="text" name="patientemergencycontactname" id="patientemergencycontactname" placeholder="Ex: Juan Dela Cruz"/> </div>
-
-                        <div className=" h-fit form-group  mt-5 flex">
-                        <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactnumber">Emergency Contact Number :</label>     
-                        <input className="w-84 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demographicformdata.patientemergencycontactnumber} onChange={handleinputchange}  type="text" name="patientemergencycontactnumber" id="patientemergencyconctactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-
-       
-                      <div className=" mt-15">
-                     {/*       <button type="submit" disabled={issubmitting} className="submit-btn mt-12 w-full" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                         {issubmitting ? "Saving..." : "Save"}
-                        </button>
-                */}
-
-                      <button type="submit" disabled={issubmitting} className={`submit-btn mt-12 w-full flex justify-center items-center ${issubmitting? "opacity-75 cursor-not-allowed" : "" }`} style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                        {issubmitting ? (                                        <>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"  className="text-white animate-spin h-5 w-5 ">
-                                        <circle cx="12" cy="12" stroke="currentColor" className="opacity-25" r="10" strokeWidth="4" ></circle>
-                                        <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span className="font-albertsans text-white font-medium">{isexistingdemographic ? "Updating..." : "Saving..."}</span>
-                                        </>):(isexistingdemographic? "Update" : "Save")}
-                      </button>
-
-                        </div>
-
-
-                  
-
-                     </div>
-                        
-
-                      </div>
-                    
-  
-                     </form>
-                     )}
-                    </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{/* Medical History Form */} {/* Medical History Form */}  {/* Medical History Form */}  {/* Medical History Form */}  {/* Medical History Form */}  {/* Medical History Form */} 
-
-                    <div id="medicalhistoryform"  className=" h-max mt-5 pl-10 " style={{display: activeForm === "medicalhistory" ? "block" : "none"}}>
-
-                      <h1 className="text-[23px]  font-bold  text-[#2d2d44] ">Systemic Conditions:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                      <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientdiabetes" id="patientdiabetes"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientdiabetes">Diabetes (Type 1 / Type 2)</label>     
-                        </div>
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patienthypertension" id="patienthypertension"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patienthypertension">Hypertension</label>     
-                        </div>
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientheartdisease" id="patientheartdisease"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientheartdisease">Heart Disease</label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patienthyroiddisorders" id="patienthyroiddisorders"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patienthyroiddisorders">Thyroid Disorders</label>     
-                        </div>
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientautoimmunediseases" id="patientautoimmunediseases" checked={showautoimmune} onChange={(e) => setshowautoimmune(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientautoimmunediseases">Autoimmune Diseases (if checked please define)</label>  
-                        </div>
-                        
-                        {showautoimmune && (
-                          <div className="mt-3 ml-5">
-                              <textarea ref={textarearef} rows={1} style={{minHeight:'44px'}}  className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  "  type="text" value={autoimmunedetails} onChange={(e) =>{ setautoimmunedetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify autoimmune disease..."/>
-                          </div>
-                        )}   
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientblooddisorders" id="patientblooddisorders" checked={showblooddisorders} onChange={(e) => setshowblooddisorders(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientblooddisorders">Blood Disorder (if checked please define)</label>  
-                        </div>
-                        
-                        {showblooddisorders && (
-                          <div className="mt-3 ml-5">
-                              <textarea ref={textarearef} rows={1} style={{minHeight:'44px'}}  className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  "  type="text" value={blooddisordersdetails} onChange={(e) =>{ setblooddisordersdetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify blood disorder/s..."/>
-                          </div>
-                        )}   
-
-
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patienthypertension" id="patienthypertension"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patienthypertension">Cardiovascular Diseases</label>     
-                        </div>
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientneuro" id="patientneuro" checked={showneuro} onChange={(e) => setshowneuro(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientneuro">Neurological Disorders (if checked please define)</label>  
-                        </div>
-                        
-                        {showneuro && (
-                          <div className="mt-3 ml-5">
-                              <textarea ref={textarearef} rows={1} style={{minHeight:'44px'}}   className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " type="text" value={neurodetails} onChange={(e) => {setneurodetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify neurological disorders..."/>
-                          </div>
-                        )}   
-
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientallergies" id="patientallergies" checked={showallergies} onChange={(e) => setshowallergies(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientallergies">Allergies (if checked please define)</label>  
-                        </div>
-                        
-                        {showallergies && (
-                          <div className="mt-3 ml-5">
-                              <textarea ref={textarearef} rows={1} style={{minHeight:'44px'}}   className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " type="text" value={allergiesdetails} onChange={(e) => {setallergiesdetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify allergies..."/>
-                          </div>
-                        )}   
-
-
-
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientmedication" id="patientmedication" checked={showmedications} onChange={(e) => setshowmedications(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientmedication">Current Medications (if checked please define)</label>   
-                        </div>
-                        
-                        {showmedications && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={medicationdetails} onChange={(e) =>{ setmedicationdetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify current medications..."/>
-                          </div>
-                        )}   
-
-
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patienteyesurgeries" id="patienteyesurgeries" checked={showpasteyesurgeries} onChange={(e) => setshowpasteyesurgeries(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientsurgeries">Previous Eye Surgeries (if checked please define)</label>   
-                        </div>
-                        
-                        {showpasteyesurgeries && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={eyesurgeriesdetails} onChange={(e) => {seteyesurgeriesdetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify past eye surgeries..."/>
-                          </div>
-                        )}   
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientfamilyhistory" id="patientfamilyhistory" checked={showeyedisease} onChange={(e) => setshoweyedisease(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientfamilyhistory">Family History of Eye Diseases (if checked please define)</label>  
-                        </div>
-                        
-                        {showeyedisease && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={eyediseasedetails} onChange={(e) => {seteyediseasedetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify family history eye disease..."/>
-                          </div>
-                        )}   
-
-
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientadditionalnotes" id="patientadditionalnotes" checked={showadditionalnotes} onChange={(e) => setshowadditionalnotes(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientadditionalnotes">Additional Notes</label>  
-                        </div>
-                        
-                        {showadditionalnotes && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={additionaldetails} onChange={(e) => {setadditionaldetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify patient additional notes..."/>
-                          </div>
-                        )}   
-
-
-
-                    </div>
-
-
-
-
-                       </div>
-
-
-                    </div>
-
-
-
-
-
-
-
-
-{/* Ocular History Form */} {/* Ocular History Form */} {/* Ocular History Form */} {/* Ocular History Form */} {/* Ocular History Form */} {/* Ocular History Form */}
-                        
-                    <div id="ocularhistoryform"  className="h-max mt-5 pl-10" style={{display: activeForm === "ocularhistory" ? "block" : "none"}}>
-
-                    <h1 className="text-[23px]  font-bold  text-[#2d2d44] ">Current Eye Sypmtoms:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                      <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Blurred Vision (Distance/Near) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Double Vision (Diplopia) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Eye Pain/Discomfort </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Redness/Burning/Itching </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Dry Eyes </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Excessive Tearing </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Floaters/Flashes </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Night Vision Problems </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Light Sensitivity (Photophobia) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Headaches with Visual Strain </label>     
-                        </div>
-
-
-
-
-
-                      </div>
-                       </div>
-
-
-
-
-
-                       <h1 className="text-[23px]  font-bold  text-[#2d2d44] mt-10">Past Eye Conditions:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                      <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Glaucoma </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Cataracts </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Macular Degeneration (AMD)</label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Diabetic Retinopathy </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Retinal Detachment/Tears </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Keratoconus </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Strabismus (Crossed Eyes) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Amblyopia (Lazy Eye) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Uveitis/Iritis </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Conjuctivitis (Pink Eye – Viral/Bacterial/Allergic) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Corneal Abrasions/Ulcers </label>     
-                        </div>
-
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patientotherpasteyecondition" id="patientotherpasteyecondition" checked={showotherpasteyecondition} onChange={(e) => setshowotherpasteyecondition(e.target.checked)}/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patientotherpasteyecondition">Other (Specify)</label>  
-                        </div>
-                        
-                        {showotherpasteyecondition && (
-                          <div className="mt-3 ml-5">
-                              <textarea className="text-[20px] rounded-md p-2 border-2 border-[#2d2d44] w-full text-[#2d2d44]  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={otherpasteyeconditiondetails} onChange={(e) => {setotherpasteyeconditiondetails(e.target.value); adjusttextareaheight();}} placeholder="Please specify other past eye conditions.."/>
-                          </div>
-                        )}   
-
-
-
-
-
-
-                      </div>
-                       </div>  
-                    </div>
-
-
-
-
-
-{/* Lifestyle & Visual Form */} {/* Lifestyle & Visual Form */} {/* Lifestyle & Visual Form */} {/* Lifestyle & Visual Form */} {/* Lifestyle & Visual Form */} {/* Lifestyle & Visual Form */}
-
-                    <div id="lifestyle&visualform"  className="h-max mt-5 pl-10" style={{display: activeForm === "lifestylevisual" ? "block" : "none"}}>
-
-
-                    <h1 className="text-[23px]  font-bold  text-[#2d2d44] ">Occupational & Visual Demands:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                      <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Computer Use (Hours/Day): <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/> </label> 
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Driving (Day/Night, Frequency):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/> </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">    
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Reading/Close Work (Hours/Day):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Sports/Activities:  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-
-
-
-
-
-
-
-
-
-
-                      </div>
-                       </div>
-
-
-
-
-
-                       <h1 className="text-[23px]  font-bold  text-[#2d2d44] mt-10">Lifestyle Factors:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                        <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Alcohol Consuption (Frequency):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Smoking (Current/Past):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Diet (Balanced/High Sugar/Processed Foods):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> UV Exposure (Sunglasses Use: Yes/No):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Screen Time (Mobile, TV, Gaming):  <input  className="w-[250px] text-center border-b-2 border-[#2d2d44]" type="text" name="patient" id="patient"/></label>     
-                        </div>
-
-                      </div>
-                       </div>  
-                       
-
-
-
-
-                       <h1 className="text-[23px]  font-bold  text-[#2d2d44] mt-10">Special Visual Needs:</h1>
-                        <div className=" h-fit form-group  ">
-
-
-                        <div className="">
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Need for Safety Glasses (e.g., Design, Electrical Work) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Color Vision Requirements (e.g., Design, Eletrical Work) </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Night Driving Difficulties </label>     
-                        </div>
-
-                        <div className="flex items-center mt-5 ml-5">
-                        <input className="w-7 h-7 mr-3 appearance-none border-2 border-[#2d2d44] rounded-md checked:bg-[#2d2d44] checked:border-[#2d2d44] after:text-white after:text-lg after:absolute after:left-1/2 after:top-1/2 after:content-['✓'] after:opacity-0 after:-translate-x-1/2 after:-translate-y-1/2 checked:after:opacity-100 relative cursor:pointer transition-all"  type="checkbox" name="patient" id="patient"/>
-                        <label className="text-[23px]  font-semibold  text-[#2d2d44] "htmlFor="patient"> Need for Blue Filtering (Digital Strain) </label>     
-                        </div>
-
-                      </div>
-                       </div>  
-
-
-
-
-
-
-                    </div>
-
-
-
-                </div>
-                </div>
+      <header className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-lg z-50 transition-all duration-300">
+        <div className=" max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className=" flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img 
+                src={navlogo} 
+                alt="Eye2Wear Logo" 
+                className="h-10 w-auto hover:scale-105 transition-transform duration-200"
+              />
             </div>
 
+            {/* Navigation Links - Hidden on mobile */}
+            <nav className="hidden lg:flex space-x-1">
+              <Link 
+                to="/patientlandingpage" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Home
+              </Link>
+              <Link 
+                to="/patientdashboard" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Appointments
+              </Link>
+              <Link 
+                to="/patientproducts" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Store
+              </Link>
+              <Link 
+                to="/patientwishlist" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Wishlist
+              </Link>
+              <Link 
+                to="/patientorders" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Orders
+              </Link>
+              <Link 
+                to="/aboutpage" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                About
+              </Link>
+            </nav>
 
-           </div>
-        </section>
+            {/* Profile Section */}
+            {localStorage.getItem("patienttoken") ? (
+              <div className="relative">
+                <div 
+                  onClick={showlogout}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                >
+                  {!patientprofilepicture ? (
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 animate-pulse flex items-center justify-center">
+                      <FontAwesomeIcon icon={faUser} className="text-white text-sm" />
+                    </div>
+                  ) : (
+                    <img 
+                      src={patientprofilepicture} 
+                      alt="Profile" 
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
+                    />
+                  )}
+                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+
+                {/* Dropdown Menu */}
+                {showlogoutbtn && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-in fade-in-0 zoom-in-95">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="flex items-center space-x-3">
+                        {!patientprofilepicture ? (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                            <FontAwesomeIcon icon={faUser} className="text-white" />
+                          </div>
+                        ) : (
+                          <img 
+                            src={patientprofilepicture} 
+                            className="w-10 h-10 rounded-full object-cover"
+                            alt="Profile"
+                          />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                          <p className="text-xs text-gray-500">Patient Account</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      to="/patientinformation" 
+                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                      Demographic Profile
+                    </Link>
+                    
+                    <button
+                      onClick={handlelogout}
+                      className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/userlogin">
+                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                  <FontAwesomeIcon icon={faUser} className="mr-2" />
+                  Login
+                </button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 pt-16">
+        <div className="container mx-auto px-4 py-8">
+          {/* Back Button */}
+          <div className="mb-8">
+            <Link 
+              to="/patientlandingpage" 
+              className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Home
+            </Link>
+          </div>
+
+          {/* Main Card */}
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-8 py-6">
+                <div className="flex items-center justify-center">
+                  <div className="bg-white/20 p-3 rounded-full mr-4">
+                    <FontAwesomeIcon icon={faEye} className="text-white text-2xl" />
+                  </div>
+                  <div className="text-center">
+                    <h1 className="text-3xl font-bold text-white mb-2">Patient Information Form</h1>
+                    <p className="text-sky-100">Complete your profile for better eye care service</p>
+                  </div>
+                </div>
+              </div>
+
+
+
+
+              {/* Form Content */}
+              <div className="p-8">
+                {/* Patient Demographic Form */}
+                <div 
+                  className={`transition-all duration-300 ${activeForm === 'patientdemographic' ? 'block' : 'hidden'}`}
+                >
+                  {isloadingdemographic ? (
+                    // Enhanced Skeleton Loading
+                    <div className="animate-pulse">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Profile Picture Skeleton */}
+                        <div className="lg:col-span-1 flex flex-col items-center">
+                          <div className="w-48 h-48 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full mb-6"></div>
+                          <div className="w-32 h-10 bg-gray-200 rounded-lg mb-4"></div>
+                          <div className="w-28 h-10 bg-gray-200 rounded-lg"></div>
+                        </div>
+
+                        {/* Form Fields Skeleton */}
+                        <div className="lg:col-span-2 space-y-6">
+                          {[...Array(8)].map((_, i) => (
+                            <div key={i} className="space-y-2">
+                              <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                              <div className="h-12 w-full bg-gray-100 rounded-lg"></div>
+                            </div>
+                          ))}
+                          <div className="h-12 w-full bg-gray-200 rounded-lg mt-8"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Enhanced Form
+                    <form onSubmit={submitpatientdemographic} className="space-y-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Profile Picture Section */}
+                        <div className="lg:col-span-1">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="relative group">
+                              <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                              {previewimage || (defaultprofilepic && defaultprofilepic !== '') ? (
+                                <img 
+                                  className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                                  src={previewimage || defaultprofilepic}
+                                  alt="Profile"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {/* Fallback placeholder when no image */}
+                              <div 
+                                className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
+                                  previewimage || (defaultprofilepic && defaultprofilepic !== '') ? 'hidden' : 'flex'
+                                }`}
+                                style={{ display: previewimage || (defaultprofilepic && defaultprofilepic !== '') ? 'none' : 'flex' }}
+                              >
+                                <div className="text-center">
+                                  <FontAwesomeIcon 
+                                    icon={faUser} 
+                                    className="text-sky-400 text-6xl mb-2"
+                                  />
+                                  <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                                </div>
+                              </div>
+                              <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                                <FontAwesomeIcon 
+                                  icon={faCamera} 
+                                  className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"
+                                />
+                              </div>
+                            </div>
+                            
+                            <input  
+                              className="hidden" 
+                              type="file" 
+                              onChange={handleprofilechange} 
+                              accept="image/jpeg, image/jpg, image/png" 
+                              ref={imageinputref} 
+                            />
+                            
+                            <button
+                              type="button"
+                              onClick={handleuploadclick}
+                              className="flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            >
+                              <FontAwesomeIcon icon={faCamera} className="mr-2" />
+                              Upload Photo
+                            </button>
+                            
+                            {selectedprofile && (
+                              <button
+                                type="button"
+                                onClick={handleremoveprofile}
+                                className="flex items-center px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Form Fields */}
+                        <div className="lg:col-span-2 space-y-6">
+                          {/* Name Fields */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <label className="flex items-center text-sm font-medium text-gray-700">
+                                <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
+                                  <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
+                                </div>
+                                Last Name
+                              </label>
+                              <input 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                value={demographicformdata.patientlastname} 
+                                onChange={handleinputchange} 
+                                type="text" 
+                                name="patientlastname" 
+                                id="patientlastname" 
+                                placeholder="Enter your last name"
+                                required
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="flex items-center text-sm font-medium text-gray-700">
+                                <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
+                                  <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
+                                </div>
+                                First Name
+                              </label>
+                              <input 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                value={demographicformdata.patientfirstname} 
+                                onChange={handleinputchange}  
+                                type="text" 
+                                name="patientfirstname" 
+                                id="patientfirstname" 
+                                placeholder="Enter your first name"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mr-3">
+                                <FontAwesomeIcon icon={faUser} className="text-sky-600 text-sm" />
+                              </div>
+                              Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demographicformdata.patientmiddlename} 
+                              onChange={handleinputchange}  
+                              type="text" 
+                              name="patientmiddlename" 
+                              id="patientmiddlename" 
+                              placeholder="Enter your middle name (optional)"
+                            />
+                          </div>
+
+                          {/* Birthdate and Age */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <label className="flex items-center text-sm font-medium text-gray-700">
+                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                  <FontAwesomeIcon icon={faCalendar} className="text-green-600 text-sm" />
+                                </div>
+                                Birthdate
+                              </label>
+                              <input 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                value={demographicformdata.patientbirthdate} 
+                                onChange={handleinputchange}  
+                                type="date" 
+                                name="patientbirthdate" 
+                                id="patientbirthdate"
+                                required
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="flex items-center text-sm font-medium text-gray-700">
+                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                                  <span className="text-gray-600 text-sm font-medium">#</span>
+                                </div>
+                                Age
+                              </label>
+                              <input 
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                                value={demographicformdata.patientage}  
+                                readOnly 
+                                type="number" 
+                                name="patientage" 
+                                id="patientage" 
+                                placeholder="Auto-calculated from birthdate"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Gender */}
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              Gender
+                            </label>
+                            <div className="mt-2">
+                              <GenderBox value={demographicformdata.patientgender} onChange={handleinputchange} />
+                            </div>
+                          </div>
+
+                          {/* Contact Information */}
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                                <FontAwesomeIcon icon={faPhone} className="text-indigo-600 text-sm" />
+                              </div>
+                              Contact Number
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demographicformdata.patientcontactnumber} 
+                              onChange={handleinputchange}  
+                              type="text" 
+                              name="patientcontactnumber" 
+                              id="patientcontactnumber" 
+                              placeholder="Ex: 09123456789"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                <FontAwesomeIcon icon={faHome} className="text-orange-600 text-sm" />
+                              </div>
+                              Home Address
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demographicformdata.patienthomeaddress} 
+                              onChange={handleinputchange}  
+                              type="text" 
+                              name="patienthomeaddress" 
+                              id="patienthomeaddress" 
+                              placeholder="Complete home address"
+                              required
+                            />
+                          </div>
+
+                          {/* Emergency Contact Section */}
+                          <div className="border-t border-gray-200 pt-6 mt-8">
+                            <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                  <FontAwesomeIcon icon={faUserShield} className="text-red-600" />
+                                </div>
+                                Emergency Contact Information
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                This information will be used to contact someone in case of medical emergencies.
+                              </p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                <label className="flex items-center text-sm font-medium text-gray-700">
+                                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                    <FontAwesomeIcon icon={faUser} className="text-red-600 text-sm" />
+                                  </div>
+                                  Contact Name
+                                </label>
+                                <input 
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                  value={demographicformdata.patientemergencycontactname} 
+                                  onChange={handleinputchange}  
+                                  type="text" 
+                                  name="patientemergencycontactname" 
+                                  id="patientemergencycontactname" 
+                                  placeholder="Emergency contact name"
+                                  required
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="flex items-center text-sm font-medium text-gray-700">
+                                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                    <FontAwesomeIcon icon={faPhone} className="text-red-600 text-sm" />
+                                  </div>
+                                  Contact Number
+                                </label>
+                                <input 
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                  value={demographicformdata.patientemergencycontactnumber} 
+                                  onChange={handleinputchange}  
+                                  type="text" 
+                                  name="patientemergencycontactnumber" 
+                                  id="patientemergencycontactnumber" 
+                                  placeholder="Emergency contact number"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Submit Button */}
+                          <div className="pt-8">
+                            <button 
+                              type="submit" 
+                              disabled={issubmitting} 
+                              className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                                issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                              }`}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-sky-700 to-indigo-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-200"></div>
+                              <div className="relative flex items-center">
+                                {issubmitting ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {isexistingdemographic ? "Updating Profile..." : "Saving Profile..."}
+                                  </>
+                                ) : (
+                                  <>
+                                    <FontAwesomeIcon icon={faEdit} className="mr-3" />
+                                    {isexistingdemographic ? "Update Profile" : "Save Profile"}
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+ 
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <Footer />
-
-
     </>
-   )
+  )
   }
         
 export default PatientInformation

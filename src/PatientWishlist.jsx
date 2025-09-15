@@ -1,5 +1,7 @@
   import React, {useState, useEffect, useCallback} from "react";
   import {Link} from "react-router-dom";
+  import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
   import navlogo from  "../src/assets/images/navlogo.png";
   import heart from "../src/assets/images/heart.png";
   import { useAuth } from "./hooks/patientuseAuth";
@@ -996,132 +998,134 @@ const WishlistGridSkeleton = () => (
     return (
       <>
 
-      {/* NavBar */}
-        <header id="header" className="backdrop-blur-md bg-[#ffffff36] sticky top-0 flex justify-between items-center text-black px-4 md:px-32 w-[99vw] drop-shadow-md z-50">
-          <a id:logocontain href="#">
-            <img src={navlogo} alt="" className="w-24 sm:w-28 md:w-33 hover:scale-105 transition-all"></img>
-          </a>
-
-          {/* Mobile Menu Button */}
-          <div className="xl:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <div className="w-6 h-0.5 bg-black"></div>
-            <div className="w-6 h-0.5 bg-black"></div>
-            <div className="w-6 h-0.5 bg-black"></div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <ul id:listcontain className="hidden xl:flex items-center gap-12 font-semibold text-base">
-          <Link to="/patientlandingpage" className="text-[#000000] hover:text-white no-underline"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li></Link>
-          <Link to="/patientdashboard"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li></Link>
-          <Link to="/patientproducts"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li></Link>
-          <Link to="/patientwishlist"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Wishlist</li></Link>
-          <Link to="/patientorders"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li></Link>
-          <Link to="/aboutpage"><li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li></Link>
-          </ul>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="xl:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t z-40">
-              <ul className="flex flex-col p-4 gap-2 font-semibold text-base">
-                <Link to="/patientlandingpage" className="text-[#000000] no-underline" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white text-black rounded-md transition-all cursor-pointer">Home</li>
-                </Link>
-                <Link to="/patientdashboard" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Appointments</li>
-                </Link>
-                <Link to="/patientproducts" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Store</li>
-                </Link>
-                <Link to="/patientwishlist" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 bg-[#2781af] text-white rounded-md transition-all cursor-pointer">Wishlist</li>
-                </Link>
-                <Link to="/patientorders" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">Orders</li>
-                </Link>
-                <Link to="/aboutpage" onClick={() => setMobileMenuOpen(false)}>
-                  <li className="text-[15px] p-3 hover:bg-[#2781af] hover:text-white rounded-md transition-all cursor-pointer">About</li>
-                </Link>
-              </ul>
+      <header className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-lg z-50 transition-all duration-300">
+        <div className=" max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className=" flex justify-between items-center h-13">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img 
+                src={navlogo} 
+                alt="Eye2Wear Logo" 
+                className="h-10 w-auto hover:scale-105 transition-transform duration-200"
+              />
             </div>
-          )}
 
-          {/* Mobile & Desktop User Section */}
-          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Navigation Links - Hidden on mobile */}
+            <nav className="hidden lg:flex space-x-1">
+              <Link 
+                to="/patientlandingpage" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Home
+              </Link>
+              <Link 
+                to="/patientdashboard" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Appointments
+              </Link>
+              <Link 
+                to="/patientproducts" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Store
+              </Link>
+              <Link 
+                to="/patientwishlist" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Wishlist
+              </Link>
+              <Link 
+                to="/patientorders" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                Orders
+              </Link>
+              <Link 
+                to="/aboutpage" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              >
+                About
+              </Link>
+            </nav>
 
-        {/* Search 
-        
-                <div className="relative hidden md:flex items-center justify-center gap-3">
-            <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
-            <input type="text" placeholder="Search..." className="py-2 pl-10 rounded-xl border-2 border-blue-300 focus:bg-slate-100 focus:outline-sky-500"></input>
+            {/* Profile Section */}
+            {localStorage.getItem("patienttoken") ? (
+              <div className="relative">
+                <div 
+                  onClick={showlogout}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                >
+                  {!patientprofilepicture ? (
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 animate-pulse flex items-center justify-center">
+                      <FontAwesomeIcon icon={faUser} className="text-white text-sm" />
+                    </div>
+                  ) : (
+                    <img 
+                      src={patientprofilepicture} 
+                      alt="Profile" 
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
+                    />
+                  )}
+                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+
+                {/* Dropdown Menu */}
+                {showlogoutbtn && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-in fade-in-0 zoom-in-95">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="flex items-center space-x-3">
+                        {!patientprofilepicture ? (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
+                            <FontAwesomeIcon icon={faUser} className="text-white" />
+                          </div>
+                        ) : (
+                          <img 
+                            src={patientprofilepicture} 
+                            className="w-10 h-10 rounded-full object-cover"
+                            alt="Profile"
+                          />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
+                          <p className="text-xs text-gray-500">Patient Account</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      to="/patientinformation" 
+                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
+                      Demographic Profile
+                    </Link>
+                    
+                    <div
+                      onClick={handlelogout}
+                      className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faUserShield} className="mr-3 w-4 h-4" />
+                      Logout
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/userlogin">
+                <button className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                  <FontAwesomeIcon icon={faUser} className="mr-2" />
+                  Login
+                </button>
+              </Link>
+            )}
           </div>
-          
-        */}
-
-
-
-  
-      {localStorage.getItem ("patienttoken")? (
-
-        
-      <div id="profilecard" className="relative items-center justify-center flex">
-      <div id="profile" onClick={showlogout}  className="ml-2 sm:ml-3 flex justify-center items-center bg-[#fbfbfb00] border-2 border-gray-200 shadow-lg rounded-full hover:cursor-pointer hover:scale-105 transition-all">
-      {!patientprofilepicture ? (
-        // Skeleton loading for navbar profile picture
-        <div className="h-10 w-10 sm:h-13 sm:w-13 rounded-full bg-gray-300 animate-pulse"></div>
-      ) : (
-        <img src={patientprofilepicture || 'default-profile.png'} alt="Profile" className="h-10 w-10 sm:h-13 sm:w-13 rounded-full"></img>
-      )}
-      </div>
-
-  {showlogoutbtn && (
-      <div className="w-64 sm:w-75 flex-col p-4 sm:p-5 motion-preset-fade absolute top-full mt-2 z-[9999] flex justify-center items-start bg-[#ffffff] rounded-2xl hover:cursor-pointer transition-all shadow-lg right-0 sm:right-auto">
-
-
-        <div className="hover:bg-[#f7f7f7] transition-all duration-300 ease-in-out py-2 px-1 rounded-2xl gap-3 flex items-center h-auto w-full">
-          {!patientprofilepicture ? (
-            // Skeleton loading for dropdown profile picture
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-300 animate-pulse"></div>
-          ) : (
-            <img src={patientprofilepicture}  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"/>
-          )}
-          <h1 className="font-albertsans font-semibold text-base sm:text-[19px]">{patientfirstname}</h1>
         </div>
-        <div className="border-b-2 rounded-full border-[#747474] h-1 w-full my-1">
-
-        </div>
-
-      {localStorage.getItem("patienttoken") && (
-        <Link to="/patientinformation" className="w-full"><div className="gap-2 flex items-center py-2 px-1 hover:bg-[#f7f7f7] duration-300 ease-in-out hover:text-[#000000] rounded-2xl transition-all cursor-pointer"> <img src={profileuser} className="w-7 h-7 sm:w-9 sm:h-9"/><h1 className="text-sm sm:text-[16px] text-[#202020]">Demographic Profile</h1></div></Link>
-      )}
-
-
-      <div 
-        id="logoutdiv" 
-        className="mt-2 px-1 py-2 hover:bg-[#f7f7f7] flex items-center gap-2 w-full rounded-2xl hover:cursor-pointer transition-all" 
-        onClick={handlelogout}
-      >
-      <img src={logout} className="w-7 h-7 sm:w-9 sm:h-9"/>
-      <p className="font-semibold text-[#E04F5F] text-sm sm:text-[16px]">Logout</p>
-    </div> 
-    </div>   
-  )}
-      </div>
-
-      
-        
-      ):(
-        <Link to="/userlogin">
-          <div className="ml-2 sm:ml-3 flex justify-center items-center p-2 sm:p-3 bg-[#027bbf] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" onClick={handlelogout}>
-          <i className="bx bx-user-circle mt-1 pr-1 sm:pr-2 font-semibold text-white text-sm sm:text-[17px]"/>
-          <p className="font-semibold text-white text-sm sm:text-[17px]">Login</p>
-        </div>
-        </Link>
-      )
-    
-    }
-      
-          </div> {/* Close Mobile & Desktop User Section */}
-        </header>
+      </header>
 
       {/* First Section */}
       <section className="pb-50 motion-preset-slide-up bg-cover bg-center min-h-[100vh] w-[full] flex justify-center align-center" >
