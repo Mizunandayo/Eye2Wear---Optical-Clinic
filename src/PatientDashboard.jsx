@@ -1021,6 +1021,20 @@ const formatappointmenttimes = (formattedtimestring) => {
   return formattedtimestring; 
 };
 
+// Helper function to check if appointment can be deleted
+// Hide delete button if any appointment (Ambher or Bautista) has "Accepted" or "Completed" status
+const canDeleteAppointment = (appointment) => {
+  const ambherStatus = appointment.patientambherappointmentstatus;
+  const bautistaStatus = appointment.patientbautistaappointmentstatus;
+  
+  // Check if either clinic has accepted/completed status
+  const hasAcceptedOrCompleted = 
+    ambherStatus === 'Accepted' || ambherStatus === 'Completed' ||
+    bautistaStatus === 'Accepted' || bautistaStatus === 'Completed';
+  
+  return !hasAcceptedOrCompleted;
+};
+
 
 
 
@@ -2624,10 +2638,12 @@ useEffect(() => {
               <div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
                   className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white">View</h1></div>
 
-              <div onClick={() =>  {setdeletepatientappointment(true);
-                                setselectedpatientappointment(appointment);
-              }}
-                className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
+              {canDeleteAppointment(appointment) && (
+                <div onClick={() =>  {setdeletepatientappointment(true);
+                                  setselectedpatientappointment(appointment);
+                }}
+                  className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
+              )}
               </td>
             </tr>
           ))}
@@ -2728,18 +2744,20 @@ useEffect(() => {
             <div className="flex gap-2 pt-2">
               <div 
                 onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-                className="flex-1 bg-[#383838] hover:bg-[#595959] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                className={`${canDeleteAppointment(appointment) ? 'flex-1' : 'w-full'} bg-[#383838] hover:bg-[#595959] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2`}
               >
                 <i className="bx bx-show text-lg"></i>
                 View
               </div>
-              <div
-                onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
-                className="flex-1 bg-[#8c3226] hover:bg-[#ab4f43] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <i className="bx bx-trash text-lg"></i>
-                Delete
-              </div>
+              {canDeleteAppointment(appointment) && (
+                <div
+                  onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
+                  className="flex-1 bg-[#8c3226] hover:bg-[#ab4f43] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <i className="bx bx-trash text-lg"></i>
+                  Delete
+                </div>
+              )}
             </div>
           </div>
         ))}
