@@ -5283,7 +5283,7 @@ try {
   const demographics = await smartFetch(
     'adminDemographics',
     async () => {
-      const response = await fetch('/api/patientdemographics', {
+      const response = await fetch('/api/patientdemographics?limit=50&page=1', {
         headers: {
           'Authorization': `Bearer ${currentusertoken}`
         }
@@ -5527,7 +5527,7 @@ const addpatientprofile = async (e) => {
       patientprofilepicture: addpatientprofilepreviewimage || demoformdata.patientprofilepicture
     };
 
-    const response = await fetch(`/api/patientdemographics`, {
+    const response = await fetch(`/api/patientdemographics?limit=100&page=1`, {
       method: "POST",
       headers: {
         "Content-Type" : "application/json",
@@ -5542,7 +5542,7 @@ const addpatientprofile = async (e) => {
           throw new Error(errordata.message || "Failed to create patient profile");
     }
 
-    const fetchresponse = await fetch('/api/patientdemographics', {
+    const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1', {
       headers: {
         'Authorization' : `Bearer ${currentusertoken}`
       }
@@ -5592,7 +5592,7 @@ const retrieveandupdatepatientprofile = async (e) => {
 
     if(!response.ok) throw new Error("Failed to update patient demographics");
 
-    const fetchresponse = await fetch('/api/patientdemographics',{
+    const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1',{
       headers: {'Authorization' : `Bearer ${currentusertoken}`}
     });
 
@@ -5626,7 +5626,7 @@ const deletepatientprofile = async () => {
 
 
 
-      const fetchresponse = await fetch('/api/patientdemographics', {
+      const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1', {
           headers:{
             'Authorization':`Bearer ${localStorage.getItem('admintoken')}`
           }

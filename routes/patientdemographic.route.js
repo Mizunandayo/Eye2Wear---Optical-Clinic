@@ -2,6 +2,7 @@
 
     import {
         getpatientdemographics,
+        getpatientdemographics_fast,
         getpatientdemographicbyid,
         getpatientdemographicbylastname,
         createpatientdemographic,
@@ -99,6 +100,7 @@
 
     //Retrieve Patient Demographic Data Route
     patientdemographicrouter.get("/", getpatientdemographics);
+    patientdemographicrouter.get("/fast", getpatientdemographics_fast); // Emergency fast endpoint
     patientdemographicrouter.get("/id/:id", getpatientdemographicbyid);
     patientdemographicrouter.get("/patientlastname/:patientlastname", getpatientdemographicbylastname);
     patientdemographicrouter.get("/patientemail/:patientemail", verifyStaffOwnerOrPatientAccess, getpatientdemographicbyemail)

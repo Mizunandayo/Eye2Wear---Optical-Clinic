@@ -310,11 +310,31 @@ io.on('connection', (socket) => {
 //ALLOW FILTERING OF PROPERTIES NOT DEFINED IN MODEL SCHEMA
 mongoose.set("strictQuery", false);
 
-// Configure mongoose for better MongoDB Atlas handling
+// EMERGENCY PERFORMANCE OPTIMIZATIONS
 mongoose.set('bufferCommands', false); // Disable mongoose buffering
+mongoose.set('maxTimeMS', 10000); // Global 10 second timeout
 
-// Get optimized connection options
-const connectionOptions = DatabaseOptimizer.getOptimizedConnectionOptions();
+// Emergency connection pool settings
+const connectionOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 5, // Reduced pool size for emergency
+  minPoolSize: 1,
+  maxIdleTimeMS: 30000,
+  serverSelectionTimeoutMS: 5000, // 5 second server selection timeout
+  socketTimeoutMS: 10000, // 10 second socket timeout
+  heartbeatFrequencyMS: 2000,
+  retryWrites: true,
+  writeConcern: {
+    w: 'majority',
+    j: true,
+    wtimeout: 5000
+  },
+  readPreference: 'primaryPreferred', // Allow reads from secondaries
+  readConcern: { level: 'local' }, // Faster read concern
+  compressors: ['zlib'], // Enable compression
+  bufferCommands: false
+};
 
 //MONGO DB ATLAS CONNECTION VALIDATION
 mongoose
@@ -331,8 +351,8 @@ mongoose
     
     // Start server
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-      console.log("🚀 Server listening on port", PORT);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log("🚀 Server listening on all interfaces port", PORT);
       console.log("📊 Database performance optimization enabled");
       console.log("📱 SMS notification system enabled");
     });

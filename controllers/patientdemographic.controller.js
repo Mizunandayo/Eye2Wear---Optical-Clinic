@@ -15,14 +15,104 @@
   //Retrieve (All Patient Demographic) Controller
   export const getpatientdemographics = async (req, res) => {
     try {
-      // Optimized query with lean() and field selection for better performance
-      const patientdemo = await Patientdemographic.find()
-        .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture createdAt')
-        .lean(); // Returns plain JavaScript objects instead of Mongoose documents
+      // EMERGENCY PERFORMANCE FIX: Ultra aggressive limits
+      const page = parseInt(req.query.page) || 1;
+      const requestedLimit = parseInt(req.query.limit) || 10; // Reduced to 10 for emergency fix
       
-      res.status(200).json(patientdemo);
+      // Enforce very strict maximum limit to prevent database overload
+      const maxLimit = 20; // Emergency maximum of 20 records per request
+      const limit = Math.min(requestedLimit, maxLimit);
+      const skip = (page - 1) * limit;
+      
+      console.log(`� EMERGENCY MODE: Fetching demographics: page=${page}, limit=${limit}, skip=${skip}`);
+      const startTime = Date.now();
+      
+      // Ultra short timeout for emergency fix (10 seconds max)
+      const queryTimeout = 10000;
+      
+      // MINIMAL field selection - only absolutely necessary fields
+      const patientdemo = await Patientdemographic.find()
+        .select('patientdemographicId patientemail patientfirstname patientlastname')
+        .sort({ _id: -1 }) // Use _id instead of patientdemographicId for better performance
+        .skip(skip)
+        .limit(limit)
+        .maxTimeMS(queryTimeout)
+        .lean()
+        .hint({ _id: -1 }); // Force use of _id index
+      
+      const queryTime = Date.now() - startTime;
+      console.log(`⚡ EMERGENCY QUERY completed in ${queryTime}ms, returned ${patientdemo.length} records`);
+      
+      // Skip count entirely in emergency mode
+      
+      const response = {
+        data: patientdemo || [],
+        pagination: {
+          page,
+          limit,
+          total: null, // Skip count for speed
+          hasMore: patientdemo && patientdemo.length === limit,
+          queryTime: queryTime
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+          recordsReturned: patientdemo ? patientdemo.length : 0,
+          emergencyMode: true,
+          message: "Emergency performance mode - limited fields and records"
+        }
+      };
+      
+      res.status(200).json(response);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error('❌ Error in getpatientdemographics:', error);
+      
+      // Handle timeout errors specifically
+      if (error.name === 'MongoTimeoutError' || error.message.includes('timeout')) {
+        return res.status(408).json({ 
+          message: "Query timeout - please try with smaller page size or add filters",
+          error: "TIMEOUT_ERROR",
+          suggestion: "Try using ?limit=10 or ?limit=20 for faster results"
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error fetching patient demographics",
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+
+  // EMERGENCY FAST ENDPOINT - Minimal data, no middleware
+  export const getpatientdemographics_fast = async (req, res) => {
+    try {
+      console.log('🚨 EMERGENCY FAST ENDPOINT called');
+      const startTime = Date.now();
+      
+      // Ultra minimal query - only 5 records, essential fields only
+      const patientdemo = await Patientdemographic.find()
+        .select('_id patientemail patientfirstname patientlastname')
+        .limit(5)
+        .lean()
+        .maxTimeMS(5000);
+      
+      const queryTime = Date.now() - startTime;
+      console.log(`⚡ EMERGENCY FAST completed in ${queryTime}ms`);
+      
+      res.status(200).json({
+        data: patientdemo || [],
+        meta: {
+          emergencyMode: true,
+          queryTime,
+          message: "Emergency fast endpoint - only 5 records with minimal fields"
+        }
+      });
+    } catch (error) {
+      console.error('❌ Emergency fast endpoint error:', error);
+      res.status(500).json({ 
+        message: "Emergency endpoint failed",
+        error: error.message
+      });
     }
   };
 
@@ -50,18 +140,34 @@
   export const getpatientdemographicbylastname = async (req, res) => {
     try {
       const { patientlastname } = req.params;
+      
+      // Add support for multiple results and pagination for common last names
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+      
       // Optimized query with field selection, lean(), and indexed lastname lookup
-      const patientdemo = await Patientdemographic.findOne({
-        patientlastname: patientlastname
+      const patientdemo = await Patientdemographic.find({
+        patientlastname: { $regex: new RegExp(patientlastname, 'i') } // Case-insensitive search
       })
       .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture createdAt')
+      .sort({ patientlastname: 1, patientfirstname: 1 }) // Use indexed fields for sorting
+      .skip(skip)
+      .limit(limit)
       .lean(); // Returns plain JavaScript objects for better performance
       
-      if (!patientdemo) {
+      if (!patientdemo || patientdemo.length === 0) {
         return res.status(404).json({ message: "Patient demographic not found" });
       }
       
-      res.status(200).json(patientdemo);
+      res.status(200).json({
+        data: patientdemo,
+        pagination: {
+          page,
+          limit,
+          hasMore: patientdemo.length === limit
+        }
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -216,9 +322,10 @@
       }
     }
 
+    // Use more efficient query with indexed field
     const existing = await Patientdemographic.findOne({
       patientemail: req.body.patientemail
-    });
+    }).select('_id').lean(); // Only select _id for existence check
 
     if(existing) {
       return res.status(400).json({
@@ -226,9 +333,20 @@
       });
     }
 
+    // Create the demographic record
     const newdemographic = await Patientdemographic.create(req.body);
-    res.status(201).json(newdemographic);
-
+    
+    // Return only essential fields to reduce response size
+    const response = {
+      _id: newdemographic._id,
+      patientdemographicId: newdemographic.patientdemographicId,
+      patientemail: newdemographic.patientemail,
+      patientfirstname: newdemographic.patientfirstname,
+      patientlastname: newdemographic.patientlastname,
+      message: "Patient demographic created successfully"
+    };
+    
+    res.status(201).json(response);
 
   }catch(error){
      res.status(500).json({
@@ -293,22 +411,33 @@
         }
       }
 
-      const existingdemo = await Patientdemographic.findById(id);
+      // Use more efficient existence check
+      const existingdemo = await Patientdemographic.findById(id).select('_id').lean();
       if(!existingdemo){
         return res.status(404).json({message: "Patient Demographic data not found"});
       }
 
-      const updateddemographic = await Patientdemographic.findByIdAndUpdate(
-        id,
-        updateddata,
-        {new: true, runValidators: true}
+      // Use updateOne for better performance if we don't need the updated document
+      const updateResult = await Patientdemographic.updateOne(
+        { _id: id },
+        { $set: updateddata },
+        { runValidators: true }
       );
 
-      if(!updateddemographic){
+      if(updateResult.matchedCount === 0){
         return res.status(404).json({message: "Patient Demographic data not found"});
       }
 
-      res.status(200).json(updateddemographic);
+      // Only fetch the updated document if needed for response
+      const updateddemographic = await Patientdemographic.findById(id)
+        .select('patientdemographicId patientemail patientfirstname patientlastname updatedAt')
+        .lean();
+
+      res.status(200).json({
+        message: "Patient demographic updated successfully",
+        data: updateddemographic,
+        modifiedCount: updateResult.modifiedCount
+      });
     }catch(error){
       // Handle specific validation errors
       if (error.name === 'ValidationError') {

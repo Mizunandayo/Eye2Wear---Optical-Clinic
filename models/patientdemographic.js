@@ -179,293 +179,99 @@ PatientdemographicSchema.post('remove', async function(){
   );
 });
 
-// Middleware to sync profile picture with patientaccount
-PatientdemographicSchema.pre('save', function(next) {
-  // Track if patientprofilepicture was modified
-  this._profilePictureModified = this.isModified('patientprofilepicture');
-  
-  // Track if name fields were modified
-  this._nameFieldsModified = this.isModified('patientlastname') || 
-                            this.isModified('patientfirstname') || 
-                            this.isModified('patientmiddlename');
-  
-  next();
-});
+// EMERGENCY: Temporarily disable pre save middleware for debugging
+// PatientdemographicSchema.pre('save', function(next) {
+//   // Middleware disabled for emergency performance fix
+//   next();
+// });
 
-PatientdemographicSchema.post('save', async function(doc) {
-  try {
-    // Check if we need to sync profile picture or name fields
-    const shouldSyncProfile = this._profilePictureModified;
-    const shouldSyncNames = this._nameFieldsModified;
+// EMERGENCY: Temporarily disable heavy middleware for debugging
+// PatientdemographicSchema.post('save', async function(doc) {
+//   try {
+//     // Only sync if fields were actually modified and it's not a new document
+//     // For new documents, sync is handled separately to avoid performance issues during registration
+//     const shouldSyncProfile = this._profilePictureModified && !this._isNewDocument;
+//     const shouldSyncNames = this._nameFieldsModified && !this._isNewDocument;
     
-    if (shouldSyncProfile || shouldSyncNames) {
-      console.log(`Syncing data for patient: ${doc.patientemail}`);
-      
-      // Prepare update object for patient account
-      const accountUpdateData = {};
-      if (shouldSyncProfile) {
-        accountUpdateData.patientprofilepicture = doc.patientprofilepicture;
-      }
-      if (shouldSyncNames) {
-        accountUpdateData.patientlastname = doc.patientlastname;
-        accountUpdateData.patientfirstname = doc.patientfirstname;
-        accountUpdateData.patientmiddlename = doc.patientmiddlename;
-      }
-      
-      // Update the corresponding patient account
-      const result = await Patientaccount.findOneAndUpdate(
-        { patientemail: doc.patientemail },
-        accountUpdateData,
-        { new: true }
-      );
-      
-      if (result) {
-        const syncedFields = [];
-        if (shouldSyncProfile) syncedFields.push('profile picture');
-        if (shouldSyncNames) syncedFields.push('name fields');
-        console.log(`✅ ${syncedFields.join(' and ')} synced successfully for patient: ${doc.patientemail}`);
-      } else {
-        console.log(`⚠️ No patient account found for email: ${doc.patientemail}`);
-      }
+//     if (shouldSyncProfile || shouldSyncNames) {
+//       try {
+//         // Prepare update object for patient account with only changed fields
+//         const accountUpdateData = {};
+//         if (shouldSyncProfile) {
+//           accountUpdateData.patientprofilepicture = doc.patientprofilepicture;
+//         }
+//         if (shouldSyncNames) {
+//           accountUpdateData.patientlastname = doc.patientlastname;
+//           accountUpdateData.patientfirstname = doc.patientfirstname;
+//           accountUpdateData.patientmiddlename = doc.patientmiddlename;
+//         }
+        
+//         // Use updateOne for better performance (no document return)
+//         const result = await Patientaccount.updateOne(
+//           { patientemail: doc.patientemail },
+//           { $set: accountUpdateData }
+//         );
+        
+//         if (result.modifiedCount > 0) {
+//           console.log(`✅ Patient account synced for: ${doc.patientemail}`);
+//         }
 
-      // Also sync with PatientAppointment model
-      try {
-        // Import PatientAppointment dynamically to avoid circular dependency
-        const PatientAppointment = mongoose.model('PatientAppointment');
-        
-        // Prepare update object for appointments
-        const appointmentUpdateData = {};
-        if (shouldSyncProfile) {
-          appointmentUpdateData.patientappointmentprofilepicture = doc.patientprofilepicture;
-        }
-        if (shouldSyncNames) {
-          appointmentUpdateData.patientappointmentlastname = doc.patientlastname;
-          appointmentUpdateData.patientappointmentfirstname = doc.patientfirstname;
-          appointmentUpdateData.patientappointmentmiddlename = doc.patientmiddlename;
-        }
-        
-        const appointmentResult = await PatientAppointment.updateMany(
-          { patientappointmentemail: doc.patientemail },
-          appointmentUpdateData
-        );
-        
-        if (appointmentResult.modifiedCount > 0) {
-          const syncedFields = [];
-          if (shouldSyncProfile) syncedFields.push('profile picture');
-          if (shouldSyncNames) syncedFields.push('name fields');
-          console.log(`✅ ${syncedFields.join(' and ')} synced to ${appointmentResult.modifiedCount} appointment(s) for patient: ${doc.patientemail}`);
-        } else {
-          console.log(`ℹ️ No appointments found to update for patient: ${doc.patientemail}`);
-        }
-      } catch (appointmentError) {
-        console.error('❌ Error syncing data to appointments:', appointmentError);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error syncing data to patient account:', error);
-  }
+//         // Sync with PatientAppointment model if needed (async without blocking)
+//         if (shouldSyncProfile || shouldSyncNames) {
+//           const PatientAppointment = mongoose.model('PatientAppointment');
+          
+//           const appointmentUpdateData = {};
+//           if (shouldSyncProfile) {
+//             appointmentUpdateData.patientappointmentprofilepicture = doc.patientprofilepicture;
+//           }
+//           if (shouldSyncNames) {
+//             appointmentUpdateData.patientappointmentlastname = doc.patientlastname;
+//             appointmentUpdateData.patientappointmentfirstname = doc.patientfirstname;
+//             appointmentUpdateData.patientappointmentmiddlename = doc.patientmiddlename;
+//           }
+          
+//           // Use fire-and-forget for appointment updates to not slow down the main operation
+//           PatientAppointment.updateMany(
+//             { patientappointmentemail: doc.patientemail },
+//             { $set: appointmentUpdateData }
+//           ).then((appointmentResult) => {
+//             if (appointmentResult.modifiedCount > 0) {
+//               console.log(`✅ ${appointmentResult.modifiedCount} appointment(s) synced for: ${doc.patientemail}`);
+//             }
+//           }).catch((appointmentError) => {
+//             console.error('❌ Error syncing appointments:', appointmentError);
+//           });
+//         }
+//       } catch (error) {
+//         console.error('❌ Error in sync operation:', error);
+//       }
+//     }
+//   } catch (error) {
+//     console.error('❌ Error setting up sync:', error);
+//   }
+// });
+
+// EMERGENCY: Simplified middleware
+PatientdemographicSchema.post('save', function(doc) {
+  console.log(`✅ Patient demographic saved: ${doc.patientemail}`);
 });
 
-// Middleware to sync profile picture on update operations
-PatientdemographicSchema.pre('findOneAndUpdate', function(next) {
-  // Check if patientprofilepicture is being updated
-  const update = this.getUpdate();
-  this._profilePictureUpdate = update && (update.patientprofilepicture || update.$set?.patientprofilepicture);
-  
-  // Check if name fields are being updated
-  this._nameFieldsUpdate = update && (
-    update.patientlastname || update.$set?.patientlastname ||
-    update.patientfirstname || update.$set?.patientfirstname ||
-    update.patientmiddlename || update.$set?.patientmiddlename
-  );
-  
-  next();
-});
+// Optimized middleware to sync profile picture on update operations
+// EMERGENCY: Temporarily disable pre findOneAndUpdate middleware for debugging
+// PatientdemographicSchema.pre('findOneAndUpdate', function(next) {
+//   // Middleware disabled for emergency performance fix
+//   next();
+// });
 
-PatientdemographicSchema.post('findOneAndUpdate', async function(doc) {
-  try {
-    if (doc && (this._profilePictureUpdate || this._nameFieldsUpdate)) {
-      const updateValue = this.getUpdate();
-      
-      console.log(`Syncing data via update for patient: ${doc.patientemail}`);
-      
-      // Prepare update object for patient account
-      const accountUpdateData = {};
-      if (this._profilePictureUpdate) {
-        const newProfilePicture = updateValue.patientprofilepicture || updateValue.$set?.patientprofilepicture;
-        accountUpdateData.patientprofilepicture = newProfilePicture;
-      }
-      if (this._nameFieldsUpdate) {
-        const newLastName = updateValue.patientlastname || updateValue.$set?.patientlastname;
-        const newFirstName = updateValue.patientfirstname || updateValue.$set?.patientfirstname;
-        const newMiddleName = updateValue.patientmiddlename || updateValue.$set?.patientmiddlename;
-        
-        if (newLastName !== undefined) accountUpdateData.patientlastname = newLastName;
-        if (newFirstName !== undefined) accountUpdateData.patientfirstname = newFirstName;
-        if (newMiddleName !== undefined) accountUpdateData.patientmiddlename = newMiddleName;
-      }
-      
-      // Update the corresponding patient account
-      const result = await Patientaccount.findOneAndUpdate(
-        { patientemail: doc.patientemail },
-        accountUpdateData,
-        { new: true }
-      );
-      
-      if (result) {
-        const syncedFields = [];
-        if (this._profilePictureUpdate) syncedFields.push('profile picture');
-        if (this._nameFieldsUpdate) syncedFields.push('name fields');
-        console.log(`✅ ${syncedFields.join(' and ')} synced via update for patient: ${doc.patientemail}`);
-      } else {
-        console.log(`⚠️ No patient account found for email: ${doc.patientemail}`);
-      }
+// EMERGENCY: Temporarily disable update middleware for debugging
+// PatientdemographicSchema.post('findOneAndUpdate', async function(doc) {
+//   // Middleware disabled for emergency performance fix
+// });
 
-      // Also sync with PatientAppointment model
-      try {
-        // Import PatientAppointment dynamically to avoid circular dependency
-        const PatientAppointment = mongoose.model('PatientAppointment');
-        
-        // Prepare update object for appointments
-        const appointmentUpdateData = {};
-        if (this._profilePictureUpdate) {
-          const newProfilePicture = updateValue.patientprofilepicture || updateValue.$set?.patientprofilepicture;
-          appointmentUpdateData.patientappointmentprofilepicture = newProfilePicture;
-        }
-        if (this._nameFieldsUpdate) {
-          const newLastName = updateValue.patientlastname || updateValue.$set?.patientlastname;
-          const newFirstName = updateValue.patientfirstname || updateValue.$set?.patientfirstname;
-          const newMiddleName = updateValue.patientmiddlename || updateValue.$set?.patientmiddlename;
-          
-          if (newLastName !== undefined) appointmentUpdateData.patientappointmentlastname = newLastName;
-          if (newFirstName !== undefined) appointmentUpdateData.patientappointmentfirstname = newFirstName;
-          if (newMiddleName !== undefined) appointmentUpdateData.patientappointmentmiddlename = newMiddleName;
-        }
-        
-        const appointmentResult = await PatientAppointment.updateMany(
-          { patientappointmentemail: doc.patientemail },
-          appointmentUpdateData
-        );
-        
-        if (appointmentResult.modifiedCount > 0) {
-          const syncedFields = [];
-          if (this._profilePictureUpdate) syncedFields.push('profile picture');
-          if (this._nameFieldsUpdate) syncedFields.push('name fields');
-          console.log(`✅ ${syncedFields.join(' and ')} synced to ${appointmentResult.modifiedCount} appointment(s) via update for patient: ${doc.patientemail}`);
-        } else {
-          console.log(`ℹ️ No appointments found to update for patient: ${doc.patientemail}`);
-        }
-      } catch (appointmentError) {
-        console.error('❌ Error syncing data to appointments via update:', appointmentError);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error syncing data to patient account:', error);
-  }
-});
-
-// Additional middleware for other update operations
-PatientdemographicSchema.pre(['updateOne', 'updateMany'], function(next) {
-  const update = this.getUpdate();
-  this._profilePictureUpdate = update && (update.patientprofilepicture || update.$set?.patientprofilepicture);
-  
-  // Check if name fields are being updated
-  this._nameFieldsUpdate = update && (
-    update.patientlastname || update.$set?.patientlastname ||
-    update.patientfirstname || update.$set?.patientfirstname ||
-    update.patientmiddlename || update.$set?.patientmiddlename
-  );
-  
-  next();
-});
-
-PatientdemographicSchema.post(['updateOne', 'updateMany'], async function(result) {
-  try {
-    if (result.modifiedCount > 0 && (this._profilePictureUpdate || this._nameFieldsUpdate)) {
-      const filter = this.getFilter();
-      const update = this.getUpdate();
-      
-      console.log(`Syncing data via bulk update operation`);
-      
-      // Find affected documents and sync their data
-      const affectedDocs = await this.model.find(filter);
-      
-      for (const doc of affectedDocs) {
-        // Prepare update object for patient account
-        const accountUpdateData = {};
-        if (this._profilePictureUpdate) {
-          const newProfilePicture = update.patientprofilepicture || update.$set?.patientprofilepicture;
-          accountUpdateData.patientprofilepicture = newProfilePicture;
-        }
-        if (this._nameFieldsUpdate) {
-          const newLastName = update.patientlastname || update.$set?.patientlastname;
-          const newFirstName = update.patientfirstname || update.$set?.patientfirstname;
-          const newMiddleName = update.patientmiddlename || update.$set?.patientmiddlename;
-          
-          if (newLastName !== undefined) accountUpdateData.patientlastname = newLastName;
-          if (newFirstName !== undefined) accountUpdateData.patientfirstname = newFirstName;
-          if (newMiddleName !== undefined) accountUpdateData.patientmiddlename = newMiddleName;
-        }
-        
-        // Sync with patient account
-        const accountResult = await Patientaccount.findOneAndUpdate(
-          { patientemail: doc.patientemail },
-          accountUpdateData,
-          { new: true }
-        );
-        
-        if (accountResult) {
-          const syncedFields = [];
-          if (this._profilePictureUpdate) syncedFields.push('profile picture');
-          if (this._nameFieldsUpdate) syncedFields.push('name fields');
-          console.log(`✅ ${syncedFields.join(' and ')} synced via bulk update for patient: ${doc.patientemail}`);
-        } else {
-          console.log(`⚠️ No patient account found for email: ${doc.patientemail}`);
-        }
-
-        // Also sync with PatientAppointment model
-        try {
-          // Import PatientAppointment dynamically to avoid circular dependency
-          const PatientAppointment = mongoose.model('PatientAppointment');
-          
-          // Prepare update object for appointments
-          const appointmentUpdateData = {};
-          if (this._profilePictureUpdate) {
-            const newProfilePicture = update.patientprofilepicture || update.$set?.patientprofilepicture;
-            appointmentUpdateData.patientappointmentprofilepicture = newProfilePicture;
-          }
-          if (this._nameFieldsUpdate) {
-            const newLastName = update.patientlastname || update.$set?.patientlastname;
-            const newFirstName = update.patientfirstname || update.$set?.patientfirstname;
-            const newMiddleName = update.patientmiddlename || update.$set?.patientmiddlename;
-            
-            if (newLastName !== undefined) appointmentUpdateData.patientappointmentlastname = newLastName;
-            if (newFirstName !== undefined) appointmentUpdateData.patientappointmentfirstname = newFirstName;
-            if (newMiddleName !== undefined) appointmentUpdateData.patientappointmentmiddlename = newMiddleName;
-          }
-          
-          const appointmentResult = await PatientAppointment.updateMany(
-            { patientappointmentemail: doc.patientemail },
-            appointmentUpdateData
-          );
-          
-          if (appointmentResult.modifiedCount > 0) {
-            const syncedFields = [];
-            if (this._profilePictureUpdate) syncedFields.push('profile picture');
-            if (this._nameFieldsUpdate) syncedFields.push('name fields');
-            console.log(`✅ ${syncedFields.join(' and ')} synced to ${appointmentResult.modifiedCount} appointment(s) via bulk update for patient: ${doc.patientemail}`);
-          } else {
-            console.log(`ℹ️ No appointments found to update for patient: ${doc.patientemail}`);
-          }
-        } catch (appointmentError) {
-          console.error('❌ Error syncing data to appointments via bulk update:', appointmentError);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error syncing data in bulk update:', error);
-  }
-});
+// EMERGENCY: Temporarily disable bulk update middleware for debugging  
+// PatientdemographicSchema.post(['updateOne', 'updateMany'], async function(result) {
+//   // Middleware disabled for emergency performance fix
+// });
 
 PatientdemographicSchema.plugin(AutoIncrement(mongoose),{
   inc_field:'patientdemographicId',
@@ -484,41 +290,55 @@ PatientdemographicSchema.index({ patientlastname: 1, patientfirstname: 1 }); // 
 PatientdemographicSchema.index({ createdAt: -1 }); // Date sorting
 PatientdemographicSchema.index({ patientlastname: 'text', patientfirstname: 'text', patientemail: 'text' }); // Text search
 
-// Static method to sync profile picture and name fields for a specific patient
+// Additional performance indexes
+PatientdemographicSchema.index({ updatedAt: -1 }); // For recent updates
+PatientdemographicSchema.index({ patientcontactnumber: 1 }); // Phone number searches
+PatientdemographicSchema.index({ patientgender: 1, patientage: 1 }); // Demographics filtering
+PatientdemographicSchema.index({ patientlastname: 1, patientfirstname: 1, patientmiddlename: 1 }); // Full name search
+
+// Optimized static method to sync profile picture and name fields for a specific patient
 PatientdemographicSchema.statics.syncProfilePicture = async function(patientemail) {
   try {
-    const demographic = await this.findOne({ patientemail });
+    const demographic = await this.findOne({ patientemail }).select('patientemail patientprofilepicture patientlastname patientfirstname patientmiddlename').lean();
     if (demographic) {
-      // Sync with patient account
-      await Patientaccount.findOneAndUpdate(
+      // Sync with patient account using updateOne for better performance
+      const accountResult = await Patientaccount.updateOne(
         { patientemail: patientemail },
         { 
-          patientprofilepicture: demographic.patientprofilepicture,
-          patientlastname: demographic.patientlastname,
-          patientfirstname: demographic.patientfirstname,
-          patientmiddlename: demographic.patientmiddlename
-        },
-        { new: true }
+          $set: {
+            patientprofilepicture: demographic.patientprofilepicture,
+            patientlastname: demographic.patientlastname,
+            patientfirstname: demographic.patientfirstname,
+            patientmiddlename: demographic.patientmiddlename
+          }
+        }
       );
 
-      // Sync with patient appointments
-      try {
-        const PatientAppointment = mongoose.model('PatientAppointment');
-        const appointmentResult = await PatientAppointment.updateMany(
-          { patientappointmentemail: patientemail },
-          { 
+      // Fire-and-forget sync with patient appointments
+      const PatientAppointment = mongoose.model('PatientAppointment');
+      PatientAppointment.updateMany(
+        { patientappointmentemail: patientemail },
+        { 
+          $set: {
             patientappointmentprofilepicture: demographic.patientprofilepicture,
             patientappointmentlastname: demographic.patientlastname,
             patientappointmentfirstname: demographic.patientfirstname,
             patientappointmentmiddlename: demographic.patientmiddlename
           }
-        );
-        console.log(`✅ Profile picture and name fields synced to ${appointmentResult.modifiedCount} appointment(s) for patient: ${patientemail}`);
-      } catch (appointmentError) {
-        console.error('❌ Error syncing data to appointments:', appointmentError);
-      }
+        }
+      ).then((appointmentResult) => {
+        if (appointmentResult.modifiedCount > 0) {
+          console.log(`✅ Profile synced to ${appointmentResult.modifiedCount} appointment(s) for: ${patientemail}`);
+        }
+      }).catch((appointmentError) => {
+        console.error('❌ Error syncing appointments:', appointmentError);
+      });
 
-      return { success: true, message: 'Profile picture and name fields synced successfully to account and appointments' };
+      return { 
+        success: true, 
+        message: 'Profile picture and name fields synced successfully to account and appointments',
+        accountModified: accountResult.modifiedCount > 0
+      };
     }
     return { success: false, message: 'Demographic record not found' };
   } catch (error) {
@@ -527,49 +347,82 @@ PatientdemographicSchema.statics.syncProfilePicture = async function(patientemai
   }
 };
 
-// Static method to sync all profile pictures and name fields (for data migration)
+// Optimized static method to sync all profile pictures and name fields (for data migration)
 PatientdemographicSchema.statics.syncAllProfilePictures = async function() {
   try {
-    const demographics = await this.find({});
-    let syncCount = 0;
-    let appointmentSyncCount = 0;
-    
-    for (const demographic of demographics) {
-      // Sync with patient account
-      await Patientaccount.findOneAndUpdate(
-        { patientemail: demographic.patientemail },
-        { 
-          patientprofilepicture: demographic.patientprofilepicture,
-          patientlastname: demographic.patientlastname,
-          patientfirstname: demographic.patientfirstname,
-          patientmiddlename: demographic.patientmiddlename
-        },
-        { new: true }
-      );
-
-      // Sync with patient appointments
-      try {
-        const PatientAppointment = mongoose.model('PatientAppointment');
-        const appointmentResult = await PatientAppointment.updateMany(
-          { patientappointmentemail: demographic.patientemail },
-          { 
-            patientappointmentprofilepicture: demographic.patientprofilepicture,
-            patientappointmentlastname: demographic.patientlastname,
-            patientappointmentfirstname: demographic.patientfirstname,
-            patientappointmentmiddlename: demographic.patientmiddlename
-          }
-        );
-        appointmentSyncCount += appointmentResult.modifiedCount;
-      } catch (appointmentError) {
-        console.error(`❌ Error syncing appointments for ${demographic.patientemail}:`, appointmentError);
+    // Use aggregation pipeline for better performance
+    const demographics = await this.aggregate([
+      {
+        $project: {
+          patientemail: 1,
+          patientprofilepicture: 1,
+          patientlastname: 1,
+          patientfirstname: 1,
+          patientmiddlename: 1
+        }
       }
+    ]);
 
-      syncCount++;
+    if (demographics.length === 0) {
+      return { success: true, message: 'No demographics found to sync' };
+    }
+    
+    let syncCount = 0;
+    
+    // Process in batches of 50 for better performance
+    const batchSize = 50;
+    for (let i = 0; i < demographics.length; i += batchSize) {
+      const batch = demographics.slice(i, i + batchSize);
+      
+      // Prepare bulk operations for patient accounts
+      const accountBulkOps = batch.map(demographic => ({
+        updateOne: {
+          filter: { patientemail: demographic.patientemail },
+          update: {
+            $set: {
+              patientprofilepicture: demographic.patientprofilepicture,
+              patientlastname: demographic.patientlastname,
+              patientfirstname: demographic.patientfirstname,
+              patientmiddlename: demographic.patientmiddlename
+            }
+          }
+        }
+      }));
+
+      // Execute bulk update for patient accounts
+      const accountResult = await Patientaccount.bulkWrite(accountBulkOps);
+      syncCount += accountResult.modifiedCount;
+
+      // Fire-and-forget bulk update for appointments
+      const PatientAppointment = mongoose.model('PatientAppointment');
+      const appointmentBulkOps = batch.map(demographic => ({
+        updateMany: {
+          filter: { patientappointmentemail: demographic.patientemail },
+          update: {
+            $set: {
+              patientappointmentprofilepicture: demographic.patientprofilepicture,
+              patientappointmentlastname: demographic.patientlastname,
+              patientappointmentfirstname: demographic.patientfirstname,
+              patientappointmentmiddlename: demographic.patientmiddlename
+            }
+          }
+        }
+      }));
+
+      PatientAppointment.bulkWrite(appointmentBulkOps).then((appointmentResult) => {
+        console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: ${appointmentResult.modifiedCount} appointments synced`);
+      }).catch((appointmentError) => {
+        console.error(`❌ Error syncing appointment batch ${Math.floor(i/batchSize) + 1}:`, appointmentError);
+      });
+
+      console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: ${accountResult.modifiedCount} accounts synced`);
     }
     
     return { 
       success: true, 
-      message: `Synced ${syncCount} profile pictures and name fields to accounts and ${appointmentSyncCount} appointment records` 
+      message: `Synced ${syncCount} profile pictures and name fields to accounts. Appointment sync in progress.`,
+      accountsSynced: syncCount,
+      totalProcessed: demographics.length
     };
   } catch (error) {
     console.error('Error in syncAllProfilePictures:', error);
