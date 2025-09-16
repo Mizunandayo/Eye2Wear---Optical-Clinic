@@ -1059,17 +1059,41 @@ useEffect(() => {
                 <div className="flex flex-row lg:flex-col gap-2 lg:gap-0 overflow-x-auto lg:overflow-x-visible">
                 {['All', 'Pending', 'Ready for Pickup', 'Completed'].map(status => {
                     const patientorderedstatusCount = status === 'All'  ? ambherOrders.length : ambherOrders.filter(order => order.patientorderambherstatus === status).length; 
+                    
+                    // Color themes for each status
+                    const getStatusColors = (status, isActive) => {
+                      switch(status) {
+                        case 'All':
+                          return isActive 
+                            ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white border-slate-600 shadow-lg' 
+                            : 'border-slate-300 hover:bg-slate-50 hover:border-slate-400';
+                        case 'Pending':
+                          return isActive 
+                            ? 'bg-yellow-800 text-white border-orange-500 shadow-lg' 
+                            : 'border-orange-300 hover:bg-orange-50 hover:border-orange-400';
+                        case 'Ready for Pickup':
+                          return isActive 
+                            ? 'bg-sky-800 text-white border-blue-500 shadow-lg' 
+                            : 'border-blue-300 hover:bg-blue-50 hover:border-blue-400';
+                        case 'Completed':
+                          return isActive 
+                            ? 'bg-green-700 text-white border-green-500 shadow-lg' 
+                            : 'border-green-300 hover:bg-green-50 hover:border-green-400';
+                        default:
+                          return 'border-gray-300 hover:bg-gray-50';
+                      }
+                    };
   
                     return (
-                       <div key={status} onClick={() => {setfilterambherorderedproductsStatus(status); setsearchpatientorderedProducts('');}} className={`mt-0 lg:mt-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl py-2 px-3 lg:px-2 text-center flex justify-center items-center whitespace-nowrap lg:whitespace-normal ${filterambherorderedproductsStatus === status ? 'bg-[#2781af] rounded-2xl text-white' : ''}`} >
-                        <h1 className={`font-albertsans font-semibold text-sm lg:text-base ${filterambherorderedproductsStatus === status ? 'text-white' : 'text-[#1f1f1f]'}`}>{status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {patientorderedstatusCount} </span> </h1>  </div>
+                       <div key={status} onClick={() => {setfilterambherorderedproductsStatus(status); setsearchpatientorderedProducts('');}} className={`mt-0 lg:mt-3 rounded-2xl transition-all duration-300 ease-in-out border-2 py-2 px-3 lg:px-2 text-center flex justify-center items-center whitespace-nowrap lg:whitespace-normal cursor-pointer ${getStatusColors(status, filterambherorderedproductsStatus === status)}`} >
+                        <h1 className={`font-albertsans font-semibold text-sm lg:text-base ${filterambherorderedproductsStatus === status ? 'text-white' : 'text-[#1f1f1f]'}`}>{status} <span className={`font-semibold px-2 rounded-full ml-2 text-sm ${filterambherorderedproductsStatus === status ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500'}`}> {patientorderedstatusCount} </span> </h1>  </div>
                         );})}
                 </div>
 
           </div>
           <div className="flex flex-col justify-start items-start ml-0 lg:ml-2 rounded-2xl w-full lg:w-[80%] min-h-[540px] max-h-auto h-auto shadow-b-lg">
               <div className="ml-2 flex flex-col sm:flex-row sm:justify-center sm:items-center gap-2 sm:gap-0 w-full"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3">Search: </h2><div className="relative flex items-center justify-center gap-3 w-full sm:w-auto"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchpatientorderedProducts} onChange={(e) => handleSearch(e.target.value)} type="text" placeholder="Enter ordered product name here..." className="transition-all duration-300 ease-in-out py-2 pl-10 w-full sm:w-250 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-              <div className="mt-5 w-full rounded-2xl h-auto flex flex-col gap-3 pl-2 pt-2 pr-2 lg:pr-30">
+              <div className="mt-5 w-full rounded-2xl h-auto grid grid-cols-1 gap-3 px-2 pt-2">{/* Changed to responsive grid layout */}
                       
                       
                       {loading ? (
@@ -1079,22 +1103,22 @@ useEffect(() => {
                       ) : (
                         filteredambherOrders.map(order => (
 
-                  <div key={order.patientorderambherid} onClick={() => handleViewOrder(order)} className="pb-4 sm:pb-7 shadow-md rounded-2xl p-3 sm:py-3.25 sm:px-3.25 mb-3 border-1 flex flex-col sm:flex-row sm:items-center motion-preset-slide-up w-full h-auto cursor-pointer hover:shadow-lg transition-all duration-300">
-                   <img src={order.patientorderambherproductimage?.[0] || 'default-image-url'} alt={order.patientorderambherproductname} className="mb-3 sm:mb-0 sm:mr-5 w-full sm:w-35 h-48 sm:h-35 rounded-2xl object-cover"/>
-                    <div className="mt-0 sm:mt-2 h-auto w-full flex flex-col items-start">
-                        <div className="flex flex-col sm:flex-row sm:justify-between w-full mb-3 sm:mb-0">
-                          <h1 className="font-semibold font-albertsans text-lg sm:text-[20px] text-[#1f1f1f] mb-2 sm:mb-0">{order.patientorderambherproductname}</h1> 
-                          <span className={`${formatorderstatusColor(order.patientorderambherstatus)} ml-0 sm:ml-3 font-albertsans font-semibold rounded-full text-sm sm:text-[15px] leading-5 px-3 sm:px-4 py-1 sm:py-2 inline-flex self-start sm:self-auto`}>{order.patientorderambherstatus}</span> 
+                  <div key={order.patientorderambherid} onClick={() => handleViewOrder(order)} className="pb-7 shadow-md rounded-2xl py-3.25 px-3.25 flex flex-col sm:flex-row items-start sm:items-center motion-preset-slide-up w-full h-auto cursor-pointer hover:shadow-lg transition-all duration-300">
+                   <img src={order.patientorderambherproductimage?.[0] || 'default-image-url'} alt={order.patientorderambherproductname} className="mr-0 sm:mr-5 w-full sm:w-35 h-48 sm:h-35 rounded-2xl object-cover mb-4 sm:mb-0"/>
+                    <div className="mt-2 h-auto w-full flex flex-col items-start">
+                        <div className="flex flex-col sm:flex-row sm:justify-between w-full items-start sm:items-center gap-2 sm:gap-0">
+                          <h1 className="font-semibold font-albertsans text-lg sm:text-[20px] text-[#1f1f1f]">{order.patientorderambherproductname}</h1> 
+                          <span className={`${formatorderstatusColor(order.patientorderambherstatus)} ml-0 sm:ml-3 font-albertsans font-semibold rounded-full text-sm sm:text-[15px] leading-5 px-3 sm:px-4 py-1 sm:py-2 inline-flex self-start sm:self-center`}>{order.patientorderambherstatus}</span> 
                         </div>
-                        <div className="mt-3 sm:mt-5 justify-between w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-1 sm:flex sm:items-center text-[#323232] font-semibold text-[13px]">
-                          <div className="flex items-center gap-2 sm:gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Date Ordered</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
-                          <div className="flex items-center gap-2 sm:gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Pickup at Ambher Optical</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{order.patientorderambherproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderambherproductchosenpickupdate && order.patientorderambherproductchosenpickupdate !== 'Later' && order.patientorderambherproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderambherproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
-                          <div className="flex items-center gap-2 sm:gap-1"><i className="text-[#565656] bx bxs-package mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Quantity</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">x{order.patientorderambherproductquantity}</p></div></div>
-                          <div className="flex items-center gap-2 sm:gap-1"><p className="font-semibold text-lg sm:text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777] font-medium text-xs sm:text-[13px]">{Number(order.patientorderambheramountpaid) < Number(order.patientorderambherproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{Number(order.patientorderambheramountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
+                        <div className="mt-5 justify-between w-full grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-0 sm:flex sm:items-center text-[#323232] font-semibold text-[13px]">
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Date Ordered</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Pickup at Ambher Optical</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{order.patientorderambherproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderambherproductchosenpickupdate && order.patientorderambherproductchosenpickupdate !== 'Later' && order.patientorderambherproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderambherproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-package mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Quantity</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">x{order.patientorderambherproductquantity}</p></div></div>
+                          <div className="flex items-center gap-1"><p className="font-semibold text-lg sm:text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777] font-medium text-xs sm:text-[13px]">{Number(order.patientorderambheramountpaid) < Number(order.patientorderambherproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{Number(order.patientorderambheramountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
                         </div>
                         <div className="flex items-center justify-between border-t-2 w-full h-10 mt-5">
                           <div></div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{(order.patientorderambherproductprice * order.patientorderambherproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
+                          <div className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{(order.patientorderambherproductprice * order.patientorderambherproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
                         </div>
                     </div>
                   </div>
@@ -1119,16 +1143,40 @@ useEffect(() => {
                 <div className="flex flex-row lg:flex-col gap-2 lg:gap-0 overflow-x-auto lg:overflow-x-visible">
                 {['All', 'Pending', 'Ready for Pickup', 'Completed'].map(status => {
                     const patientorderedstatusCount = status === 'All'  ? bautistaOrders.length : bautistaOrders.filter(order => order.patientorderbautistastatus === status).length; 
+                    
+                    // Color themes for each status
+                    const getStatusColors = (status, isActive) => {
+                      switch(status) {
+                        case 'All':
+                          return isActive 
+                            ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white border-slate-600 shadow-lg' 
+                            : 'border-slate-300 hover:bg-slate-50 hover:border-slate-400';
+                        case 'Pending':
+                          return isActive 
+                            ? 'bg-yellow-800 text-white border-orange-500 shadow-lg' 
+                            : 'border-orange-300 hover:bg-orange-50 hover:border-orange-400';
+                        case 'Ready for Pickup':
+                          return isActive 
+                            ? 'bg-sky-800 text-white border-blue-500 shadow-lg' 
+                            : 'border-blue-300 hover:bg-blue-50 hover:border-blue-400';
+                        case 'Completed':
+                          return isActive 
+                            ? 'bg-green-700 text-white border-green-500 shadow-lg' 
+                            : 'border-green-300 hover:bg-green-50 hover:border-green-400';
+                        default:
+                          return 'border-gray-300 hover:bg-gray-50';
+                      }
+                    };
   
                     return (
-                       <div key={status} onClick={() => {setfilterbautistaorderedproductsStatus(status); setsearchpatientorderedProducts('');}} className={`mt-0 lg:mt-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl py-2 px-3 lg:px-2 text-center flex justify-center items-center whitespace-nowrap lg:whitespace-normal ${filterbautistaorderedproductsStatus === status ? 'bg-[#2781af] rounded-2xl text-white' : ''}`} >
-                        <h1 className={`font-albertsans font-semibold text-sm lg:text-base ${filterbautistaorderedproductsStatus === status ? 'text-white' : 'text-[#1f1f1f]'}`}>{status} <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {patientorderedstatusCount} </span> </h1>  </div>
+                       <div key={status} onClick={() => {setfilterbautistaorderedproductsStatus(status); setsearchpatientorderedProducts('');}} className={`mt-0 lg:mt-3 rounded-2xl transition-all duration-300 ease-in-out border-2 py-2 px-3 lg:px-2 text-center flex justify-center items-center whitespace-nowrap lg:whitespace-normal cursor-pointer ${getStatusColors(status, filterbautistaorderedproductsStatus === status)}`} >
+                        <h1 className={`font-albertsans font-semibold text-sm lg:text-base ${filterbautistaorderedproductsStatus === status ? 'text-white' : 'text-[#1f1f1f]'}`}>{status} <span className={`font-semibold px-2 rounded-full ml-2 text-sm ${filterbautistaorderedproductsStatus === status ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500'}`}> {patientorderedstatusCount} </span> </h1>  </div>
                         );})}
                 </div>
 
           </div>
           <div className="flex flex-col justify-start items-start ml-0 lg:ml-2 rounded-2xl w-full lg:w-[80%] min-h-[540px] max-h-auto h-auto shadow-b-lg">
-              <div className="ml-2 flex flex-col sm:flex-row sm:justify-center sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-0"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3">Search: </h2><div className="relative flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchpatientorderedProducts}  onChange={(e) => handleSearch(e.target.value)}  type="text" placeholder="Enter ordered product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full sm:w-250 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+              <div className="ml-2 flex flex-col sm:flex-row sm:justify-center sm:items-center gap-2 sm:gap-0 w-full"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3">Search: </h2><div className="relative flex items-center justify-center gap-3 w-full sm:w-auto"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input value={searchpatientorderedProducts}  onChange={(e) => handleSearch(e.target.value)}  type="text" placeholder="Enter ordered product name here..."   className="transition-all duration-300 ease-in-out py-2 pl-10 w-full sm:w-250 rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
               <div className="mt-5 w-full rounded-2xl h-auto grid grid-cols-1 gap-3 px-2 pt-2">{/* Changed to responsive grid layout */}
                       
                       
@@ -1143,18 +1191,18 @@ useEffect(() => {
                     <img src={order.patientorderbautistaproductimage?.[0] || 'default-image-url'} alt={order.patientorderbautistaproductname} className="mr-0 sm:mr-5 w-full sm:w-35 h-48 sm:h-35 rounded-2xl object-cover mb-4 sm:mb-0"/>
                     <div className="mt-2 h-auto w-full flex flex-col items-start">
                         <div className="flex flex-col sm:flex-row sm:justify-between w-full items-start sm:items-center gap-2 sm:gap-0">
-                          <h1 className="font-semibold font-albertsans text-[18px] sm:text-[20px] text-[#1f1f1f]">{order.patientorderbautistaproductname}</h1> 
-                          <span className={`${formatorderstatusColor(order.patientorderbautistastatus)} ml-0 sm:ml-3 font-albertsans font-semibold rounded-full text-[13px] sm:text-[15px] leading-5 px-3 sm:px-4 py-1 sm:py-2 inline-flex self-start sm:self-center`}>{order.patientorderbautistastatus}</span>
+                          <h1 className="font-semibold font-albertsans text-lg sm:text-[20px] text-[#1f1f1f]">{order.patientorderbautistaproductname}</h1> 
+                          <span className={`${formatorderstatusColor(order.patientorderbautistastatus)} ml-0 sm:ml-3 font-albertsans font-semibold rounded-full text-sm sm:text-[15px] leading-5 px-3 sm:px-4 py-1 sm:py-2 inline-flex self-start sm:self-center`}>{order.patientorderbautistastatus}</span>
                         </div>
-                        <div className="mt-5 justify-between w-full grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 sm:flex sm:items-center text-[#323232] font-semibold text-[13px]">
-                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-[20px] sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-[12px] sm:text-[13px]">Date Ordered</p><p className="text-[#303030] font-semibold text-[13px] sm:text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
-                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-[20px] sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-[12px] sm:text-[13px]">Pickup at Bautista Eye Center</p><p className="text-[#303030] font-semibold text-[13px] sm:text-[15px]">{order.patientorderbautistaproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderbautistaproductchosenpickupdate && order.patientorderbautistaproductchosenpickupdate !== 'Later' && order.patientorderbautistaproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderbautistaproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
-                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-package mt-0.5 font-semibold text-[20px] sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-[12px] sm:text-[13px]">Quantity</p><p className="text-[#303030] font-semibold text-[13px] sm:text-[15px]">x{order.patientorderbautistaproductquantity}</p></div></div>
-                          <div className="flex items-center gap-1"><p className="font-semibold text-[20px] sm:text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777] font-medium text-[12px] sm:text-[13px]">{Number(order.patientorderbautistaamountpaid) < Number(order.patientorderbautistaproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md text-[11px] sm:text-[12px]">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030] font-semibold text-[13px] sm:text-[15px]">{Number(order.patientorderbautistaamountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
+                        <div className="mt-5 justify-between w-full grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-0 sm:flex sm:items-center text-[#323232] font-semibold text-[13px]">
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Date Ordered</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{formatorderDates(order.createdAt)}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-calendar mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Pickup at Bautista Eye Center</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{order.patientorderbautistaproductpickupstatus === 'Now'  ? `Completed (${formatorderDates(order.createdAt)})` : order.patientorderbautistaproductchosenpickupdate && order.patientorderbautistaproductchosenpickupdate !== 'Later' && order.patientorderbautistaproductchosenpickupdate !== 'Now' ? `Available for Pickup: ${formatorderDates(order.patientorderbautistaproductchosenpickupdate)}` : "To be scheduled"}</p></div></div>
+                          <div className="flex items-center gap-1"><i className="text-[#565656] bx bxs-package mt-0.5 font-semibold text-lg sm:text-[22px]"/><div><p className="text-[#777777] font-medium text-xs sm:text-[13px]">Quantity</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">x{order.patientorderbautistaproductquantity}</p></div></div>
+                          <div className="flex items-center gap-1"><p className="font-semibold text-lg sm:text-[22px] text-[#565656]">₱</p><div> <p className="text-[#777777] font-medium text-xs sm:text-[13px]">{Number(order.patientorderbautistaamountpaid) < Number(order.patientorderbautistaproducttotal) ? (<span className="px-1 py-.5 bg-yellow-100 text-yellow-900 font-alberstans rounded-md">Down Payment</span> ): "Amount Paid"}</p><p className="text-[#303030] font-semibold text-sm sm:text-[15px]">{Number(order.patientorderbautistaamountpaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div></div>
                         </div>
                         <div className="flex items-center justify-between border-t-2 w-full h-10 mt-5">
                           <div></div>
-                          <div className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-[15px] sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-[20px] sm:text-[25px] text-[#549013]">₱{(order.patientorderbautistaproductprice * order.patientorderbautistaproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
+                          <div className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{(order.patientorderbautistaproductprice * order.patientorderbautistaproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
                         </div>
                     </div>
                   </div>
