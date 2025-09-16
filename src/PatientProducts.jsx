@@ -1921,7 +1921,7 @@ useEffect(() => {
 
 
 
-              <div id="inventorymanagement" className="  pl-5 pr-5 pb-4 pt-8  transition-all duration-300  ease-in-out  w-[100%] h-full bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 " >   
+              <div id="inventorymanagement" className="  pl-5 pr-5 pb-4 pt-8  transition-all duration-300  ease-in-out  w-[100%] h-full bg-white " >   
 
               <div className=" flex items-center mt-8"><i className="bx bxs-shopping-bag text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Browse our Products</h1></div>
 
@@ -2297,7 +2297,7 @@ useEffect(() => {
                            <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                 <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
                    
-                                  <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}} className="bg-[#333232] px-6 sm:px-10 py-2 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[30px] sm:text-[40px]"/></div>
+                            <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}}  className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
                                 </div>
 
 
@@ -2820,8 +2820,8 @@ useEffect(() => {
                          <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-4">
                            <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                 <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
-                   
-                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="bg-[#333232] px-6 sm:px-10 py-2 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[30px] sm:text-[40px]"/></div>
+                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
+
                                 </div>
 
 
