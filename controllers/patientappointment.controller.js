@@ -47,7 +47,10 @@
         fileFilter: fileFilter,
         limits: {
             fileSize: 10 * 1024 * 1024, // 10MB per file
-            files: 5 // Maximum 5 files
+            files: 5, // Maximum 5 files
+            fieldSize: 10 * 1024 * 1024, // 10MB for field values (for large text fields)
+            fieldNameSize: 255, // Maximum field name size
+            fields: 100 // Maximum number of non-file fields
         }
     });
 

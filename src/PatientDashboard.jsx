@@ -348,16 +348,24 @@ const patientsubmitappointment = async (formData) => {
 
   try{
 
+    // Validate that we have patient demographics
+    if (!patientdemographics) {
+      throw new Error('Patient demographic information is required. Please complete your profile first.');
+    }
+
+    if (!patientdemographics.patientlastname || !patientdemographics.patientfirstname || !patientdemographics.patientemail) {
+      throw new Error('Patient name and email are required. Please complete your profile first.');
+    }
 
     const patientappointmentdata = {
 
       patientappointmentstatus: "Pending",
 
-      patientappointmentprofilepicture: patientdemographics?.patientprofilepicture || '',
-      patientappointmentlastname: patientdemographics?.patientlastname || '',
-      patientappointmentfirstname: patientdemographics?.patientfirstname || '',
-      patientappointmentmiddlename: patientdemographics?.patientmiddlename || '',
-      patientappointmentemail: patientdemographics?.patientemail || '',
+      patientappointmentprofilepicture: patientdemographics.patientprofilepicture || '',
+      patientappointmentlastname: patientdemographics.patientlastname,
+      patientappointmentfirstname: patientdemographics.patientfirstname,
+      patientappointmentmiddlename: patientdemographics.patientmiddlename || '',
+      patientappointmentemail: patientdemographics.patientemail,
 
 
       patientappointmentstaffname:"Staff Name",
@@ -418,9 +426,13 @@ const patientsubmitappointment = async (formData) => {
 
 
       patientadditionalappointmentnotes: additionaldetails,
-      patientadditionalappointmentnotesimage: defaultimageplaceholder,
+      patientadditionalappointmentnotesimage: "default-profile-url",
       patientappointmentpaymentotal: 0,
     }
+
+    // Debug: Log appointment data being sent
+    console.log('Appointment data being sent:', patientappointmentdata);
+    console.log('Patient demographics:', patientdemographics);
 
     // Create FormData for file uploads
     const submissionFormData = new FormData();
@@ -476,7 +488,9 @@ const patientsubmitappointment = async (formData) => {
 
 
     if(!response.ok){
-      throw new Error(`HTTP error! Error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Server response:', response.status, errorText);
+      throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
     }
 
 

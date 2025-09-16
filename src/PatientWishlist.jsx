@@ -295,6 +295,12 @@ const WishlistGridSkeleton = () => (
             const [addambherinventoryproductimagepreviewimages, setaddambherinventoryproductimagepreviewimages] = useState([]);
             const [ambhercurrentimageindex, setambhercurrentimageindex] = useState(0);
             const [selectedambherproduct, setselectedambherproduct] = useState(null);
+
+            // SOLD COUNT STATE VARIABLES
+            const [ambherproductsoldCount, setambherproductsoldCount] = useState(0);
+            const [bautistaproductsoldCount, setbautistaproductsoldCount] = useState(0);
+            const [ambherproductsoldCounts, setambherproductsoldCounts] = useState({});
+            const [bautistaproductsoldCounts, setbautistaproductsoldCounts] = useState({});
     
 
 
@@ -304,8 +310,8 @@ const WishlistGridSkeleton = () => (
             const ambherhandlepreviousimage = (e) => {
               e.preventDefault(); 
               if (selectedambherproduct) {
-                if (!selectedambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
-                setambhercurrentimageindex(prev => prev === 0 ? selectedambherproduct.ambherinventoryproductimagepreviewimages.length - 1 : prev - 1 );
+                if (!selectedambherproduct.patientwishlistinventoryproductimagepreviewimages?.length) return;
+                setambhercurrentimageindex(prev => prev === 0 ? selectedambherproduct.patientwishlistinventoryproductimagepreviewimages.length - 1 : prev - 1 );
             
               } else {
                 if (!addambherinventoryproductimagepreviewimages?.length) return;
@@ -317,8 +323,8 @@ const WishlistGridSkeleton = () => (
             const ambherhandlenextimage = (e) => {
               e.preventDefault();
               if (selectedambherproduct) {
-                if (!selectedambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
-                setambhercurrentimageindex(prev => prev === selectedambherproduct.ambherinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+                if (!selectedambherproduct.patientwishlistinventoryproductimagepreviewimages?.length) return;
+                setambhercurrentimageindex(prev => prev === selectedambherproduct.patientwishlistinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
             
               } else {
                 if (!addambherinventoryproductimagepreviewimages?.length) return;
@@ -386,8 +392,8 @@ const WishlistGridSkeleton = () => (
             const bautistahandlepreviousimage = (e) => {
               e.preventDefault(); 
               if (selectedbautistaproduct) {
-                if (!selectedbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
-                setbautistacurrentimageindex(prev => prev === 0 ? selectedbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 : prev - 1 );
+                if (!selectedbautistaproduct.patientwishlistinventoryproductimagepreviewimages?.length) return;
+                setbautistacurrentimageindex(prev => prev === 0 ? selectedbautistaproduct.patientwishlistinventoryproductimagepreviewimages.length - 1 : prev - 1 );
             
               } else {
                 if (!addbautistainventoryproductimagepreviewimages?.length) return;
@@ -399,8 +405,8 @@ const WishlistGridSkeleton = () => (
             const bautistahandlenextimage = (e) => {
               e.preventDefault();
               if (selectedbautistaproduct) {
-                if (!selectedbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
-                setbautistacurrentimageindex(prev => prev === selectedbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+                if (!selectedbautistaproduct.patientwishlistinventoryproductimagepreviewimages?.length) return;
+                setbautistacurrentimageindex(prev => prev === selectedbautistaproduct.patientwishlistinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
             
               } else {
                 if (!addbautistainventoryproductimagepreviewimages?.length) return;
@@ -591,6 +597,109 @@ const WishlistGridSkeleton = () => (
       fetchWishlistData(true); // Force refresh on real-time update
     }
   }, [realtimeUpdates, fetchWishlistData]);
+
+
+  // FETCHING AMBHER AND BAUTISTA ORDER SOLD COUNT
+  
+  // Fetch sold count for selected ambher product in modal
+  useEffect(() => {
+    const fetchAmbherSoldCount = async () => {
+      if (!selectedambherproduct?.patientwishlistinventoryproductid) return;
+
+      try {
+        const response = await fetch(`${apiUrl}/api/patientorderambher/ambherproductsoldcount/${selectedambherproduct.patientwishlistinventoryproductid}`);
+        if (!response.ok) throw new Error("Failed to fetch sold count");
+        const data = await response.json();
+        setambherproductsoldCount(data.sold || 0);
+      } catch (error) {
+        console.error("Error fetching ambher product sold count:", error);
+        setambherproductsoldCount(0);
+      }
+    };
+
+    fetchAmbherSoldCount();
+  }, [selectedambherproduct, apiUrl]);
+
+  // Fetch sold count for all ambher products (for card display)
+  useEffect(() => {
+    const fetchAllAmbherSoldCounts = async () => {
+      if (ambherWishlist.length === 0) return;
+      
+      const counts = {};
+      
+      await Promise.all(
+        ambherWishlist.map(async (item) => {
+          if (!item.patientwishlistinventoryproductid) return;
+          
+          try {
+            const response = await fetch(`${apiUrl}/api/patientorderambher/ambherproductsoldcount/${item.patientwishlistinventoryproductid}`);
+            if (!response.ok) throw new Error("Failed to fetch");
+
+            const data = await response.json();
+            counts[item.patientwishlistinventoryproductid] = data.sold || 0;
+          } catch (error) {
+            console.error("Error fetching sold count for ambher product", item.patientwishlistinventoryproductid, error);
+            counts[item.patientwishlistinventoryproductid] = 0;
+          }
+        })
+      );
+
+      setambherproductsoldCounts(counts);
+    };
+
+    fetchAllAmbherSoldCounts();
+  }, [ambherWishlist, apiUrl]);
+
+  // Find selected bautista product for bautista sold count
+
+  // Fetch sold count for selected bautista product in modal
+  useEffect(() => {
+    const fetchBautistaSoldCount = async () => {
+      if (!selectedbautistaproduct?.patientwishlistinventoryproductid) return;
+
+      try {
+        const response = await fetch(`${apiUrl}/api/patientorderbautista/bautistaproductsoldcount/${selectedbautistaproduct.patientwishlistinventoryproductid}`);
+        if (!response.ok) throw new Error("Failed to fetch sold count");
+        const data = await response.json();
+        setbautistaproductsoldCount(data.sold || 0);
+      } catch (error) {
+        console.error("Error fetching bautista product sold count:", error);
+        setbautistaproductsoldCount(0);
+      }
+    };
+
+    fetchBautistaSoldCount();
+  }, [selectedbautistaproduct, apiUrl]);
+
+  // Fetch sold count for all bautista products (for card display)
+  useEffect(() => {
+    const fetchAllBautistaSoldCounts = async () => {
+      if (bautistaWishlist.length === 0) return;
+      
+      const counts = {};
+      
+      await Promise.all(
+        bautistaWishlist.map(async (item) => {
+          if (!item.patientwishlistinventoryproductid) return;
+          
+          try {
+            const response = await fetch(`${apiUrl}/api/patientorderbautista/bautistaproductsoldcount/${item.patientwishlistinventoryproductid}`);
+            if (!response.ok) throw new Error("Failed to fetch");
+
+            const data = await response.json();
+            counts[item.patientwishlistinventoryproductid] = data.sold || 0;
+          } catch (error) {
+            console.error("Error fetching sold count for bautista product", item.patientwishlistinventoryproductid, error);
+            counts[item.patientwishlistinventoryproductid] = 0;
+          }
+        })
+      );
+
+      setbautistaproductsoldCounts(counts);
+    };
+
+    fetchAllBautistaSoldCounts();
+  }, [bautistaWishlist, apiUrl]);
 
 
 
@@ -1349,7 +1458,11 @@ const WishlistGridSkeleton = () => (
                       <div className="w-fit h-auto ml-1 sm:ml-2 mt-1">
                         <h1 className={`font-albertsans text-[#1f8126] font-bold text-[16px] sm:text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1>
                       </div>
-                  {/*<div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>0 Sold</h1></div>*/}
+                  <div className="w-full h-auto ml-1 sm:ml-2 mt-1 mb-3">
+                    <h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>
+                      {ambherproductsoldCounts[item.patientwishlistinventoryproductid] || 0} Sold
+                    </h1>
+                  </div>
 
                   {item.patientwishlistinventoryproductquantity === 0 ? (
                     <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl mt-2">
@@ -1411,9 +1524,9 @@ const WishlistGridSkeleton = () => (
                                 
 
 
-                                <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || (addambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || defaultimageplaceholder}/>
+                                <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedambherproduct?.patientwishlistinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || (addambherinventoryproductimagepreviewimages?.[ambhercurrentimageindex]) || defaultimageplaceholder}/>
 
-                                     {((selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1 || 
+                                     {((selectedambherproduct?.patientwishlistinventoryproductimagepreviewimages?.length || 0) > 1 || 
                                        addambherinventoryproductimagepreviewimages?.length > 1) && (
                                          <>
                                            <div type="button" onClick={ambherhandlepreviousimage} className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-1 sm:p-2 absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-lg sm:text-2xl" /></div>
@@ -1465,7 +1578,7 @@ const WishlistGridSkeleton = () => (
                                           <img src={starimage} className="w-5 h-5"/>
                                           <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
                                           */}
-                                          <p className="mt-1 font-albertsans pl-3 text-[12px] sm:text-[13px]">0 sold</p>
+                                          <p className="mt-1 font-albertsans pl-3 text-[12px] sm:text-[13px]">{ambherproductsoldCount || 0} sold</p>
                                         </div>
                         
                                   
@@ -1628,7 +1741,11 @@ const WishlistGridSkeleton = () => (
                   <div className="mx-1 w-fit rounded-md py-1 px-2 h-fit mt-2 break-words min-w-0 bg-[#F0F6FF]"><h1 className={`font-medium text-[#0d0d0d] text-xs sm:text-[13px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductcategory}</h1></div>
                   <div className="w-full h-auto ml-1 sm:ml-2 mt-2 px-1"><h1 className={`font-semibold text-sm sm:text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{item.patientwishlistinventoryproductname}</h1></div>
                   <div className="text-[#1f8126] w-fit h-auto ml-1 sm:ml-2 mt-1 px-1"><h1 className={`font-albertsans font-bold text-base sm:text-[18px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱ {item.patientwishlistinventoryproductprice?.toLocaleString()}</h1></div>
-                  {/*<div className="w-full h-auto ml-2 mt-5 mb-5 "><h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>0 Sold</h1></div>*/}
+                  <div className="w-full h-auto ml-1 sm:ml-2 mt-1 mb-3 px-1">
+                    <h1 className={`font-albertsans font-medium text-[#4e4f4f] text-[15px] min-w-0 break-words ${item.patientwishlistinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>
+                      {bautistaproductsoldCounts[item.patientwishlistinventoryproductid] || 0} Sold
+                    </h1>
+                  </div>
 
                   {item.patientwishlistinventoryproductquantity === 0 ? (
                     <div className="w-full py-1 flex justify-center items-center bg-[#b94c4c] rounded-b-2xl mt-auto"><h1 className="font-semibold text-white text-xs sm:text-sm">Out of Stock</h1></div>
@@ -1690,9 +1807,9 @@ const WishlistGridSkeleton = () => (
                                           
           
           
-                                          <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
-          
-                                               {((selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1 || 
+                                          <img className="mt-2 w-full max-w-[300px] sm:max-w-[400px] lg:w-120 object-cover rounded-2xl h-auto lg:h-120" src={(selectedbautistaproduct?.patientwishlistinventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
+
+                                               {((selectedbautistaproduct?.patientwishlistinventoryproductimagepreviewimages?.length || 0) > 1 || 
                                                  addbautistainventoryproductimagepreviewimages?.length > 1) && (
                                                    <>
                                                      <div type="button" onClick={bautistahandlepreviousimage} className="bg-opacity-50 hover:bg-opacity-75 rounded-2xl text-white p-1 sm:p-2 absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-gray-500"><i className="bx bx-chevron-left text-lg sm:text-2xl" /></div>
@@ -1744,7 +1861,7 @@ const WishlistGridSkeleton = () => (
                                                     <img src={starimage} className="w-5 h-5"/>
                                                     <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
                                                     */} 
-                                                    <p className="mt-1 font-albertsans pl-3 text-[12px] sm:text-[13px]">0 sold</p>
+                                                    <p className="mt-1 font-albertsans pl-3 text-[12px] sm:text-[13px]">{bautistaproductsoldCount || 0} sold</p>
                                                   </div>
                                   
                                             
