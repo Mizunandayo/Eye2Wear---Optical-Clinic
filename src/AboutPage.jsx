@@ -35,6 +35,11 @@ function AboutPage() {
   };
   const { handlelogout, fetchpatientdetails, showLogoutModal, confirmLogout, cancelLogout } = useAuth();
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     const loadpatient = async () => {
       const data = await fetchpatientdetails();

@@ -45,10 +45,32 @@ patientappointmentstatushistory: [{
 
 
 //PATIENT INFORMATION
-patientappointmentprofilepicture: String,
-patientappointmentlastname:{type: String, required: true},
-patientappointmentfirstname:{type: String, required: true},
-patientappointmentmiddlename: String,
+patientappointmentprofilepicture: {
+  type: String,
+  required: [true, "Profile picture is required"],
+  default: "default-profile-url",
+  validate: {
+    validator: function(v) {
+      return v !== null && v !== undefined && v.trim() !== '';
+    },
+    message: "Profile picture is required"
+  }
+},
+patientappointmentlastname: {
+  type: String,
+  required: [true, "Please provide your last name"],
+  trim: true,
+},
+patientappointmentfirstname: {
+  type: String,
+  required: [true, "Please provide your first name"],
+  trim: true,
+},
+patientappointmentmiddlename: {
+  type: String,
+  required: [true, "Please provide your middle name"],
+  trim: true,
+},
 patientappointmentemail: {type: String, required: true},
 
 

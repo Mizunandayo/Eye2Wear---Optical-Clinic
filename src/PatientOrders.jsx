@@ -162,6 +162,11 @@ function PatientOrders(){
  // Smart caching with real-time updates
  const { smartFetch, realtimeUpdates, CACHE_DURATIONS } = useSmartCache();
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Mobile menu click outside handler
   useEffect(() => {
     const handleClickOutside = (event) => {

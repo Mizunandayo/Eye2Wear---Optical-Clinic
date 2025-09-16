@@ -103,6 +103,11 @@ const WishlistGridSkeleton = () => (
   // Smart caching with real-time updates
   const { smartFetch, realtimeUpdates, CACHE_DURATIONS } = useSmartCache();
 
+    // Scroll to top when component mounts
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
+
     //Retrieveing Data from useAuth Hook
     useEffect(() => {
       const loadpatient = async () => {

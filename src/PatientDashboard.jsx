@@ -157,6 +157,11 @@ function PatientDashboard(){
  // Smart caching with real-time updates for appointments
  const { smartFetch, realtimeUpdates, CACHE_DURATIONS, invalidateCache, triggerRealtimeUpdate } = useSmartCache();
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   //Retrieveing Data from useAuth Hook
   useEffect(() => {
     const loadpatient = async () => {
@@ -2721,20 +2726,20 @@ useEffect(() => {
 
             {/* Mobile Action Buttons */}
             <div className="flex gap-2 pt-2">
-              <button 
+              <div 
                 onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
                 className="flex-1 bg-[#383838] hover:bg-[#595959] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <i className="bx bx-show text-lg"></i>
                 View
-              </button>
-              <button 
+              </div>
+              <div
                 onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
                 className="flex-1 bg-[#8c3226] hover:bg-[#ab4f43] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <i className="bx bx-trash text-lg"></i>
                 Delete
-              </button>
+              </div>
             </div>
           </div>
         ))}
@@ -2800,7 +2805,7 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
-                         <div id="viewpatientappointment" className="h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-8">
+                         <div id="viewpatientappointment" className="pt-30 h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-8">
                            <div className="animate-fadeInUp w-full max-w-7xl mx-auto max-h-full flex flex-col">
                              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
                                
@@ -3006,13 +3011,13 @@ useEffect(() => {
           </h3>
           
           {selectedpatientappointment.patientambherappointmentrating === 0 && selectedpatientappointment.patientambherappointmentfeedback === "" ? (
-            <button  
+            <div 
               onClick={() => setshowambherfeedbackdialog(true)}  
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
               <i className="bx bx-message-square-dots text-lg"></i>
               Submit Feedback
-            </button>
+            </div>
           ) : (
             <div className="bg-white rounded-xl p-4 border border-green-200">
               <span className="text-sm font-medium text-gray-500">Your Feedback:</span>
@@ -3207,13 +3212,13 @@ useEffect(() => {
           </h3>
           
           {selectedpatientappointment.patientbautistaappointmentrating === 0 && selectedpatientappointment.patientbautistaappointmentfeedback === "" ? (
-            <button  
+            <div 
               onClick={() => setshowbautistafeedbackdialog(true)}  
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
               <i className="bx bx-message-square-dots text-lg"></i>
               Submit Feedback
-            </button>
+            </div>
           ) : (
             <div className="bg-white rounded-xl p-4 border border-blue-200">
               <span className="text-sm font-medium text-gray-500">Your Feedback:</span>

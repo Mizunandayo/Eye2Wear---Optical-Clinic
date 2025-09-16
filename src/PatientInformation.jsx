@@ -234,7 +234,10 @@ function PatientInformation(){
   const [demographicid, setdemographicid] = useState(null);
   const [isloadingdemographic, setisloadingdemographic] = useState(true);
 
-
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   
 //LOADING PATIENT DEMOGRAPHIC DATA OR IF NOT IT WILL BE A CREATION OF DEMOGRAPHIC DATA
