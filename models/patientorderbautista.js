@@ -15,7 +15,10 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
 
 
     //PATIENT INFORMATION
+    // Patient profile picture - Cloudinary URL
     patientprofilepicture: String,
+    // Cloudinary public_id for patient profile picture
+    patientprofilepicture_public_id: { type: String, default: null },
     patientlastname: {type: String, required: true},
     patientfirstname: {type: String, required: true},
     patientmiddlename: String,
@@ -28,7 +31,10 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
     patientorderbautistaproductbrand: {type: String, required: true},
     patientorderbautistaproductmodelnumber: {type: String, required: true},
     patientorderbautistaproductcategory:{type: String, required: true},
+    // Product images - Cloudinary URLs
     patientorderbautistaproductimage: {type: [String], required: true},
+    // Cloudinary public_ids for product images management
+    patientorderbautistaproductimage_public_ids: {type: [String], default: []},
     patientorderbautistaproductprice: {type: Number, required: true},
     patientorderbautistaproductquantity: {type: Number, required: true, min: 1},
     patientorderbautistaproductsubtotal: {type: Number, required: true},
@@ -42,7 +48,10 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
     patientorderbautistaamountpaidchange: { type: Number, default: 0 }, // Computed from deducting overall total to total paid amount
     patientorderbautistaproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee
     patientorderbautistaproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
+    // Payment receipt image - Cloudinary URL
     patientorderbautistaproductpaymentreceiptimage: String,
+    // Cloudinary public_id for payment receipt image
+    patientorderbautistaproductpaymentreceiptimage_public_id: { type: String, default: null },
     patientorderbautistaproductpaymentstatus: { 
         type: String, 
         enum: ['Fully Paid', 'Partially Paid'], 

@@ -80,11 +80,17 @@ const StaffaccountSchema = mongoose.Schema(
 
 
 
-    //Profile picture properties
+    //Profile picture properties - Cloudinary
     staffprofilepicture: {
       type: String,
       required: true,
       default:"default-profile-url"
+    },
+    
+    // Cloudinary public_id for profile picture management
+    staffprofilepicture_public_id: {
+      type: String,
+      default: null
     },
 
     staffclinic:{

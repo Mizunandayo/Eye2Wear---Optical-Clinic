@@ -48,10 +48,16 @@ const PatientWishlistSchema = new mongoose.Schema({
   patientwishlistinventoryproductdescription: { type: String, required: true },
   patientwishlistinventoryproductprice: { type: Number, required: true },
   patientwishlistinventoryproductquantity: { type: Number, required: true },
+  // Product images - Cloudinary URLs
   patientwishlistinventoryproductimagepreviewimages: { type: [String], required: true },
+  // Cloudinary public_ids for product images management
+  patientwishlistinventoryproductimagepreviewimages_public_ids: { type: [String], default: [] },
 
   // Patient Details
+  // Patient profile picture - Cloudinary URL
   patientwishlistprofilepicture: String,
+  // Cloudinary public_id for patient profile picture
+  patientwishlistprofilepicture_public_id: { type: String, default: null },
   patientwishlistlastname: { type: String, required: true },
   patientwishlistfirstname: { type: String, required: true },
   patientwishlistmiddlename: String,

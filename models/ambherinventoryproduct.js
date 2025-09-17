@@ -20,11 +20,15 @@ ambherinventoryproductmodelnumber: {type: String, required: true},
 ambherinventoryproductdescription: {type: String, required: true},
 ambherinventoryproductprice: {type: Number, required: true},
 ambherinventoryproductquantity: {type: Number, required: true},
+// Product images - Cloudinary URLs
 ambherinventoryproductimagepreviewimages: {type: [String], required: true},
+// Cloudinary public_ids for product images management
+ambherinventoryproductimagepreviewimages_public_ids: {type: [String], default: []},
 
-
-
+// Added by user profile picture - Cloudinary URL
 ambherinventoryproductaddedbyprofilepicture: String,
+// Cloudinary public_id for added by profile picture
+ambherinventoryproductaddedbyprofilepicture_public_id: {type: String, default: null},
 ambherinventoryproductaddedbylastname:{type: String, required: true},
 ambherinventoryproductaddedbyfirstname:{type: String, required: true},
 ambherinventoryproductaddedbymiddlename: String,

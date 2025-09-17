@@ -16,7 +16,10 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
 
 
     //PATIENT INFORMATION
+    // Patient profile picture - Cloudinary URL
     patientprofilepicture: String,
+    // Cloudinary public_id for patient profile picture
+    patientprofilepicture_public_id: { type: String, default: null },
     patientlastname: {type: String, required: true},
     patientfirstname: {type: String, required: true},
     patientmiddlename: String,
@@ -29,7 +32,10 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
     patientorderambherproductbrand: {type: String, required: true},
     patientorderambherproductmodelnumber: {type: String, required: true},
     patientorderambherproductcategory:{type: String, required: true},
+    // Product images - Cloudinary URLs
     patientorderambherproductimage: {type: [String], required: true},
+    // Cloudinary public_ids for product images management
+    patientorderambherproductimage_public_ids: {type: [String], default: []},
     patientorderambherproductprice: {type: Number, required: true},
     patientorderambherproductquantity: {type: Number, required: true, min: 1},
     patientorderambherproductsubtotal: {type: Number, required: true},
@@ -44,7 +50,10 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
     patientorderambheramountpaidchange: { type: Number, default: 0 },  // Computed from deducting overall total to total paid amount
     patientorderambherproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee
     patientorderambherproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
+    // Payment receipt image - Cloudinary URL
     patientorderambherproductpaymentreceiptimage: String,
+    // Cloudinary public_id for payment receipt image
+    patientorderambherproductpaymentreceiptimage_public_id: { type: String, default: null },
     patientorderambherproductpaymentstatus: { 
         type: String, 
         enum: ['Fully Paid', 'Partially Paid'], 

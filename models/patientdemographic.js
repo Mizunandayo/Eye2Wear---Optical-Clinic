@@ -136,7 +136,7 @@ const PatientdemographicSchema = mongoose.Schema(
     }, 
 
 
-    //Profile picture properties
+    //Profile picture properties - Cloudinary
     patientprofilepicture: {
       type: String,
       required: [true, "Profile picture is required"],
@@ -147,6 +147,12 @@ const PatientdemographicSchema = mongoose.Schema(
         },
         message: "Profile picture is required"
       }
+    },
+    
+    // Cloudinary public_id for profile picture management
+    patientprofilepicture_public_id: {
+      type: String,
+      default: null
     },
 
 

@@ -20,11 +20,15 @@ bautistainventoryproductmodelnumber: {type: String, required: true},
 bautistainventoryproductdescription: {type: String, required: true},
 bautistainventoryproductprice: {type: Number, required: true},
 bautistainventoryproductquantity: {type: Number, required: true},
+// Product images - Cloudinary URLs
 bautistainventoryproductimagepreviewimages: {type: [String], required: true},
+// Cloudinary public_ids for product images management
+bautistainventoryproductimagepreviewimages_public_ids: {type: [String], default: []},
 
-
-
+// Added by user profile picture - Cloudinary URL
 bautistainventoryproductaddedbyprofilepicture: String,
+// Cloudinary public_id for added by profile picture
+bautistainventoryproductaddedbyprofilepicture_public_id: {type: String, default: null},
 bautistainventoryproductaddedbylastname:{type: String, required: true},
 bautistainventoryproductaddedbyfirstname:{type: String, required: true},
 bautistainventoryproductaddedbymiddlename: String,

@@ -13,6 +13,7 @@ import {faEye as faEyeRegular} from "@fortawesome/free-regular-svg-icons";
 import defaultprofilepic from '../src/assets/images/defaulticon.png'
 import { GenderBox } from "./components/GenderBox";
 import { useAuth } from "./hooks/patientuseAuth";
+import useCloudinaryUpload from "./hooks/useCloudinaryUpload";
 import storeimage from "../src/assets/images/store.png";
 import profileuser from "../src/assets/images/profile-user.png";
 import logout from "../src/assets/images/logout.png";
@@ -131,7 +132,7 @@ function PatientInformation(){
     const file = e.target.files[0];
     if(file){
       // Client-side validation
-      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB limit (more reasonable than 50MB)
+      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB limit
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       
       // Check file size
@@ -148,14 +149,12 @@ function PatientInformation(){
         return;
       }
       
+      // Store the file for later Cloudinary upload
       setselectedprofile(file);
+      
+      // Create preview URL for immediate display
       const reader = new FileReader();
-      reader.onloadend = () =>{
-        setdemographicformdata(prev => ({
-          ...prev,
-          patientprofilepicture: reader.result
-        }));
-
+      reader.onloadend = () => {
         setpreviewimage(reader.result);
       };
       
@@ -164,6 +163,9 @@ function PatientInformation(){
       };
 
       reader.readAsDataURL(file);
+      
+      // Reset any previous Cloudinary errors
+      resetCloudinaryError();
     }
   }
 
@@ -203,6 +205,15 @@ function PatientInformation(){
   }
 
   const {handlelogout, fetchpatientdetails, fetchpatientdemographicbyemail, showLogoutModal, confirmLogout, cancelLogout} = useAuth();
+  
+  // Cloudinary upload hook
+  const {
+    uploadProfilePicture,
+    uploading: cloudinaryUploading,
+    uploadProgress,
+    error: cloudinaryError,
+    resetError: resetCloudinaryError
+  } = useCloudinaryUpload();
   
 
 
@@ -418,13 +429,48 @@ const submitpatientdemographic = async (e) => {
   try {
     console.log("Submitting: ", demographicformdata);
     
-    // Remove the default profile picture if it's the placeholder
-    const patientdemographictosend = {
-      ...demographicformdata,
-      patientprofilepicture: demographicformdata.patientprofilepicture === defaultprofilepic 
-        ? null 
-        : demographicformdata.patientprofilepicture
-    };
+    // Prepare the demographic data
+    let patientdemographictosend = { ...demographicformdata };
+    
+    // Handle profile picture upload to Cloudinary if a new file is selected
+    if (selectedprofile) {
+      try {
+        showProfileToast(true, "Uploading profile picture to cloud storage...");
+        
+        // Upload to Cloudinary first
+        // Use patient email as identifier for Cloudinary folder structure
+        const identifier = demographicformdata.patientemail || patientemail || `patient_${Date.now()}`;
+        console.log("Uploading image with identifier:", identifier);
+        console.log("Patient email from form data:", demographicformdata.patientemail);
+        console.log("Patient email from state:", patientemail);
+        
+        const uploadResult = await uploadProfilePicture(
+          selectedprofile, 
+          identifier,
+          'patient'
+        );
+        
+        // Update the form data with Cloudinary URL and public_id
+        patientdemographictosend = {
+          ...patientdemographictosend,
+          patientprofilepicture: uploadResult.imageUrl,
+          patientprofilepicture_public_id: uploadResult.public_id
+        };
+        
+        console.log("Image uploaded to Cloudinary:", uploadResult);
+        showProfileToast(true, "Profile picture uploaded successfully!");
+        
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        throw new Error(`Failed to upload profile picture: ${uploadError.message}`);
+      }
+    }
+    
+    // Remove default profile picture if it's the placeholder
+    if (patientdemographictosend.patientprofilepicture === defaultprofilepic) {
+      patientdemographictosend.patientprofilepicture = 'default-profile-url';
+      patientdemographictosend.patientprofilepicture_public_id = null;
+    }
 
     let endpoint = `/api/patientdemographics`;
     let method = "POST";
@@ -433,6 +479,8 @@ const submitpatientdemographic = async (e) => {
       endpoint = `/api/patientdemographics/${demographicid}`;
       method = "PUT";
     }
+
+    showProfileToast(true, "Saving demographic information...");
 
     const response = await fetch(endpoint, {
       method,
@@ -449,11 +497,8 @@ const submitpatientdemographic = async (e) => {
         errorData = await response.json();
       } catch (parseError) {
         console.error("Failed to parse error response:", parseError);
-        // If response is not JSON, create a generic error based on status
         errorData = { 
-          message: response.status === 413 
-            ? "Image file is too large. Please choose a smaller image." 
-            : `Server error (${response.status}). Please try again.` 
+          message: `Server error (${response.status}). Please try again.` 
         };
       }
       
@@ -462,6 +507,16 @@ const submitpatientdemographic = async (e) => {
 
     const responsedata = await response.json();
     console.log("Success: ", responsedata);
+    
+    // Update local state with the saved data
+    setdemographicformdata(prev => ({
+      ...prev,
+      patientprofilepicture: patientdemographictosend.patientprofilepicture,
+      patientprofilepicture_public_id: patientdemographictosend.patientprofilepicture_public_id
+    }));
+    
+    // Clear the selected file since it's now uploaded
+    setselectedprofile(null);
     
     // Show success toast
     showProfileToast(true, isexistingdemographic 
@@ -475,12 +530,15 @@ const submitpatientdemographic = async (e) => {
 
   } catch(error) {
     console.error("Error: ", error);
-    // Show error toast with specific error message
+    
+    // Handle different types of errors
     let errorMessage = "Failed to update profile. Please try again.";
     
     if (error.message) {
-      if (error.message.includes("413") || error.message.includes("file size") || error.message.includes("size limit") || error.message.includes("too large")) {
-        errorMessage = "Image file is too large. Please choose a smaller image (max 50MB).";
+      if (error.message.includes("upload") || error.message.includes("Cloudinary")) {
+        errorMessage = `Image upload failed: ${error.message}. Please try a different image.`;
+      } else if (error.message.includes("413") || error.message.includes("file size") || error.message.includes("size limit") || error.message.includes("too large")) {
+        errorMessage = "Image file is too large. Please choose a smaller image (max 10MB).";
       } else if (error.message.includes("file type") || error.message.includes("format") || error.message.includes("Invalid")) {
         errorMessage = "Invalid file format. Please choose a valid image file.";
       } else if (error.message.includes("400")) {
@@ -492,11 +550,10 @@ const submitpatientdemographic = async (e) => {
       } else if (error.message.includes("404") || error.message.includes("not found")) {
         errorMessage = "Profile not found. Please refresh and try again.";
       } else if (error.message.includes("500") || error.message.includes("Server error")) {
-        errorMessage = "Server error occurred. This might be due to a large image file or server issue. Please try with a smaller image or contact support.";
+        errorMessage = "Server error occurred. Please try again or contact support.";
       } else if (error.message.includes("Network")) {
         errorMessage = "Network error. Please check your connection and try again.";
       } else {
-        // Use the actual error message from server
         errorMessage = error.message;
       }
     }
@@ -884,7 +941,7 @@ const submitpatientdemographic = async (e) => {
                               {previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? (
                                 <img 
                                   className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                                  src={demographicformdata.patientprofilepicture}
+                                  src={previewimage || demographicformdata.patientprofilepicture}
                                   alt="Profile"
                                   onError={(e) => {
                                     e.target.style.display = 'none';

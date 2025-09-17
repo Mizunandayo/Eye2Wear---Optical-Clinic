@@ -18,7 +18,10 @@ patientotherclinicrecordid:{
 
 
 //PATIENT INFORMATION
+// Patient profile picture - Cloudinary URL
 patientotherclinicprofilepicture: String,
+// Cloudinary public_id for patient profile picture
+patientotherclinicprofilepicture_public_id: {type: String, default: null},
 patientothercliniclastname:{type: String, required: true},
 patientotherclinicfirstname:{type: String, required: true},
 patientotherclinicmiddlename: String,
@@ -33,12 +36,15 @@ patientotherclinicsubmittedbymiddlename: String,
 patientotherclinicsubmittedbylastname: String,
 patientotherclinicsubmittedbytype: String,
 
+// Other clinic record image - Cloudinary URL
 patientotherclinicrecordimage: {
         type: String,
         required: false, // Make optional to handle cases where image fails to load
         default: null, // Use null instead of string for better performance
-        maxlength: 2097152 // Limit base64 size to ~1.5MB actual image size
+        maxlength: 2097152 // Limit base64 size to ~1.5MB actual image size (will be removed when migrated to Cloudinary)
       },
+// Cloudinary public_id for other clinic record image
+patientotherclinicrecordimage_public_id: {type: String, default: null},
 
 
 

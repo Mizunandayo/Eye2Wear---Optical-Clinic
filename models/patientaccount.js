@@ -86,11 +86,17 @@ const PatientaccountSchema = mongoose.Schema(
 
 
 
-    //Profile picture properties
+    //Profile picture properties - Cloudinary
     patientprofilepicture: {
       type: String,
       required: true,
       default:"default-profile-url"
+    },
+    
+    // Cloudinary public_id for profile picture management
+    patientprofilepicture_public_id: {
+      type: String,
+      default: null
     },
 
 

@@ -29,6 +29,7 @@ import cautionlowstockalert from "../src/assets/images/caution.png";
 import starimage from "../src/assets/images/star.png";
 import useSmartCache from './hooks/useSmartCache';
 import { useImageOptimization } from './utils/imageOptimization';
+import useCloudinaryUpload from './hooks/useCloudinaryUpload';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
@@ -52,9 +53,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "./components/ui/chart";
-
-
-
 
 
 
@@ -1851,6 +1849,9 @@ function AdminDashboard(){
     loadingProgress
   } = useImageOptimization();
   
+  // Cloudinary upload hook for profile pictures
+  const { uploadProfilePicture } = useCloudinaryUpload();
+   
 
 
 
@@ -3210,7 +3211,8 @@ const [staffformdata, setstaffformdata] = useState({
     staffmiddlename:'',
     staffclinic:'',
     staffiseyespecialist: '',
-    staffprofilepicture:'' // Holds the profile picture 
+    staffprofilepicture:'', // Holds the profile picture 
+    staffprofilepicture_public_id: '' // Cloudinary public_id
 });
 
 //Debounce check for search input
@@ -3411,10 +3413,12 @@ return (
                     stafffirstname: staff.stafffirstname,
                     staffmiddlename: staff.staffmiddlename,
                     staffiseyespecialist: staff.staffiseyespecialist,
-                    staffprofilepicture: staff.staffprofilepicture
+                    staffprofilepicture: staff.staffprofilepicture,
+                    staffprofilepicture_public_id: staff.staffprofilepicture_public_id
                   });
 
                   setstaffpreviewimage(staff.staffprofilepicture);
+                  setstaffselectedprofile(null); // Reset selected profile when editing
                   setshowviewstaffdialog(true);}}
 
                  className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div></td>
@@ -3458,74 +3462,22 @@ const staffhandleprofilechange = async (e) => {
 
   if (!file) return;
 
-
   const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
   if(!imagefiletype.includes(file.type)) {
     alert("Please select an image file (JPG or PNG)");
     return;
   }
 
-
-  const maximagefile = 1;
+  const maximagefile = 10; // Increased to 10MB for Cloudinary
   if(file.size > maximagefile * 1024 * 1024){
-    alert("Image is too large. Please select image under 1MB");
+    alert("Image is too large. Please select image under 10MB");
     return;
   }
 
-  setstaffselectedprofile(null);
-  setstaffpreviewimage(null);
-
-  if(staffimageinputref.current){
-    staffimageinputref.current.value = "";
-  }
-
-
-
-
-
-
-  try{
-
-    const imageconfiguration = {
-      maximagemb: 1,
-      maxworh: 800,
-      useWebWorker: true,
-      initialQuality: 0.8
-    };
-
-
-    const compressedimageprofile = await imageCompression(file, imageconfiguration);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-
-      if(reader.error){
-        console.error("Error processing image file : ", reader.error);
-        alert("Error processing image file. Try again");
-        return;
-      }
-      setstaffpreviewimage(reader.result);
-    };
-
-
-    reader.onerror = () => {
-      console.error("File Reader Error : ", reader.error);
-      alert("Error reading file. Try again");
-      return;
-    };
-
-    reader.readAsDataURL(compressedimageprofile);
-    setstaffselectedprofile(compressedimageprofile);
-  
-
-  } catch (error) {
-
-    console.error("Image file compression failed : ", error.message);
-    alert("Image file compression failed. Try again");
-    return;
-
-  }
-    
-
+  // Show preview immediately using URL.createObjectURL for better performance
+  const previewUrl = URL.createObjectURL(file);
+  setstaffpreviewimage(previewUrl);
+  setstaffselectedprofile(file); // Store the actual file for Cloudinary upload
 };
 
 //Handles the click event of upload button
@@ -3681,7 +3633,8 @@ const staffhandlechange = (e) => {
         staffmiddlename:'',
         staffclinic: '',
         staffiseyespecialist:'',
-        staffprofilepicture: ''
+        staffprofilepicture: '',
+        staffprofilepicture_public_id: ''
       });
 
 
@@ -3761,10 +3714,47 @@ const staffhandlechange = (e) => {
     try{
       if(!selectededitstaffaccount) return;
 
+      let profilePictureUrl = staffformdata.staffprofilepicture;
+      let profilePicturePublicId = staffformdata.staffprofilepicture_public_id;
+
+      // If there's a new image file to upload
+      if (staffselectedprofile) {
+        setstaffmessage({text: 'Uploading profile picture...', type: 'info'});
+        
+        console.log('About to upload profile picture:', {
+          file: staffselectedprofile,
+          userId: staffformdata.staffemail,
+          userType: 'staff',
+          selectedStaff: selectededitstaffaccount?.staffemail
+        });
+        
+        try {
+          const uploadResult = await uploadProfilePicture(
+            staffselectedprofile, 
+            staffformdata.staffemail, 
+            'staff'
+          );
+          
+          if (uploadResult.success) {
+            profilePictureUrl = uploadResult.data.url;
+            profilePicturePublicId = uploadResult.data.public_id;
+            setstaffmessage({text: 'Profile picture uploaded successfully!', type: 'success'});
+          } else {
+            throw new Error(uploadResult.message || 'Failed to upload profile picture');
+          }
+        } catch (uploadError) {
+          console.error('Profile picture upload error:', uploadError);
+          setstaffmessage({text: `Upload failed: ${uploadError.message}`, type: 'error'});
+          setstaffissubmitting(false);
+          return;
+        }
+      }
+
       const updatestaffaccountdetails = {
         ...staffformdata,
         staffiseyespecialist:staffformdata.staffiseyespecialist,
-        staffprofilepicture: staffpreviewimage || staffformdata.staffprofilepicture
+        staffprofilepicture: profilePictureUrl,
+        staffprofilepicture_public_id: profilePicturePublicId
       };
 
       const response = await fetch(`/api/staffaccounts/${selectededitstaffaccount.id}`,{
@@ -3803,6 +3793,18 @@ const staffhandlechange = (e) => {
         setselectededitstaffaccount(null);
         setshowviewstaffdialog(false);
         setstaffmessage({text:"", type:""});
+        setstaffformdata({
+          role: 'staff',
+          staffemail: '',
+          stafflastname: '',
+          stafffirstname: '',
+          staffmiddlename: '',
+          staffiseyespecialist:'',
+          staffprofilepicture: '',
+          staffprofilepicture_public_id: ''
+        });
+        setstaffpreviewimage(null);
+        setstaffselectedprofile(null);
       }, 1500);
 
     } catch (error){
@@ -16783,9 +16785,11 @@ useEffect(() => {
                           stafffirstname: '',
                           staffmiddlename: '',
                           staffiseyespecialist:'',
-                          staffprofilepicture: ''
+                          staffprofilepicture: '',
+                          staffprofilepicture_public_id: ''
                         });
                         setstaffpreviewimage(null);
+                        setstaffselectedprofile(null);
    }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
  </div>
 
@@ -16798,7 +16802,7 @@ useEffect(() => {
         <input  className="hidden" type="file" onChange={staffhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={staffimageinputref} />
         <div onClick={staffhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
                                                
-        {selectedprofile && (<div onClick={staffhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
+        {staffselectedprofile && (<div onClick={staffhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
        </div>
    </div>
 
