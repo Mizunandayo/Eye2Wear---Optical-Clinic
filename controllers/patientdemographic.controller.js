@@ -30,15 +30,14 @@
       // Ultra short timeout for emergency fix (10 seconds max)
       const queryTimeout = 10000;
       
-      // MINIMAL field selection - only absolutely necessary fields
+      // COMPLETE field selection - include all patient demographic fields
       const patientdemo = await Patientdemographic.find()
-        .select('patientdemographicId patientemail patientfirstname patientlastname')
-        .sort({ _id: -1 }) // Use _id instead of patientdemographicId for better performance
+        .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture createdAt updatedAt')
+        .sort({ patientdemographicId: -1 }) // Use patientdemographicId which has an index
         .skip(skip)
         .limit(limit)
         .maxTimeMS(queryTimeout)
-        .lean()
-        .hint({ _id: -1 }); // Force use of _id index
+        .lean(); // Let MongoDB choose optimal index
       
       const queryTime = Date.now() - startTime;
       console.log(`⚡ EMERGENCY QUERY completed in ${queryTime}ms, returned ${patientdemo.length} records`);
@@ -89,9 +88,9 @@
       console.log('🚨 EMERGENCY FAST ENDPOINT called');
       const startTime = Date.now();
       
-      // Ultra minimal query - only 5 records, essential fields only
+      // Ultra minimal query - only 5 records, but include more essential fields
       const patientdemo = await Patientdemographic.find()
-        .select('_id patientemail patientfirstname patientlastname')
+        .select('_id patientemail patientfirstname patientlastname patientmiddlename patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientprofilepicture')
         .limit(5)
         .lean()
         .maxTimeMS(5000);

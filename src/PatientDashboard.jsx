@@ -1035,6 +1035,23 @@ const canDeleteAppointment = (appointment) => {
   return !hasAcceptedOrCompleted;
 };
 
+// Helper function to check if a pending appointment can be cancelled
+// Show cancel button for pending appointments when there's an accepted/completed appointment in the same record
+const canCancelPendingAppointment = (appointment, clinicType) => {
+  const ambherStatus = appointment.patientambherappointmentstatus;
+  const bautistaStatus = appointment.patientbautistaappointmentstatus;
+  
+  if (clinicType === 'ambher') {
+    // Can cancel pending Ambher appointment if Bautista is accepted/completed
+    return ambherStatus === 'Pending' && (bautistaStatus === 'Accepted' || bautistaStatus === 'Completed');
+  } else if (clinicType === 'bautista') {
+    // Can cancel pending Bautista appointment if Ambher is accepted/completed
+    return bautistaStatus === 'Pending' && (ambherStatus === 'Accepted' || ambherStatus === 'Completed');
+  }
+  
+  return false;
+};
+
 
 
 
@@ -1107,6 +1124,77 @@ const handledeleteappointment = async (appointmentId) => {
       setdeletingappointment(false); // End loading state
     }
 }
+
+// Cancel specific clinic appointment (set status to 'Cancelled')
+const handleCancelAppointment = async (appointmentId, clinicType) => {
+  console.log('🚫 Attempting to cancel appointment with ID:', appointmentId, 'for clinic:', clinicType);
+  
+  try {
+    const updateUrl = `/api/patientappointments/appointments/${appointmentId}`;
+    console.log('🌐 PUT URL:', updateUrl);
+
+    // Prepare the update data based on clinic type
+    const updateData = {};
+    if (clinicType === 'ambher') {
+      updateData.patientambherappointmentstatus = 'Cancelled';
+    } else if (clinicType === 'bautista') {
+      updateData.patientbautistaappointmentstatus = 'Cancelled';
+    }
+
+    const response = await fetch(updateUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('patienttoken')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updateData)
+    });
+
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response ok:', response.ok);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('❌ Error response:', errorText);
+      throw new Error(`Failed to Cancel Appointment: ${response.status} ${response.statusText}`);
+    }
+
+    const updatedAppointment = await response.json();
+    console.log('✅ Appointment cancelled successfully:', updatedAppointment);
+
+    // Update local state immediately for instant UI update
+    setpatientappointments(prev => 
+      prev.map(appt => 
+        appt.patientappointmentid === appointmentId ? updatedAppointment : appt
+      )
+    );
+
+    // Update the selected appointment for the modal if it's currently viewing this appointment
+    if (selectedpatientappointment && selectedpatientappointment.patientappointmentid === appointmentId) {
+      setselectedpatientappointment(updatedAppointment);
+    }
+
+    // Clear cache and trigger updates
+    const email = localStorage.getItem("patientemail");
+    if (email) {
+      const cacheKey = `appointmentData_${email}`;
+      console.log('🔄 Invalidating cache:', cacheKey);
+      invalidateCache([cacheKey]);
+    }
+    
+    // Trigger real-time updates
+    triggerRealtimeUpdate('appointments');
+    invalidateAppointmentData();
+
+    // Show success message
+    const clinicName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    console.log(`✅ ${clinicName} appointment cancelled successfully`);
+
+  } catch (error) {
+    console.error("Appointment cancellation failed: ", error);
+    seterrorloadingappointments(error.message);
+  }
+};
 
 
 
@@ -2914,8 +3002,31 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Services - Only show if not Pending */}
-      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && (
+      {/* Cancel Appointment Button - Only for pending appointments when other clinic is accepted/completed */}
+      {canCancelPendingAppointment(selectedpatientappointment, 'ambher') && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-x-circle text-red-600"></i>
+            Cancel Appointment
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-red-200">
+            <p className="text-gray-600 mb-4 text-sm">
+              Since your other appointment has been confirmed, you can cancel this pending appointment if needed.
+            </p>
+            <div
+              onClick={() => handleCancelAppointment(selectedpatientappointment.patientappointmentid, 'ambher')}
+              className="w-full cursor-pointer bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <i className="bx bx-x-circle text-lg"></i>
+              Cancel Ambher Optical Appointment
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Services - Only show if not Pending or Accepted */}
+      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && 
+       selectedpatientappointment.patientambherappointmentstatus !== "Accepted" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-green-600"></i>
@@ -3115,8 +3226,31 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Services - Only show if not Pending */}
-      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && (
+      {/* Cancel Appointment Button - Only for pending appointments when other clinic is accepted/completed */}
+      {canCancelPendingAppointment(selectedpatientappointment, 'bautista') && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i className="bx bx-x-circle text-red-600"></i>
+            Cancel Appointment
+          </h3>
+          <div className="bg-white rounded-xl p-4 border border-red-200">
+            <p className="text-gray-600 mb-4 text-sm">
+              Since your other appointment has been confirmed, you can cancel this pending appointment if needed.
+            </p>
+            <div
+              onClick={() => handleCancelAppointment(selectedpatientappointment.patientappointmentid, 'bautista')}
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <i className=" cursor-pointer bx bx-x-circle text-lg"></i>
+              Cancel Bautista Eye Center Appointment
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Services - Only show if not Pending or Accepted */}
+      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && 
+       selectedpatientappointment.patientbautistaappointmentstatus !== "Accepted" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-blue-600"></i>

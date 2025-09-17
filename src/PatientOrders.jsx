@@ -1035,11 +1035,11 @@ useEffect(() => {
               <div className="flex items-center mt-8"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">My Orders</h1></div>
 
   <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mt-3 gap-3 sm:gap-0 sm:h-[60px]">
-  <div onClick={() => showorderstable('ambherorderstable')} className={`w-full sm:w-auto mr-0 sm:mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='ambherorderstable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
+  <div onClick={() => showorderstable('ambherorderstable')} className={`gap-2 w-full sm:w-auto mr-0 sm:mr-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='ambherorderstable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
     <img src={ambherlogo} className="w-5 h-5"/>        
     <h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='ambherorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Ambher Optical <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {ambherOrders.length} </span></h1>
   </div>
-  <div onClick={() => showorderstable('bautistaorderstable')} className={`w-full sm:w-auto ml-0 sm:ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='bautistaorderstable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
+  <div onClick={() => showorderstable('bautistaorderstable')} className={`gap-2 w-full sm:w-auto ml-0 sm:ml-3 hover:rounded-2xl transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 py-3 text-center flex justify-center items-center ${activeorderstable ==='bautistaorderstable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
     <img src={bautistalogo} className="w-5 h-5"/>        
     <h1 className={`font-albertsans font-semibold text-sm sm:text-base ${activeorderstable ==='bautistaorderstable' ? 'text-white' : 'text-[#1f1f1f]'}`}>Bautista Eye Center <span className="bg-gray-200 text-gray-500 font-semibold px-2 rounded-full ml-2 text-sm"> {bautistaOrders.length} </span></h1>
   </div>

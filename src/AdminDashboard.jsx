@@ -5125,10 +5125,13 @@ return (...args) => {
 };
 
 const filterPatientProfiles = useCallback(searchPatientProfilesDebounce((term) => {
+// Ensure patientdemographics is an array before filtering
+const safePatientDemographics = Array.isArray(patientdemographics) ? patientdemographics : [];
+
 if (!term) {
-  setFilteredPatientProfiles(patientdemographics);
+  setFilteredPatientProfiles(safePatientDemographics);
 } else {
-  const filtered = patientdemographics.filter(profile => 
+  const filtered = safePatientDemographics.filter(profile => 
     profile.patientfirstname?.toLowerCase().includes(term.toLowerCase()) ||
     profile.patientlastname?.toLowerCase().includes(term.toLowerCase()) ||
     profile.patientemail?.toLowerCase().includes(term.toLowerCase()) ||
@@ -5290,13 +5293,18 @@ try {
       });
 
       if (!response.ok) throw new Error("Failed to retrieve patient demographics");
-      return response.json();
+      const result = await response.json();
+      // Extract data array from the new response structure
+      const extractedData = result.data || result;
+      return extractedData; // Fallback to result if data property doesn't exist
     },
     CACHE_DURATIONS.MEDIUM, // 5 minutes cache
     forceRefresh
   );
 
-  setpatientdemographics(demographics);
+  // Ensure demographics is always an array before setting state
+  const safedemographics = Array.isArray(demographics) ? demographics : [];
+  setpatientdemographics(safedemographics);
 } catch (error) {
   setpatientdemoerror(error.message);
 } finally {
@@ -5306,7 +5314,8 @@ try {
 
 useEffect(() => {
 if(activeprofiletable === "patientprofiletable") {
-  fetchDemographicsData();
+  // Force refresh to clear any cached data with old format
+  fetchDemographicsData(true); // Force refresh on component mount
 }
 }, [activeprofiletable, fetchDemographicsData]);
 
@@ -5319,16 +5328,20 @@ if (realtimeUpdates.has('demographics')) {
 
 // Patient Profiles Filter
 useEffect(() => {
+// Ensure both search and data are properly handled
+const safePatientDemographics = Array.isArray(patientdemographics) ? patientdemographics : [];
+
 if (searchPatientProfiles) {
   filterPatientProfiles(searchPatientProfiles);
 } else {
-  setFilteredPatientProfiles(patientdemographics);
+  setFilteredPatientProfiles(safePatientDemographics);
 }
 }, [searchPatientProfiles, filterPatientProfiles, patientdemographics]);
 
 // Initialize filtered data when demographics load
 useEffect(() => {
-setFilteredPatientProfiles(patientdemographics);
+const safePatientDemographics = Array.isArray(patientdemographics) ? patientdemographics : [];
+setFilteredPatientProfiles(safePatientDemographics);
 }, [patientdemographics]);
 
 
@@ -5359,7 +5372,10 @@ if(patientdemoerror){
 // Show filtered results if search is active, otherwise show no results message for original data
 const displayData = searchPatientProfiles.trim() ? filteredPatientProfiles : patientdemographics;
 
-if(displayData.length === 0){
+// Ensure displayData is always an array to prevent map errors
+const safeDisplayData = Array.isArray(displayData) ? displayData : [];
+
+if(safeDisplayData.length === 0){
   const message = searchPatientProfiles.trim() 
     ? `No patient profiles found matching "${searchPatientProfiles}".`
     : "No patient profiles found.";
@@ -5374,7 +5390,7 @@ if(displayData.length === 0){
 return (
   <div className="overflow-y-auto w-full h-full flex flex-wrap content-start gap-3 pl-2 pt-2">
   
-  {displayData.map((patient) => (
+  {safeDisplayData.map((patient) => (
     <div id="patientcard" key={patient._id} onClick={() => {
     setshowpatientpofile(true);
     setselectedpatientdemo(patient);
@@ -5400,13 +5416,17 @@ return (
       name: `${patient.patientfirstname} ${patient.patientlastname}`});
   }}
   
-  className="flex justify-center items-center mb-1 bg-white shadow-lg w-[316px] h-[120px] rounded-3xl hover:cursor-pointer hover:scale-105 transition-all ease-in-out duration-300 " >
+  className="flex justify-center items-center mb-1 bg-white shadow-lg w-[316px] h-[160px] rounded-3xl hover:cursor-pointer hover:scale-105 transition-all ease-in-out duration-300 " >
     <div className="w-[125px] h-full  rounded-2xl flex justify-center items-center">
     <img src={patient.patientprofilepicture || defaultprofilepic} alt="Profile" className="h-18 w-18 rounded-full object-cover"></img>
     </div>
     <div className="bg-white min-w-0 flex flex-col justify-center items-start pl-2 pr-2 w-full h-full  rounded-3xl">
-      <h1 className="font-albertsans font-semibold text-[17px] truncate w-full text-[#2d3744]">{patient.patientfirstname} {patient.patientlastname}</h1>
-      <p className="text-[14px] truncate w-full">{patient.patientemail}</p>
+      <h1 className="font-albertsans font-semibold text-[16px] truncate w-full text-[#2d3744]">{patient.patientfirstname} {patient.patientlastname}</h1>
+      <p className="text-[13px] truncate w-full text-gray-600">{patient.patientemail}</p>
+      <p className="text-[12px] truncate w-full text-gray-500">Age: {patient.patientage}</p>
+      <p className="text-[12px] truncate w-full text-gray-500">Gender: {patient.patientgender}</p>
+      <p className="text-[12px] truncate w-full text-gray-500">Contact: {patient.patientcontactnumber}</p>
+      <p className="text-[11px] truncate w-full text-gray-400">{patient.patienthomeaddress}</p>
     </div>
   </div>
   ))}
@@ -19592,7 +19612,9 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
       e.target.src = 'default-profile-url';
     }}
   />
-  <h1 className="font-albertsans text-[#171717]  text-center text-[15px] font-medium ">{patients.patientfirstname} {patients.patientlastname}</h1>
+  <h1 className="font-albertsans text-[#171717]  text-center text-[15px] font-medium ">{patients.patientfirstname} {patients.patientmiddlename} {patients.patientlastname}</h1>
+  <p className="text-[12px] text-gray-500">{patients.patientage} years old • {patients.patientgender}</p>
+  <p className="text-[11px] text-gray-400">{patients.patientcontactnumber}</p>
   </div>
 </td>
 
@@ -19685,8 +19707,24 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
         <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientgender}</p>
        </div>
         <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Bithdate :</h1>
+        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Age :</h1>
+        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientage}</p>
+       </div>
+        <div className="mt-3   flex  items-center h-auto w-full">
+        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Birthdate :</h1>
         <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate)}</p>
+       </div>
+        <div className="mt-3   flex  items-center h-auto w-full">
+        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[18px]">Home Address :</h1>
+        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patienthomeaddress}</p>
+       </div>
+        <div className="mt-3   flex  items-center h-auto w-full">
+        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[17px]">Emergency Contact :</h1>
+        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patientemergencycontactname}</p>
+       </div>
+        <div className="mt-3   flex  items-center h-auto w-full">
+        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">Emergency Phone :</h1>
+        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patientemergencycontactnumber}</p>
        </div>
                     
 
@@ -19795,7 +19833,6 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 
 
 
-{/*AICODE*/}
 
  { activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' && (
   <div  id='medicalrecordspastvisitstable'className="  p-2 w-full h-full mt-3 rounded-2xl">  
