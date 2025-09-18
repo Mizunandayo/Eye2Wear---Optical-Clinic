@@ -5371,17 +5371,61 @@ return (
       name: `${patient.patientfirstname} ${patient.patientlastname}`});
   }}
   
-  className="flex justify-center items-center mb-1 bg-white shadow-lg w-[316px] h-[160px] rounded-3xl hover:cursor-pointer hover:scale-105 transition-all ease-in-out duration-300 " >
-    <div className="w-[125px] h-full  rounded-2xl flex justify-center items-center">
-    <img src={patient.patientprofilepicture || defaultprofilepic} alt="Profile" className="h-18 w-18 rounded-full object-cover"></img>
+  className="group relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer w-80 min-h-[180px]">
+    {/* Profile Section */}
+    <div className="flex items-center gap-4 mb-4">
+      <div className="relative">
+        <img 
+          src={patient.patientprofilepicture || defaultprofilepic} 
+          alt="Profile" 
+          className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all duration-300"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-albertsans font-semibold text-lg text-gray-900 truncate">
+          {patient.patientfirstname} {patient.patientlastname}
+        </h3>
+        <p className="text-sm text-gray-500 truncate">{patient.patientemail}</p>
+      </div>
     </div>
-    <div className="bg-white min-w-0 flex flex-col justify-center items-start pl-2 pr-2 w-full h-full  rounded-3xl">
-      <h1 className="font-albertsans font-semibold text-[16px] truncate w-full text-[#2d3744]">{patient.patientfirstname} {patient.patientlastname}</h1>
-      <p className="text-[13px] truncate w-full text-gray-600">{patient.patientemail}</p>
-      <p className="text-[12px] truncate w-full text-gray-500">Age: {patient.patientage}</p>
-      <p className="text-[12px] truncate w-full text-gray-500">Gender: {patient.patientgender}</p>
-      <p className="text-[12px] truncate w-full text-gray-500">Contact: {patient.patientcontactnumber}</p>
-      <p className="text-[11px] truncate w-full text-gray-400">{patient.patienthomeaddress}</p>
+
+    {/* Patient Details */}
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <i className="bx bx-cake text-gray-400 text-sm"></i>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Age</span>
+        </div>
+        <span className="text-sm text-gray-700 font-medium">{patient.patientage}</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <i className={`bx ${patient.patientgender?.toLowerCase() === 'male' ? 'bx-male' : patient.patientgender?.toLowerCase() === 'female' ? 'bx-female' : 'bx-user'} text-gray-400 text-sm`}></i>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Gender</span>
+        </div>
+        <span className="text-sm text-gray-700 font-medium">{patient.patientgender}</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <i className="bx bx-phone text-gray-400 text-sm"></i>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Contact</span>
+        </div>
+        <span className="text-sm text-gray-700 font-medium">{patient.patientcontactnumber}</span>
+      </div>
+    </div>
+
+    {/* Address */}
+    <div className="mt-4 pt-3 border-t border-gray-50">
+      <div className="flex items-center gap-2 mb-2">
+        <i className="bx bx-map text-gray-400 text-sm"></i>
+        <p className="text-xs text-gray-400 uppercase tracking-wider">Address</p>
+      </div>
+      <p className="text-sm text-gray-600 truncate ml-6">{patient.patienthomeaddress}</p>
+    </div>
+
+    {/* Hover Effect Indicator */}
+    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
     </div>
   </div>
   ))}
@@ -16313,9 +16357,10 @@ useEffect(() => {
 {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} 
    { (activeaccounttable === 'patientaccounttable' && !isAdminRole) && ( <div id="patientaccounttable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
 
-        <div className=" mt-5  w-full h-[60px] flex justify-between gap-10 rounded-3xl pl-5 pr-5">              
+<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">             
         <div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter patient name..." value={searchpatients} onChange={(e) => {setsearchpatients(e.target.value); filterpatientaccount(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-        <div onClick={() => setshowaddpatientdialog(true)}  className="w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Patient</p></div>
+ <div onClick={() => setshowaddpatientdialog(true)}  className="w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Patient</p></div>
+
         </div>
 
         <div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
@@ -16372,7 +16417,7 @@ useEffect(() => {
                           {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
                           {emailerror && emailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
                        
-                          </div>ww
+                          </div>
                           </div>
                     
                     
@@ -17455,14 +17500,15 @@ useEffect(() => {
 
 
 {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} 
-{ activeprofiletable === 'patientprofiletable' && ( <div id="patientprofiletable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
+{ activeprofiletable === 'patientprofiletable' && ( <div id="patientprofiletable" className="animate-fadeInUp flex flex-col items-center  w-[100%] h-[83%] rounded-2xl mt-5" >
 
 <div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter patient name..." value={searchPatientProfiles} onChange={(e) => {setSearchPatientProfiles(e.target.value); filterPatientProfiles(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-<div onClick={() => setshowaddpatientprofile(true)}  className=" mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Patient Profile</p></div>
+<div className="ml-2 mr-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter patient name..." value={searchPatientProfiles} onChange={(e) => {setSearchPatientProfiles(e.target.value); filterPatientProfiles(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+<div onClick={() => setshowaddpatientprofile(true)}  className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Profile</p></div>
+
 </div>
 
-<div className=" rounded-3xl min-h-[85%] h-auto pb-5 w-full mt-2 bg-[#f7f7f7]">
+<div className=" rounded-3xl min-h-[95%] h-auto pb-5 w-full mt-2 bg-[#f7f7f7]">
 {renderpatientprofiles()}
 </div>
 
