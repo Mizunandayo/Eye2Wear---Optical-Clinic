@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import navlogo from "../src/assets/images/navlogo.png";
 import Typewriter from "typewriter-effect";
+import axios from 'axios';
 
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
@@ -30,6 +31,7 @@ function AboutPage() {
   const [patientprofilepicture, setpatientprofilepicture] = useState('');
   const [showlogoutbtn, setshowlogoutbtn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   };
@@ -42,10 +44,18 @@ function AboutPage() {
 
   useEffect(() => {
     const loadpatient = async () => {
-      const data = await fetchpatientdetails();
-      if (data) {
-        setpatientfirstname(data.patientfirstname || '');
-        setpatientprofilepicture(data.patientprofilepicture || '');
+      // Only fetch patient details if user is logged in
+      if (localStorage.getItem("patienttoken")) {
+        try {
+          const data = await fetchpatientdetails(true); // Allow guest access
+          if (data) {
+            setpatientfirstname(data.patientfirstname || '');
+            setpatientprofilepicture(data.patientprofilepicture || '');
+          }
+        } catch {
+          console.log('Failed to fetch patient details, but continuing as guest');
+          // Don't redirect on error, just continue as guest user
+        }
       }
     };
     loadpatient();
@@ -69,8 +79,6 @@ function AboutPage() {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [mobileMenuOpen]);
-
-  const currentuserloggedin = useMemo(() => localStorage.getItem("patienttoken") ? "Patient" : null, []);
 
 
 
@@ -136,30 +144,36 @@ function AboutPage() {
               >
                 Home
               </Link>
-              <Link 
-                to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Appointments
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <Link 
+                  to="/patientdashboard" 
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Appointments
+                </Link>
+              )}
               <Link 
                 to="/patientproducts" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
-              <Link 
-                to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Wishlist
-              </Link>
-              <Link 
-                to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Orders
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <>
+                  <Link 
+                    to="/patientwishlist" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Wishlist
+                  </Link>
+                  <Link 
+                    to="/patientorders" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Orders
+                  </Link>
+                </>
+              )}
               <Link 
                 to="/aboutpage" 
                 className="px-4 py-2 text-sm font-semibold text-sky-600 bg-sky-50 rounded-lg transition-all duration-200"
@@ -234,11 +248,12 @@ function AboutPage() {
                 )}
               </div>
             ) : (
-              <Link to="/userlogin" className="hidden lg:block">
-                <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
-                  <FontAwesomeIcon icon={faUser} className="mr-2" />
-                  Login
-                </div>
+              <Link 
+                to="/userlogin"
+                className="hidden lg:block bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <FontAwesomeIcon icon={faUser} className="mr-2" />
+                Login
               </Link>
             )}
           </div>
@@ -254,13 +269,15 @@ function AboutPage() {
                 >
                   Home
                 </Link>
-                <Link 
-                  to="/patientdashboard" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-                >
-                  Appointments
-                </Link>
+                {localStorage.getItem("patienttoken") && (
+                  <Link 
+                    to="/patientdashboard" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Appointments
+                  </Link>
+                )}
                 <Link 
                   to="/patientproducts" 
                   onClick={() => setMobileMenuOpen(false)}
@@ -268,20 +285,24 @@ function AboutPage() {
                 >
                   Store
                 </Link>
-                <Link 
-                  to="/patientwishlist" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-                >
-                  Wishlist
-                </Link>
-                <Link 
-                  to="/patientorders" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-                >
-                  Orders
-                </Link>
+                {localStorage.getItem("patienttoken") && (
+                  <>
+                    <Link 
+                      to="/patientwishlist" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    >
+                      Wishlist
+                    </Link>
+                    <Link 
+                      to="/patientorders" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    >
+                      Orders
+                    </Link>
+                  </>
+                )}
                 <Link 
                   to="/aboutpage" 
                   onClick={() => setMobileMenuOpen(false)}
@@ -336,12 +357,10 @@ function AboutPage() {
                     <Link 
                       to="/userlogin"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block"
+                      className="block w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md text-left"
                     >
-                      <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
-                        <FontAwesomeIcon icon={faUser} className="mr-2" />
-                        Login
-                      </div>
+                      <FontAwesomeIcon icon={faUser} className="mr-2" />
+                      Login
                     </Link>
                   </div>
                 )}
@@ -509,7 +528,6 @@ function AboutPage() {
           </div>
         </div>
       )}
-
 
     </>
   );

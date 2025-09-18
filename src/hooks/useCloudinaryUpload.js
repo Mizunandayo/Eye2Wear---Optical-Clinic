@@ -48,7 +48,13 @@ const useCloudinaryUpload = () => {
       }
 
       setUploadProgress(100);
-      return result;
+      
+      // Normalize the response to ensure imageUrl and public_id are available at the top level
+      return {
+        ...result,
+        imageUrl: result.data?.imageUrl || result.imageUrl,
+        public_id: result.data?.public_id || result.public_id
+      };
     } catch (err) {
       setError(err.message);
       throw err;

@@ -3861,6 +3861,7 @@ export default function App() {
     <BrowserRouter>
       <PatientChatButton/>
       <Routes>
+        <Route path="/" element={<PatientLandingpage />} />
         <Route path="/patientregistration" element={<PatientRegistration />} />
         <Route path="/userlogin" element={<UserLogin />} />
         <Route path="/patientlandingpage" element={<PatientLandingpage />} />

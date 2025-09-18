@@ -73,8 +73,7 @@ const AdminaccountSchema = mongoose.Schema(
     //Profile picture properties - Cloudinary
     adminprofilepicture: {
       type: String,
-      required: true,
-      default:"default-profile-url"
+      default: ""
     },
     
     // Cloudinary public_id for profile picture management

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
+import axios from "axios";
 import landingbg2 from "../src/assets/images/landingbg2.png";
 import landingbg3 from "../src/assets/images/landingbg3.png";
 import bentoglass from "../src/assets/images/bentoglass.png";
@@ -197,6 +198,14 @@ mapStyles.textContent = `
   .animate-location-pulse {
     animation: location-pulse 2s infinite;
   }
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
   #geographicmapcontainer {
     height: 100% !important;
     min-height: 580px;
@@ -229,10 +238,18 @@ function PatientLandingpage() {
 
   useEffect(() => {
     const loadpatient = async () => {
-      const data = await fetchpatientdetails();
-      if (data) {
-        setpatientfirstname(data.patientfirstname || '');
-        setpatientprofilepicture(data.patientprofilepicture || '');
+      // Only fetch patient details if user is logged in
+      if (localStorage.getItem("patienttoken")) {
+        try {
+          const data = await fetchpatientdetails(true); // Allow guest access
+          if (data) {
+            setpatientfirstname(data.patientfirstname || '');
+            setpatientprofilepicture(data.patientprofilepicture || '');
+          }
+        } catch {
+          console.log('Failed to fetch patient details, but continuing as guest');
+          // Don't redirect on error, just continue as guest user
+        }
       }
     };
     loadpatient();
@@ -258,9 +275,6 @@ function PatientLandingpage() {
   }, [mobileMenuOpen]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
-
-  const currentusertoken = useMemo(() => localStorage.getItem("patienttoken"), []);
-  const currentuserloggedin = useMemo(() => localStorage.getItem("patienttoken") ? "Patient" : null, []);
 
   const [clinicLocations, setClinicLocations] = useState([]);
   const [loadingClinicLocations, setLoadingClinicLocations] = useState(true);
@@ -1269,30 +1283,36 @@ const handleFullscreenChange = () => {
               >
                 Home
               </Link>
-              <Link 
-                to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Appointments
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <Link 
+                  to="/patientdashboard" 
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Appointments
+                </Link>
+              )}
               <Link 
                 to="/patientproducts" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
-              <Link 
-                to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Wishlist
-              </Link>
-              <Link 
-                to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Orders
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <>
+                  <Link 
+                    to="/patientwishlist" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Wishlist
+                  </Link>
+                  <Link 
+                    to="/patientorders" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Orders
+                  </Link>
+                </>
+              )}
               <Link 
                 to="/aboutpage" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1383,7 +1403,10 @@ const handleFullscreenChange = () => {
                 )}
               </div>
             ) : (
-              <Link to="/userlogin" className="hidden lg:block">
+              <Link 
+                to="/userlogin"
+                className="hidden lg:block cursor-pointer"
+              >
                 <div className="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg">
                   <FontAwesomeIcon icon={faUser} className="mr-2" />
                   Login
@@ -1406,13 +1429,15 @@ const handleFullscreenChange = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/patientdashboard" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Appointments
-            </Link>
+            {localStorage.getItem("patienttoken") && (
+              <Link 
+                to="/patientdashboard" 
+                className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Appointments
+              </Link>
+            )}
             <Link 
               to="/patientproducts" 
               className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1420,20 +1445,24 @@ const handleFullscreenChange = () => {
             >
               Store
             </Link>
-            <Link 
-              to="/patientwishlist" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Wishlist
-            </Link>
-            <Link 
-              to="/patientorders" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Orders
-            </Link>
+            {localStorage.getItem("patienttoken") && (
+              <>
+                <Link 
+                  to="/patientwishlist" 
+                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Wishlist
+                </Link>
+                <Link 
+                  to="/patientorders" 
+                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Orders
+                </Link>
+              </>
+            )}
             <Link 
               to="/aboutpage" 
               className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1487,6 +1516,7 @@ const handleFullscreenChange = () => {
               ) : (
                 <Link 
                   to="/userlogin"
+                  className="cursor-pointer"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-3 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">

@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useCallback} from "react";
 import {Link} from "react-router-dom";
+import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import navlogo from  "../src/assets/images/navlogo.png";
@@ -103,6 +104,7 @@ function PatientProducts(){
   const [patientprofilepicture, setpatientprofilepicture] = useState('');
   const [showlogoutbtn, setshowlogoutbtn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   }
@@ -128,24 +130,25 @@ function PatientProducts(){
   //Retrieveing Data from useAuth Hook
   useEffect(() => {
     const loadpatient = async () => {
-
-      try{
-
-      const data = await fetchpatientdetails();
-      if(data){
-        setpatientfirstname(data.patientfirstname || '');
-        setpatientmiddlename(data.patientmiddlename || '');
-        setpatientlastname(data.patientlastname || '');
-        setpatientemail(data.patientemail || '');
-        setpatientprofilepicture(data.patientprofilepicture || '');
-        localStorage.setItem("patientemail", data.patientemail);
+      // Only fetch patient details if user is logged in
+      if (localStorage.getItem("patienttoken")) {
+        try {
+          const data = await fetchpatientdetails(true); // Allow guest access
+          if (data) {
+            setpatientfirstname(data.patientfirstname || '');
+            setpatientmiddlename(data.patientmiddlename || '');
+            setpatientlastname(data.patientlastname || '');
+            setpatientemail(data.patientemail || '');
+            setpatientprofilepicture(data.patientprofilepicture || '');
+            localStorage.setItem("patientemail", data.patientemail);
+          }
+        } catch {
+          console.log('Failed to fetch patient details, but continuing as guest');
+          // Don't redirect on error, just continue as guest user
+        }
       }
-    }catch(error){
-
-        console.error("Error fetching patient details", error);
-
-    }
-   }; loadpatient();
+    }; 
+    loadpatient();
   }, []);
 
   // Handle clicking outside mobile menu to close it
@@ -166,6 +169,14 @@ function PatientProducts(){
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [mobileMenuOpen]);
+
+ //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+ //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+ //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+ //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+
+
+
 
 
 
@@ -209,12 +220,7 @@ const showinventorytable = (inventorytableid) => {
       setactiveinventorytable(inventorytableid);
 };
 
-// View Order Modal handlers
-const handleViewOrder = (order) => {
-  setSelectedOrderForView(order);
-  setViewOrderCurrentImageIndex(0);
-  setShowViewOrderModal(true);
-};
+
 
 const closeViewOrderModal = () => {
   setShowViewOrderModal(false);
@@ -1675,30 +1681,36 @@ useEffect(() => {
               >
                 Home
               </Link>
-              <Link 
-                to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Appointments
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <Link 
+                  to="/patientdashboard" 
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                >
+                  Appointments
+                </Link>
+              )}
               <Link 
                 to="/patientproducts" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
-              <Link 
-                to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Wishlist
-              </Link>
-              <Link 
-                to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              >
-                Orders
-              </Link>
+              {localStorage.getItem("patienttoken") && (
+                <>
+                  <Link 
+                    to="/patientwishlist" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Wishlist
+                  </Link>
+                  <Link 
+                    to="/patientorders" 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  >
+                    Orders
+                  </Link>
+                </>
+              )}
               <Link 
                 to="/aboutpage" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1812,13 +1824,15 @@ useEffect(() => {
             >
               Home
             </Link>
-            <Link 
-              to="/patientdashboard" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Appointments
-            </Link>
+            {localStorage.getItem("patienttoken") && (
+              <Link 
+                to="/patientdashboard" 
+                className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Appointments
+              </Link>
+            )}
             <Link 
               to="/patientproducts" 
               className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1826,20 +1840,24 @@ useEffect(() => {
             >
               Store
             </Link>
-            <Link 
-              to="/patientwishlist" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Wishlist
-            </Link>
-            <Link 
-              to="/patientorders" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Orders
-            </Link>
+            {localStorage.getItem("patienttoken") && (
+              <>
+                <Link 
+                  to="/patientwishlist" 
+                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Wishlist
+                </Link>
+                <Link 
+                  to="/patientorders" 
+                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Orders
+                </Link>
+              </>
+            )}
             <Link 
               to="/aboutpage" 
               className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
@@ -1894,6 +1912,7 @@ useEffect(() => {
                 <Link 
                   to="/userlogin"
                   onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
                 >
                   <div className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-3 rounded-lg font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md">
                     <FontAwesomeIcon icon={faUser} className="mr-2" />
@@ -2261,7 +2280,7 @@ useEffect(() => {
 
       {/*Toast Message when wishlist button is clicked*/}
           {ambhershowheartToast && (
-            <div className="top-4  -translate-x-1/2  z-100   left-1/2 transform fixed " >
+            <div className="top-15   -translate-x-1/2  z-100   left-1/2 transform fixed " >
                   <div key={ambherheartisClicked ? 'added' : 'removed'}  className={` ${ambhershowtoastmessageClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'}  flex items-center bg-white   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
                     {ambherheartisClicked ? (          
                        <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle "></i></span>
@@ -4132,6 +4151,91 @@ useEffect(() => {
                 onMouseOut={(e) => e.target.style.backgroundColor = '#2781af'}
               >
                 Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#111827'
+            }}>
+              Confirm Logout
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#6b7280',
+              marginBottom: '24px'
+            }}>
+              Are you sure you want to log out? You will need to sign in again to access your account.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Log Out
               </button>
             </div>
           </div>

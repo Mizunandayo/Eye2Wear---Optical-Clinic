@@ -187,9 +187,9 @@ export const uploadProfilePicture = [
         currentUser = await Model.findById(userId);
       }
       
-      if (!currentUser && userType === 'patient') {
-        // For patients, we'll just upload the image without updating any existing record
-        // The demographic creation/update will handle linking the image later
+      if (!currentUser && (userType === 'patient' || userType === 'owner' || userType === 'staff' || userType === 'admin')) {
+        // For new accounts being created, just upload the image without updating any existing record
+        // The account creation process will handle linking the image later
         return res.status(200).json({
           success: true,
           message: 'Profile picture uploaded successfully (no existing record to update)',

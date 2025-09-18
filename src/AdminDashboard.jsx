@@ -2695,11 +2695,11 @@ return (
             <td  className="py-3 px-6 text-center">
               <div className="flex justify-center">
               <img 
-                src={patient.patientprofilepicture} 
+                src={patient.patientprofilepicture || defaultprofilepic} 
                 alt="Profile" 
                 className="w-12 h-12 rounded-full object-cover"
                 onError={(e) => {
-                  e.target.src = 'default-profile-url'; 
+                  e.target.src = defaultprofilepic; 
                 }}
               />
               </div>
@@ -2993,7 +2993,7 @@ const handlechange = (e) => {
 
     const patientaccsubmission = {
       ...formdata,
-      patientprofilepicture: previewimage || formdata.patientprofilepicture
+      patientprofilepicture: formdata.patientprofilepicture || defaultprofilepic
     };
 
 //Sends all patient data to the server
@@ -3104,7 +3104,7 @@ const handlechange = (e) => {
 
       const updatepatientaccountdetails = {
         ...formdata,
-        patientprofilepicture: previewimage || formdata.patientprofilepicture
+        patientprofilepicture: formdata.patientprofilepicture || defaultprofilepic
       };
 
       const response = await fetch(`/api/patientaccounts/${selectededitpatientaccount.id}`,{
@@ -3244,47 +3244,48 @@ const filterstaffaccount = useCallback(searchstaffdebounce((term) => {
   setfilteredstaffs(filtered);
 }, 300), [staffs]);
 
-//Fetching staff list and data from database
-useEffect(() => {
-  const fetchstaffs = async () => {
-    try{
+  //Fetching staff list and data from database
+  useEffect(() => {
+    const fetchstaffs = async () => {
+      setloadingstaffs(true); // Reset loading state
+      try{
 
-      const fetchresponse = await fetch('/api/staffaccounts', {
-        headers: {
-          'Authorization': `Bearer ${currentusertoken}`
+        const fetchresponse = await fetch('/api/staffaccounts', {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if(!fetchresponse.ok){
+          throw new Error("Failed to fetch staff accounts");
         }
-      });
-      
-      if(!fetchresponse.ok){
-        throw new Error("Failed to fetch staff accounts");
-      }
 
-      let staffdata = await fetchresponse.json();
-      
-      // Apply clinic filtering (except for Admin)
-      if (currentuserloggedin !== "Admin") {
-        if (isAmbherOnlyUser()) {
-          staffdata = staffdata.filter(staff => staff.staffclinic === "Ambher Optical");
-        } else if (isBautistaOnlyUser()) {
-          staffdata = staffdata.filter(staff => staff.staffclinic === "Bautista Eye Center");
+        let staffdata = await fetchresponse.json();
+        
+        // Apply clinic filtering (except for Admin)
+        if (currentuserloggedin !== "Admin") {
+          if (isAmbherOnlyUser()) {
+            staffdata = staffdata.filter(staff => staff.staffclinic === "Ambher Optical");
+          } else if (isBautistaOnlyUser()) {
+            staffdata = staffdata.filter(staff => staff.staffclinic === "Bautista Eye Center");
+          }
         }
-      }
+        
+        setstaffs(staffdata);
+        setfailedloadingstaffs(null); // Clear any previous errors
       
-      setstaffs(staffdata);
+      }catch(error){
+        setfailedloadingstaffs(error.message);
+      }finally{
+        setloadingstaffs(false);
+      }
+    };
     
-    }catch(error){
-      setfailedloadingstaffs(error.message);
-    }finally{
-      setloadingstaffs(false);
+    // Fetch staff accounts for all authenticated users - filtering will be applied after data is retrieved
+    if(currentusertoken && currentuserloggedin && userDataLoaded) {
+      fetchstaffs();
     }
-  };
-  
-  if(currentusertoken) {
-    fetchstaffs();
-  }
-}, [currentusertoken]);
-
-//staff Filter
+  }, [currentusertoken, currentuserloggedin, userDataLoaded, isAmbherOnlyUser, isBautistaOnlyUser]);//staff Filter
 useEffect(() => {
   filterstaffaccount(searchstaffs);
 }, [searchstaffs, filterstaffaccount]);
@@ -3311,9 +3312,9 @@ return (
       `}
     </style>
     <div className="overflow-x-auto w-full h-full">
-      <table className="w-full rounded-tl-2xl  rounded-tr-2xl shadow-lg">
+      <table className="w-full rounded-tl-2xl rounded-tr-2xl shadow-lg">
         <thead className="rounded-tl-2xl rounded-tr-2xl">
-          <tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl ">
+          <tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
             <th className="pb-3 pt-3 pl-2 pr-2 text-center rounded-tl-2xl">Id</th>
             <th className="pb-3 pt-3 pl-5 pr-5 text-center">Profile</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Lastname</th>
@@ -3323,14 +3324,7 @@ return (
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Clinic</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Eye Specialist</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center rounded-tr-2xl">Actions</th>
-
-            {currentuserloggedin !== "Staff" && (
-              <>
-                <th className="pb-3 pt-3 text-center pr-3"></th>
-                <th className="pb-3 pt-3 text-center pr-3 rounded-tr-2xl"></th>
-              </>
-            )}
+            <th className={`pb-3 pt-3 pl-2 pr-2 text-center ${currentuserloggedin !== "Staff" ? '' : 'rounded-tr-2xl'}`}>Actions</th>
           </tr>
         </thead>
         
@@ -3345,7 +3339,7 @@ return (
 
           {failedloadingstaffs && (
             <tr>
-              <td colSpan="12" className="p-4 bg-red-50 text-red-600 text-center">
+              <td colSpan="10" className="p-4 bg-red-50 text-red-600 text-center">
                 Error: {failedloadingstaffs}
               </td>
             </tr>
@@ -3353,41 +3347,38 @@ return (
 
           {(!loadingstaffs && !failedloadingstaffs && searchstaffs && filteredstaffs.length === 0) && (
             <tr>
-              <td colSpan="12" className="rounded-2xl py-6 px-4 bg-yellow-50 text-yellow-600 text-center">
+              <td colSpan="10" className="rounded-2xl py-6 px-4 bg-yellow-50 text-yellow-600 text-center">
                 No staffs found.
               </td>
             </tr>
           )}
 
           {(!loadingstaffs && !failedloadingstaffs && staffstorender.length > 0) && paginatedStaffs.map((staff) => (
-          <tr key={staff._id}  className="hover:bg-gray-100  transition-all duration-300 ease-in-out hover:cursor-pointer ">
-            <td  className="py-3 px-6 text-[#3a3a3a] font-albertsans font-medium ">#{staff.staffId}</td>
-            <td  className="py-3 px-6 text-center">
-            <div className="flex justify-center">
-              <img 
-                src={staff.staffprofilepicture} 
-                alt="Profile" 
-                className="w-12 h-12 rounded-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'default-profile-url'; // Fallback image
-                }}
-              />
+          <tr key={staff._id} className="hover:bg-gray-100 transition-all duration-300 ease-in-out hover:cursor-pointer">
+            <td className="py-3 px-6 text-[#3a3a3a] font-albertsans font-medium">#{staff.staffId}</td>
+            <td className="py-3 px-6 text-center">
+              <div className="flex justify-center">
+                <img 
+                  src={staff.staffprofilepicture || defaultprofilepic} 
+                  alt="Profile" 
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = defaultprofilepic; // Fallback image
+                  }}
+                />
               </div>
             </td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium ">{staff.stafflastname}</td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium max-w-[150px]">{staff.stafffirstname}</td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.staffmiddlename}</td>
-    
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.stafflastname}</td>
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium max-w-[150px]">{staff.stafffirstname}</td>
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.staffmiddlename}</td>
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
               <a href={`mailto:${staff.staffemail}`} className="text-blue-400 hover:underline">
                 {staff.staffemail}
               </a>
-
             </td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">{staff.staffclinic}</td>
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.staffiseyespecialist}</td>
-
-            <td  className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">{staff.staffclinic}</td>
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">{staff.staffiseyespecialist}</td>
+            <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
               {new Date(staff.createdAt).toLocaleDateString('en-US',{
                 month: 'short',
                 day: 'numeric',
@@ -3395,48 +3386,60 @@ return (
               })}
             </td>
             {(currentuserloggedin !== "Staff" || (currentuserloggedin === "Staff" && staff.staffemail === JSON.parse(localStorage.getItem("currentuser"))?.email)) && (
-              <>
-                <td><div onClick={() =>  {
-                  setselectededitstaffaccount({
-                     id: staff._id,
-                     email: staff.staffemail,
-                     lastname: staff.stafflastname,
-                     firstname: staff.stafffirstname,
-                     middlename: staff.staffmiddlename,
-                     eyespecialist: staff.staffiseyespecialist,
-                     profilepicture: staff.staffprofilepicture
-                     });
+              <td className="py-3 px-6 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <div 
+                    onClick={() => {
+                      setselectededitstaffaccount({
+                        id: staff._id,
+                        email: staff.staffemail,
+                        lastname: staff.stafflastname,
+                        firstname: staff.stafffirstname,
+                        middlename: staff.staffmiddlename,
+                        eyespecialist: staff.staffiseyespecialist,
+                        profilepicture: staff.staffprofilepicture
+                      });
 
-                  setstaffformdata({
-                    role: 'staff',
-                    staffemail: staff.staffemail,
-                    staffpassword: staff.staffpassword,
-                    stafflastname: staff.stafflastname,
-                    stafffirstname: staff.stafffirstname,
-                    staffmiddlename: staff.staffmiddlename,
-                    staffiseyespecialist: staff.staffiseyespecialist,
-                    staffprofilepicture: staff.staffprofilepicture,
-                    staffprofilepicture_public_id: staff.staffprofilepicture_public_id
-                  });
+                      setstaffformdata({
+                        role: 'staff',
+                        staffemail: staff.staffemail,
+                        staffpassword: staff.staffpassword,
+                        stafflastname: staff.stafflastname,
+                        stafffirstname: staff.stafffirstname,
+                        staffmiddlename: staff.staffmiddlename,
+                        staffiseyespecialist: staff.staffiseyespecialist,
+                        staffprofilepicture: staff.staffprofilepicture,
+                        staffprofilepicture_public_id: staff.staffprofilepicture_public_id
+                      });
 
-                  setstaffpreviewimage(staff.staffprofilepicture);
-                  setstaffselectedprofile(null); // Reset selected profile when editing
-                  setshowviewstaffdialog(true);}}
-
-                 className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div></td>
-    
-                {currentuserloggedin !== "Staff" && (
-                  <td><div onClick={() =>  {
-                    setselectedstaffaccount({
-                       id: staff.staffId,
-                       email: staff.staffemail,
-                       name: `${staff.stafffirstname} ${staff.stafflastname}`});
-                                
-                    setshowdeletestaffdialog(true);}}
-
-                   className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div></td>
-                )}
-              </>
+                      setstaffpreviewimage(staff.staffprofilepicture);
+                      setstaffselectedprofile(null); // Reset selected profile when editing
+                      setshowviewstaffdialog(true);
+                    }}
+                    className="bg-[#383838] hover:bg-[#595959] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
+                  >
+                    <i className="bx bxs-pencil text-white mr-1"/>
+                    <h1 className="text-white">Edit</h1>
+                  </div>
+                  
+                  {currentuserloggedin !== "Staff" && (
+                    <div 
+                      onClick={() => {
+                        setselectedstaffaccount({
+                          id: staff.staffId,
+                          email: staff.staffemail,
+                          name: `${staff.stafffirstname} ${staff.stafflastname}`
+                        });
+                        setshowdeletestaffdialog(true);
+                      }}
+                      className="bg-[#8c3226] hover:bg-[#ab4f43] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
+                    >
+                      <i className="bx bxs-trash text-white mr-1"/>
+                      <h1 className="text-white">Delete</h1>
+                    </div>
+                  )}
+                </div>
+              </td>
             )}
             </tr>
           ))}
@@ -3598,7 +3601,7 @@ const staffhandlechange = (e) => {
       ...staffformdata,
       staffclinic: ownerownedclinic,
       staffiseyespecialist: staffformdata.staffiseyespecialist,
-      staffprofilepicture: staffpreviewimage || staffformdata.staffprofilepicture
+      staffprofilepicture: staffformdata.staffprofilepicture || defaultprofilepic
     };
 
     console.log(staffaccsubmission);
@@ -3900,6 +3903,7 @@ const staffhandlechange = (e) => {
   //Fetching owner list and data from database
   useEffect(() => {
     const fetchowners = async () => {
+      setloadingowners(true); // Reset loading state
       try{
 
         const fetchresponse = await fetch('/api/owneraccounts', {
@@ -3924,6 +3928,7 @@ const staffhandlechange = (e) => {
         }
         
         setowners(ownerdata);
+        setfailedloadingowners(null); // Clear any previous errors
       
       }catch(error){
         setfailedloadingowners(error.message);
@@ -3932,10 +3937,11 @@ const staffhandlechange = (e) => {
       }
     };
     
-    if(currentusertoken) {
+    // Fetch owner accounts for all authenticated users - filtering will be applied after data is retrieved
+    if(currentusertoken && currentuserloggedin && userDataLoaded) {
       fetchowners();
     }
-  }, [currentusertoken]);
+  }, [currentusertoken, currentuserloggedin, userDataLoaded, isAmbherOnlyUser, isBautistaOnlyUser]);
 
   //owner Filter
   useEffect(() => {
@@ -4001,11 +4007,11 @@ const staffhandlechange = (e) => {
               <td  className="py-3 px-6 text-center">
                 <div className="flex justify-center">
                 <img 
-                  src={owner.ownerprofilepicture} 
+                  src={owner.ownerprofilepicture || defaultprofilepic} 
                   alt="Profile" 
                   className="w-12 h-12 rounded-full object-cover"
                   onError={(e) => {
-                    e.target.src = 'default-profile-url'; // Fallback image
+                    e.target.src = defaultprofilepic; // Fallback image
                   }}
                 />
                 </div>
@@ -4246,7 +4252,7 @@ const staffhandlechange = (e) => {
         ...ownerformdata,
         ownerclinic: ownerformdata.ownerclinic,
         owneriseyespecialist: ownerformdata.owneriseyespecialist,
-        ownerprofilepicture: ownerformdata.ownerprofilepicture || 'default-profile-url' // Use Cloudinary URL
+        ownerprofilepicture: ownerformdata.ownerprofilepicture || defaultprofilepic // Use Cloudinary URL
       };
 
       console.log("Submitting", owneraccsubmission);
@@ -4365,7 +4371,7 @@ const staffhandlechange = (e) => {
 
         const updateowneraccountdetails = {
           ...ownerformdata,
-          ownerprofilepicture: ownerformdata.ownerprofilepicture || 'default-profile-url' // Use Cloudinary URL
+          ownerprofilepicture: ownerformdata.ownerprofilepicture || defaultprofilepic // Use Cloudinary URL
         };
 
         const response = await fetch(`/api/owneraccounts/${selectededitowneraccount.id}`,{
@@ -4589,11 +4595,11 @@ return (
           <td  className="py-3 px-6 text-center">
             <div className="flex justify-center">
             <img 
-              src={admin.adminprofilepicture} 
+              src={admin.adminprofilepicture || defaultprofilepic} 
               alt="Profile" 
               className="w-12 h-12 rounded-full object-cover"
               onError={(e) => {
-                e.target.src = 'default-profile-url'; // Fallback image
+                e.target.src = defaultprofilepic; // Fallback image
               }}
             />
             </div>
@@ -4683,36 +4689,10 @@ if(file.size > maximagefile * 1024 * 1024){
   return;
 }
 
-// Reset states
-setadminselectedprofile(null);
-setadminpreviewimage(null);
-
-if(adminimageinputref.current){
-  adminimageinputref.current.value = "";
-}
-
-try {
-  // Upload to Cloudinary
-  const result = await uploadProfilePicture(file, adminformdata.adminemail || 'unknown', 'admin');
-  
-  if (result && result.imageUrl) {
-    console.log('Admin profile upload successful:', result);
-    setadminpreviewimage(result.imageUrl);
-    setadminselectedprofile(file);
-    
-    // Update form data with Cloudinary URL
-    setadminformdata(prev => ({
-      ...prev,
-      adminprofilepicture: result.imageUrl
-    }));
-  } else {
-    console.error('Admin profile upload failed: No image URL returned', result);
-    alert('Upload failed: No image URL returned from server');
-  }
-} catch (error) {
-  console.error("Admin profile upload error:", error);
-  alert(`Upload failed: ${error.message || 'Unknown error occurred'}`);
-}
+// Show preview immediately using URL.createObjectURL for better performance
+const previewUrl = URL.createObjectURL(file);
+setadminpreviewimage(previewUrl);
+setadminselectedprofile(file); // Store the actual file for Cloudinary upload
 
 };
 
@@ -4724,6 +4704,11 @@ adminimageinputref.current.click();
 const adminhandleremoveprofile = () => {
 setadminselectedprofile(null);
 setadminpreviewimage(null);
+// Clear the profile picture from form data
+setadminformdata(prev => ({
+  ...prev,
+  adminprofilepicture: ''
+}));
 if(adminimageinputref.current){
   adminimageinputref.current.value = "";
 }
@@ -4825,10 +4810,36 @@ const adminhandlesubmit = async (e) => {
 
 try{
 
-  
+  let profilePictureUrl = defaultprofilepic;
+
+  // If there's a profile picture file selected, upload it to Cloudinary first
+  if (adminselectedprofile) {
+    setadminmessage({text: 'Uploading profile picture...', type: 'info'});
+    
+    try {
+      const uploadResult = await uploadProfilePicture(
+        adminselectedprofile, 
+        adminformdata.adminemail, 
+        'admin' // Use 'admin' type for admin accounts
+      );
+      
+      if (uploadResult.success) {
+        profilePictureUrl = uploadResult.data.imageUrl;
+        setadminmessage({text: 'Profile picture uploaded successfully!', type: 'success'});
+      } else {
+        throw new Error(uploadResult.message || 'Failed to upload profile picture');
+      }
+    } catch (uploadError) {
+      console.error('Profile picture upload error:', uploadError);
+      setadminmessage({text: `Upload failed: ${uploadError.message}`, type: 'error'});
+      setadminissubmitting(false);
+      return;
+    }
+  }
+
   const adminaccsubmission = {
     ...adminformdata,
-    adminprofilepicture: adminformdata.adminprofilepicture || 'default-profile-url' // Use Cloudinary URL
+    adminprofilepicture: profilePictureUrl // Use uploaded Cloudinary URL or default
   };
 
 
@@ -4843,6 +4854,10 @@ try{
         body: JSON.stringify(adminaccsubmission)
   });
 
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || `Server error: ${response.status}`);
+  }
 
   
   await axios.post(`/api/accountcreation/admin`, {
@@ -4876,8 +4891,39 @@ try{
 
 //Error encounter  
   } catch(error) {
-    console.error("Error:", error)
-    setadminmessage({text:"Registration Failed. Try again",type:"error"});
+    console.error("Error:", error);
+    
+    // Extract specific error message for better user feedback
+    let errorMessage = "Registration Failed. Try again";
+    
+    if (error.message) {
+      // Check for password validation error
+      if (error.message.includes("adminpassword") && error.message.includes("shorter than the minimum allowed length")) {
+        errorMessage = "Password must be at least 6 characters long.";
+      } 
+      // Check for email validation errors
+      else if (error.message.includes("adminemail") && error.message.includes("is not a valid email")) {
+        errorMessage = "Please enter a valid email address.";
+      }
+      // Check for duplicate email error
+      else if (error.message.includes("duplicate key error") || error.message.includes("E11000")) {
+        errorMessage = "This email address is already registered.";
+      }
+      // Check for required field errors
+      else if (error.message.includes("Path") && error.message.includes("is required")) {
+        const fieldMatch = error.message.match(/Path `(\w+)` is required/);
+        if (fieldMatch) {
+          const fieldName = fieldMatch[1].replace('admin', '').replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+          errorMessage = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required.`;
+        }
+      }
+      // For other specific errors, show the error message if it's user-friendly
+      else if (!error.message.includes("Error:") && error.message.length < 100) {
+        errorMessage = error.message;
+      }
+    }
+    
+    setadminmessage({text: errorMessage, type: "error"});
          
   } finally {
     setadminissubmitting(false)
@@ -4942,9 +4988,35 @@ const updateadminaccount = async (e) => {
   try{
     if(!selectededitadminaccount) return;
 
+    let profilePictureUrl = adminformdata.adminprofilepicture || defaultprofilepic;
+
+    // If a new profile picture was selected, upload it to Cloudinary first
+    if (adminselectedprofile) {
+      setadminmessage({text: 'Uploading profile picture...', type: 'info'});
+      
+      try {
+        const uploadResult = await uploadProfilePicture(
+          adminselectedprofile, 
+          adminformdata.adminemail, 
+          'admin' // Use 'admin' type for admin accounts
+        );
+        
+        if (uploadResult.success) {
+          profilePictureUrl = uploadResult.data.imageUrl;
+          setadminmessage({text: 'Profile picture uploaded successfully!', type: 'success'});
+        } else {
+          throw new Error(uploadResult.error || 'Failed to upload profile picture');
+        }
+      } catch (uploadError) {
+        setadminmessage({text: `Upload failed: ${uploadError.message}`, type: 'error'});
+        setadminissubmitting(false);
+        return;
+      }
+    }
+
     const updateadminaccountdetails = {
       ...adminformdata,
-      adminprofilepicture: adminpreviewimage || adminformdata.adminprofilepicture
+      adminprofilepicture: profilePictureUrl
     };
 
     const response = await fetch(`/api/adminaccounts/${selectededitadminaccount.id}`,{
@@ -4983,6 +5055,19 @@ const updateadminaccount = async (e) => {
       setselectededitadminaccount(null);
       setshowviewadmindialog(false);
       setadminmessage({text:"", type:""});
+      // Reset profile picture states
+      setadminselectedprofile(null);
+      setadminpreviewimage(null);
+      // Reset form data
+      setadminformdata({
+        role: 'Admin',
+        adminemail: '',
+        adminpassword: '',
+        adminlastname: '',
+        adminfirstname: '',
+        adminmiddlename: '',
+        adminprofilepicture: ''
+      });
     }, 1500);
 
   } catch (error){
@@ -5053,6 +5138,8 @@ const [viewpatientappointment, setviewpatientappointment] = useState(false);
 const [deletepatientappointment, setdeletepatientappointment] = useState(false);
 const [isAcceptingAppointment, setIsAcceptingAppointment] = useState(false);
 const [isCompletingAppointment, setIsCompletingAppointment] = useState(false);
+const [isDecliningAppointment, setIsDecliningAppointment] = useState(false);
+const [isCancellingAppointment, setIsCancellingAppointment] = useState(false);
 const [bautistaeyespecialist, setbautistaeyespecialist] = useState('');
 const [ambhereyespecialist, setambhereyespecialist] = useState('');
 const [ambherappointmentpaymentotal, setambherappointmentpaymentotal] = useState('');
@@ -6146,7 +6233,12 @@ try {
   if (completeAppointment) {
     // Ambher Optical data
     if (completeAppointment.patientambherappointmentdate) {
-      setambhereyespecialist(completeAppointment.patientambherappointmenteyespecialist || '');
+      // Only populate eye specialist if appointment is not pending
+      if (completeAppointment.patientambherappointmentstatus !== 'Pending') {
+        setambhereyespecialist(completeAppointment.patientambherappointmenteyespecialist || '');
+      } else {
+        setambhereyespecialist(''); // Clear eye specialist for pending appointments
+      }
       setambherappointmentpaymentotal(completeAppointment.patientambherappointmentpaymentotal?.toString() || '');
       setambherappointmentconsultationremarkssubject(completeAppointment.patientambherappointmentconsultationremarkssubject || '');
       setambherappointmentconsultationremarks(completeAppointment.patientambherappointmentconsultationremarks || '');
@@ -6155,7 +6247,12 @@ try {
     
     // Bautista Eye Center data
     if (completeAppointment.patientbautistaappointmentdate) {
-      setbautistaeyespecialist(completeAppointment.patientbautistaappointmenteyespecialist || '');
+      // Only populate eye specialist if appointment is not pending
+      if (completeAppointment.patientbautistaappointmentstatus !== 'Pending') {
+        setbautistaeyespecialist(completeAppointment.patientbautistaappointmenteyespecialist || '');
+      } else {
+        setbautistaeyespecialist(''); // Clear eye specialist for pending appointments
+      }
       setbautistaappointmentpaymentotal(completeAppointment.patientbautistaappointmentpaymentotal?.toString() || '');
       setbautistaappointmentconsultationremarkssubject(completeAppointment.patientbautistaappointmentconsultationremarkssubject || '');
       setbautistaappointmentconsultationremarks(completeAppointment.patientbautistaappointmentconsultationremarks || '');
@@ -6171,7 +6268,12 @@ try {
   if (appointment) {
     // Ambher Optical data
     if (appointment.patientambherappointmentdate) {
-      setambhereyespecialist(appointment.patientambherappointmenteyespecialist || '');
+      // Only populate eye specialist if appointment is not pending
+      if (appointment.patientambherappointmentstatus !== 'Pending') {
+        setambhereyespecialist(appointment.patientambherappointmenteyespecialist || '');
+      } else {
+        setambhereyespecialist(''); // Clear eye specialist for pending appointments
+      }
       setambherappointmentpaymentotal(appointment.patientambherappointmentpaymentotal?.toString() || '');
       setambherappointmentconsultationremarkssubject(appointment.patientambherappointmentconsultationremarkssubject || '');
       setambherappointmentconsultationremarks(appointment.patientambherappointmentconsultationremarks || '');
@@ -6180,7 +6282,12 @@ try {
     
     // Bautista Eye Center data
     if (appointment.patientbautistaappointmentdate) {
-      setbautistaeyespecialist(appointment.patientbautistaappointmenteyespecialist || '');
+      // Only populate eye specialist if appointment is not pending
+      if (appointment.patientbautistaappointmentstatus !== 'Pending') {
+        setbautistaeyespecialist(appointment.patientbautistaappointmenteyespecialist || '');
+      } else {
+        setbautistaeyespecialist(''); // Clear eye specialist for pending appointments
+      }
       setbautistaappointmentpaymentotal(appointment.patientbautistaappointmentpaymentotal?.toString() || '');
       setbautistaappointmentconsultationremarkssubject(appointment.patientbautistaappointmentconsultationremarkssubject || '');
       setbautistaappointmentconsultationremarks(appointment.patientbautistaappointmentconsultationremarks || '');
@@ -6246,6 +6353,22 @@ if (!canAccessAppointment(selectedpatientappointment, clinicType)) {
 if (!appointmentId) {
   console.error("Appointment ID is missing");
   return;
+}
+
+// Check if appointment status is Pending and validate eye specialist selection
+const currentStatus = clinicType === 'ambher' 
+  ? selectedpatientappointment?.patientambherappointmentstatus 
+  : selectedpatientappointment?.patientbautistaappointmentstatus;
+
+if (currentStatus === 'Pending') {
+  const selectedEyeSpecialist = clinicType === 'ambher' ? ambhereyespecialist : bautistaeyespecialist;
+  
+  if (!selectedEyeSpecialist || selectedEyeSpecialist.trim() === '') {
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    alert(`Please select an Eye Specialist before accepting this ${clinicDisplayName} appointment.`);
+    console.error(`Eye specialist must be selected to accept pending ${clinicType} appointment`);
+    return;
+  }
 }
 
 // Set loading state to true
@@ -6341,8 +6464,237 @@ try{
 
 };
 
+// Handle declining pending appointments
+const handleDeclineAppointment = async (appointmentId, clinicType) => {
+  // Check if user has permission to decline appointments
+  if (currentuserloggedin !== "Staff" && currentuserloggedin !== "Owner") {
+    console.error("Only Staff and Owner can decline appointments");
+    return;
+  }
 
+  // Check clinic-specific access permissions
+  if (!canAccessAppointment(selectedpatientappointment, clinicType)) {
+    console.error(`Access denied: You can only decline appointments from your clinic (${clinicType})`);
+    alert(`Access denied: You can only decline appointments from your clinic`);
+    return;
+  }
 
+  // Validate appointmentId
+  if (!appointmentId) {
+    console.error("Appointment ID is missing");
+    return;
+  }
+
+  // Check if appointment status is Pending
+  const currentStatus = clinicType === 'ambher' 
+    ? selectedpatientappointment?.patientambherappointmentstatus 
+    : selectedpatientappointment?.patientbautistaappointmentstatus;
+
+  if (currentStatus !== 'Pending') {
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    alert(`Can only decline pending ${clinicDisplayName} appointments.`);
+    console.error(`Cannot decline ${clinicType} appointment with status: ${currentStatus}`);
+    return;
+  }
+
+  // Set loading state to true
+  setIsDecliningAppointment(true);
+
+  try {
+    const response = await fetch(`/api/patientappointments/appointments/${appointmentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        [`patient${clinicType}appointmentstatus`]: 'Declined',
+        [`patient${clinicType}appointmentstatushistory`]: {
+          changedBy: adminfirstname
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to decline appointment");
+    }
+
+    const updatedappointment = await response.json();
+    setselectedpatientappointment(updatedappointment);
+    setpatientappointments(prevappointments =>
+      prevappointments.map(appt =>
+        appt._id === updatedappointment._id ? updatedappointment : appt
+      )
+    );
+
+    console.log(`${clinicType} Appointment has been declined successfully`);
+
+    // Get patient information for toast message
+    const patientName = `${selectedpatientappointment.patientappointmentfirstname} ${selectedpatientappointment.patientappointmentlastname}`;
+    
+    // Try to get patient contact number from demographic data
+    let patientContactNumber = 'Contact not available';
+    try {
+      // Get the appropriate token for authorization
+      const staffToken = localStorage.getItem('stafftoken');
+      const ownerToken = localStorage.getItem('ownertoken');
+      const adminToken = localStorage.getItem('admintoken');
+      const token = staffToken || ownerToken || adminToken;
+
+      // Fetch patient demographic data to get contact number
+      const demographicResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientappointment.patientappointmentemail}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (demographicResponse.ok) {
+        const demographicData = await demographicResponse.json();
+        if (demographicData && demographicData.patientcontactnumber) {
+          patientContactNumber = demographicData.patientcontactnumber;
+        }
+      }
+    } catch (demoError) {
+      console.warn('Could not fetch patient demographic data:', demoError);
+    }
+
+    // Show success toast message
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`❌ ${clinicDisplayName} appointment declined successfully! SMS sent to ${patientName} (${patientContactNumber})`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for decline/cancellation
+
+  } catch (error) {
+    console.error(`Failed to decline ${clinicType} patient appointment:`, error);
+    
+    // Show error toast message
+    const patientName = `${selectedpatientappointment?.patientappointmentfirstname || 'Unknown'} ${selectedpatientappointment?.patientappointmentlastname || 'Patient'}`;
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`❌ Failed to decline ${clinicDisplayName} appointment for ${patientName}: ${error.message}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for error
+  } finally {
+    // Always set loading state to false when done
+    setIsDecliningAppointment(false);
+  }
+};
+
+// Handle cancelling accepted appointments
+const handleCancelAppointment = async (appointmentId, clinicType) => {
+  // Check if user has permission to cancel appointments
+  if (currentuserloggedin !== "Staff" && currentuserloggedin !== "Owner") {
+    console.error("Only Staff and Owner can cancel appointments");
+    return;
+  }
+
+  // Check clinic-specific access permissions
+  if (!canAccessAppointment(selectedpatientappointment, clinicType)) {
+    console.error(`Access denied: You can only cancel appointments from your clinic (${clinicType})`);
+    alert(`Access denied: You can only cancel appointments from your clinic`);
+    return;
+  }
+
+  // Validate appointmentId
+  if (!appointmentId) {
+    console.error("Appointment ID is missing");
+    return;
+  }
+
+  // Check if appointment status is Accepted
+  const currentStatus = clinicType === 'ambher' 
+    ? selectedpatientappointment?.patientambherappointmentstatus 
+    : selectedpatientappointment?.patientbautistaappointmentstatus;
+
+  if (currentStatus !== 'Accepted') {
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    alert(`Can only cancel accepted ${clinicDisplayName} appointments.`);
+    console.error(`Cannot cancel ${clinicType} appointment with status: ${currentStatus}`);
+    return;
+  }
+
+  // Set loading state to true
+  setIsCancellingAppointment(true);
+
+  try {
+    const response = await fetch(`/api/patientappointments/appointments/${appointmentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        [`patient${clinicType}appointmentstatus`]: 'Cancelled',
+        [`patient${clinicType}appointmentstatushistory`]: {
+          changedBy: adminfirstname
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to cancel appointment");
+    }
+
+    const updatedappointment = await response.json();
+    setselectedpatientappointment(updatedappointment);
+    setpatientappointments(prevappointments =>
+      prevappointments.map(appt =>
+        appt._id === updatedappointment._id ? updatedappointment : appt
+      )
+    );
+
+    console.log(`${clinicType} Appointment has been cancelled successfully`);
+
+    // Get patient information for toast message
+    const patientName = `${selectedpatientappointment.patientappointmentfirstname} ${selectedpatientappointment.patientappointmentlastname}`;
+    
+    // Try to get patient contact number from demographic data
+    let patientContactNumber = 'Contact not available';
+    try {
+      // Get the appropriate token for authorization
+      const staffToken = localStorage.getItem('stafftoken');
+      const ownerToken = localStorage.getItem('ownertoken');
+      const adminToken = localStorage.getItem('admintoken');
+      const token = staffToken || ownerToken || adminToken;
+
+      // Fetch patient demographic data to get contact number
+      const demographicResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientappointment.patientappointmentemail}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (demographicResponse.ok) {
+        const demographicData = await demographicResponse.json();
+        if (demographicData && demographicData.patientcontactnumber) {
+          patientContactNumber = demographicData.patientcontactnumber;
+        }
+      }
+    } catch (demoError) {
+      console.warn('Could not fetch patient demographic data:', demoError);
+    }
+
+    // Show success toast message
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`❌ ${clinicDisplayName} appointment cancelled successfully! SMS sent to ${patientName} (${patientContactNumber})`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for decline/cancellation
+
+  } catch (error) {
+    console.error(`Failed to cancel ${clinicType} patient appointment:`, error);
+    
+    // Show error toast message
+    const patientName = `${selectedpatientappointment?.patientappointmentfirstname || 'Unknown'} ${selectedpatientappointment?.patientappointmentlastname || 'Patient'}`;
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`❌ Failed to cancel ${clinicDisplayName} appointment for ${patientName}: ${error.message}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for error
+  } finally {
+    // Always set loading state to false when done
+    setIsCancellingAppointment(false);
+  }
+};
 
 
 //AICODE
@@ -6405,11 +6757,13 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
           
           // Include all service selections for Bautista
           ...(clinicType === 'bautista' && {
-            patientbautistaappointmentconsultation: selectedpatientappointment.patientbautistaappointmentconsultation || false,
-            patientbautistaappointmenteyecheckup: selectedpatientappointment.patientbautistaappointmenteyecheckup || false,
-            patientbautistaappointmentfollowup: selectedpatientappointment.patientbautistaappointmentfollowup || false,
-            patientbautistaappointmenteyeexam: selectedpatientappointment.patientbautistaappointmenteyeexam || false,
-            patientbautistaappointmenteyesurgery: selectedpatientappointment.patientbautistaappointmenteyesurgery || false,
+            patientbautistaappointmentcomprehensiveeyeexam: selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam || false,
+            patientbautistaappointmentdiabeticretinopathy: selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy || false,
+            patientbautistaappointmentglaucoma: selectedpatientappointment.patientbautistaappointmentglaucoma || false,
+            patientbautistaappointmenthypertensiveretinopathy: selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy || false,
+            patientbautistaappointmentretinolproblem: selectedpatientappointment.patientbautistaappointmentretinolproblem || false,
+            patientbautistaappointmentcataractsurgery: selectedpatientappointment.patientbautistaappointmentcataractsurgery || false,
+            patientbautistaappointmentpterygiumsurgery: selectedpatientappointment.patientbautistaappointmentpterygiumsurgery || false,
             patientbautistaappointmentotherservice: selectedpatientappointment.patientbautistaappointmentotherservice || false,
             patientbautistaappointmentotherservicenote: selectedpatientappointment.patientbautistaappointmentotherservicenote || ''
           })
@@ -7739,11 +8093,24 @@ try{
   try {
     const uploadResult = await uploadProductImages(compressedimages, 'temp', 'ambher');
     
+    // Debug logging
+    console.log('Upload result:', uploadResult);
+    console.log('Image URLs:', uploadResult.data?.imageUrls);
+    
     // Use Cloudinary URLs as preview images instead of BASE64
-    const cloudinaryUrls = uploadResult.imageUrls;
+    const cloudinaryUrls = uploadResult.data?.imageUrls;
+    
+    // Ensure cloudinaryUrls is an array before spreading
+    const urlsArray = Array.isArray(cloudinaryUrls) ? cloudinaryUrls : (cloudinaryUrls ? [cloudinaryUrls] : []);
+    
+    console.log('URLs array:', urlsArray);
     
     setaddambherinventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
-    setaddambherinventoryproductimagepreviewimages(prev => [...prev, ...cloudinaryUrls]);
+    setaddambherinventoryproductimagepreviewimages(prev => {
+      const updated = [...prev, ...urlsArray];
+      console.log('Updated preview images:', updated);
+      return updated;
+    });
     setcurrentimageindex(0);
     
   } catch (uploadError) {
@@ -7892,7 +8259,7 @@ try{
     ambherinventoryproductdescription: addambherinventoryproductdescription || '',
     ambherinventoryproductprice: Number(addambherinventoryproductprice) || 0,
     ambherinventoryproductquantity:  Number(addambherinventoryproductquantity) || 0,
-    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || '',
+    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || [],
 
 
 
@@ -7908,7 +8275,19 @@ try{
 
   }
 
-  console.log(ambherinventoryproductdata);
+  console.log('=== SUBMISSION DEBUG ===');
+  console.log('ambherinventoryproductdata:', ambherinventoryproductdata);
+  console.log('currentusertoken:', currentusertoken ? 'EXISTS' : 'MISSING');
+  console.log('addambherinventoryproductimagepreviewimages length:', addambherinventoryproductimagepreviewimages.length);
+  console.log('Form data values:');
+  console.log('- category:', ambherinventorycategorynamebox);
+  console.log('- name:', addambherinventoryproductname);
+  console.log('- brand:', addambherinventoryproductbrand);
+  console.log('- model:', addambherinventoryproductmodelnumber);
+  console.log('- price:', addambherinventoryproductprice);
+  console.log('- quantity:', addambherinventoryproductquantity);
+  console.log('========================');
+  
   const response = await fetch(`/api/ambherinventoryproduct`,{
     method: 'POST',
     headers: {
@@ -7918,11 +8297,28 @@ try{
     body: JSON.stringify(ambherinventoryproductdata)
   });
 
-
+  console.log('Response status:', response.status);
+  console.log('Response ok:', response.ok);
 
   if(!response.ok){
-    throw new Error(`Response fetching error! Error: ${response.status}`);
-
+    // Try to get the error message from the response
+    let errorMessage = `Response fetching error! Error: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      console.log('Server error response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (parseError) {
+      console.log('Could not parse error response:', parseError);
+      // Try to get text response
+      try {
+        const errorText = await response.text();
+        console.log('Server error text:', errorText);
+        if (errorText) errorMessage = errorText;
+      } catch (textError) {
+        console.log('Could not get error text:', textError);
+      }
+    }
+    throw new Error(errorMessage);
   }
 
 
@@ -7964,7 +8360,7 @@ try{
     ambherinventoryproductdescription: addambherinventoryproductdescription || '',
     ambherinventoryproductprice: Number(addambherinventoryproductprice) || 0,
     ambherinventoryproductquantity:  Number(addambherinventoryproductquantity) || 0,
-    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || '',
+    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || [],
 
 
 
@@ -8272,11 +8668,24 @@ if (bautistainventoryproducts.length > 0) {
             try {
               const uploadResult = await uploadProductImages(compressedimages, 'temp', 'bautista');
               
+              // Debug logging
+              console.log('Bautista Upload result:', uploadResult);
+              console.log('Bautista Image URLs:', uploadResult.data?.imageUrls);
+              
               // Use Cloudinary URLs as preview images instead of BASE64
-              const cloudinaryUrls = uploadResult.imageUrls;
+              const cloudinaryUrls = uploadResult.data?.imageUrls;
+              
+              // Ensure cloudinaryUrls is an array before spreading
+              const urlsArray = Array.isArray(cloudinaryUrls) ? cloudinaryUrls : (cloudinaryUrls ? [cloudinaryUrls] : []);
+              
+              console.log('Bautista URLs array:', urlsArray);
               
               setaddbautistainventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
-              setaddbautistainventoryproductimagepreviewimages(prev => [...prev, ...cloudinaryUrls]);
+              setaddbautistainventoryproductimagepreviewimages(prev => {
+                const updated = [...prev, ...urlsArray];
+                console.log('Bautista Updated preview images:', updated);
+                return updated;
+              });
               setbautistacurrentimageindex(0);
               
             } catch (uploadError) {
@@ -8425,7 +8834,7 @@ if (bautistainventoryproducts.length > 0) {
               bautistainventoryproductdescription: addbautistainventoryproductdescription || '',
               bautistainventoryproductprice: Number(addbautistainventoryproductprice) || 0,
               bautistainventoryproductquantity:  Number(addbautistainventoryproductquantity) || 0,
-              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || '',
+              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || [],
         
         
         
@@ -8497,7 +8906,7 @@ if (bautistainventoryproducts.length > 0) {
               bautistainventoryproductdescription: addbautistainventoryproductdescription || '',
               bautistainventoryproductprice: Number(addbautistainventoryproductprice) || 0,
               bautistainventoryproductquantity:  Number(addbautistainventoryproductquantity) || 0,
-              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || '',
+              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || [],
         
         
         
@@ -9723,6 +10132,8 @@ const formatorderstatusColor = (status) => {
     case 'Completed':
       return 'bg-green-100 text-green-900';
     case 'Cancelled':
+      return 'bg-orange-200 text-orange-900';
+    case 'Declined':
       return 'bg-red-100 text-red-900';
     default:
       return 'bg-gray-100 text-gray-900';
@@ -16128,7 +16539,7 @@ useEffect(() => {
     <div className="relative">
     <div id="profile" onClick={showlogout}  className="ml-3  flex justify-center items-center  bg-[#fbfbfb00] rounded-full p-1 hover:cursor-pointer hover:scale-105 transition-all">
 
-     <img src={adminprofilepicture || 'default-profile.png'} alt="Profile" className="h-10 w-10 rounded-full"></img>
+     <img src={adminprofilepicture || defaultprofilepic} alt="Profile" className="h-10 w-10 rounded-full"></img>
     </div>
 
     {showlogoutbtn && (
@@ -16355,12 +16766,29 @@ useEffect(() => {
 
 
 {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} {/*Patient Account Table*/} 
-   { (activeaccounttable === 'patientaccounttable' && !isAdminRole) && ( <div id="patientaccounttable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
+   { (activeaccounttable === 'patientaccounttable' && !isAdminRole) && ( <div id="patientaccounttable" className="animate-fadeInUp flex flex-col w-full h-[83%] mt-6  rounded-3xl  overflow-hidden" >
 
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">             
-        <div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter patient name..." value={searchpatients} onChange={(e) => {setsearchpatients(e.target.value); filterpatientaccount(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
- <div onClick={() => setshowaddpatientdialog(true)}  className="w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Patient</p></div>
-
+<div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">             
+        <div className="ml-2 mr-2 w-full flex items-center">
+          <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+          <div className="relative w-full flex items-center justify-center gap-3">
+            <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+            <input 
+              type="text" 
+              placeholder="Enter patient name..." 
+              value={searchpatients} 
+              onChange={(e) => {setsearchpatients(e.target.value); filterpatientaccount(e.target.value);}}
+              className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+            />
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowaddpatientdialog(true)}  
+          className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"
+        >
+          <i className="bx bx-user-plus text-white font-bold text-[30px]"/>
+          <p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Patient</p>
+        </div>
         </div>
 
         <div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
@@ -16370,256 +16798,481 @@ useEffect(() => {
         
         {/*Add Patient Dialog*/}
            {showaddpatientdialog && (
-           <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-                  <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                    <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Patient Account</h1></div>
-                    <div onClick={() => {setshowaddpatientdialog(false),   setmessage('') }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                  </div>
-
-            <form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={handlesubmit}>
-                  <div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-                    <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-                      <div className=" w-fit h-fit">
-                        <img className=" object-cover h-90  w-90 rounded-full" src={previewimage || defaultprofilepic}/>
-                      
-                        <input  className="hidden" type="file" onChange={handleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={imageinputref} />
-                        <div onClick={handleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                              
-                        {selectedprofile && (<div onClick={handleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
+           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+             <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+                  {/* Header */}
+                  <div className="bg-sky-800 px-8 py-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="bg-white/20 p-3 rounded-full mr-4">
+                          <i className="bx bx-user-plus text-white text-2xl"></i>
                         </div>
-                    </div>
-
-                    <div className="w-full h-full  rounded-2xl">
-                          <div className=" w-full h-full rounded-4xl">
-                    
-                    
-
-                          <div className="registration-container">
-                       
-                          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Creation</h1>
-                          {message.text && (
-                            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-                              {message.text}
-                            </div>
-                          )}
-                    
-                          <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's create patient account!</h1>
-                    
-                    
-                    
-                    
-                          <div className="form-group mt-10  flex">
-                          <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-                          <div className="flex flex-col">
-                          <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="patientemail" id="patientemail" value={formdata.patientemail} onChange={handlechange} required/>
-                          {checkemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-                          {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-                          {emailerror && emailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-                       
-                          </div>
-                          </div>
-                    
-                    
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="passwrd">Password : </label>
-                          <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10 w-70" placeholder="Enter your password..." type="password" name="patientpassword" id="patientpassword" value={formdata.patientpassword} onChange={handlechange} required min="6"/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="lastname">Last Name :</label>
-                          <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="patientlastname" id="patientlastname" value={formdata.patientlastname} onChange={handlechange} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="firstname">First Name :</label>
-                          <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="patientfirstname" id="patientfirstname" value={formdata.patientfirstname} onChange={handlechange} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="middlename">Middle Name :</label>
-                          <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="patientmiddlename" id="patientmiddlename" value={formdata.patientmiddlename} onChange={handlechange} required/></div>
-                          
-                    
-                         
-                       
-                          <button type="submit" disabled={issubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                            {issubmitting ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                Creating Account...
-                              </>
-                            ) : (
-                              "Create Account"
-                            )}
-                          </button>
-                       
-
-                    
-                    
-                          </div>
-                  
-                    
-                    
-                          </div>
-
-                    </div>
-                  </div>
-                  </form>
-             </div>
-           </div>
-        )}
-
-
-
-
-
-
-        {showdeletepatientdialog && (
-           <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-
-             <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-             <form className="flex flex-col  w-full h-fit " onSubmit={handlesubmit}>
-
-                <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Account</h1></div>
-                <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                    <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient account?</p>
-                    {selectedpatientaccount && ( <>
-                              <p className="text-[16px] mt-3">Patient Id: {selectedpatientaccount.id}</p>
-                              <p className="text-[16px]">Patient Name: {selectedpatientaccount.name}</p> </>)}  
-                    </div>        
-                    <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                      <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeletepatientdialog(false); setselectedpatientaccount(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-                      <div className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
-                        isdeletingpatient 
-                          ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50' 
-                          : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
-                      }`} onClick={isdeletingpatient ? undefined : deletepatientaccount}>
-                        <p className="text-[#ffffff] flex items-center">
-                          {isdeletingpatient ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Deleting...
-                            </>
-                          ) : (
-                            'Delete'
-                          )}
-                        </p>
+                        <div>
+                          <h1 className="text-3xl font-bold text-white mb-1">Add Patient Account</h1>
+                          <p className="text-sky-100">Create a new patient account</p>
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => {setshowaddpatientdialog(false), setmessage('')}}
+                        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+                      >
+                        <i className="bx bx-x text-white text-2xl"></i>
                       </div>
                     </div>
-                </div>
+                  </div>
 
-             </form>
-             </div>
-           </div>
-        )}
+            <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+              <form onSubmit={handlesubmit} className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Profile Picture Section */}
+                  <div className="lg:col-span-1">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                        <img 
+                          className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                          src={previewimage || defaultprofilepic}
+                          alt="Profile"
+                        />
+                        <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                          <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                        </div>
+                      </div>
+                      
+                      <input  
+                        className="hidden" 
+                        type="file" 
+                        onChange={handleprofilechange} 
+                        accept="image/jpeg, image/jpg, image/png" 
+                        ref={imageinputref} 
+                      />
+                      
+                      <div className="flex items-center gap-2">
+                        {selectedprofile && (
+                          <button
+                            type="button"
+                            onClick={handleremoveprofile}
+                            className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            title="Remove Photo"
+                          >
+                            <i className="bx bx-trash w-4 h-4"></i>
+                          </button>
+                        )}
+                        
+                        <button
+                          type="button"
+                          onClick={handleuploadclick}
+                          className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                          <i className="bx bx-camera mr-2"></i>
+                          Upload Photo
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        Email
+                      </label>
+                      <div className="flex flex-col">
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          placeholder="Enter your email..." 
+                          type="text" 
+                          name="patientemail" 
+                          id="patientemail" 
+                          value={formdata.patientemail} 
+                          onChange={handlechange} 
+                          required
+                        />
+                        {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+                        {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+                        {emailerror && emailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        Password
+                      </label>
+                      <input 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                        placeholder="Enter your password..." 
+                        type="password" 
+                        name="patientpassword" 
+                        id="patientpassword" 
+                        value={formdata.patientpassword} 
+                        onChange={handlechange} 
+                        required 
+                        min="6"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Last Name
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          placeholder="Enter your lastname..." 
+                          type="text" 
+                          name="patientlastname" 
+                          id="patientlastname" 
+                          value={formdata.patientlastname} 
+                          onChange={handlechange} 
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          First Name
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          placeholder="Enter your firstname..." 
+                          type="text" 
+                          name="patientfirstname" 
+                          id="patientfirstname" 
+                          value={formdata.patientfirstname} 
+                          onChange={handlechange} 
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                      </label>
+                      <input 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                        placeholder="Enter your middlename..." 
+                        type="text" 
+                        name="patientmiddlename" 
+                        id="patientmiddlename" 
+                        value={formdata.patientmiddlename} 
+                        onChange={handlechange} 
+                        required
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pt-8 space-y-4">
+                      <button 
+                        type="submit" 
+                        disabled={issubmitting} 
+                        className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                          issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                        }`}
+                      >
+                        <div className="relative flex items-center">
+                          {issubmitting ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Creating Account...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bx bx-user-plus mr-3"></i>
+                              Create Account
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>)}
+
+
+
+{showdeletepatientdialog && (
+  <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+    <div className="flex flex-col items bg-white rounded-2xl w-[600px] h-fit animate-fadeInUp">
+      <form className="flex flex-col w-full h-fit" onSubmit={handlesubmit}>
+        
+        {/* Header */}
+        <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
+          <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1]" />
+          <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">
+            Delete Patient Account
+          </h1>
+        </div>
+        
+        {/* Body */}
+        <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
+          <div className="px-5 flex flex-col justify-center h-[130px] w-full">
+            <p className="font-albertsans font-medium text-[20px]">
+              Are you sure you want to delete this patient account?
+            </p>
+            {selectedpatientaccount && (
+              <>
+                <p className="text-[16px] mt-3">
+                  Patient Id: {selectedpatientaccount.id}
+                </p>
+                <p className="text-[16px]">
+                  Patient Name: {selectedpatientaccount.name}
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Footer / Buttons */}
+          <div className="pr-5 flex justify-end items-center h-[80px] w-full">
+            {/* Cancel */}
+            <div
+              className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out"
+              onClick={() => {
+                setshowdeletepatientdialog(false);
+                setselectedpatientaccount(null);
+              }}
+            >
+              <p className="text-[#ffffff]">Cancel</p>
+            </div>
+
+            {/* Delete */}
+            <div
+              className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
+                isdeletingpatient
+                  ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50'
+                  : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
+              }`}
+              onClick={isdeletingpatient ? undefined : deletepatientaccount}
+            >
+              <p className="text-[#ffffff] flex items-center">
+                {isdeletingpatient ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+)}
+
+
 
 
 
 
          {showviewpatientdialog && (
-            <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-              <div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-                   <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                     <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Edit Patient Account</h1></div>
-                     <div onClick={() => {setshowviewpatientdialog(false);
-                                          setselectededitpatientaccount(null);
-                                          setformdata({
-                                            role: 'Patient',
-                                            patientemail: '',
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+              {/* Header */}
+              <div className="bg-sky-800 px-8 py-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-white/20 p-3 rounded-full mr-4">
+                      <i className="bx bx-user text-white text-2xl"></i>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Account</h1>
+                      <p className="text-sky-100">Update patient account information</p>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => {setshowviewpatientdialog(false);
+                                     setselectededitpatientaccount(null);
+                                     setformdata({
+                                       role: 'Patient',
+                                       patientemail: '',
+                                       patientlastname: '',
+                                       patientfirstname: '',
+                                       patientmiddlename: '',
+                                       patientprofilepicture: ''
+                                     });
+                                     setpreviewimage(null);}}
+                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+                  >
+                    <i className="bx bx-x text-white text-2xl"></i>
+                  </div>
+                </div>
+              </div>
 
-                                            patientlastname: '',
-                                            patientfirstname: '',
-                                            patientmiddlename: '',
-                                            patientprofilepicture: ''
-                                          });
-                                          setpreviewimage(null);
-                     }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                   </div>
-
-              <form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={updatepatientaccount}>
-                   <div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-                      <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-                        <div className=" w-fit h-fit">
-                         <img className=" object-cover h-90  w-90 rounded-full" src={previewimage || defaultprofilepic}/>
+              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form onSubmit={updatepatientaccount} className="p-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Profile Picture Section */}
+                    <div className="lg:col-span-1">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative group">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                          <img 
+                            className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                            src={previewimage || defaultprofilepic}
+                            alt="Profile"
+                          />
+                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                          </div>
+                        </div>
                         
-                          <input  className="hidden" type="file" onChange={handleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={imageinputref} />
-                          <div onClick={handleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                                                 
-                          {selectedprofile && (<div onClick={handleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-                         </div>
-                     </div>
-     
-                      <div className="w-full h-full  rounded-2xl">
-                            <div className=" w-full h-full rounded-4xl">
-                                       
-                                       
-                   
-                            <div className="registration-container">
+                        <input  
+                          className="hidden" 
+                          type="file" 
+                          onChange={handleprofilechange} 
+                          accept="image/jpeg, image/jpg, image/png" 
+                          ref={imageinputref} 
+                        />
                         
-                            <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Details</h1>
-                            {message.text && (
-                              <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-                                {message.text}
-                              </div>
-                            )}
-                                       
-                           <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's modify your account!</h1>
-                                       
-                                       
-                                       
-                                       
-                           <div className="form-group mt-10  flex">
-                           <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-                            <div className="flex flex-col">
-                            <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="patientemail" id="patientemail" value={formdata.patientemail} onChange={handlechange} required/>
-                                {checkemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-                                {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-                                 {emailerror && emailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-                                          
-                           </div>
-                            </div>
-                                       
-                                       
- 
-                           <div className="form-group mt-5">
-                           <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="lastname">Last Name :</label>
-                           <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="patientlastname" id="patientlastname" value={formdata.patientlastname} onChange={handlechange} required/></div>
-                                       
-                           <div className="form-group mt-5">
-                           <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="firstname">First Name :</label>
-                           <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="patientfirstname" id="patientfirstname" value={formdata.patientfirstname} onChange={handlechange} required/></div>
-                                       
-                           <div className="form-group mt-5">
-                           <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="middlename">Middle Name :</label>
-                           <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="patientmiddlename" id="patientmiddlename" value={formdata.patientmiddlename} onChange={handlechange} required/></div>
-                                             
-                                       
-                                            
-                                          
-                           <button type="submit" disabled={issubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                             {issubmitting ? (
-                               <>
-                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                 Saving...
-                               </>
-                             ) : (
-                               "Save"
-                             )}
-                           </button> 
-                                          
-     
-                                       
-                                       
-                           </div>
-                                     
-                                       
-                                       
-                            </div>
-
+                        <div className="flex items-center gap-2">
+                          {selectedprofile && (
+                            <button
+                              type="button"
+                              onClick={handleremoveprofile}
+                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              title="Remove Photo"
+                            >
+                              <i className="bx bx-trash w-4 h-4"></i>
+                            </button>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={handleuploadclick}
+                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                          >
+                            <i className="bx bx-camera mr-2"></i>
+                            Upload Photo
+                          </button>
+                        </div>
                       </div>
-                   </div>
-                    </form>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Message Display */}
+                      {message.text && (
+                        <div className={`p-4 rounded-lg ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                          {message.text}
+                        </div>
+                      )}
+
+                      {/* Email Field */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Email
+                        </label>
+                        <div className="flex flex-col">
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            placeholder="Enter your email..." 
+                            type="text" 
+                            name="patientemail" 
+                            id="patientemail" 
+                            value={formdata.patientemail} 
+                            onChange={handlechange} 
+                            required
+                          />
+                          {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+                          {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+                          {emailerror && emailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+                        </div>
+                      </div>
+
+                      {/* Name Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Last Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            placeholder="Enter your lastname..." 
+                            type="text" 
+                            name="patientlastname" 
+                            id="patientlastname" 
+                            value={formdata.patientlastname} 
+                            onChange={handlechange} 
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            First Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            placeholder="Enter your firstname..." 
+                            type="text" 
+                            name="patientfirstname" 
+                            id="patientfirstname" 
+                            value={formdata.patientfirstname} 
+                            onChange={handlechange} 
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          placeholder="Enter your middlename..." 
+                          type="text" 
+                          name="patientmiddlename" 
+                          id="patientmiddlename" 
+                          value={formdata.patientmiddlename} 
+                          onChange={handlechange} 
+                          required
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="pt-8 space-y-4">
+                        <button 
+                          type="submit" 
+                          disabled={issubmitting} 
+                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                            issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                          }`}
+                        >
+                          <div className="relative flex items-center">
+                            {issubmitting ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-edit mr-3"></i>
+                                Save Changes
+                              </>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
+          </div>
         )}
 
    </div> )}
@@ -16629,10 +17282,28 @@ useEffect(() => {
 {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/} {/*Staff Account Table*/}              
    { (activeaccounttable === 'staffaccounttable' && !isAdminRole) && ( <div id="staffaccounttable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
 
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter staff name..." value={searchstaffs} onChange={(e) => {setsearchstaffs(e.target.value); filterstaffaccount(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+<div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+<div className="ml-2 mr-2 w-full flex items-center">
+  <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+  <div className="relative w-full flex items-center justify-center gap-3">
+    <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+    <input 
+      type="text" 
+      placeholder="Enter staff name..." 
+      value={searchstaffs} 
+      onChange={(e) => {setsearchstaffs(e.target.value); filterstaffaccount(e.target.value);}}
+      className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+    />
+  </div>
+</div>
 {currentuserloggedin !== "Staff" && (
-<div onClick={() => setshowaddstaffdialog(true)}  className=" mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Staff</p></div>
+<div 
+  onClick={() => setshowaddstaffdialog(true)}  
+  className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"
+>
+  <i className="bx bx-user-plus text-white font-bold text-[30px]"/>
+  <p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Staff</p>
+</div>
 )}
 </div>
 
@@ -16643,103 +17314,209 @@ useEffect(() => {
 
 {/*Add staff Dialog*/}
 {showaddstaffdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add staff Account</h1></div>
-  <div onClick={() => setshowaddstaffdialog(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-
-<form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={staffhandlesubmit}>
-<div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-  <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-    <div className=" w-fit h-fit">
-      <img className=" object-cover h-90  w-90 rounded-full" src={staffpreviewimage || defaultprofilepic}/>
-    
-      <input  className="hidden" type="file" onChange={staffhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={staffimageinputref} />
-      <div onClick={staffhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                            
-      {staffselectedprofile && (<div onClick={staffhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  {/* Header */}
+  <div className="bg-sky-800 px-8 py-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="bg-white/20 p-3 rounded-full mr-4">
+          <i className="bx bx-user-plus text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Add Staff Account</h1>
+          <p className="text-sky-100">Create a new staff account</p>
+        </div>
       </div>
+      <div
+        onClick={() => setshowaddstaffdialog(false)}
+        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+      >
+        <i className="bx bx-x text-white text-2xl"></i>
+      </div>
+    </div>
   </div>
 
-  <div className="w-full h-full  rounded-2xl">
-        <div className=" w-full h-full rounded-4xl">
-   
-  
-
-        <div className="registration-container">
-     
-        <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Creation</h1>
-        {staffmessage.text && (
-          <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-            {staffmessage.text}
+<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+  <form onSubmit={staffhandlesubmit} className="p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Profile Picture Section */}
+      <div className="lg:col-span-1">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+            <img 
+              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+              src={staffpreviewimage || defaultprofilepic}
+              alt="Profile"
+            />
+            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+            </div>
           </div>
-        )}
-  
-        <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's create staff account!</h1>
-  
-  
-  
-  
-        <div className="form-group mt-10  flex">
-        <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffemail">Email :</label>
-        <div className="flex flex-col">
-        <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="staffemail" id="staffemail" value={staffformdata.staffemail} onChange={staffhandlechange} required/>
-        {staffcheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-        {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-        {staffemailerror && staffemailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-     
+          
+          <input  
+            className="hidden" 
+            type="file" 
+            onChange={staffhandleprofilechange} 
+            accept="image/jpeg, image/jpg, image/png" 
+            ref={staffimageinputref} 
+          />
+          
+          <div className="flex items-center gap-2">
+            {staffselectedprofile && (
+              <button
+                type="button"
+                onClick={staffhandleremoveprofile}
+                className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                title="Remove Photo"
+              >
+                <i className="bx bx-trash w-4 h-4"></i>
+              </button>
+            )}
+            
+            <button
+              type="button"
+              onClick={staffhandleuploadclick}
+              className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <i className="bx bx-camera mr-2"></i>
+              Upload Photo
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Form Fields */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <div className="flex flex-col">
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your email..." 
+              type="text" 
+              name="staffemail" 
+              id="staffemail" 
+              value={staffformdata.staffemail} 
+              onChange={staffhandlechange} 
+              required
+            />
+            {staffcheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+            {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+            {staffemailerror && staffemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+          </div>
         </div>
-  
-  
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffpassword">Password : </label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10 w-70" placeholder="Enter your password..." type="password" name="staffpassword" id="staffpassword" value={staffformdata.staffpassword} onChange={staffhandlechange} required min="6"/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="stafflastname">Last Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="stafflastname" id="stafflastname" value={staffformdata.stafflastname} onChange={staffhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="stafffirstname">First Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="stafffirstname" id="stafffirstname" value={staffformdata.stafffirstname} onChange={staffhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffmiddlename">Middle Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="staffmiddlename" id="staffmiddlename" value={staffformdata.staffmiddlename} onChange={staffhandlechange} required/></div>
+
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            placeholder="Enter your password..." 
+            type="password" 
+            name="staffpassword" 
+            id="staffpassword" 
+            value={staffformdata.staffpassword} 
+            onChange={staffhandlechange} 
+            required 
+            min="6"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your lastname..." 
+              type="text" 
+              name="stafflastname" 
+              id="stafflastname" 
+              value={staffformdata.stafflastname} 
+              onChange={staffhandlechange} 
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your firstname..." 
+              type="text" 
+              name="stafffirstname" 
+              id="stafffirstname" 
+              value={staffformdata.stafffirstname} 
+              onChange={staffhandlechange} 
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            placeholder="Enter your middlename..." 
+            type="text" 
+            name="staffmiddlename" 
+            id="staffmiddlename" 
+            value={staffformdata.staffmiddlename} 
+            onChange={staffhandlechange} 
+            required
+          />
+        </div>
         
-        <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffclinic">Eye Specialist:</label>
-        <div className="ml-4"><StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} /></div>
-        </div>
-       
-     
-        <button type="submit" disabled={staffissubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-          {staffissubmitting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Creating Account...
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </button>
-     
-
-  
-  
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Eye Specialist
+          </label>
+          <div className="mt-2">
+            <StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} />
+          </div>
         </div>
 
-  
-  
+        {/* Action Buttons */}
+        <div className="pt-8 space-y-4">
+          <button 
+            type="submit" 
+            disabled={staffissubmitting} 
+            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+              staffissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+            }`}
+          >
+            <div className="relative flex items-center">
+              {staffissubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-user-plus mr-3"></i>
+                  Create Account
+                </>
+              )}
+            </div>
+          </button>
         </div>
-
-  </div>
+      </div>
+    </div>
+  </form>
 </div>
-</form>
 </div>
 </div>
 )}
@@ -16788,116 +17565,217 @@ useEffect(() => {
 
 
 {showviewstaffdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
- <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-   <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Edit Staff Account</h1></div>
-   <div onClick={() => {setshowviewstaffdialog(false);
-                        setselectededitstaffaccount(null);
-                        setstaffformdata({
-                          role: 'staff',
-                          staffemail: '',
-                          stafflastname: '',
-                          stafffirstname: '',
-                          staffmiddlename: '',
-                          staffiseyespecialist:'',
-                          staffprofilepicture: '',
-                          staffprofilepicture_public_id: ''
-                        });
-                        setstaffpreviewimage(null);
-                        setstaffselectedprofile(null);
-   }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
- </div>
-
-<form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={updatestaffaccount}>
- <div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-    <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-      <div className=" w-fit h-fit">
-       <img className=" object-cover h-90  w-90 rounded-full" src={staffpreviewimage || defaultprofilepic}/>
-      
-        <input  className="hidden" type="file" onChange={staffhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={staffimageinputref} />
-        <div onClick={staffhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                               
-        {staffselectedprofile && (<div onClick={staffhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-       </div>
-   </div>
-
-    <div className="w-full h-full  rounded-2xl">
-          <div className=" w-full h-full rounded-4xl">
-                     
-                     
- 
-          <div className="registration-container">
-      
-          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Details</h1>
-          {staffmessage.text && (
-            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-              {staffmessage.text}
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+      {/* Header */}
+      <div className="bg-sky-800 px-8 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="bg-white/20 p-3 rounded-full mr-4">
+              <i className="bx bx-user text-white text-2xl"></i>
             </div>
-          )}
-                     
-         <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's modify your account!</h1>
-                     
-                     
-                     
-                     
-         <div className="form-group mt-10  flex">
-         <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-          <div className="flex flex-col">
-          <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="staffemail" id="staffemail" value={staffformdata.staffemail} onChange={staffhandlechange} required/>
-         {staffcheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-         {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-          {staffemailerror && staffemailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-                        
-         </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-1">Edit Staff Account</h1>
+              <p className="text-sky-100">Update staff account information</p>
+            </div>
           </div>
-                     
-                     
-    
-
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="stafflastname">Last Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="stafflastname" id="stafflastname" value={staffformdata.stafflastname} onChange={staffhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="stafffirstname">First Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="stafffirstname" id="stafffirstname" value={staffformdata.stafffirstname} onChange={staffhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffmiddlename">Middle Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="staffmiddlename" id="staffmiddlename" value={staffformdata.staffmiddlename} onChange={staffhandlechange} required/></div>
-                           
-                     
-         <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="staffclinic">Eye Specialist:</label>
-        <div className="ml-4"><StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} /></div>
+          <div
+            onClick={() => {setshowviewstaffdialog(false);
+                             setselectededitstaffaccount(null);
+                             setstaffformdata({
+                               role: 'staff',
+                               staffemail: '',
+                               stafflastname: '',
+                               stafffirstname: '',
+                               staffmiddlename: '',
+                               staffiseyespecialist:'',
+                               staffprofilepicture: '',
+                               staffprofilepicture_public_id: ''
+                             });
+                             setstaffpreviewimage(null);
+                             setstaffselectedprofile(null);}}
+            className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+          >
+            <i className="bx bx-x text-white text-2xl"></i>
+          </div>
         </div>
-                        
-         <button type="submit" disabled={staffissubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-           {staffissubmitting ? (
-             <>
-               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-               Saving...
-             </>
-           ) : (
-             "Save"
-           )}
-         </button>
-                        
+      </div>
 
-                     
-                     
-         </div>
-                   
-                     
-                     
+      <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <form onSubmit={updatestaffaccount} className="p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Profile Picture Section */}
+            <div className="lg:col-span-1">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                  <img 
+                    className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                    src={staffpreviewimage || defaultprofilepic}
+                    alt="Profile"
+                  />
+                  <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                    <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                  </div>
+                </div>
+                
+                <input  
+                  className="hidden" 
+                  type="file" 
+                  onChange={staffhandleprofilechange} 
+                  accept="image/jpeg, image/jpg, image/png" 
+                  ref={staffimageinputref} 
+                />
+                
+                <div className="flex items-center gap-2">
+                  {staffselectedprofile && (
+                    <button
+                      type="button"
+                      onClick={staffhandleremoveprofile}
+                      className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      title="Remove Photo"
+                    >
+                      <i className="bx bx-trash w-4 h-4"></i>
+                    </button>
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={staffhandleuploadclick}
+                    className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  >
+                    <i className="bx bx-camera mr-2"></i>
+                    Upload Photo
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Message Display */}
+              {staffmessage.text && (
+                <div className={`p-4 rounded-lg ${staffmessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                  {staffmessage.text}
+                </div>
+              )}
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <div className="flex flex-col">
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    placeholder="Enter your email..." 
+                    type="text" 
+                    name="staffemail" 
+                    id="staffemail" 
+                    value={staffformdata.staffemail} 
+                    onChange={staffhandlechange} 
+                    required
+                  />
+                  {staffcheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+                  {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+                  {staffemailerror && staffemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+                </div>
+              </div>
+
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    placeholder="Enter your lastname..." 
+                    type="text" 
+                    name="stafflastname" 
+                    id="stafflastname" 
+                    value={staffformdata.stafflastname} 
+                    onChange={staffhandlechange} 
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    placeholder="Enter your firstname..." 
+                    type="text" 
+                    name="stafffirstname" 
+                    id="stafffirstname" 
+                    value={staffformdata.stafffirstname} 
+                    onChange={staffhandlechange} 
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="Enter your middlename..." 
+                  type="text" 
+                  name="staffmiddlename" 
+                  id="staffmiddlename" 
+                  value={staffformdata.staffmiddlename} 
+                  onChange={staffhandlechange} 
+                  required
+                />
+              </div>
+
+              {/* Eye Specialist Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Eye Specialist
+                </label>
+                <div className="mt-2">
+                  <StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-8 space-y-4">
+                <button 
+                  type="submit" 
+                  disabled={staffissubmitting} 
+                  className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                    staffissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="relative flex items-center">
+                    {staffissubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bx bx-edit mr-3"></i>
+                        Save Changes
+                      </>
+                    )}
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
-
+        </form>
+      </div>
     </div>
- </div>
-  </form>
-</div>
-</div>
+  </div>
 )}
 
    </div> )}
@@ -16907,10 +17785,28 @@ useEffect(() => {
 {/*Owner Account Table*/} {/*Owner Account Table*/} {/*Owner Account Table*/} {/*Owner Account Table*/} {/*Owner Account Table*/} {/*Owner Account Table*/} {/*Owner Account Table*/}
    { activeaccounttable === 'owneraccounttable' && ( <div id="owneraccounttable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
 
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter owner name..." value={searchowners} onChange={(e) => {setsearchowners(e.target.value); filterowneraccount(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+<div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+<div className="ml-2 mr-2 w-full flex items-center">
+  <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+  <div className="relative w-full flex items-center justify-center gap-3">
+    <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+    <input 
+      type="text" 
+      placeholder="Enter owner name..." 
+      value={searchowners} 
+      onChange={(e) => {setsearchowners(e.target.value); filterowneraccount(e.target.value);}}
+      className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+    />
+  </div>
+</div>
 {currentuserloggedin !== "Staff" && (
-<div onClick={() => setshowaddownerdialog(true)}  className=" mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Owner</p></div>
+<div 
+  onClick={() => setshowaddownerdialog(true)}  
+  className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"
+>
+  <i className="bx bx-user-plus text-white font-bold text-[30px]"/>
+  <p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Owner</p>
+</div>
 )}
 </div>
 
@@ -16921,114 +17817,441 @@ useEffect(() => {
 
 {/*Add owner Dialog*/}
 {showaddownerdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Owner Account</h1></div>
-  <div onClick={() => setshowaddownerdialog(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-
-<form className="flex flex-col  ml-15 mr-15   w-fullx" onSubmit={ownerhandlesubmit}>
-<div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-  <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-    <div className=" w-fit h-fit">
-      <img className=" object-cover h-90  w-90 rounded-full" src={ownerpreviewimage || defaultprofilepic}/>
-    
-      <input  className="hidden" type="file" onChange={ownerhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={ownerimageinputref} />
-      <div onClick={ownerhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                            
-      {ownerselectedprofile && (<div onClick={ownerhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  {/* Header */}
+  <div className="bg-sky-800 px-8 py-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="bg-white/20 p-3 rounded-full mr-4">
+          <i className="bx bx-user-plus text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Add Owner Account</h1>
+          <p className="text-sky-100">Create a new owner account</p>
+        </div>
       </div>
+      <div
+        onClick={() => setshowaddownerdialog(false)}
+        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+      >
+        <i className="bx bx-x text-white text-2xl"></i>
+      </div>
+    </div>
   </div>
 
-  <div className="w-full h-full  rounded-2xl">
-        <div className=" w-full h-full rounded-4xl">
-   
-  
-
-        <div className=" registration-container">
-     
-        <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Creation</h1>
-        {ownermessage.text && (
-          <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-            {ownermessage.text}
+<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+  <form onSubmit={ownerhandlesubmit} className="p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Profile Picture Section */}
+      <div className="lg:col-span-1">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+            <img 
+              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+              src={ownerpreviewimage || defaultprofilepic}
+              alt="Profile"
+            />
+            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+            </div>
           </div>
-        )}
-  
-        <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's create owner account!</h1>
-  
-  
-  
-  
-        <div className="form-group mt-10  flex">
-        <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="owneremail">Email :</label>
-        <div className="flex flex-col">
-        <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="owneremail" id="owneremail" value={ownerformdata.owneremail} onChange={ownerhandlechange} required/>
-        {ownercheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-        {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-        {owneremailerror && owneremailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-     
+          
+          <input  
+            className="hidden" 
+            type="file" 
+            onChange={ownerhandleprofilechange} 
+            accept="image/jpeg, image/jpg, image/png" 
+            ref={ownerimageinputref} 
+          />
+          
+          <div className="flex items-center gap-2">
+            {ownerselectedprofile && (
+              <button
+                type="button"
+                onClick={ownerhandleremoveprofile}
+                className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                title="Remove Photo"
+              >
+                <i className="bx bx-trash w-4 h-4"></i>
+              </button>
+            )}
+            
+            <button
+              type="button"
+              onClick={ownerhandleuploadclick}
+              className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <i className="bx bx-camera mr-2"></i>
+              Upload Photo
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Form Fields */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <div className="flex flex-col">
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your email..." 
+              type="text" 
+              name="owneremail" 
+              id="owneremail" 
+              value={ownerformdata.owneremail} 
+              onChange={ownerhandlechange} 
+              required
+            />
+            {ownercheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+            {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+            {owneremailerror && owneremailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+          </div>
         </div>
-  
-  
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerpassword">Password : </label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10 w-70" placeholder="Enter your password..." type="password" name="ownerpassword" id="ownerpassword" value={ownerformdata.ownerpassword} onChange={ownerhandlechange} required min="6"/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerlastname">Last Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="ownerlastname" id="ownerlastname" value={ownerformdata.ownerlastname} onChange={ownerhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerfirstname">First Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="ownerfirstname" id="ownerfirstname" value={ownerformdata.ownerfirstname} onChange={ownerhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownermiddlename">Middle Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="ownermiddlename" id="ownermiddlename" value={ownerformdata.ownermiddlename} onChange={ownerhandlechange} required/></div>
+
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            placeholder="Enter your password..." 
+            type="password" 
+            name="ownerpassword" 
+            id="ownerpassword" 
+            value={ownerformdata.ownerpassword} 
+            onChange={ownerhandlechange} 
+            required 
+            min="6"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your lastname..." 
+              type="text" 
+              name="ownerlastname" 
+              id="ownerlastname" 
+              value={ownerformdata.ownerlastname} 
+              onChange={ownerhandlechange} 
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your firstname..." 
+              type="text" 
+              name="ownerfirstname" 
+              id="ownerfirstname" 
+              value={ownerformdata.ownerfirstname} 
+              onChange={ownerhandlechange} 
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            placeholder="Enter your middlename..." 
+            type="text" 
+            name="ownermiddlename" 
+            id="ownermiddlename" 
+            value={ownerformdata.ownermiddlename} 
+            onChange={ownerhandlechange} 
+            required
+          />
+        </div>
         
-         <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerclinic">Clinic :</label>
-        <div className="ml-22"><OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} /></div>   
-        </div>
-     
-
-        <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerclinic">Eye Specialist:</label>
-        <div className="ml-4"><OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} /></div>
-        </div>
-        
-
-       
-     
-        <button type="submit" disabled={ownerissubmitting} className="submit-btn mt-6 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-          {ownerissubmitting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Creating Account...
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </button>
-     
-
-  
-  
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Clinic
+          </label>
+          <div className="mt-2">
+            <OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} />
+          </div>
         </div>
 
-  
-  
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Eye Specialist
+          </label>
+          <div className="mt-2">
+            <OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} />
+          </div>
         </div>
 
-  </div>
+        {/* Action Buttons */}
+        <div className="pt-8 space-y-4">
+          <button 
+            type="submit" 
+            disabled={ownerissubmitting} 
+            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+              ownerissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+            }`}
+          >
+            <div className="relative flex items-center">
+              {ownerissubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-user-plus mr-3"></i>
+                  Create Account
+                </>
+              )}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
-</form>
 </div>
 </div>
 )}
+
+
+
+
+
+
+{showviewownerdialog && (
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  {/* Header */}
+  <div className="bg-sky-800 px-8 py-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="bg-white/20 p-3 rounded-full mr-4">
+          <i className="bx bx-user text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Edit Owner Account</h1>
+          <p className="text-sky-100">Update owner account information</p>
+        </div>
+      </div>
+      <div
+        onClick={() => {setshowviewownerdialog(false);
+                         setselectededitowneraccount(null);
+                         setownerformdata({
+                           role: 'Owner',
+                           owneremail: '',
+                           ownerlastname: '',
+                           ownerfirstname: '',
+                           ownermiddlename: '',
+                           ownerclinic: '',
+                           ownerprofilepicture: ''
+                         });
+                         setownerpreviewimage(null);
+                         setownerselectedprofile(null);}}
+        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+      >
+        <i className="bx bx-x text-white text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+    <form onSubmit={updateowneraccount} className="p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Profile Picture Section */}
+        <div className="lg:col-span-1">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+              <img 
+                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                src={ownerpreviewimage || defaultprofilepic}
+                alt="Profile"
+              />
+              <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+              </div>
+            </div>
+            
+            <input  
+              className="hidden" 
+              type="file" 
+              onChange={ownerhandleprofilechange} 
+              accept="image/jpeg, image/jpg, image/png" 
+              ref={ownerimageinputref} 
+            />
+            
+            <div className="flex items-center gap-2">
+              {ownerselectedprofile && (
+                <button
+                  type="button"
+                  onClick={ownerhandleremoveprofile}
+                  className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  title="Remove Photo"
+                >
+                  <i className="bx bx-trash w-4 h-4"></i>
+                </button>
+              )}
+              
+              <button
+                type="button"
+                onClick={ownerhandleuploadclick}
+                className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <i className="bx bx-camera mr-2"></i>
+                Upload Photo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Fields */}
+        <div className="lg:col-span-2 space-y-6">
+          {ownermessage.text && (
+            <div className={`p-4 rounded-lg border ${
+              ownermessage.type === 'error' 
+                ? 'bg-red-50 border-red-200 text-red-800' 
+                : 'bg-green-50 border-green-200 text-green-800'
+            }`}>
+              {ownermessage.text}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <div className="flex flex-col">
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your email..." 
+                type="text" 
+                name="owneremail" 
+                id="owneremail" 
+                value={ownerformdata.owneremail} 
+                onChange={ownerhandlechange} 
+                required
+              />
+              {ownercheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+              {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (
+                <p className="text-red-500 text-sm mt-1">Enter a valid email address</p>
+              )}
+              {owneremailerror && owneremailexist && (
+                <p className="text-red-500 text-sm mt-1">Email already exists</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Last Name</label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your lastname..." 
+                type="text" 
+                name="ownerlastname" 
+                id="ownerlastname" 
+                value={ownerformdata.ownerlastname} 
+                onChange={ownerhandlechange} 
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">First Name</label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your firstname..." 
+                type="text" 
+                name="ownerfirstname" 
+                id="ownerfirstname" 
+                value={ownerformdata.ownerfirstname} 
+                onChange={ownerhandlechange} 
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Middle Name</label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your middlename..." 
+              type="text" 
+              name="ownermiddlename" 
+              id="ownermiddlename" 
+              value={ownerformdata.ownermiddlename} 
+              onChange={ownerhandlechange} 
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Clinic</label>
+            <div className="w-full">
+              <OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Eye Specialist</label>
+            <div className="w-full">
+              <OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} />
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <button 
+              type="submit" 
+              disabled={ownerissubmitting} 
+              className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium rounded-lg hover:from-sky-600 hover:to-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-center">
+                {ownerissubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-edit mr-3"></i>
+                    Save Changes
+                  </>
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+)}
+
+
 
 
 {showdeleteownerdialog && (
@@ -17070,125 +18293,6 @@ useEffect(() => {
 </div>
 )}
 
-
-
-
-{showviewownerdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
- <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-   <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Edit Owner Account</h1></div>
-   <div onClick={() => {setshowviewownerdialog(false);
-                        setselectededitowneraccount(null);
-                        setownerformdata({
-                          role: 'Owner',
-                          owneremail: '',
-                          ownerlastname: '',
-                          ownerfirstname: '',
-                          ownermiddlename: '',
-                          ownerclinic: '',
-                          ownerprofilepicture: ''
-                        });
-                        setownerpreviewimage(null);
-   }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
- </div>
-
-<form className="flex flex-col  ml-15 mr-15  w-fullx" onSubmit={updateowneraccount}>
- <div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-    <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-      <div className=" w-fit h-fit">
-       <img className=" object-cover h-90  w-90 rounded-full" src={ownerpreviewimage || defaultprofilepic}/>
-      
-        <input  className="hidden" type="file" onChange={ownerhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={ownerimageinputref} />
-        <div onClick={ownerhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                               
-        {selectedprofile && (<div onClick={ownerhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-       </div>
-   </div>
-
-    <div className="w-full h-full  rounded-2xl">
-          <div className=" w-full h-full rounded-4xl">
-                     
-                     
- 
-          <div className="registration-container">
-      
-          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Details</h1>
-          {ownermessage.text && (
-            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-              {ownermessage.text}
-            </div>
-          )}
-                     
-         <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's modify your account!</h1>
-                     
-                     
-                     
-                     
-         <div className="form-group mt-10  flex">
-         <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-          <div className="flex flex-col">
-          <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="owneremail" id="owneremail" value={ownerformdata.owneremail} onChange={ownerhandlechange} required/>
-         {ownercheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-         {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-          {owneremailerror && owneremailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-                        
-         </div>
-          </div>
-                     
-                     
-
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerlastname">Last Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="ownerlastname" id="ownerlastname" value={ownerformdata.ownerlastname} onChange={ownerhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerfirstname">First Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="ownerfirstname" id="ownerfirstname" value={ownerformdata.ownerfirstname} onChange={ownerhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownermiddlename">Middle Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="ownermiddlename" id="ownermiddlename" value={ownerformdata.ownermiddlename} onChange={ownerhandlechange} required/></div>
-                           
-         <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerclinic">Clinic :</label>
-        <div className="ml-22"><OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} /></div>   
-        </div>
-     
-
-        <div className="form-group mt-5 flex">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="ownerclinic">Eye Specialist:</label>
-        <div className="ml-4"><OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} /></div>
-        </div>        
-                          
-                    
-         <button type="submit" disabled={ownerissubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-           {ownerissubmitting ? (
-             <>
-               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-               Saving...
-             </>
-           ) : (
-             "Save"
-           )}
-         </button>
-                        
-
-                     
-                     
-         </div>
-                   
-                     
-                     
-          </div>
-
-    </div>
- </div>
-  </form>
-</div>
-</div>
-)}
-
    </div> )}
 
 
@@ -17197,10 +18301,28 @@ useEffect(() => {
 {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/} {/*Admin Account Table*/}
    { activeaccounttable === 'administratoraccounttable' && ( <div id="administratoraccounttable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
 
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter admin name..." value={searchadmins} onChange={(e) => {setsearchadmins(e.target.value); filteradminaccount(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
+<div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+<div className="ml-2 mr-2 w-full flex items-center">
+  <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+  <div className="relative w-full flex items-center justify-center gap-3">
+    <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+    <input 
+      type="text" 
+      placeholder="Enter admin name..." 
+      value={searchadmins} 
+      onChange={(e) => {setsearchadmins(e.target.value); filteradminaccount(e.target.value);}}
+      className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+    />
+  </div>
+</div>
 {currentuserloggedin !== "Staff" && (
-<div onClick={() => setshowaddadmindialog(true)}  className=" mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Admin</p></div>
+<div 
+  onClick={() => setshowaddadmindialog(true)}  
+  className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"
+>
+  <i className="bx bx-user-plus text-white font-bold text-[30px]"/>
+  <p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Admin</p>
+</div>
 )}
 </div>
 
@@ -17211,100 +18333,224 @@ useEffect(() => {
 
 {/*Add admin Dialog*/}
 {showaddadmindialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Admin Account</h1></div>
-  <div onClick={() => setshowaddadmindialog(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-
-<form className="flex flex-col  ml-15 mr-15   w-fullx" onSubmit={adminhandlesubmit}>
-<div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-  <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-    <div className=" w-fit h-fit">
-      <img className=" object-cover h-90  w-90 rounded-full" src={adminpreviewimage || defaultprofilepic}/>
-    
-      <input  className="hidden" type="file" onChange={adminhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={adminimageinputref} />
-      <div onClick={adminhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                            
-      {adminselectedprofile && (<div onClick={adminhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  {/* Header */}
+  <div className="bg-sky-800 px-8 py-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="bg-white/20 p-3 rounded-full mr-4">
+          <i className="bx bx-user-plus text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Add Admin Account</h1>
+          <p className="text-sky-100">Create a new admin account</p>
+        </div>
       </div>
+      <div
+        onClick={() => setshowaddadmindialog(false)}
+        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+      >
+        <i className="bx bx-x text-white text-2xl"></i>
+      </div>
+    </div>
   </div>
 
-  <div className="w-full h-full  rounded-2xl">
-        <div className=" w-full h-full rounded-4xl">
-   
-  
-
-        <div className=" registration-container">
-     
-        <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Creation</h1>
-        {adminmessage.text && (
-          <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-            {adminmessage.text}
+<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+  <form onSubmit={adminhandlesubmit} className="p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Profile Picture Section */}
+      <div className="lg:col-span-1">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+            <img 
+              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+              src={adminpreviewimage || defaultprofilepic}
+              alt="Profile"
+            />
+            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+            </div>
           </div>
-        )}
-  
-        <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's create admin account!</h1>
-  
-  
-  
-  
-        <div className="form-group mt-10  flex">
-        <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminemail">Email :</label>
-        <div className="flex flex-col">
-        <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="adminemail" id="adminemail" value={adminformdata.adminemail} onChange={adminhandlechange} required/>
-        {admincheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-        {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-        {adminemailerror && adminemailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-     
+          
+          <input  
+            className="hidden" 
+            type="file" 
+            onChange={adminhandleprofilechange} 
+            accept="image/jpeg, image/jpg, image/png" 
+            ref={adminimageinputref} 
+          />
+          
+          <div className="flex items-center gap-2">
+            {adminselectedprofile && (
+              <button
+                type="button"
+                onClick={adminhandleremoveprofile}
+                className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                title="Remove Photo"
+              >
+                <i className="bx bx-trash w-4 h-4"></i>
+              </button>
+            )}
+            
+            <button
+              type="button"
+              onClick={adminhandleuploadclick}
+              className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <i className="bx bx-camera mr-2"></i>
+              Upload Photo
+            </button>
+          </div>
         </div>
-        </div>
-  
-  
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminpassword">Password : </label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-11 h-10 w-70" placeholder="Enter your password..." type="password" name="adminpassword" id="adminpassword" value={adminformdata.adminpassword} onChange={adminhandlechange} required min="6"/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminlastname">Last Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="adminlastname" id="adminlastname" value={adminformdata.adminlastname} onChange={adminhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminfirstname">First Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="adminfirstname" id="adminfirstname" value={adminformdata.adminfirstname} onChange={adminhandlechange} required/></div>
-  
-        <div className="form-group mt-5">
-        <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminmiddlename">Middle Name :</label>
-        <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="adminmiddlename" id="adminmiddlename" value={adminformdata.adminmiddlename} onChange={adminhandlechange} required/></div>
-        
+      </div>
 
-       
-     
-        <button type="submit" disabled={adminissubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-          {adminissubmitting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Creating Account...
-            </>
-          ) : (
-            "Create Account"
+      {/* Form Fields */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <div className="flex flex-col">
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your email..." 
+              type="text" 
+              name="adminemail" 
+              id="adminemail" 
+              value={adminformdata.adminemail} 
+              onChange={adminhandlechange} 
+              required
+            />
+            {admincheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+            {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+            {adminemailerror && adminemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className={`flex items-center text-sm font-medium transition-colors duration-200 ${
+            !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
+              ? 'text-gray-700'
+              : adminformdata.adminpassword.length >= 6 
+                ? 'text-green-600' 
+                : 'text-red-600'
+          }`}>
+            Password
+          </label>
+          <input 
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+              !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
+                ? 'border-gray-300'
+                : adminformdata.adminpassword.length >= 6 
+                  ? 'border-green-300' 
+                  : 'border-red-300'
+            }`}
+            placeholder="Enter your password..." 
+            type="password" 
+            name="adminpassword" 
+            id="adminpassword" 
+            value={adminformdata.adminpassword || ''} 
+            onChange={adminhandlechange} 
+            required 
+            min="6"
+          />
+          {adminformdata.adminpassword && adminformdata.adminpassword.length > 0 && (
+            <p className={`text-sm mt-1 transition-colors duration-200 ${
+              adminformdata.adminpassword.length >= 6 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {adminformdata.adminpassword.length >= 6 
+                ? '✓ Password meets minimum length requirement' 
+                : `Password must be at least 6 characters (${adminformdata.adminpassword.length}/6)`
+              }
+            </p>
           )}
-        </button>
-     
-
-  
-  
         </div>
 
-  
-  
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your lastname..." 
+              type="text" 
+              name="adminlastname" 
+              id="adminlastname" 
+              value={adminformdata.adminlastname} 
+              onChange={adminhandlechange} 
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your firstname..." 
+              type="text" 
+              name="adminfirstname" 
+              id="adminfirstname" 
+              value={adminformdata.adminfirstname} 
+              onChange={adminhandlechange} 
+              required
+            />
+          </div>
         </div>
 
-  </div>
+        <div className="space-y-2">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            placeholder="Enter your middlename..." 
+            type="text" 
+            name="adminmiddlename" 
+            id="adminmiddlename" 
+            value={adminformdata.adminmiddlename} 
+            onChange={adminhandlechange} 
+            required
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-8 space-y-4">
+          <button 
+            type="submit" 
+            disabled={adminissubmitting} 
+            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+              adminissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+            }`}
+          >
+            <div className="relative flex items-center">
+              {adminissubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-user-plus mr-3"></i>
+                  Create Account
+                </>
+              )}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
-</form>
 </div>
 </div>
 )}
@@ -17353,107 +18599,199 @@ useEffect(() => {
 
 
 {showviewadmindialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
- <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-   <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Edit Admin Account</h1></div>
-   <div onClick={() => {setshowviewadmindialog(false);
-                        setselectededitadminaccount(null);
-                        setadminformdata({
-                          role: 'Admin',
-                          adminemail: '',
-                          adminlastname: '',
-                          adminfirstname: '',
-                          adminmiddlename: '',
-                          adminprofilepicture: ''
-                        });
-                        setadminpreviewimage(null);
-   }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
- </div>
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  {/* Header */}
+  <div className="bg-sky-800 px-8 py-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="bg-white/20 p-3 rounded-full mr-4">
+          <i className="bx bx-user text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Edit Admin Account</h1>
+          <p className="text-sky-100">Update admin account information</p>
+        </div>
+      </div>
+      <div
+        onClick={() => {setshowviewadmindialog(false);
+                         setselectededitadminaccount(null);
+                         setadminformdata({
+                           role: 'Admin',
+                           adminemail: '',
+                           adminlastname: '',
+                           adminfirstname: '',
+                           adminmiddlename: '',
+                           adminprofilepicture: ''
+                         });
+                         setadminpreviewimage(null);
+                         setadminselectedprofile(null);}}
+        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+      >
+        <i className="bx bx-x text-white text-2xl"></i>
+      </div>
+    </div>
+  </div>
 
-<form className="flex flex-col  ml-15 mr-15  w-fullx" onSubmit={updateadminaccount}>
- <div className="flex justify-center items-center bg-[#fcfcfc] rounded-2xl w-full h-[590px]">
-    <div className="w-full h-full  rounded-2xl flex justify-center mt-15">
-      <div className=" w-fit h-fit">
-       <img className=" object-cover h-90  w-90 rounded-full" src={adminpreviewimage || defaultprofilepic}/>
-      
-        <input  className="hidden" type="file" onChange={adminhandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={adminimageinputref} />
-        <div onClick={adminhandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-                                               
-        {selectedprofile && (<div onClick={adminhandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-       </div>
-   </div>
+  <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+    <form onSubmit={updateadminaccount} className="p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Profile Picture Section */}
+        <div className="lg:col-span-1">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+              <img 
+                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                src={adminpreviewimage || defaultprofilepic}
+                alt="Profile"
+              />
+              <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+              </div>
+            </div>
+            
+            <input  
+              className="hidden" 
+              type="file" 
+              onChange={adminhandleprofilechange} 
+              accept="image/jpeg, image/jpg, image/png" 
+              ref={adminimageinputref} 
+            />
+            
+            <div className="flex items-center gap-2">
+              {adminselectedprofile && (
+                <button
+                  type="button"
+                  onClick={adminhandleremoveprofile}
+                  className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  title="Remove Photo"
+                >
+                  <i className="bx bx-trash w-4 h-4"></i>
+                </button>
+              )}
+              
+              <button
+                type="button"
+                onClick={adminhandleuploadclick}
+                className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <i className="bx bx-camera mr-2"></i>
+                Upload Photo
+              </button>
+            </div>
+          </div>
+        </div>
 
-    <div className="w-full h-full  rounded-2xl">
-          <div className=" w-full h-full rounded-4xl">
-                     
-                     
- 
-          <div className="registration-container">
-      
-          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Account Details</h1>
+        {/* Form Fields */}
+        <div className="lg:col-span-2 space-y-6">
           {adminmessage.text && (
-            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
+            <div className={`p-4 rounded-lg border ${
+              adminmessage.type === 'error' 
+                ? 'bg-red-50 border-red-200 text-red-800' 
+                : 'bg-green-50 border-green-200 text-green-800'
+            }`}>
               {adminmessage.text}
             </div>
           )}
-                     
-         <h1 className=" font-albertsans  italic text-[#060606] text-[20px]">Let's modify your account!</h1>
-                     
-                     
-                     
-                     
-         <div className="form-group mt-10  flex">
-         <label className="  font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="email">Email :</label>
-          <div className="flex flex-col">
-          <input className=" bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-22 h-10 w-70" placeholder="Enter your email..." type="text" name="adminemail" id="adminemail" value={adminformdata.adminemail} onChange={adminhandlechange} required/>
-         {admincheckemail && <p className="text-gray-500 text-sm ml-22">Checking Email</p>}
-         {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
-          {adminemailerror && adminemailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
-                        
-         </div>
-          </div>
-                     
-                     
-    
 
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminlastname">Last Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-10 h-10 w-70" placeholder="Enter your lastname..." type="text" name="adminlastname" id="adminlastname" value={adminformdata.adminlastname} onChange={adminhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminfirstname">First Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-9 h-10 w-70" placeholder="Enter your firstname..." type="text" name="adminfirstname" id="adminfirstname" value={adminformdata.adminfirstname} onChange={adminhandlechange} required/></div>
-                     
-         <div className="form-group mt-5">
-         <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="adminmiddlename">Middle Name :</label>
-         <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-70" placeholder="Enter your middlename..." type="text" name="adminmiddlename" id="adminmiddlename" value={adminformdata.adminmiddlename} onChange={adminhandlechange} required/></div>
-                                      
-                          
-                    
-         <button type="submit" disabled={adminissubmitting} className="submit-btn mt-12 w-full flex items-center justify-center" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-           {adminissubmitting ? (
-             <>
-               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-               Saving...
-             </>
-           ) : (
-             "Save"
-           )}
-         </button>
-                        
-
-                     
-                     
-         </div>
-                   
-                     
-                     
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <div className="flex flex-col">
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your email..." 
+                type="text" 
+                name="adminemail" 
+                id="adminemail" 
+                value={adminformdata.adminemail} 
+                onChange={adminhandlechange} 
+                required
+              />
+              {admincheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+              {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (
+                <p className="text-red-500 text-sm mt-1">Enter a valid email address</p>
+              )}
+              {adminemailerror && adminemailexist && (
+                <p className="text-red-500 text-sm mt-1">Email already exists</p>
+              )}
+            </div>
           </div>
 
-    </div>
- </div>
-  </form>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Last Name</label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your lastname..." 
+                type="text" 
+                name="adminlastname" 
+                id="adminlastname" 
+                value={adminformdata.adminlastname} 
+                onChange={adminhandlechange} 
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">First Name</label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                placeholder="Enter your firstname..." 
+                type="text" 
+                name="adminfirstname" 
+                id="adminfirstname" 
+                value={adminformdata.adminfirstname} 
+                onChange={adminhandlechange} 
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Middle Name</label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              placeholder="Enter your middlename..." 
+              type="text" 
+              name="adminmiddlename" 
+              id="adminmiddlename" 
+              value={adminformdata.adminmiddlename} 
+              onChange={adminhandlechange} 
+              required
+            />
+          </div>
+
+          <div className="pt-6">
+            <button 
+              type="submit" 
+              disabled={adminissubmitting} 
+              className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium rounded-lg hover:from-sky-600 hover:to-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-center">
+                {adminissubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-edit mr-3"></i>
+                    Save Changes
+                  </>
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 </div>
 )}
@@ -17477,782 +18815,807 @@ useEffect(() => {
 {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} 
 {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} 
 
-{ (activedashboard === 'profileinformation' && !isAdminRole) && ( <div id="profileinformation" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl" >   
-
-
-<div className="flex items-center justify-between">
-  <div className="flex items-center">
-    <i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> 
-    <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1>
-  </div>
-  <div
-    onClick={refreshProfileData}
-    disabled={loadingpatients}
-    className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
-  >
-    <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
-    {loadingpatients ? 'Refreshing...' : 'Refresh'}
-  </div>
-</div>
-
-
-
-
-
-{/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} {/*Patient profile Table*/} 
-{ activeprofiletable === 'patientprofiletable' && ( <div id="patientprofiletable" className="animate-fadeInUp flex flex-col items-center  w-[100%] h-[83%] rounded-2xl mt-5" >
-
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 mr-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter patient name..." value={searchPatientProfiles} onChange={(e) => {setSearchPatientProfiles(e.target.value); filterPatientProfiles(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
-<div onClick={() => setshowaddpatientprofile(true)}  className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Profile</p></div>
-
-</div>
-
-<div className=" rounded-3xl min-h-[95%] h-auto pb-5 w-full mt-2 bg-[#f7f7f7]">
-{renderpatientprofiles()}
-</div>
-
-
-
-
-
-{showpatientpofile && (
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-xl  overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
-    {/* Header */}
-    <div className="bg-sky-800 px-8 py-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className="bg-white/20 p-3 rounded-full mr-4">
-            <i className="bx bx-user text-white text-2xl"></i>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Profile</h1>
-            <p className="text-sky-100">Update patient information</p>
-          </div>
-        </div>
-        <div
-          onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
-          className=" cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-        >
-          <i className="bx bx-x text-white text-2xl"></i>
-        </div>
+{(activedashboard === 'profileinformation' && !isAdminRole) && (
+  <div id="profileinformation" className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-[100%] rounded-2xl">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <i className="bx bxs-user-detail text-[#184d85] text-[25px] mr-2"/> 
+        <h1 className="font-albertsans font-bold text-[#184d85] text-[25px]">Profile Information</h1>
+      </div>
+      <div
+        onClick={refreshProfileData}
+        disabled={loadingpatients}
+        className="cursor-pointer flex items-center px-4 py-2 bg-[#184d85] text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-albertsans"
+      >
+        <RefreshCw className={`w-4 h-4 mr-2 ${loadingpatients ? 'animate-spin' : ''}`} />
+        {loadingpatients ? 'Refreshing...' : 'Refresh'}
       </div>
     </div>
 
-    <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-      <form onSubmit={retrieveandupdatepatientprofile} className="p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Picture Section */}
-          <div className="lg:col-span-1">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                {addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
-                  <img 
-                    className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                    src={addpatientprofilepreviewimage || demoformdata.patientprofilepicture || defaultprofilepic}
-                    alt="Profile"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                {/* Fallback placeholder when no image */}
-                <div 
-                  className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                    addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
-                  }`}
-                  style={{ display: addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
-                >
-                  <div className="text-center">
-                    <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
-                    <p className="text-sky-600 text-sm font-medium">No Photo</p>
-                  </div>
-                </div>
-                <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                  <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                </div>
-              </div>
-              
-              <input  
-                className="hidden" 
-                type="file" 
-                onChange={addpatientprofilehandlechange} 
-                accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
-                ref={addpatientprofileimageinputref} 
+    {/* Patient profile Table */}
+    {activeprofiletable === 'patientprofiletable' && (
+      <div id="patientprofiletable" className="animate-fadeInUp flex flex-col items-center w-[100%] h-[83%] rounded-2xl mt-5">
+        <div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+          <div className="ml-2 mr-2 w-full flex items-center">
+            <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+            <div className="relative w-full flex items-center justify-center gap-3">
+              <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+              <input 
+                type="text" 
+                placeholder="Enter patient name..." 
+                value={searchPatientProfiles} 
+                onChange={(e) => {setSearchPatientProfiles(e.target.value); filterPatientProfiles(e.target.value);}}
+                className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
               />
-              
-              <div className="flex items-center gap-2">
-                {(addpatientprofileselectedfile || addpatientprofilepreviewimage) && (
-                  <button
-                    type="button"
-                    onClick={addpatientprofilehandleremoveprofile}
-                    className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                    title="Remove Photo"
+            </div>
+          </div>
+          <div 
+            onClick={() => setshowaddpatientprofile(true)}  
+            className="ml-2 w-70 mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center px-5 transition-all duration-300 ease-in-out"
+          >
+            <i className="bx bx-user-plus text-white font-bold text-[30px]"/>
+            <p className="font-bold font-albertsans text-white text-[18px] ml-2 py-2 px-1">Add Profile</p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl min-h-[95%] h-auto pb-5 w-full mt-2 bg-[#f7f7f7]">
+          {renderpatientprofiles()}
+        </div>
+
+        {showpatientpofile && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+              {/* Header */}
+              <div className="bg-sky-800 px-8 py-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-white/20 p-3 rounded-full mr-4">
+                      <i className="bx bx-user text-white text-2xl"></i>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Profile</h1>
+                      <p className="text-sky-100">Update patient information</p>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
+                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
                   >
-                    <i className="bx bx-trash w-4 h-4"></i>
-                  </button>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={addpatientprofilehandleuploadclick}
-                  className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  <i className="bx bx-camera mr-2"></i>
-                  Upload Photo
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Fields */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Last Name
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientlastname} 
-                  onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
-                  type="text" 
-                  name="patientlastname" 
-                  id="patientlastname" 
-                  placeholder="Enter last name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  First Name
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientfirstname} 
-                  onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
-                  type="text" 
-                  name="patientfirstname" 
-                  id="patientfirstname" 
-                  placeholder="Enter first name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patientmiddlename} 
-                onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
-                type="text" 
-                name="patientmiddlename" 
-                id="patientmiddlename" 
-                placeholder="Enter middle name (optional)"
-              />
-            </div>
-
-            {/* Birthdate and Age */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Birthdate
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientbirthdate} 
-                  onChange={(e) => {
-                    const newpatientBirthdate = e.target.value;
-                    setdemoformdata({
-                      ...demoformdata, 
-                      patientbirthdate: newpatientBirthdate,
-                      patientage: calculateAge(newpatientBirthdate)
-                    });
-                  }}  
-                  type="date" 
-                  name="patientbirthdate" 
-                  id="patientbirthdate"
-                  max={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Age
-                </label>
-                <input 
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
-                  value={demoformdata.patientage}  
-                  readOnly 
-                  type="number" 
-                  name="patientage" 
-                  id="patientage" 
-                  placeholder="Auto-calculated from birthdate"
-                />
-              </div>
-            </div>
-
-            {/* Gender */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <div className="mt-2">
-                <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Contact Number
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patientcontactnumber} 
-                onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
-                type="text" 
-                name="patientcontactnumber" 
-                id="patientcontactnumber" 
-                placeholder="Ex: 09123456789"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Home Address
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patienthomeaddress} 
-                onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
-                type="text" 
-                name="patienthomeaddress" 
-                id="patienthomeaddress" 
-                placeholder="Complete home address"
-                required
-              />
-            </div>
-
-            {/* Emergency Contact Section */}
-            <div className="border-t border-gray-200 pt-6 mt-8">
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                    <i className="bx bx-shield text-red-600"></i>
+                    <i className="bx bx-x text-white text-2xl"></i>
                   </div>
-                  Emergency Contact Information
-                </h3>
-                <p className="text-sm text-gray-600">
-                  This information will be used to contact someone in case of medical emergencies.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    Contact Name
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    value={demoformdata.patientemergencycontactname} 
-                    onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
-                    type="text" 
-                    name="patientemergencycontactname" 
-                    id="patientemergencycontactname" 
-                    placeholder="Emergency contact name"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    Contact Number
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    value={demoformdata.patientemergencycontactnumber} 
-                    onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
-                    type="text" 
-                    name="patientemergencycontactnumber" 
-                    id="patientemergencycontactnumber" 
-                    placeholder="Emergency contact number"
-                    required
-                  />
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="pt-8 space-y-4">
-              <button 
-                type="submit" 
-                disabled={issubmitting} 
-                className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                  issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                }`}
-              >
-                <div className="relative flex items-center">
-                  {issubmitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Updating Profile...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-edit mr-3"></i>
-                      Save Changes
-                    </>
-                  )}
-                </div>
-              </button>
+              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form onSubmit={retrieveandupdatepatientprofile} className="p-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Profile Picture Section */}
+                    <div className="lg:col-span-1">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative group">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                          {addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
+                            <img 
+                              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                              src={addpatientprofilepreviewimage || demoformdata.patientprofilepicture || defaultprofilepic}
+                              alt="Profile"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback placeholder when no image */}
+                          <div 
+                            className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
+                              addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
+                            }`}
+                            style={{ display: addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
+                          >
+                            <div className="text-center">
+                              <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                              <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                          </div>
+                        </div>
+                        
+                        <input  
+                          className="hidden" 
+                          type="file" 
+                          onChange={addpatientprofilehandlechange} 
+                          accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+                          ref={addpatientprofileimageinputref} 
+                        />
+                        
+                        <div className="flex items-center gap-2">
+                          {(addpatientprofileselectedfile || addpatientprofilepreviewimage) && (
+                            <button
+                              type="button"
+                              onClick={addpatientprofilehandleremoveprofile}
+                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              title="Remove Photo"
+                            >
+                              <i className="bx bx-trash w-4 h-4"></i>
+                            </button>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={addpatientprofilehandleuploadclick}
+                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                          >
+                            <i className="bx bx-camera mr-2"></i>
+                            Upload Photo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-              <button
-                type="button"
-                onClick={() => setshowdeletepatientprofiledialog(true)}
-                className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                <i className="bx bx-trash mr-3"></i>
-                Delete Patient Profile
-              </button>
+                    {/* Form Fields */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Name Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Last Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientlastname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
+                            type="text" 
+                            name="patientlastname" 
+                            id="patientlastname" 
+                            placeholder="Enter last name"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            First Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientfirstname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
+                            type="text" 
+                            name="patientfirstname" 
+                            id="patientfirstname" 
+                            placeholder="Enter first name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patientmiddlename} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
+                          type="text" 
+                          name="patientmiddlename" 
+                          id="patientmiddlename" 
+                          placeholder="Enter middle name (optional)"
+                        />
+                      </div>
+
+                      {/* Birthdate and Age */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Birthdate
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientbirthdate} 
+                            onChange={(e) => {
+                              const newpatientBirthdate = e.target.value;
+                              setdemoformdata({
+                                ...demoformdata, 
+                                patientbirthdate: newpatientBirthdate,
+                                patientage: calculateAge(newpatientBirthdate)
+                              });
+                            }}  
+                            type="date" 
+                            name="patientbirthdate" 
+                            id="patientbirthdate"
+                            max={new Date().toISOString().split('T')[0]}
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Age
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                            value={demoformdata.patientage}  
+                            readOnly 
+                            type="number" 
+                            name="patientage" 
+                            id="patientage" 
+                            placeholder="Auto-calculated from birthdate"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gender */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Gender
+                        </label>
+                        <div className="mt-2">
+                          <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Contact Number
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patientcontactnumber} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
+                          type="text" 
+                          name="patientcontactnumber" 
+                          id="patientcontactnumber" 
+                          placeholder="Ex: 09123456789"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Home Address
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patienthomeaddress} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
+                          type="text" 
+                          name="patienthomeaddress" 
+                          id="patienthomeaddress" 
+                          placeholder="Complete home address"
+                          required
+                        />
+                      </div>
+
+                      {/* Emergency Contact Section */}
+                      <div className="border-t border-gray-200 pt-6 mt-8">
+                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                              <i className="bx bx-shield text-red-600"></i>
+                            </div>
+                            Emergency Contact Information
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            This information will be used to contact someone in case of medical emergencies.
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              Contact Name
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demoformdata.patientemergencycontactname} 
+                              onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactname" 
+                              id="patientemergencycontactname" 
+                              placeholder="Emergency contact name"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              Contact Number
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demoformdata.patientemergencycontactnumber} 
+                              onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactnumber" 
+                              id="patientemergencycontactnumber" 
+                              placeholder="Emergency contact number"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="pt-8 space-y-4">
+                        <button 
+                          type="submit" 
+                          disabled={issubmitting} 
+                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                            issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                          }`}
+                        >
+                          <div className="relative flex items-center">
+                            {issubmitting ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Updating Profile...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-edit mr-3"></i>
+                                Save Changes
+                              </>
+                            )}
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setshowdeletepatientprofiledialog(true)}
+                          className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                        >
+                          <i className="bx bx-trash mr-3"></i>
+                          Delete Patient Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>)}
+        )}
 
-{showdeletepatientprofiledialog && (
-  <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-    <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-      <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1></div>
-      <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-        <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient profile?</p>
-        {selectedpatientprofile && ( <>
-                 <p className="text-[16px]">Patient Name: {selectedpatientprofile.name}</p>
-                  <p className="text-[16px] mt-3">Patient Email: {selectedpatientprofile.email}</p>
-                   </>)}  
-        </div>        
-        <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-          <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeletepatientprofiledialog(false); setselectedpatientprofile(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-          <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={deletepatientprofile}><p className=" text-[#ffffff]">Delete</p></div>
-        </div>
+        {showdeletepatientprofiledialog && (
+          <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+            <div className="flex flex-col items-center bg-white rounded-2xl w-[600px] h-fit animate-fadeInUp">
+              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
+                <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1]" />
+                <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1>
+              </div>
+              <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
+                <div className="px-5 flex flex-col justify-center h-[130px] w-full">
+                  <p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient profile?</p>
+                  {selectedpatientprofile && ( 
+                    <>
+                      <p className="text-[16px]">Patient Name: {selectedpatientprofile.name}</p>
+                      <p className="text-[16px] mt-3">Patient Email: {selectedpatientprofile.email}</p>
+                    </>
+                  )}  
+                </div>        
+                <div className="pr-5 flex justify-end items-center h-[80px] w-full">
+                  <div 
+                    className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" 
+                    onClick={() => {setshowdeletepatientprofiledialog(false); setselectedpatientprofile(null);}}
+                  >
+                    <p className="text-[#ffffff]">Cancel</p>
+                  </div>
+                  <div 
+                    className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" 
+                    onClick={deletepatientprofile}
+                  >
+                    <p className="text-[#ffffff]">Delete</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showaddpatientpofile && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+              {/* Header */}
+              <div className="bg-sky-800 px-8 py-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-white/20 p-3 rounded-full mr-4">
+                      <i className="bx bx-user-plus text-white text-2xl"></i>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-white mb-1">Add Patient Profile</h1>
+                      <p className="text-sky-100">Create a new patient profile</p>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
+                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+                  >
+                    <i className="bx bx-x text-white text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form onSubmit={addpatientprofile} className="p-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Profile Picture Section */}
+                    <div className="lg:col-span-1">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative group">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                          {addpatientprofilepreviewimage ? (
+                            <img 
+                              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                              src={addpatientprofilepreviewimage || defaultprofilepic}
+                              alt="Profile"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback placeholder when no image */}
+                          <div 
+                            className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
+                              addpatientprofilepreviewimage ? 'hidden' : 'flex'
+                            }`}
+                            style={{ display: addpatientprofilepreviewimage ? 'none' : 'flex' }}
+                          >
+                            <div className="text-center">
+                              <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                              <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                          </div>
+                        </div>
+                        
+                        <input  
+                          className="hidden" 
+                          type="file" 
+                          onChange={addpatientprofilehandlechange} 
+                          accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+                          ref={addpatientprofileimageinputref} 
+                        />
+                        
+                        <div className="flex items-center gap-2">
+                          {(selectedpatientprofile || addpatientprofilepreviewimage) && (
+                            <button
+                              type="button"
+                              onClick={addpatientprofilehandleremoveprofile}
+                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              title="Remove Photo"
+                            >
+                              <i className="bx bx-trash w-4 h-4"></i>
+                            </button>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={addpatientprofilehandleuploadclick}
+                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                          >
+                            <i className="bx bx-camera mr-2"></i>
+                            Upload Photo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Email Field */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Patient Email
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})}
+                          value={demoformdata.patientemail} 
+                          id="patientemail" 
+                          name="patientemail" 
+                          required 
+                          type="email" 
+                          placeholder="Enter patient email"
+                        />
+                        {/* Email validation messages */}
+                        <div className="text-sm">
+                          {demopatientcheckemail && (
+                            <p className="text-gray-500">Checking Email...</p>
+                          )}
+                          {!demopatientcheckemail && (
+                            <>
+                              {demopatientemailerror && !demopatientemailexist && (
+                                <p className="text-red-500">
+                                  Please enter a valid email address
+                                </p>
+                              )}
+                              {demopatientemailexist && (
+                                <p className="text-red-500">
+                                  A patient profile already exists with this email
+                                </p>
+                              )}
+                              {emailisnotpatienterror && (
+                                <p className="text-red-500">
+                                  This email belongs to a staff/admin account and cannot be used for patient profiles
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Name Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Last Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientlastname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
+                            type="text" 
+                            name="patientlastname" 
+                            id="patientlastname" 
+                            placeholder="Enter last name"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            First Name
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientfirstname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
+                            type="text" 
+                            name="patientfirstname" 
+                            id="patientfirstname" 
+                            placeholder="Enter first name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patientmiddlename} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
+                          type="text" 
+                          name="patientmiddlename" 
+                          id="patientmiddlename" 
+                          placeholder="Enter middle name (optional)"
+                        />
+                      </div>
+
+                      {/* Birthdate and Age */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Birthdate
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            value={demoformdata.patientbirthdate} 
+                            onChange={(e) => {
+                              const newBirthdate = e.target.value;
+                              setdemoformdata({
+                                ...demoformdata, 
+                                patientbirthdate: newBirthdate,
+                                patientage: calculateAge(newBirthdate)
+                              });
+                            }} 
+                            max={new Date().toISOString().split('T')[0]}  
+                            type="date" 
+                            name="patientbirthdate" 
+                            id="patientbirthdate"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Age
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                            value={demoformdata.patientage}  
+                            readOnly 
+                            type="number" 
+                            name="patientage" 
+                            id="patientage" 
+                            placeholder="Auto-calculated from birthdate"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gender */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Gender
+                        </label>
+                        <div className="mt-2">
+                          <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Contact Number
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patientcontactnumber} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
+                          type="text" 
+                          name="patientcontactnumber" 
+                          id="patientcontactnumber" 
+                          placeholder="Ex: 09123456789"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          Home Address
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          value={demoformdata.patienthomeaddress} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
+                          type="text" 
+                          name="patienthomeaddress" 
+                          id="patienthomeaddress" 
+                          placeholder="Complete home address"
+                          required
+                        />
+                      </div>
+
+                      {/* Emergency Contact Section */}
+                      <div className="border-t border-gray-200 pt-6 mt-8">
+                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                              <i className="bx bx-shield text-red-600"></i>
+                            </div>
+                            Emergency Contact Information
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            This information will be used to contact someone in case of medical emergencies.
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              Contact Name
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demoformdata.patientemergencycontactname} 
+                              onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactname" 
+                              id="patientemergencycontactname" 
+                              placeholder="Emergency contact name"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700">
+                              Contact Number
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              value={demoformdata.patientemergencycontactnumber} 
+                              onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactnumber" 
+                              id="patientemergencycontactnumber" 
+                              placeholder="Emergency contact number"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="pt-8">
+                        <button 
+                          type="submit" 
+                          disabled={addpatientprofileissubmitting} 
+                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                            addpatientprofileissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                          }`}
+                        >
+                          <div className="relative flex items-center">
+                            {addpatientprofileissubmitting ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Creating Profile...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-user-plus mr-3"></i>
+                                Create Patient Profile
+                              </>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    )}
+
+    {/* Add Patient Profile Toast Notification */}
+    {addPatientProfileToast && (
+      <div className={`${smsToast || pdfToast ? 'bottom-28' : 'bottom-4'} right-8 z-101 transform fixed`}>
+        <div key={addPatientProfileToastType} className={`${addPatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+          {addPatientProfileToastType === 'success' ? (          
+            <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+          ) : (
+            <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+          )}
+          {addPatientProfileToastMessage}
+
+          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${addPatientProfileToastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`} style={{width: addPatientProfileProgressWidth, transition: 'width 4s linear'}}/>
+        </div>
+      </div>  
+    )}
+
+    {/* Update Patient Profile Toast Notification */}
+    {updatePatientProfileToast && (
+      <div className={`${smsToast || pdfToast || addPatientProfileToast ? 'bottom-36' : 'bottom-4'} right-8 z-101 transform fixed`}>
+        <div key={updatePatientProfileToastType} className={`${updatePatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+          {updatePatientProfileToastType === 'success' ? (          
+            <span className="text-blue-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+          ) : (
+            <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+          )}
+          {updatePatientProfileToastMessage}
+
+          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${updatePatientProfileToastType === 'success' ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: updatePatientProfileProgressWidth, transition: 'width 4s linear'}}/>
+        </div>
+      </div>  
+    )}
   </div>
 )}
 
 
 
-
-
-{showaddpatientpofile && (
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-xl  overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
-    {/* Header */}
-    <div className="bg-sky-800 px-8 py-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className="bg-white/20 p-3 rounded-full mr-4">
-            <i className="bx bx-user-plus text-white text-2xl"></i>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">Add Patient Profile</h1>
-            <p className="text-sky-100">Create a new patient profile</p>
-          </div>
-        </div>
-        <div
-          onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
-          className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-        >
-          <i className="bx bx-x text-white text-2xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-      <form onSubmit={addpatientprofile} className="p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Picture Section */}
-          <div className="lg:col-span-1">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                {addpatientprofilepreviewimage ? (
-                  <img 
-                    className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                    src={addpatientprofilepreviewimage || defaultprofilepic}
-                    alt="Profile"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                {/* Fallback placeholder when no image */}
-                <div 
-                  className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                    addpatientprofilepreviewimage ? 'hidden' : 'flex'
-                  }`}
-                  style={{ display: addpatientprofilepreviewimage ? 'none' : 'flex' }}
-                >
-                  <div className="text-center">
-                    <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
-                    <p className="text-sky-600 text-sm font-medium">No Photo</p>
-                  </div>
-                </div>
-                <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                  <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                </div>
-              </div>
-              
-              <input  
-                className="hidden" 
-                type="file" 
-                onChange={addpatientprofilehandlechange} 
-                accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
-                ref={addpatientprofileimageinputref} 
-              />
-              
-              <div className="flex items-center gap-2">
-                {(selectedpatientprofile || addpatientprofilepreviewimage) && (
-                  <button
-                    type="button"
-                    onClick={addpatientprofilehandleremoveprofile}
-                    className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                    title="Remove Photo"
-                  >
-                    <i className="bx bx-trash w-4 h-4"></i>
-                  </button>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={addpatientprofilehandleuploadclick}
-                  className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  <i className="bx bx-camera mr-2"></i>
-                  Upload Photo
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Fields */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Patient Email
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})} 
-                value={demoformdata.patientemail} 
-                id="patientemail" 
-                name="patientemail" 
-                required 
-                type="email" 
-                placeholder="Enter patient email"
-              />
-              {/* Email validation messages */}
-              <div className="text-sm">
-                {demopatientcheckemail && (
-                  <p className="text-gray-500">Checking Email...</p>
-                )}
-                {!demopatientcheckemail && (
-                  <>
-                    {demopatientemailerror && !demopatientemailexist && (
-                      <p className="text-red-500">
-                        Please enter a valid email address
-                      </p>
-                    )}
-                    {demopatientemailexist && (
-                      <p className="text-red-500">
-                        A patient profile already exists with this email
-                      </p>
-                    )}
-                    {emailisnotpatienterror && (
-                      <p className="text-red-500">
-                        This email belongs to a staff/admin account and cannot be used for patient profiles
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Last Name
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientlastname} 
-                  onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
-                  type="text" 
-                  name="patientlastname" 
-                  id="patientlastname" 
-                  placeholder="Enter last name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  First Name
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientfirstname} 
-                  onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
-                  type="text" 
-                  name="patientfirstname" 
-                  id="patientfirstname" 
-                  placeholder="Enter first name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patientmiddlename} 
-                onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
-                type="text" 
-                name="patientmiddlename" 
-                id="patientmiddlename" 
-                placeholder="Enter middle name (optional)"
-              />
-            </div>
-
-            {/* Birthdate and Age */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Birthdate
-                </label>
-                <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  value={demoformdata.patientbirthdate} 
-                  onChange={(e) => {
-                    const newBirthdate = e.target.value;
-                    setdemoformdata({
-                      ...demoformdata, 
-                      patientbirthdate: newBirthdate,
-                      patientage: calculateAge(newBirthdate)
-                    });
-                  }} 
-                  max={new Date().toISOString().split('T')[0]}  
-                  type="date" 
-                  name="patientbirthdate" 
-                  id="patientbirthdate"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Age
-                </label>
-                <input 
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
-                  value={demoformdata.patientage}  
-                  readOnly 
-                  type="number" 
-                  name="patientage" 
-                  id="patientage" 
-                  placeholder="Auto-calculated from birthdate"
-                />
-              </div>
-            </div>
-
-            {/* Gender */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <div className="mt-2">
-                <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Contact Number
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patientcontactnumber} 
-                onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
-                type="text" 
-                name="patientcontactnumber" 
-                id="patientcontactnumber" 
-                placeholder="Ex: 09123456789"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                Home Address
-              </label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                value={demoformdata.patienthomeaddress} 
-                onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
-                type="text" 
-                name="patienthomeaddress" 
-                id="patienthomeaddress" 
-                placeholder="Complete home address"
-                required
-              />
-            </div>
-
-            {/* Emergency Contact Section */}
-            <div className="border-t border-gray-200 pt-6 mt-8">
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                    <i className="bx bx-shield text-red-600"></i>
-                  </div>
-                  Emergency Contact Information
-                </h3>
-                <p className="text-sm text-gray-600">
-                  This information will be used to contact someone in case of medical emergencies.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    Contact Name
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    value={demoformdata.patientemergencycontactname} 
-                    onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
-                    type="text" 
-                    name="patientemergencycontactname" 
-                    id="patientemergencycontactname" 
-                    placeholder="Emergency contact name"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    Contact Number
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    value={demoformdata.patientemergencycontactnumber} 
-                    onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
-                    type="text" 
-                    name="patientemergencycontactnumber" 
-                    id="patientemergencycontactnumber" 
-                    placeholder="Emergency contact number"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-8">
-              <button 
-                type="submit" 
-                disabled={addpatientprofileissubmitting} 
-                className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                  addpatientprofileissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                }`}
-              >
-                <div className="relative flex items-center">
-                  {addpatientprofileissubmitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Creating Profile...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-user-plus mr-3"></i>
-                      Create Patient Profile
-                    </>
-                  )}
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>)}
-
-
-
-</div>)}
-
-
-
-{/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/} {/*Staff profile Table*/}              
-{ activeprofiletable === 'staffprofiletable' && ( <div id="staffprofiletable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
-</div>)}
-
-
-
-{/*Owner profile Table*/} {/*Owner profile Table*/} {/*Owner profile Table*/} {/*Owner profile Table*/} {/*Owner profile Table*/} {/*Owner profile Table*/} {/*Owner profile Table*/}
-{ activeprofiletable === 'ownerprofiletable' && ( <div id="ownerprofiletable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
-</div>)}
-
-
-
-
-{/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/} {/*Admin profile Table*/}
-{ activeprofiletable === 'administratorprofiletable' && ( <div id="administratorprofiletable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
-</div>)}
-
-
-
-
-
-
-</div> )}
-
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
-
-
-
-
-
 
 
 
@@ -18333,7 +19696,7 @@ useEffect(() => {
 
 
 {/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}{/*All Appointments Table*/}
-{ activeappointmentstable === 'allappointmentstable' && ( <div id="allappointmentstable" className="animate-fadeInUp flex flex-col border-t-2 border-[#909090] w-[100%] flex-1 rounded-2xl mt-5 min-h-0" ref={appointmentTableRef}>
+{ activeappointmentstable === 'allappointmentstable' && ( <div id="allappointmentstable" className="animate-fadeInUp flex flex-col  w-[100%] flex-1 rounded-2xl mt-5 min-h-0" ref={appointmentTableRef}>
 
 <div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
 <div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input type="text" placeholder="Enter appointment details..." value={searchAppointments} onChange={(e) => {setSearchAppointments(e.target.value); filterAppointments(e.target.value);}} className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"></input></div></div>
@@ -18413,7 +19776,8 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
       <span className="font-albertsans text-[#171717] text-[15px] font-medium whitespace-nowrap">{formatappointmatedates(appointment.patientambherappointmentdate)} </span> 
       <span className="ml-1 font-albertsans text-[#171717] text-[15px] font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientambherappointmenttime)})</span> 
       <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
+${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+appointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
 appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
 appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
 appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
@@ -18429,7 +19793,8 @@ appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-
       <span className="ml-1 font-albertsans  text-[15px] text-[#171717] font-medium whitespace-nowrap">({formatappointmenttime(appointment.patientbautistaappointmenttime)})</span> 
       
 <span className={` ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
+${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+appointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
 appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
 appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
 appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#103d4a]':
@@ -18445,21 +19810,12 @@ appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] tex
 <div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
     className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white ">View</h1></div>
 
-{/* Only show delete button if user has access to this appointment */}
-{canAccessAppointment(appointment) && (
-  <div onClick={() =>  {setdeletepatientappointment(true);
-                    setselectedpatientappointment(appointment);
-  }}
-    className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-)}
 
-{/* If user doesn't have access, show disabled button */}
-{!canAccessAppointment(appointment) && (
-  <div className="bg-gray-400 cursor-not-allowed flex justify-center items-center py-2 px-5 rounded-2xl opacity-50" title="Access denied: Cannot manage appointments from other clinics">
-    <i className="bx bxs-trash text-white mr-1"/>
-    <h1 className="text-white">Delete</h1>
-  </div>
-)}
+
+
+
+
+
 
         {deletepatientappointment && (
            <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
@@ -18476,7 +19832,7 @@ appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] tex
                     <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
                       <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setdeletepatientappointment(false)}><p className=" text-[#ffffff]">Cancel</p></div>
                       <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {handledeleteappointment(selectedpatientappointment.patientappointmentid);setdeletepatientappointment(false); }}><p className=" text-[#ffffff]">Delete</p></div>
-                    </div>
+                                         </div>
                 </div>
 
              </div>
@@ -18597,7 +19953,8 @@ itemName="appointments"
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+            selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
             selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
             selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
             selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
@@ -18631,6 +19988,11 @@ itemName="appointments"
             </p>
           </div>
 
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Location Address:</span>
+            <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmentlocationaddress}</p>
+          </div>
+
           {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
             <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
               <span className="text-sm font-medium text-green-700">Payment Total:</span>
@@ -18642,8 +20004,8 @@ itemName="appointments"
         </div>
       </div>
 
-      {/* Services - Hidden when appointment is Pending */}
-      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && (
+      {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
+      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && selectedpatientappointment.patientambherappointmentstatus !== "Declined" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-green-600"></i>
@@ -18922,7 +20284,7 @@ itemName="appointments"
       )}
 
       {/* Bautista Eye Center Services */}
-      {selectedpatientappointment.patientappointmentclinic === "Bautista Eye Center" && selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && (
+      {selectedpatientappointment.patientappointmentclinic === "Bautista Eye Center" && selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && selectedpatientappointment.patientbautistaappointmentstatus !== "Declined" && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Eye className="w-5 h-5 text-green-600" />
@@ -19152,9 +20514,15 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Assign Eye Specialist:</label>
               <AmbhereyespecialistBox value={ambhereyespecialist} onChange={(e) => setambhereyespecialist(e.target.value)} />
+              {(!ambhereyespecialist || ambhereyespecialist.trim() === '') && (
+                <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
+                  <i className="bx bx-info-circle"></i>
+                  Please select an eye specialist to accept this appointment.
+                </p>
+              )}
             </div>
             
-            {ambhereyespecialist && (
+            {ambhereyespecialist && ambhereyespecialist.trim() !== '' && (
               <button 
                 onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
                 disabled={isAcceptingAppointment}
@@ -19210,6 +20578,62 @@ itemName="appointments"
                 )}
               </button>
             )}
+
+            {/* Decline Appointment Button */}
+            <button 
+              onClick={() => !isDecliningAppointment && handleDeclineAppointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
+              disabled={isDecliningAppointment}
+              style={{
+                backgroundColor: isDecliningAppointment ? '#9CA3AF' : '#DC2626',
+                cursor: isDecliningAppointment ? 'not-allowed' : 'pointer',
+                width: '100%',
+                color: 'white',
+                fontWeight: '600',
+                paddingTop: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '24px',
+                paddingRight: '24px',
+                borderRadius: '12px',
+                transition: 'all 0.2s ease-in-out',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                border: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (!isDecliningAppointment) {
+                  e.target.style.backgroundColor = '#B91C1C';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isDecliningAppointment) {
+                  e.target.style.backgroundColor = '#DC2626';
+                }
+              }}
+            >
+              {isDecliningAppointment ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '20px',
+                    width: '20px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Declining...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-x" style={{ fontSize: '18px' }}></i>
+                  Decline Ambher Appointment
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -19286,21 +20710,114 @@ itemName="appointments"
               <button 
                 onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
                 disabled={isCompletingAppointment}
-                className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} w-full text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2`}
+                style={{
+                  backgroundColor: isCompletingAppointment ? '#9CA3AF' : '#008000',
+                  cursor: isCompletingAppointment ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  color: 'white',
+                  fontWeight: '600',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  paddingLeft: '24px',
+                  paddingRight: '24px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s ease-in-out',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCompletingAppointment) {
+                    e.target.style.backgroundColor = '#004700';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isCompletingAppointment) {
+                    e.target.style.backgroundColor = '#008000';
+                  }
+                }}
               >
                 {isCompletingAppointment ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div style={{
+                      animation: 'spin 1s linear infinite',
+                      borderRadius: '50%',
+                      height: '20px',
+                      width: '20px',
+                      borderBottom: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderLeft: '2px solid transparent',
+                      borderRight: '2px solid transparent'
+                    }}></div>
                     <span>Completing...</span>
                   </>
                 ) : (
                   <>
-                    <i className="bx bx-check-circle text-lg"></i>
+                    <i className="bx bx-check-circle" style={{ fontSize: '18px' }}></i>
                     Complete Ambher Appointment
                   </>
                 )}
               </button>
             )}
+
+
+            <button 
+              onClick={() => !isCancellingAppointment && handleCancelAppointment(selectedpatientappointment.patientappointmentid, 'ambher')} 
+              disabled={isCancellingAppointment}
+              style={{
+                backgroundColor: isCancellingAppointment ? '#9CA3AF' : '#750000',
+                cursor: isCancellingAppointment ? 'not-allowed' : 'pointer',
+                width: '100%',
+                color: 'white',
+                fontWeight: '600',
+                paddingTop: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '24px',
+                paddingRight: '24px',
+                borderRadius: '12px',
+                transition: 'all 0.2s ease-in-out',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                border: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (!isCancellingAppointment) {
+                  e.target.style.backgroundColor = '#470000';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isCancellingAppointment) {
+                  e.target.style.backgroundColor = '#750000';
+                }
+              }}
+            >
+              {isCancellingAppointment ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '20px',
+                    width: '20px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Cancelling...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-x" style={{ fontSize: '18px' }}></i>
+                  Cancel Ambher Appointment
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -19385,7 +20902,8 @@ itemName="appointments"
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
@@ -19419,6 +20937,11 @@ itemName="appointments"
             </p>
           </div>
 
+          <div className="mb-3">
+            <span className="text-sm font-medium text-gray-500">Location Address:</span>
+            <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientbautistaappointmentlocationaddress}</p>
+          </div>
+
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
               <span className="text-sm font-medium text-blue-700">Payment Total:</span>
@@ -19430,8 +20953,8 @@ itemName="appointments"
         </div>
       </div>
 
-      {/* Services - Hidden when appointment is Pending */}
-      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && (
+      {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
+      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && selectedpatientappointment.patientbautistaappointmentstatus !== "Declined" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-blue-600"></i>
@@ -19439,100 +20962,271 @@ itemName="appointments"
           </h3>
           <div className="bg-white rounded-xl p-4 border border-blue-200">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-comprehensive"
-                  checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-comprehensive" className="text-gray-700 font-medium">Comprehensive Eye Exam</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-diabetic"
-                  checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-diabetic" className="text-gray-700 font-medium">Diabetic Retinopathy</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-glaucoma"
-                  checked={selectedpatientappointment.patientbautistaappointmentglaucoma}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-glaucoma" className="text-gray-700 font-medium">Glaucoma</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-hypertensive"
-                  checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-hypertensive" className="text-gray-700 font-medium">Hypertensive Retinopathy</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-retinal"
-                  checked={selectedpatientappointment.patientbautistaappointmentretinolproblem}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-retinal" className="text-gray-700 font-medium">Retinal Problem</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-cataract-surgery"
-                  checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-cataract-surgery" className="text-gray-700 font-medium">Cataract Surgery</label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="bautista-pterygium"
-                  checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  readOnly
-                />
-                <label htmlFor="bautista-pterygium" className="text-gray-700 font-medium">Pterygium Surgery</label>
-              </div>
-              
-              <div className="space-y-2">
+              {/* Comprehensive Eye Exam */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam) && (
                 <div className="flex items-center gap-3">
                   <input 
                     type="checkbox" 
-                    id="bautista-other"
-                    checked={selectedpatientappointment.patientbautistaappointmentotherservice}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    readOnly
+                    id="bautista-comprehensive"
+                    checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentcomprehensiveeyeexam: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
                   />
-                  <label htmlFor="bautista-other" className="text-gray-700 font-medium">Other Service</label>
+                  <label htmlFor="bautista-comprehensive" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Comprehensive Eye Exam</label>
                 </div>
-                {selectedpatientappointment.patientbautistaappointmentotherservice && (
-                  <div className="ml-7 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                    <p className="text-blue-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote || "No details provided"}</p>
+              )}
+              
+              {/* Diabetic Retinopathy */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-diabetic"
+                    checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentdiabeticretinopathy: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-diabetic" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Diabetic Retinopathy</label>
+                </div>
+              )}
+              
+              {/* Glaucoma */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentglaucoma) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-glaucoma"
+                    checked={selectedpatientappointment.patientbautistaappointmentglaucoma || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentglaucoma: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-glaucoma" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Glaucoma</label>
+                </div>
+              )}
+              
+              {/* Hypertensive Retinopathy */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-hypertensive"
+                    checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmenthypertensiveretinopathy: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-hypertensive" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Hypertensive Retinopathy</label>
+                </div>
+              )}
+              
+              {/* Retinal Problem */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentretinolproblem) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-retinal"
+                    checked={selectedpatientappointment.patientbautistaappointmentretinolproblem || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentretinolproblem: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-retinal" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Retinal Problem</label>
+                </div>
+              )}
+              
+              {/* Cataract Surgery */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentcataractsurgery) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-cataract-surgery"
+                    checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentcataractsurgery: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-cataract-surgery" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Cataract Surgery</label>
+                </div>
+              )}
+              
+              {/* Pterygium Surgery */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentpterygiumsurgery) && (
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="bautista-pterygium"
+                    checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery || false}
+                    onChange={(e) => {
+                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                        setselectedpatientappointment(prev => ({
+                          ...prev,
+                          patientbautistaappointmentpterygiumsurgery: e.target.checked
+                        }));
+                      }
+                    }}
+                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : 'cursor-pointer'
+                    }`}
+                  />
+                  <label htmlFor="bautista-pterygium" className={`text-gray-700 font-medium ${
+                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                      ? 'cursor-not-allowed' 
+                      : 'cursor-pointer'
+                  }`}>Pterygium Surgery</label>
+                </div>
+              )}
+              
+              {/* Other Service */}
+              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentotherservice) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="bautista-other"
+                      checked={selectedpatientappointment.patientbautistaappointmentotherservice || false}
+                      onChange={(e) => {
+                        if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
+                          setselectedpatientappointment(prev => ({
+                            ...prev,
+                            patientbautistaappointmentotherservice: e.target.checked,
+                            // Clear the note if unchecking
+                            ...(!e.target.checked && { patientbautistaappointmentotherservicenote: '' })
+                          }));
+                        }
+                      }}
+                      disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                      className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                        selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                          ? 'cursor-not-allowed opacity-60' 
+                          : 'cursor-pointer'
+                      }`}
+                    />
+                    <label htmlFor="bautista-other" className={`text-gray-700 font-medium ${
+                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
+                        ? 'cursor-not-allowed' 
+                        : 'cursor-pointer'
+                    }`}>Other Service</label>
                   </div>
-                )}
-              </div>
+                  {selectedpatientappointment.patientbautistaappointmentotherservice && (
+                    <div className="ml-7">
+                      {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" ? (
+                        <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
+                          {selectedpatientappointment.patientbautistaappointmentotherservicenote || "No details provided"}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={selectedpatientappointment.patientbautistaappointmentotherservicenote || ''}
+                          onChange={(e) => {
+                            setselectedpatientappointment(prev => ({
+                              ...prev,
+                              patientbautistaappointmentotherservicenote: e.target.value
+                            }));
+                          }}
+                          placeholder="Specify other service"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -19549,27 +21243,126 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Assign Eye Specialist:</label>
               <BautistaeyespecialistBox value={bautistaeyespecialist} onChange={(e) => setbautistaeyespecialist(e.target.value)} />
+              {(!bautistaeyespecialist || bautistaeyespecialist.trim() === '') && (
+                <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
+                  <i className="bx bx-info-circle"></i>
+                  Please select an eye specialist to accept this appointment.
+                </p>
+              )}
             </div>
             
-            {bautistaeyespecialist && (
+            {bautistaeyespecialist && bautistaeyespecialist.trim() !== '' && (
               <button 
                 onClick={() => !isAcceptingAppointment && handleacceptappointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
                 disabled={isAcceptingAppointment}
-                className={`${isAcceptingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} w-full text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2`}
+                style={{
+                  backgroundColor: isAcceptingAppointment ? '#9CA3AF' : '#16A34A',
+                  cursor: isAcceptingAppointment ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  color: 'white',
+                  fontWeight: '600',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  paddingLeft: '24px',
+                  paddingRight: '24px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s ease-in-out',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isAcceptingAppointment) {
+                    e.target.style.backgroundColor = '#15803D';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isAcceptingAppointment) {
+                    e.target.style.backgroundColor = '#16A34A';
+                  }
+                }}
               >
                 {isAcceptingAppointment ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div style={{
+                      animation: 'spin 1s linear infinite',
+                      borderRadius: '50%',
+                      height: '20px',
+                      width: '20px',
+                      borderBottom: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderLeft: '2px solid transparent',
+                      borderRight: '2px solid transparent'
+                    }}></div>
                     <span>Accepting...</span>
                   </>
                 ) : (
                   <>
-                    <i className="bx bx-check text-lg"></i>
+                    <i className="bx bx-check" style={{ fontSize: '18px' }}></i>
                     Accept Bautista Appointment
                   </>
                 )}
               </button>
             )}
+
+            {/* Decline Appointment Button */}
+            <button 
+              onClick={() => !isDecliningAppointment && handleDeclineAppointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
+              disabled={isDecliningAppointment}
+              style={{
+                backgroundColor: isDecliningAppointment ? '#9CA3AF' : '#DC2626',
+                cursor: isDecliningAppointment ? 'not-allowed' : 'pointer',
+                width: '100%',
+                color: 'white',
+                fontWeight: '600',
+                paddingTop: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '24px',
+                paddingRight: '24px',
+                borderRadius: '12px',
+                transition: 'all 0.2s ease-in-out',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                border: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (!isDecliningAppointment) {
+                  e.target.style.backgroundColor = '#B91C1C';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isDecliningAppointment) {
+                  e.target.style.backgroundColor = '#DC2626';
+                }
+              }}
+            >
+              {isDecliningAppointment ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '20px',
+                    width: '20px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Declining...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-x" style={{ fontSize: '18px' }}></i>
+                  Decline Bautista Appointment
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -19646,21 +21439,114 @@ itemName="appointments"
               <button 
                 onClick={() => !isCompletingAppointment && handleCompleteAppointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
                 disabled={isCompletingAppointment}
-                className={`${isCompletingAppointment ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} w-full text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2`}
+                style={{
+                  backgroundColor: isCompletingAppointment ? '#9CA3AF' : '#008000',
+                  cursor: isCompletingAppointment ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  color: 'white',
+                  fontWeight: '600',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  paddingLeft: '24px',
+                  paddingRight: '24px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s ease-in-out',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCompletingAppointment) {
+                    e.target.style.backgroundColor = '#004700';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isCompletingAppointment) {
+                    e.target.style.backgroundColor = '#008000';
+                  }
+                }}
               >
                 {isCompletingAppointment ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div style={{
+                      animation: 'spin 1s linear infinite',
+                      borderRadius: '50%',
+                      height: '20px',
+                      width: '20px',
+                      borderBottom: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderLeft: '2px solid transparent',
+                      borderRight: '2px solid transparent'
+                    }}></div>
                     <span>Completing...</span>
                   </>
                 ) : (
                   <>
-                    <i className="bx bx-check-circle text-lg"></i>
+                    <i className="bx bx-check-circle" style={{ fontSize: '18px' }}></i>
                     Complete Bautista Appointment
                   </>
                 )}
               </button>
             )}
+
+            {/* Cancel Appointment Button for Accepted Appointments */}
+            <button 
+              onClick={() => !isCancellingAppointment && handleCancelAppointment(selectedpatientappointment.patientappointmentid, 'bautista')} 
+              disabled={isCancellingAppointment}
+              style={{
+                backgroundColor: isCancellingAppointment ? '#9CA3AF' : '#750000',
+                cursor: isCancellingAppointment ? 'not-allowed' : 'pointer',
+                width: '100%',
+                color: 'white',
+                fontWeight: '600',
+                paddingTop: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '24px',
+                paddingRight: '24px',
+                borderRadius: '12px',
+                transition: 'all 0.2s ease-in-out',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                border: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (!isCancellingAppointment) {
+                  e.target.style.backgroundColor = '#470000';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isCancellingAppointment) {
+                  e.target.style.backgroundColor = '#750000';
+                }
+              }}
+            >
+              {isCancellingAppointment ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '20px',
+                    width: '20px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Cancelling...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-x" style={{ fontSize: '18px' }}></i>
+                  Cancel Bautista Appointment
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -19945,7 +21831,7 @@ itemName="appointments"
 
 
 
-{ activemedicalrecordstable === 'allmedicalrecordstable' && ( <div id="allmedicalrecordstable" className="animate-fadeInUp flex flex-col items-center border-t-2  border-[#909090] w-[100%] h-[90%] rounded-2xl mt-5" >
+{ activemedicalrecordstable === 'allmedicalrecordstable' && ( <div id="allmedicalrecordstable" className="animate-fadeInUp flex flex-col items-center  w-[100%] h-[90%] rounded-2xl mt-5" >
 
 <div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
 <div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input 
@@ -21214,11 +23100,10 @@ onError={(e) => {
                         <div className="h-fit w-fit ">
 
                   <div className="relative">
-                  <img  className="w-120 object-cover rounded-2xl h-120" src={(selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[currentimageindex]) || (addambherinventoryproductimagepreviewimages?.[currentimageindex]) || defaultimageplaceholder}/>
+                  <img  className="w-120 object-cover rounded-2xl h-120" src={(addambherinventoryproductimagepreviewimages?.[currentimageindex]) || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[currentimageindex]) || defaultimageplaceholder}/>
 
 
-                       {((selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1 || 
-                         addambherinventoryproductimagepreviewimages?.length > 1) && (
+                       {((addambherinventoryproductimagepreviewimages?.length || selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1) && (
                            <>
                              <button type="button" onClick={handlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-full text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-black"><i className="bx bx-chevron-left text-2xl" /></button>
 
@@ -21229,13 +23114,15 @@ onError={(e) => {
                        </div>
                         
                         
-                          {addambherinventoryproductimagepreviewimages.length > 0 && (
+                          {(addambherinventoryproductimagepreviewimages.length > 0 || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length > 0)) && (
                             <div className="overflow-x-auto flex gap-2 mt-2 ">
-                              {addambherinventoryproductimagepreviewimages.map((preview, index) => (
+                              {(addambherinventoryproductimagepreviewimages.length > 0 ? addambherinventoryproductimagepreviewimages : selectedambherproduct?.ambherinventoryproductimagepreviewimages || []).map((preview, index) => (
                                   <div key={index} className="relative">
-                                  <img src={preview} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${currentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
-                                  <button onClick={() => addambherinventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
-                                </div>
+                                  <img src={preview} onClick={() => setcurrentimageindex(index)} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${currentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
+                                  {addambherinventoryproductimagepreviewimages.length > 0 && (
+                                    <button onClick={() => addambherinventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
+                                  )}
+                                  </div>
                               ))}
                             </div>
                           )}
@@ -21935,11 +23822,10 @@ onError={(e) => {
                         <div className="h-fit w-fit ">
 
                   <div className="relative">
-                  <img  className="w-120 object-cover rounded-2xl h-120" src={(selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
+                  <img  className="w-120 object-cover rounded-2xl h-120" src={(addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
 
 
-                       {((selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1 || 
-                         addbautistainventoryproductimagepreviewimages?.length > 1) && (
+                       {((addbautistainventoryproductimagepreviewimages?.length || selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1) && (
                            <>
                              <button type="button" onClick={bautistahandlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-full text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-black"><i className="bx bx-chevron-left text-2xl" /></button>
 
@@ -21950,13 +23836,15 @@ onError={(e) => {
                        </div>
                         
                         
-                          {addbautistainventoryproductimagepreviewimages.length > 0 && (
+                          {(addbautistainventoryproductimagepreviewimages.length > 0 || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length > 0)) && (
                             <div className="overflow-x-auto flex gap-2 mt-2 ">
-                              {addbautistainventoryproductimagepreviewimages.map((preview, index) => (
+                              {(addbautistainventoryproductimagepreviewimages.length > 0 ? addbautistainventoryproductimagepreviewimages : selectedbautistaproduct?.bautistainventoryproductimagepreviewimages || []).map((preview, index) => (
                                   <div key={index} className="relative">
-                                  <img src={preview} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${bautistacurrentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
-                                  <button onClick={() => addbautistainventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
-                                </div>
+                                  <img src={preview} onClick={() => setbautistacurrentimageindex(index)} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${bautistacurrentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
+                                  {addbautistainventoryproductimagepreviewimages.length > 0 && (
+                                    <button onClick={() => addbautistainventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
+                                  )}
+                                  </div>
                               ))}
                             </div>
                           )}
@@ -25524,37 +27412,7 @@ paginatedBautistaOrders.map((order) => (
      </div>  
    )}
 
-   {/* Add Patient Profile Toast Notification */}
-   {addPatientProfileToast && (
-     <div className={`${smsToast || pdfToast ? 'bottom-28' : 'bottom-4'} right-8 z-101 transform fixed`}>
-       <div key={addPatientProfileToastType} className={`${addPatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
-         {addPatientProfileToastType === 'success' ? (          
-           <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
-         ) : (
-           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
-         )}
-         {addPatientProfileToastMessage}
 
-         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${addPatientProfileToastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`} style={{width: addPatientProfileProgressWidth, transition: 'width 4s linear'}}/>
-       </div>
-     </div>  
-   )}
-
-   {/* Update Patient Profile Toast Notification */}
-   {updatePatientProfileToast && (
-     <div className={`${smsToast || pdfToast || addPatientProfileToast ? 'bottom-36' : 'bottom-4'} right-8 z-101 transform fixed`}>
-       <div key={updatePatientProfileToastType} className={`${updatePatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
-         {updatePatientProfileToastType === 'success' ? (          
-           <span className="text-blue-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
-         ) : (
-           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
-         )}
-         {updatePatientProfileToastMessage}
-
-         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${updatePatientProfileToastType === 'success' ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: updatePatientProfileProgressWidth, transition: 'width 4s linear'}}/>
-       </div>
-     </div>  
-   )}
 
 {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
 {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} {/*End of SMS Monitoring*/} 
@@ -26779,6 +28637,20 @@ paginatedBautistaOrders.map((order) => (
           </div>
         </div>
       )}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

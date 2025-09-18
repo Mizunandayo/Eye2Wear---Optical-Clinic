@@ -22,7 +22,7 @@ export const useAuth = () => {
         if(localStorage.getItem("patienttoken")){
             setShowLogoutModal(true);
         } else {
-            navigate("/userlogin");
+            navigate("/");
         }
     }, [navigate]);
 
@@ -37,7 +37,7 @@ export const useAuth = () => {
         localStorage.removeItem('role');
         localStorage.removeItem('token');
         setShowLogoutModal(false);
-        navigate('/userlogin');
+        navigate('/');
     }, [navigate]);
 
     const cancelLogout = useCallback(() => {
@@ -85,7 +85,7 @@ export const useAuth = () => {
     });
     const CACHE_DURATION = 5000; // Cache for 5 seconds
 
-    const fetchpatientdetails = useCallback(async () => {
+    const fetchpatientdetails = useCallback(async (allowGuestAccess = false) => {
         const now = Date.now();
         
         // Return cached data if it's still valid
@@ -96,7 +96,10 @@ export const useAuth = () => {
 
         const token = localStorage.getItem("patienttoken");
         if (!token) {
-            navigate("/userlogin");
+            if (allowGuestAccess) {
+                return null; // Allow guest access without redirecting
+            }
+            navigate("/");
             return null;
         }
 
@@ -115,7 +118,9 @@ export const useAuth = () => {
             return response.data;
         } catch (error) {
             if (error.response?.status === 401) {
-                handlelogout();
+                if (!allowGuestAccess) {
+                    handlelogout();
+                }
             }
             console.error("Failed to fetch patient details:", error);
             return null;

@@ -1492,7 +1492,7 @@ const WishlistGridSkeleton = () => (
 
         {/*Toast Message when wishlist button is clicked*/}
             {ambhershowheartToast && (
-              <div className="top-4  -translate-x-1/2  z-100   left-1/2 transform fixed " >
+              <div className="top-15 -translate-x-1/2  z-100   left-1/2 transform fixed " >
                     <div key={ambherheartisClicked ? 'added' : 'removed'}  className={` ${ambhershowtoastmessageClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'}  flex items-center bg-white   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
                       {ambherheartisClicked ? (          
                         <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle "></i></span>
