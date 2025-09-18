@@ -21875,7 +21875,41 @@ Error: {errorloadingappointments}
 
 <tbody className=" divide-y divide-gray-200 bg-white  ">
 
-{filteredmedicalrecords.map((patients) => (
+{filteredmedicalrecords
+  .sort((a, b) => {
+    // Get the latest appointment date for patient a
+    const lastAmbherA = patientappointments
+      .filter(app => app.patientappointmentemail === a.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
+      .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
+    
+    const lastBautistaA = patientappointments
+      .filter(app => app.patientappointmentemail === a.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
+      .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
+    
+    // Get the latest appointment date for patient b
+    const lastAmbherB = patientappointments
+      .filter(app => app.patientappointmentemail === b.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
+      .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
+    
+    const lastBautistaB = patientappointments
+      .filter(app => app.patientappointmentemail === b.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
+      .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
+    
+    // Find the most recent date for each patient
+    const dateA = Math.max(
+      lastAmbherA ? new Date(lastAmbherA.patientambherappointmentdate).getTime() : 0,
+      lastBautistaA ? new Date(lastBautistaA.patientbautistaappointmentdate).getTime() : 0
+    );
+    
+    const dateB = Math.max(
+      lastAmbherB ? new Date(lastAmbherB.patientambherappointmentdate).getTime() : 0,
+      lastBautistaB ? new Date(lastBautistaB.patientbautistaappointmentdate).getTime() : 0
+    );
+    
+    // Sort in descending order (most recent first)
+    return dateB - dateA;
+  })
+  .map((patients) => (
 <tr 
 key={patients._id}
 className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
@@ -21961,56 +21995,94 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 
 
 {showpatientmedicalrecord && (
-<div id="patientdemographicprofileform" className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 pb-5 bg-white rounded-2xl w-[1300px] h-[780px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Patient Medical Record</h1></div>
-  <div onClick={() => setshowpatientmedicalrecord(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+<div id="patientdemographicprofileform" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50 ">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[1300px] h-[780px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+  <div className="flex items-center gap-4">
+    <img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-12 h-12 transition-transform hover:scale-105"></img>
+    <h1 className="text-gray-800 font-albertsans font-semibold text-2xl">Patient Medical Record</h1>
+  </div>
+  <div 
+    onClick={() => setshowpatientmedicalrecord(false)} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"/>
+  </div>
 </div>
 
-<div className="flex justify-center items-center rounded-2xl h-[670px] w-full">
-  <div className=" flex flex-col pt-10 pl-3 items-center h-full w-[35%]  rounded-2xl">
-      <img src={selectedpatientmedicalrecord.patientprofilepicture} className="w-65 h-65 rounded-full"></img>
-       <div className="mt-10  flex  items-center h-auto w-full">
-        <h1 className="  w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Name :</h1>
-        <p className=" text-center bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientfirstname}  {selectedpatientmedicalrecord.patientlastname}</p>
-       </div>
-       <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Email :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientemail}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Contact No :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientcontactnumber}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className="w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Gender :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientgender}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Age :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{selectedpatientmedicalrecord.patientage}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Birthdate :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate)}</p>
-       </div>
+<div className="flex gap-6 h-[670px] w-full">
+  <div className="flex flex-col items-center w-[35%] bg-gray-50 rounded-2xl p-6">
+      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md mb-6">
+        <img src={selectedpatientmedicalrecord.patientprofilepicture} className="w-full h-full object-cover" alt="Patient Profile"/>
+      </div>
+      
+       <div className="space-y-3 w-full">
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Name:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1">{selectedpatientmedicalrecord.patientfirstname} {selectedpatientmedicalrecord.patientlastname}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Email:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1 truncate">{selectedpatientmedicalrecord.patientemail}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Contact:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1">{selectedpatientmedicalrecord.patientcontactnumber}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Gender:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1">{selectedpatientmedicalrecord.patientgender}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Age:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1">{selectedpatientmedicalrecord.patientage}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium text-sm w-24 shrink-0">Birthdate:</span>
+          <span className="bg-white px-3 py-2 rounded-lg text-gray-800 font-medium text-sm flex-1">{formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate)}</span>
+        </div>
 
-                    
 
 
+
+
+       </div>
   </div>
-  <div className="h-full flex flex-col  w-[65%] px-3 rounded-2xl">
-      <div className="flex justify-center items-center mt-3 w-full h-[60px]">
-      <div onClick={() => showpatientmedicalrecordstable('medicalrecordsconsultationtable')}  className={`cursor-pointer w-full mr-5 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activepatientmedicalrecordstable ==='medicalrecordsconsultationtable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activepatientmedicalrecordstable ==='medicalrecordsconsultationtable' ? 'text-white' : ''}`}>Consultation</h1></div>
-      <div onClick={() => showpatientmedicalrecordstable('medicalrecordspastvisitstable')}  className={`cursor-pointer w-full ml-5 hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activepatientmedicalrecordstable ==='medicalrecordspastvisitstable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d]   ${activepatientmedicalrecordstable ==='medicalrecordspastvisitstable' ? 'text-white' : ''}`}>Other Clinic Records</h1></div>
+  
+  <div className="flex flex-col w-[65%]">
+      <div className="flex gap-3 mb-4">
+        <button 
+          onClick={() => showpatientmedicalrecordstable('medicalrecordsconsultationtable')}  
+          className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+            activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' 
+              ? 'bg-blue-600 text-white shadow-md' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Consultation
+        </button>
+        
+        <button 
+          onClick={() => showpatientmedicalrecordstable('medicalrecordspastvisitstable')}  
+          className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+            activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' 
+              ? 'bg-blue-600 text-white shadow-md' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Other Clinic Records
+        </button>
       </div>
 
  { activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' && (
-  <div  id='medicalrecordsconsultationtable'className="border-10 overflow-y-auto p-2 w-full h-full bg-[#e5e7eb] mt-3 rounded-2xl">  
+  <div id='medicalrecordsconsultationtable' className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200">  
 
    {(() => {
-          
            const completedAppointments = patientappointments
              .filter(appointment => 
                      appointment.patientappointmentemail === selectedpatientmedicalrecord.patientemail && 
@@ -22021,7 +22093,7 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                 const appointments = [];
 
                 if(appointment.patientambherappointmentstatus === 'Completed'){
-                  appointments.push({
+                  const ambherAppt = {
                       ...appointment,
                       clinicType: 'ambher',
                       profilepicture: appointment.patientappointmentprofilepicture,
@@ -22036,12 +22108,12 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                       consultationremarkssubject: appointment.patientambherappointmentconsultationremarkssubject,
                       consultationremarks: appointment.patientambherappointmentconsultationremarks,
                       consultationprescription: appointment.patientambherappointmentprescription
-                  });  
+                  };
+                  appointments.push(ambherAppt);
                 }
 
-
                 if(appointment.patientbautistaappointmentstatus === 'Completed'){
-                  appointments.push({
+                  const bautistaAppt = {
                       ...appointment,
                       clinicType: 'bautista',
                       profilepicture: appointment.patientappointmentprofilepicture,
@@ -22056,7 +22128,8 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                       consultationremarkssubject: appointment.patientbautistaappointmentconsultationremarkssubject,
                       consultationremarks: appointment.patientbautistaappointmentconsultationremarks,
                       consultationprescription: appointment.patientbautistaappointmentprescription
-                  });  
+                  };
+                  appointments.push(bautistaAppt);
                 }
 
                 return appointments;
@@ -22066,29 +22139,42 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                 const dateb = new Date(b.date);
                 return dateb - datea;
              });
-             
 
        return completedAppointments.map((appointment, index) => (
-
-         <div key={index} className="pl-3 mt-3 w-full h-[80px] shadow-sm bg-white rounded-2xl flex justify-between items-center">
-            <div className="px-2 flex justify-center items-center rounded-2xl h-full w-[220px]">
-                <h1 className="font-albertsans truncate w-full font-semibold text-[#134882] text-[18px]">{appointment.consultationremarkssubject}</h1>
+         <div key={index} className="p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
+            <div className="flex-1 px-3">
+                <h3 className="font-medium text-gray-800 text-base truncate">
+                  {appointment.consultationremarkssubject || `${appointment.clinicType} Appointment`}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {appointment.consultationremarkssubject ? 'Consultation completed' : 'Basic appointment record'}
+                </p>
             </div>
 
-
-            <div className=" px-2 flex flex-col justify-center items-center rounded-2xl h-full w-[220px]">
-              <h1 className="font-medium truncate w-full">{formatappointmatedates(appointment.date)}</h1> 
-              <h1 className="text-[#4a4a4a] font-sm truncate w-full">{formatappointmenttime(appointment.time)}</h1> 
+            <div className="flex-1 px-3 text-center">
+              <p className="font-medium text-gray-800 text-sm">{formatappointmatedates(appointment.date)}</p> 
+              <p className="text-gray-500 text-xs">{formatappointmenttime(appointment.time)}</p> 
             </div>
 
-            <div className=" px-2 flex justify-center items-center rounded-2xl h-full w-[220px] ">
-              <h1 className="font-medium truncate w-full">{appointment.eyespecialist}</h1>
+            <div className="flex-1 px-3 text-center">
+              <p className="font-medium text-gray-800 text-sm truncate">
+                {appointment.eyespecialist || `${appointment.clinicType === 'ambher' ? 'Ambher' : 'Bautista'} Clinic`}
+              </p>
+              <p className="text-xs text-gray-500">
+                {appointment.eyespecialist ? 'Specialist assigned' : 'Clinic appointment'}
+              </p>
             </div>
 
-              <div className="rounded-2xl h-full w-auto mr-4 flex justify-center items-center "><div onClick={() => {setshowpatientmedicalrecordconsultation(true);setselectedpatientappointment(appointment);}} className="bg-[#383838]  hover:bg-[#595959]   transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white ">View</h1></div></div>
+            <div className="px-3">
+              <button 
+                onClick={() => {setshowpatientmedicalrecordconsultation(true);setselectedpatientappointment(appointment);}} 
+                className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                View
+              </button>
             </div>
-
-             ));
+         </div>
+       ));
              
       })()}      
 
@@ -22105,9 +22191,16 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 
 
  { activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' && (
-  <div  id='medicalrecordspastvisitstable'className="  p-2 w-full h-full mt-3 rounded-2xl">  
-     <div onClick={() => setshowpatientaddothermedicalrecord(true)}  className="py-2 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-user-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Record</p></div>
-  <div className="border-10 overflow-y-auto p-2 w-full h-[530px] bg-[#e5e7eb] mt-3 rounded-2xl"> 
+  <div id='medicalrecordspastvisitstable' className="w-full flex-1 flex flex-col">  
+     <button 
+       onClick={() => setshowpatientaddothermedicalrecord(true)}  
+       className="mb-4 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+     >
+       <i className="bx bx-user-plus text-lg"/>
+       <span>Add Record</span>
+     </button>
+     
+  <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
 
          {(() => {
 // Show loading skeleton while fetching records
@@ -22124,12 +22217,12 @@ return (
 // Show error message if failed to load
 if (patientdemoerror) {
 return (
-<div className="text-center text-red-500 mt-4 p-4 bg-red-50 rounded-2xl">
+<div className="text-center text-red-500 p-6 bg-red-50 rounded-xl border border-red-200">
 <i className="bx bx-error text-2xl mb-2"></i>
-<p>{patientdemoerror}</p>
+<p className="mb-3">{patientdemoerror}</p>
 <button 
   onClick={() => fetchDemographicsData(true)} 
-  className="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
 >
   Retry
 </button>
@@ -22156,25 +22249,25 @@ return matches;
 console.log('Filtered records count:', filteredRecords.length);
 
 if (filteredRecords.length === 0) {
-return <div className="text-center text-gray-500 mt-4">No other clinic records found</div>;
+return <div className="text-center text-gray-500 py-8">No other clinic records found</div>;
 }
 
 return filteredRecords.map((record) => (
-<div key={record._id || record.otherclinicid} className="pl-3 mt-3 w-full h-[80px] shadow-sm bg-white rounded-2xl flex justify-between items-center">
-<div className="px-2 flex justify-center items-center rounded-2xl h-full w-[220px]">
-<h1 className="font-albertsans truncate w-full font-semibold text-[#134882] text-[18px]">{record.patientotherclinicname}</h1>
+<div key={record._id || record.otherclinicid} className="p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
+<div className="flex-1 px-3">
+<h3 className="font-medium text-gray-800 text-base truncate">{record.patientotherclinicname}</h3>
 </div>
 
-<div className="px-2 flex flex-col justify-center items-center rounded-2xl h-full w-[220px]">
-<h1 className="font-medium truncate w-full">{formatappointmatedates(record.patientotherclinicconsultationdate)}</h1>
+<div className="flex-1 px-3 text-center">
+<p className="font-medium text-gray-800 text-sm">{formatappointmatedates(record.patientotherclinicconsultationdate)}</p>
 </div>
 
-<div className="px-2 flex justify-center items-center rounded-2xl h-full w-[220px]">
-<h1 className="font-medium truncate w-full">{record.patientothercliniceyespecialist}</h1>
+<div className="flex-1 px-3 text-center">
+<p className="font-medium text-gray-800 text-sm truncate">{record.patientothercliniceyespecialist}</p>
 </div>
 
-<div className="rounded-2xl h-full w-auto mr-4 flex justify-center items-center">
-<div 
+<div className="px-3 flex gap-2">
+<button 
   onClick={() => {
     setshowotherclinicrecord(true);
     setselectedpatientappointment({
@@ -22189,12 +22282,13 @@ return filteredRecords.map((record) => (
       patientotherclinicrecordimage: record.patientotherclinicrecordimage
     });
   }} 
-  className="bg-[#383838] hover:bg-[#595959] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
+  className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
 >
-  <h1 className="text-white">View</h1>
-</div>
+  View
+</button>
 
-<div onClick={() =>  {
+<button 
+  onClick={() =>  {
     setselectedpatientappointment({
       ...record,
       otherclinicid: record.patientotherclinicrecordid,
@@ -22207,8 +22301,11 @@ return filteredRecords.map((record) => (
       patientotherclinicrecordimage: record.patientotherclinicrecordimage
     });
   setshowdeleteotherclinicrecorddialog(true);}}
-
- className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-3 ml-2 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
+  className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+>
+  <i className="bx bxs-trash text-sm"/>
+  Delete
+</button>
 </div>
 </div>
 ));
