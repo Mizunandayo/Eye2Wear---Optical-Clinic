@@ -1903,6 +1903,22 @@ function AdminDashboard(){
   const [pdfProgressWidth, setPdfProgressWidth] = useState('0%');
   const [pdfIsClicked, setPdfIsClicked] = useState(false);
 
+  // Add Patient Profile Toast States
+  const [addPatientProfileToast, setAddPatientProfileToast] = useState(false);
+  const [addPatientProfileToastMessage, setAddPatientProfileToastMessage] = useState('');
+  const [addPatientProfileToastClosing, setAddPatientProfileToastClosing] = useState(false);
+  const [addPatientProfileProgressWidth, setAddPatientProfileProgressWidth] = useState('0%');
+  const [addPatientProfileIsClicked, setAddPatientProfileIsClicked] = useState(false);
+  const [addPatientProfileToastType, setAddPatientProfileToastType] = useState('success'); // 'success', 'error', 'warning'
+
+  // Update Patient Profile Toast States
+  const [updatePatientProfileToast, setUpdatePatientProfileToast] = useState(false);
+  const [updatePatientProfileToastMessage, setUpdatePatientProfileToastMessage] = useState('');
+  const [updatePatientProfileToastClosing, setUpdatePatientProfileToastClosing] = useState(false);
+  const [updatePatientProfileProgressWidth, setUpdatePatientProfileProgressWidth] = useState('0%');
+  const [updatePatientProfileIsClicked, setUpdatePatientProfileIsClicked] = useState(false);
+  const [updatePatientProfileToastType, setUpdatePatientProfileToastType] = useState('success'); // 'success', 'error', 'warning'
+
 
 
   
@@ -5333,6 +5349,7 @@ return (
     setshowpatientpofile(true);
     setselectedpatientdemo(patient);
     setdemoformdata({
+      patientemail: patient.patientemail,
       patientlastname: patient.patientlastname,
       patientfirstname: patient.patientfirstname,
       patientmiddlename: patient.patientmiddlename,
@@ -5498,14 +5515,8 @@ const addpatientprofile = async (e) => {
           throw new Error(errordata.message || "Failed to create patient profile");
     }
 
-    const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1', {
-      headers: {
-        'Authorization' : `Bearer ${currentusertoken}`
-      }
-    });
-
-    const updateddata = await fetchresponse.json();
-    setpatientdemographics(updateddata);
+    // Use the smart fetch system to refresh demographics data
+    await fetchDemographicsData(true); // Force refresh to get updated data
 
     resetpatientprofileformdata();
     setaddpatientprofilemessage({
@@ -5513,12 +5524,32 @@ const addpatientprofile = async (e) => {
       type: "success"
     });
 
+    // Show success toast
+    setAddPatientProfileToastMessage("Patient Profile successfully created");
+    setAddPatientProfileToastType("success");
+    setAddPatientProfileToast(true);
+    setAddPatientProfileProgressWidth('0%');
+    setAddPatientProfileIsClicked(false);
+
+    // Auto-close modal after short delay
+    setTimeout(() => {
+      setshowaddpatientprofile(false);
+    }, 1500);
+
   }catch (error) {
     console.error("Error creating patient profile: ", error);
     setaddpatientprofilemessage({
       text: error.message || "Failed to create patient profile",
-      type: "success"
+      type: "error"
     });
+
+    // Show error toast
+    setAddPatientProfileToastMessage(error.message || "Failed to create patient profile");
+    setAddPatientProfileToastType("error");
+    setAddPatientProfileToast(true);
+    setAddPatientProfileProgressWidth('0%');
+    setAddPatientProfileIsClicked(false);
+
   }finally{
     setaddpatientprofileissubmitting(false);
   }
@@ -5529,35 +5560,49 @@ const addpatientprofile = async (e) => {
 //DISPLAY AND UPDATE PATIENT PROFILE
 const retrieveandupdatepatientprofile = async (e) => {
   e.preventDefault();
+  setissubmitting(true);
 
   try{
-
-
     const response = await fetch(`/api/patientdemographics/${selectedpatientdemo._id}`,{
       method: 'PUT',
       headers:{
         'Content-Type' : 'application/json',
         'Authorization' : `Bearer ${currentusertoken}`
       },
-      body: JSON.stringify({
-        ...demoformdata,
-        patientprofilepicture: previewimage || demoformdata.patientprofilepicture
-      })
+      body: JSON.stringify(demoformdata)
     });
 
+    if(!response.ok) {
+      const errordata = await response.json();
+      throw new Error(errordata.message || "Failed to update patient demographics");
+    }
 
-    if(!response.ok) throw new Error("Failed to update patient demographics");
+    // Use the smart fetch system to refresh demographics data
+    await fetchDemographicsData(true); // Force refresh to get updated data
+    
+    // Show success toast
+    setUpdatePatientProfileToastMessage("Patient profile updated successfully");
+    setUpdatePatientProfileToastType("success");
+    setUpdatePatientProfileToast(true);
+    setUpdatePatientProfileProgressWidth('0%');
+    setUpdatePatientProfileIsClicked(true);
 
-    const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1',{
-      headers: {'Authorization' : `Bearer ${currentusertoken}`}
-    });
-
-    const updateddata = await fetchresponse.json();
-    setpatientdemographics(updateddata);
-    setshowpatientpofile(false);
+    // Close modal after short delay
+    setTimeout(() => {
+      setshowpatientpofile(false);
+    }, 1500);
 
   }catch(error){
     console.error("Error updating patient demographic: ", error);
+    
+    // Show error toast
+    setUpdatePatientProfileToastMessage(error.message || "Failed to update patient profile");
+    setUpdatePatientProfileToastType("error");
+    setUpdatePatientProfileToast(true);
+    setUpdatePatientProfileProgressWidth('0%');
+    setUpdatePatientProfileIsClicked(false);
+  }finally{
+    setissubmitting(false);
   }
 }
 
@@ -9009,9 +9054,57 @@ useEffect(() => {
   }
 }, [pdfToast]);
 
+// UseEffect for Add Patient Profile Toast
+useEffect(() => {
+  if (addPatientProfileToast) {
+    setAddPatientProfileProgressWidth('0%');
+    setAddPatientProfileToastClosing(false);
 
+    const progresstimer = setTimeout(() => {
+      setAddPatientProfileProgressWidth('100%');
+    }, 50);
 
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setAddPatientProfileToastClosing(true);
+      setTimeout(() => {
+        setAddPatientProfileToast(false);
+        setAddPatientProfileProgressWidth('0%');
+      }, 300);
+    }, 4000);
 
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [addPatientProfileToast]);
+
+// UseEffect for Update Patient Profile Toast
+useEffect(() => {
+  if (updatePatientProfileToast) {
+    setUpdatePatientProfileProgressWidth('0%');
+    setUpdatePatientProfileToastClosing(false);
+
+    const progresstimer = setTimeout(() => {
+      setUpdatePatientProfileProgressWidth('100%');
+    }, 50);
+
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setUpdatePatientProfileToastClosing(true);
+      setTimeout(() => {
+        setUpdatePatientProfileToast(false);
+        setUpdatePatientProfileProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [updatePatientProfileToast]);
 
 //CHECK EMAIL IF EXISTS IN AMBHER ORDER FORM
 useEffect(() => {
@@ -17356,12 +17449,7 @@ useEffect(() => {
     {loadingpatients ? 'Refreshing...' : 'Refresh'}
   </div>
 </div>
-<div className="flex justify-between items-center mt-3 h-[60px]">
-<div onClick={() => showprofiletable('patientprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='patientprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='patientprofiletable' ? 'text-white' : ''}`}>Patients</h1></div>
-<div onClick={() => showprofiletable('staffprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='staffprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='staffprofiletable' ? 'text-white' : ''}`}>Staff</h1></div>
-<div onClick={() => showprofiletable('ownerprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='ownerprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='ownerprofiletable' ? 'text-white' : ''}`}>Owner</h1></div>
-<div onClick={() => showprofiletable('administratorprofiletable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeprofiletable ==='administratorprofiletable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeprofiletable ==='administratorprofiletable' ? 'text-white' : ''}`}>Administrator</h1></div>
-</div>
+
 
 
 
@@ -17384,7 +17472,7 @@ useEffect(() => {
 
 {showpatientpofile && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  <div className="bg-white rounded-2xl shadow-xl  overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
     {/* Header */}
     <div className="bg-sky-800 px-8 py-6">
       <div className="flex items-center justify-between">
@@ -17397,12 +17485,12 @@ useEffect(() => {
             <p className="text-sky-100">Update patient information</p>
           </div>
         </div>
-        <button
+        <div
           onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
-          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+          className=" cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
         >
           <i className="bx bx-x text-white text-2xl"></i>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -17414,10 +17502,10 @@ useEffect(() => {
             <div className="flex flex-col items-center space-y-4">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                {previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
+                {addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
                   <img 
                     className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                    src={previewimage || demoformdata.patientprofilepicture || defaultprofilepic}
+                    src={addpatientprofilepreviewimage || demoformdata.patientprofilepicture || defaultprofilepic}
                     alt="Profile"
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -17428,9 +17516,9 @@ useEffect(() => {
                 {/* Fallback placeholder when no image */}
                 <div 
                   className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                    previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
+                    addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
                   }`}
-                  style={{ display: previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
+                  style={{ display: addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
                 >
                   <div className="text-center">
                     <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
@@ -17445,16 +17533,16 @@ useEffect(() => {
               <input  
                 className="hidden" 
                 type="file" 
-                onChange={handleprofilechange} 
+                onChange={addpatientprofilehandlechange} 
                 accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
-                ref={imageinputref} 
+                ref={addpatientprofileimageinputref} 
               />
               
               <div className="flex items-center gap-2">
-                {(selectedprofile || previewimage) && (
+                {(addpatientprofileselectedfile || addpatientprofilepreviewimage) && (
                   <button
                     type="button"
-                    onClick={handleremoveprofile}
+                    onClick={addpatientprofilehandleremoveprofile}
                     className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     title="Remove Photo"
                   >
@@ -17464,7 +17552,7 @@ useEffect(() => {
                 
                 <button
                   type="button"
-                  onClick={handleuploadclick}
+                  onClick={addpatientprofilehandleuploadclick}
                   className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   <i className="bx bx-camera mr-2"></i>
@@ -17728,7 +17816,7 @@ useEffect(() => {
 
 {showaddpatientpofile && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+  <div className="bg-white rounded-2xl shadow-xl  overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
     {/* Header */}
     <div className="bg-sky-800 px-8 py-6">
       <div className="flex items-center justify-between">
@@ -17741,12 +17829,12 @@ useEffect(() => {
             <p className="text-sky-100">Create a new patient profile</p>
           </div>
         </div>
-        <button
+        <div
           onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
-          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+          className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
         >
           <i className="bx bx-x text-white text-2xl"></i>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -18049,13 +18137,13 @@ useEffect(() => {
             <div className="pt-8">
               <button 
                 type="submit" 
-                disabled={issubmitting} 
+                disabled={addpatientprofileissubmitting} 
                 className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                  issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                  addpatientprofileissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}
               >
                 <div className="relative flex items-center">
-                  {issubmitting ? (
+                  {addpatientprofileissubmitting ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -25386,6 +25474,38 @@ paginatedBautistaOrders.map((order) => (
          {pdfToastMessage}
 
          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: pdfProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
+
+   {/* Add Patient Profile Toast Notification */}
+   {addPatientProfileToast && (
+     <div className={`${smsToast || pdfToast ? 'bottom-28' : 'bottom-4'} right-8 z-101 transform fixed`}>
+       <div key={addPatientProfileToastType} className={`${addPatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {addPatientProfileToastType === 'success' ? (          
+           <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {addPatientProfileToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${addPatientProfileToastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`} style={{width: addPatientProfileProgressWidth, transition: 'width 4s linear'}}/>
+       </div>
+     </div>  
+   )}
+
+   {/* Update Patient Profile Toast Notification */}
+   {updatePatientProfileToast && (
+     <div className={`${smsToast || pdfToast || addPatientProfileToast ? 'bottom-36' : 'bottom-4'} right-8 z-101 transform fixed`}>
+       <div key={updatePatientProfileToastType} className={`${updatePatientProfileToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+         {updatePatientProfileToastType === 'success' ? (          
+           <span className="text-blue-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+         ) : (
+           <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+         )}
+         {updatePatientProfileToastMessage}
+
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${updatePatientProfileToastType === 'success' ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: updatePatientProfileProgressWidth, transition: 'width 4s linear'}}/>
        </div>
      </div>  
    )}
