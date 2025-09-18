@@ -5020,6 +5020,7 @@ const demopatientemailcharacters = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const [addpatientprofilemessage, setaddpatientprofilemessage] = useState ({text: "", type: ""});
 const [addpatientprofileissubmitting, setaddpatientprofileissubmitting] = useState(false);
 const [addpatientprofilepreviewimage, setaddpatientprofilepreviewimage] = useState(null);
+const [addpatientprofileselectedfile, setaddpatientprofileselectedfile] = useState(null);
 const addpatientprofileimageinputref= useRef(null);
 
 // Search functionality for Profile Information
@@ -5478,10 +5479,8 @@ const addpatientprofile = async (e) => {
       throw new Error("Fix email validation before submitting");
     }
 
-
     const demoformdatatosend = {
-      ...demoformdata,
-      patientprofilepicture: addpatientprofilepreviewimage || demoformdata.patientprofilepicture
+      ...demoformdata
     };
 
     const response = await fetch(`/api/patientdemographics?limit=100&page=1`, {
@@ -5613,20 +5612,19 @@ const file = e.target.files[0];
 
 if (!file) return;
 
-
 const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
 if(!imagefiletype.includes(file.type)) {
   alert("Please select an image file (JPG or PNG)");
   return;
 }
 
-
-const maximagefile = 1;
+const maximagefile = 10; // Increased to 10MB to match other handlers
 if(file.size > maximagefile * 1024 * 1024){
-  alert("Image is too large. Please select image under 1MB");
+  alert("Image is too large. Please select image under 10MB");
   return;
 }
 
+// Reset states
 setselectedpatientprofile(null);
 setaddpatientprofilepreviewimage(null);
 
@@ -5634,48 +5632,27 @@ if(addpatientprofileimageinputref.current){
   addpatientprofileimageinputref.current.value = "";
 }
 
-
-
-
-
-
-try{
-
-  const imageconfiguration = {
-    maximagemb: 1,
-    maxworh: 800,
-    useWebWorker: true,
-    initialQuality: 0.8
-  };
-
-
-  const compressedimageprofile = await imageCompression(file, imageconfiguration);
-  const reader = new FileReader();
-  reader.onloadend = () => {
-
-    if(reader.error){
-      console.error("Error processing image file : ", reader.error);
-      alert("Error processing image file. Try again");
-      return;
-    }
-    setaddpatientprofilepreviewimage(reader.result);
-  };
-
-
-  reader.onerror = () => {
-    console.error("File Reader Error : ", reader.error);
-    alert("Error reading file. Try again");
-    return;
-  };
-
-  reader.readAsDataURL(compressedimageprofile);
-  setselectedpatientprofile(compressedimageprofile);
-
-
+try {
+  // Upload to Cloudinary
+  const result = await uploadProfilePicture(file, demoformdata.patientemail || 'unknown', 'patient');
+  
+  if (result.success) {
+    console.log('Patient profile upload successful:', result);
+    setaddpatientprofilepreviewimage(result.data.imageUrl);
+    setselectedpatientprofile(file);
+    
+    // Update form data with Cloudinary URL
+    setdemoformdata(prev => ({
+      ...prev,
+      patientprofilepicture: result.data.imageUrl
+    }));
+  } else {
+    console.error('Patient profile upload failed:', result.message);
+    alert(`Upload failed: ${result.message || 'Unknown error'}`);
+  }
 } catch (error) {
-
-  console.error("Image file compression failed : ", error.message);
-  alert("Image file compression failed. Try again");
+  console.error("Image upload failed: ", error.message);
+  alert("Image upload failed. Try again");
   return;
 
 }
@@ -5691,6 +5668,11 @@ addpatientprofileimageinputref.current.click();
 const addpatientprofilehandleremoveprofile = () => {
 setselectedpatientprofile(null);
 setaddpatientprofilepreviewimage(null);
+// Clear the profile picture from form data
+setdemoformdata(prev => ({
+  ...prev,
+  patientprofilepicture: ''
+}));
 if(addpatientprofileimageinputref.current){
   addpatientprofileimageinputref.current.value = "";
 }
@@ -16297,7 +16279,7 @@ useEffect(() => {
                           {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm ml-22">Enter a valid email address</p>)}
                           {emailerror && emailexist && (<p className= "text-red-500 text-sm ml-22">Email already exist</p>)}
                        
-                          </div>
+                          </div>ww
                           </div>
                     
                     
@@ -17401,321 +17383,700 @@ useEffect(() => {
 
 
 {showpatientpofile && (
-<div id="patientdemographicprofileform" className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[780px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Patient Profile</h1></div>
-  <div onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+    {/* Header */}
+    <div className="bg-sky-800 px-8 py-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="bg-white/20 p-3 rounded-full mr-4">
+            <i className="bx bx-user text-white text-2xl"></i>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Profile</h1>
+            <p className="text-sky-100">Update patient information</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
+          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+        >
+          <i className="bx bx-x text-white text-2xl"></i>
+        </button>
+      </div>
+    </div>
 
-<form onSubmit={retrieveandupdatepatientprofile}>
-           
-           <div className="ml-25 mt-5 flex ">
+    <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form onSubmit={retrieveandupdatepatientprofile} className="p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Profile Picture Section */}
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                {previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
+                  <img 
+                    className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                    src={previewimage || demoformdata.patientprofilepicture || defaultprofilepic}
+                    alt="Profile"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                {/* Fallback placeholder when no image */}
+                <div 
+                  className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
+                    previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
+                  }`}
+                  style={{ display: previewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
+                >
+                  <div className="text-center">
+                    <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                    <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                  <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                </div>
+              </div>
+              
+              <input  
+                className="hidden" 
+                type="file" 
+                onChange={handleprofilechange} 
+                accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+                ref={imageinputref} 
+              />
+              
+              <div className="flex items-center gap-2">
+                {(selectedprofile || previewimage) && (
+                  <button
+                    type="button"
+                    onClick={handleremoveprofile}
+                    className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    title="Remove Photo"
+                  >
+                    <i className="bx bx-trash w-4 h-4"></i>
+                  </button>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={handleuploadclick}
+                  className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <i className="bx bx-camera mr-2"></i>
+                  Upload Photo
+                </button>
+              </div>
+            </div>
+          </div>
 
+          {/* Form Fields */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Last Name
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientlastname} 
+                  onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
+                  type="text" 
+                  name="patientlastname" 
+                  id="patientlastname" 
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
 
-           <div className=" w-60 h-60 ml-10">
-             <img className=" object-cover h-60 w-full rounded-full" src={previewimage || defaultprofilepic}/>
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  First Name
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientfirstname} 
+                  onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
+                  type="text" 
+                  name="patientfirstname" 
+                  id="patientfirstname" 
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+            </div>
 
-             <input  className="hidden" type="file" onChange={handleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={imageinputref} />
-             <div onClick={handleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-             
-             {selectedprofile && (<div onClick={handleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-           </div>
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patientmiddlename} 
+                onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
+                type="text" 
+                name="patientmiddlename" 
+                id="patientmiddlename" 
+                placeholder="Enter middle name (optional)"
+              />
+            </div>
 
-           <div className=" ml-15">
+            {/* Birthdate and Age */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Birthdate
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientbirthdate} 
+                  onChange={(e) => {
+                    const newpatientBirthdate = e.target.value;
+                    setdemoformdata({
+                      ...demoformdata, 
+                      patientbirthdate: newpatientBirthdate,
+                      patientage: calculateAge(newpatientBirthdate)
+                    });
+                  }}  
+                  type="date" 
+                  name="patientbirthdate" 
+                  id="patientbirthdate"
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
 
-            
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Age
+                </label>
+                <input 
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                  value={demoformdata.patientage}  
+                  readOnly 
+                  type="number" 
+                  name="patientage" 
+                  id="patientage" 
+                  placeholder="Auto-calculated from birthdate"
+                />
+              </div>
+            </div>
 
-            <div className=" h-fit form-group  ">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientlastname">Last Name :</label>     
-             <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientlastname} onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} type="text" name="patientlastname" id="patientlastname" placeholder="Patient Last Name..."/></div>
+            {/* Gender */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Gender
+              </label>
+              <div className="mt-2">
+                <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
+              </div>
+            </div>
 
-             <div className=" h-fit form-group  mt-5">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientfirstname">First Name :</label>     
-             <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientfirstname} onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  type="text" name="patientfirstname" id="patientfirstname" placeholder="Patient First Name..."/></div>
+            {/* Contact Information */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Contact Number
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patientcontactnumber} 
+                onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
+                type="text" 
+                name="patientcontactnumber" 
+                id="patientcontactnumber" 
+                placeholder="Ex: 09123456789"
+                required
+              />
+            </div>
 
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientmiddlename">Middle Name :</label>     
-             <input className="w-112 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientmiddlename} onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  type="text" name="patientmiddlename" id="patientmiddlename" placeholder="Patient Middle Name.."/></div>
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Home Address
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patienthomeaddress} 
+                onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
+                type="text" 
+                name="patienthomeaddress" 
+                id="patienthomeaddress" 
+                placeholder="Complete home address"
+                required
+              />
+            </div>
 
-
-
-             <div className=" mt-5 flex items-center">
-            <div className="">
-                   
-                 <div className=" h-fit form-group">
-                <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientbirthdate">Birthdate :</label>     
-                <input className="w-38 justify-center border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"      value={demoformdata.patientbirthdate} 
-                                 onChange={(e) => {
-                                   const newpatientBirthdate = e.target.value;
-                                   setdemoformdata({
-                                     ...demoformdata, 
-                                     patientbirthdate: newpatientBirthdate,
-                                     patientage: calculateAge(newpatientBirthdate)
-                                   });
-                                 }}  
-                                 type="date" 
-                                 name="patientbirthdate" 
-                                 id="patientbirthdate" 
-                                 placeholder=""
-                                 max={new Date().toISOString().split('T')[0]}/> </div>
-                             
-
-                 </div>
-             <div className="">
-
-             <div className=" h-fit form-group ml-15">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientage">Age :</label>     
-             <input className="w-32 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  readOnly value={demoformdata.patientage} onChange={(e) => setdemoformdata({...demoformdata, patientage: e.target.value})} type="number" name="patientage" id="patientage" placeholder="Age..."/></div>
-
-                 </div>
-
-
-
-
-             </div>
-
-
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientgender">Gender :</label>     
-             <div className="ml-3"><GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} /></div>  </div>
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientcontactnumber">Contact Number :</label>     
-             <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientcontactnumber} onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})} type="text" name="patientcontactnumber" id="patientcontactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patienthomeaddress">Home Address :</label>     
-             <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"   value={demoformdata.patienthomeaddress} onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  type="text" name="patienthomeaddress" id="patienthomeaddress" placeholder="Ex: #001 Sison St., Townsite, Limay, Bataan"/> </div>
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactname">Emergency Contact Name :</label>     
-             <input className="w-90 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientemergencycontactname} onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  type="text" name="patientemergencycontactname" id="patientemergencycontactname" placeholder="Ex: Juan Dela Cruz"/> </div>
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactnumber">Emergency Contact Number :</label>     
-             <input className="w-84 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demoformdata.patientemergencycontactnumber} onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  type="text" name="patientemergencycontactnumber" id="patientemergencyconctactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-
-
-           <div className=" mt-10">
-
-           <button type="submit" disabled={issubmitting} className={`submit-btn mt-12 w-full flex justify-center items-center ${issubmitting? "opacity-75 cursor-not-allowed" : "" }`} style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-              Save Changes
-           </button>
-
-             </div>
-
-
-
-             <div onClick={() =>  {
-  setshowdeletepatientprofiledialog(true);
-  }}
-
- className="bg-[#8c3226] hover:bg-[#ab4f43] mt-4 h-[50px]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 hover:cursor-pointer rounded-[20px]"><h1 className="text-white font-albertsans font-semibold text-[20px]">Delete</h1></div>
-
-
-
-
-{showdeletepatientprofiledialog && (
-           <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-
-             <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-
-
-                <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1></div>
-                <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                    <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient profile?</p>
-                    {selectedpatientprofile && ( <>
-                             <p className="text-[16px]">Patient Name: {selectedpatientprofile.name}</p>
-                              <p className="text-[16px] mt-3">Patient Email: {selectedpatientprofile.email}</p>
-                               </>)}  
-                    </div>        
-                    <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                      <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeletepatientprofiledialog(false); setselectedpatientprofile(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-                      <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={deletepatientprofile}><p className=" text-[#ffffff]">Delete</p></div>
-                    </div>
+            {/* Emergency Contact Section */}
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                    <i className="bx bx-shield text-red-600"></i>
+                  </div>
+                  Emergency Contact Information
+                </h3>
+                <p className="text-sm text-gray-600">
+                  This information will be used to contact someone in case of medical emergencies.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Contact Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    value={demoformdata.patientemergencycontactname} 
+                    onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
+                    type="text" 
+                    name="patientemergencycontactname" 
+                    id="patientemergencycontactname" 
+                    placeholder="Emergency contact name"
+                    required
+                  />
                 </div>
 
-             </div>
-           </div>
-        )}
-       
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Contact Number
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    value={demoformdata.patientemergencycontactnumber} 
+                    onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
+                    type="text" 
+                    name="patientemergencycontactnumber" 
+                    id="patientemergencycontactnumber" 
+                    placeholder="Emergency contact number"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
+            {/* Action Buttons */}
+            <div className="pt-8 space-y-4">
+              <button 
+                type="submit" 
+                disabled={issubmitting} 
+                className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                  issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                }`}
+              >
+                <div className="relative flex items-center">
+                  {issubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating Profile...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-edit mr-3"></i>
+                      Save Changes
+                    </>
+                  )}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setshowdeletepatientprofiledialog(true)}
+                className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <i className="bx bx-trash mr-3"></i>
+                Delete Patient Profile
+              </button>
+            </div>
           </div>
-             
-
-           </div>
-         
-
-          </form>
-</div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>)}
+
+{showdeletepatientprofiledialog && (
+  <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
+    <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
+      <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1></div>
+      <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
+        <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient profile?</p>
+        {selectedpatientprofile && ( <>
+                 <p className="text-[16px]">Patient Name: {selectedpatientprofile.name}</p>
+                  <p className="text-[16px] mt-3">Patient Email: {selectedpatientprofile.email}</p>
+                   </>)}  
+        </div>        
+        <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
+          <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeletepatientprofiledialog(false); setselectedpatientprofile(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
+          <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={deletepatientprofile}><p className=" text-[#ffffff]">Delete</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
 
 
 
 
 {showaddpatientpofile && (
-<div id="patientdemographicprofileform" className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[780px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Patient Profile</h1></div>
-  <div onClick={() =>{setshowaddpatientprofile(false); resetpatientprofileformdata();}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-
-<form onSubmit={addpatientprofile}>
-           
-           <div className="ml-25 mt-5 flex ">
-
-
-           <div className=" w-60 h-60 ml-10">
-             <img className=" object-cover h-60 w-full rounded-full" src={addpatientprofilepreviewimage || defaultprofilepic}/>
-
-             <input  className="hidden" type="file" onChange={addpatientprofilehandlechange} accept="image/jpeg, image/jpg, image/png" ref={addpatientprofileimageinputref} />
-             <div onClick={addpatientprofilehandleuploadclick}  className="mt-5 flex justify-center items-center align-middle p-3 bg-[#0ea0cd] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/><p className="font-semibold text-[20px] text-white">Upload</p></div>
-             
-             {selectedpatientprofile && (<div onClick={addpatientprofilehandleremoveprofile} className="mt-5 flex justify-center items-center align-middle p-3 bg-[#bf4c3b] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/><p className="font-semibold text-[20px] text-white">Remove</p></div>)}
-           </div>
-
-           <div className=" ml-15">
-
-
-           <div className="form-group flex mb-3">
-               <label className="text-[23px] font-bold text-[#2d2d44]"  htmlFor="patientemail">Patient Email :</label>
-               <div className="flex flex-col">
-               <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-114" onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})} value={demoformdata.patientemail} id="patientemail" name="patientemail" required type="email" placeholder="Patient Email"/>
-               <div>
-                       {demopatientcheckemail && (
-                        <p className="text-gray-500 text-sm">Checking Email...</p>
-                       )}
-
-
-
-                       {!demopatientcheckemail && (
-                        <>
-
-                        {demopatientemailerror && !demopatientemailexist && (
-                             <p className="text-red-500 text-sm">
-                              Please enter a valid email address
-                             </p>
-                           )}
-              
-
-                        {demopatientemailexist && (
-                             <p className="text-red-500 text-sm">
-                                A patient profile already exists with this email
-                             </p>
-                            )}
-
-              
-                        {emailisnotpatienterror && (
-                              <p className="text-red-500 text-sm">
-                                 This email belongs to a staff/admin account and cannot be used for patient profiles
-                              </p>
-                             )}
-                        </>
-                       )}
-
-               </div>
-                </div>
-              
-                </div>
-
-
-            <div className=" h-fit form-group  ">
-             <label className="text-[23px]  font-bold  text-[#2d2d44]" htmlFor="patientlastname">Last Name :</label>     
-             <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientlastname} onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} type="text" name="patientlastname" id="patientlastname" placeholder="Patient Last Name..."/></div>
-
-             <div className=" h-fit form-group  mt-5">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientfirstname">First Name :</label>     
-             <input className="w-120 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientfirstname} onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  type="text" name="patientfirstname" id="patientfirstname" placeholder="Patient First Name..."/></div>
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientmiddlename">Middle Name :</label>     
-             <input className="w-112 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientmiddlename} onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  type="text" name="patientmiddlename" id="patientmiddlename" placeholder="Patient Middle Name.."/></div>
-
-
-
-             <div className=" mt-5 flex items-center">
-               <div className="">
-                   
-                 <div className=" h-fit form-group ">
-                <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientbirthdate">Birthdate :</label>     
-                <input className="w-38 justify-center border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientbirthdate}     onChange={(e) => {
-const newBirthdate = e.target.value;
-setdemoformdata({
-...demoformdata, 
-patientbirthdate: newBirthdate,
-patientage: calculateAge(newBirthdate)
-});
-}} max={new Date().toISOString().split('T')[0]}  type="date" name="patientbirthdate" id="patientbirthdate" placeholder=""/> </div>
-
-                 </div>
-             <div className="">
-
-             <div className=" h-fit form-group ml-15">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientage">Age :</label>     
-             <input className=" w-32 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  readOnly value={demoformdata.patientage} onChange={(e) => setdemoformdata({...demoformdata, patientage: e.target.value})} type="number" name="patientage" id="patientage" placeholder="Age..."/></div>
-
-                 </div>
-
-
-
-
-             </div>
-
-
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientgender">Gender :</label>     
-             <div className="ml-3"><GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} /></div>  </div>
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patientcontactnumber">Contact Number :</label>     
-             <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientcontactnumber} onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})} type="text" name="patientcontactnumber" id="patientcontactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[23px]  font-bold  text-[#2d2d44] "htmlFor="patienthomeaddress">Home Address :</label>     
-             <input className="w-104 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"   value={demoformdata.patienthomeaddress} onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  type="text" name="patienthomeaddress" id="patienthomeaddress" placeholder="Ex: #001 Sison St., Townsite, Limay, Bataan"/> </div>
-
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactname">Emergency Contact Name :</label>     
-             <input className="w-90 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold"  value={demoformdata.patientemergencycontactname} onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  type="text" name="patientemergencycontactname" id="patientemergencycontactname" placeholder="Ex: Juan Dela Cruz"/> </div>
-
-             <div className=" h-fit form-group  mt-5 flex">
-             <label className="text-[20px]  font-bold  text-[#2d2d44] "htmlFor="patientemergencycontactnumber">Emergency Contact Number :</label>     
-             <input className="w-84 border-b-2 border-gray-600 ml-3 text-[#2d2d44] text-[20px]  font-semibold" value={demoformdata.patientemergencycontactnumber} onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  type="text" name="patientemergencycontactnumber" id="patientemergencyconctactnumber" placeholder="Ex: 09xxxxxxxxx"/> </div>
-
-
-
-           <div className=" mt-10">
-
-           <button type="submit" disabled={issubmitting} className={`submit-btn mt-12 w-full flex justify-center items-center ${issubmitting? "opacity-75 cursor-not-allowed" : "" }`} style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-              Create Patient Profile
-           </button>
-
-             </div>
-
-
-
-
-
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+    {/* Header */}
+    <div className="bg-sky-800 px-8 py-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="bg-white/20 p-3 rounded-full mr-4">
+            <i className="bx bx-user-plus text-white text-2xl"></i>
           </div>
-             
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-1">Add Patient Profile</h1>
+            <p className="text-sky-100">Create a new patient profile</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
+          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+        >
+          <i className="bx bx-x text-white text-2xl"></i>
+        </button>
+      </div>
+    </div>
 
-           </div>
-         
+    <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form onSubmit={addpatientprofile} className="p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Profile Picture Section */}
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                {addpatientprofilepreviewimage ? (
+                  <img 
+                    className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                    src={addpatientprofilepreviewimage || defaultprofilepic}
+                    alt="Profile"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                {/* Fallback placeholder when no image */}
+                <div 
+                  className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
+                    addpatientprofilepreviewimage ? 'hidden' : 'flex'
+                  }`}
+                  style={{ display: addpatientprofilepreviewimage ? 'none' : 'flex' }}
+                >
+                  <div className="text-center">
+                    <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                    <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                  <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                </div>
+              </div>
+              
+              <input  
+                className="hidden" 
+                type="file" 
+                onChange={addpatientprofilehandlechange} 
+                accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+                ref={addpatientprofileimageinputref} 
+              />
+              
+              <div className="flex items-center gap-2">
+                {(selectedpatientprofile || addpatientprofilepreviewimage) && (
+                  <button
+                    type="button"
+                    onClick={addpatientprofilehandleremoveprofile}
+                    className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    title="Remove Photo"
+                  >
+                    <i className="bx bx-trash w-4 h-4"></i>
+                  </button>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={addpatientprofilehandleuploadclick}
+                  className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <i className="bx bx-camera mr-2"></i>
+                  Upload Photo
+                </button>
+              </div>
+            </div>
+          </div>
 
-          </form>
-</div>
+          {/* Form Fields */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Patient Email
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})} 
+                value={demoformdata.patientemail} 
+                id="patientemail" 
+                name="patientemail" 
+                required 
+                type="email" 
+                placeholder="Enter patient email"
+              />
+              {/* Email validation messages */}
+              <div className="text-sm">
+                {demopatientcheckemail && (
+                  <p className="text-gray-500">Checking Email...</p>
+                )}
+                {!demopatientcheckemail && (
+                  <>
+                    {demopatientemailerror && !demopatientemailexist && (
+                      <p className="text-red-500">
+                        Please enter a valid email address
+                      </p>
+                    )}
+                    {demopatientemailexist && (
+                      <p className="text-red-500">
+                        A patient profile already exists with this email
+                      </p>
+                    )}
+                    {emailisnotpatienterror && (
+                      <p className="text-red-500">
+                        This email belongs to a staff/admin account and cannot be used for patient profiles
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Last Name
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientlastname} 
+                  onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
+                  type="text" 
+                  name="patientlastname" 
+                  id="patientlastname" 
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  First Name
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientfirstname} 
+                  onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
+                  type="text" 
+                  name="patientfirstname" 
+                  id="patientfirstname" 
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patientmiddlename} 
+                onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
+                type="text" 
+                name="patientmiddlename" 
+                id="patientmiddlename" 
+                placeholder="Enter middle name (optional)"
+              />
+            </div>
+
+            {/* Birthdate and Age */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Birthdate
+                </label>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                  value={demoformdata.patientbirthdate} 
+                  onChange={(e) => {
+                    const newBirthdate = e.target.value;
+                    setdemoformdata({
+                      ...demoformdata, 
+                      patientbirthdate: newBirthdate,
+                      patientage: calculateAge(newBirthdate)
+                    });
+                  }} 
+                  max={new Date().toISOString().split('T')[0]}  
+                  type="date" 
+                  name="patientbirthdate" 
+                  id="patientbirthdate"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  Age
+                </label>
+                <input 
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                  value={demoformdata.patientage}  
+                  readOnly 
+                  type="number" 
+                  name="patientage" 
+                  id="patientage" 
+                  placeholder="Auto-calculated from birthdate"
+                />
+              </div>
+            </div>
+
+            {/* Gender */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Gender
+              </label>
+              <div className="mt-2">
+                <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Contact Number
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patientcontactnumber} 
+                onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
+                type="text" 
+                name="patientcontactnumber" 
+                id="patientcontactnumber" 
+                placeholder="Ex: 09123456789"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                Home Address
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                value={demoformdata.patienthomeaddress} 
+                onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
+                type="text" 
+                name="patienthomeaddress" 
+                id="patienthomeaddress" 
+                placeholder="Complete home address"
+                required
+              />
+            </div>
+
+            {/* Emergency Contact Section */}
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                    <i className="bx bx-shield text-red-600"></i>
+                  </div>
+                  Emergency Contact Information
+                </h3>
+                <p className="text-sm text-gray-600">
+                  This information will be used to contact someone in case of medical emergencies.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Contact Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    value={demoformdata.patientemergencycontactname} 
+                    onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
+                    type="text" 
+                    name="patientemergencycontactname" 
+                    id="patientemergencycontactname" 
+                    placeholder="Emergency contact name"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Contact Number
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                    value={demoformdata.patientemergencycontactnumber} 
+                    onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
+                    type="text" 
+                    name="patientemergencycontactnumber" 
+                    id="patientemergencycontactnumber" 
+                    placeholder="Emergency contact number"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-8">
+              <button 
+                type="submit" 
+                disabled={issubmitting} 
+                className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
+                  issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                }`}
+              >
+                <div className="relative flex items-center">
+                  {issubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating Profile...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-user-plus mr-3"></i>
+                      Create Patient Profile
+                    </>
+                  )}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>)}
 
 
