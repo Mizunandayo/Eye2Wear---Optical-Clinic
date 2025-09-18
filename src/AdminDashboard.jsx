@@ -1529,9 +1529,21 @@ const MedicalRecordImageViewer = ({ record, loadMedicalRecordImage, onImageClick
   }
 
   if (imageData && !imageError) {
-    const imageSrc = imageData.startsWith('data:') 
-      ? imageData 
-      : `data:image/jpeg;base64,${imageData}`;
+    // Handle different image formats:
+    // 1. Cloudinary URLs (http/https)
+    // 2. Data URLs (data:image/...)
+    // 3. BASE64 strings (fallback for old data)
+    let imageSrc;
+    if (imageData.startsWith('http')) {
+      // Cloudinary URL - use directly
+      imageSrc = imageData;
+    } else if (imageData.startsWith('data:')) {
+      // Data URL - use directly
+      imageSrc = imageData;
+    } else {
+      // Assume BASE64 string (for backward compatibility)
+      imageSrc = `data:image/jpeg;base64,${imageData}`;
+    }
 
     return (
       <div className="flex flex-col justify center items-center w-fit h-fit mt-5">
@@ -1850,7 +1862,7 @@ function AdminDashboard(){
   } = useImageOptimization();
   
   // Cloudinary upload hook for profile pictures
-  const { uploadProfilePicture } = useCloudinaryUpload();
+  const { uploadProfilePicture, uploadProductImages } = useCloudinaryUpload();
    
 
 
@@ -2807,20 +2819,19 @@ const handleprofilechange = async (e) => {
 
   if (!file) return;
 
-
   const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
   if(!imagefiletype.includes(file.type)) {
     alert("Please select an image file (JPG or PNG)");
     return;
   }
 
-
-  const maximagefile = 1;
+  const maximagefile = 10; // Increased to 10MB for Cloudinary
   if(file.size > maximagefile * 1024 * 1024){
-    alert("Image is too large. Please select image under 1MB");
+    alert("Image is too large. Please select image under 10MB");
     return;
   }
 
+  // Reset states
   setselectedprofile(null);
   setpreviewimage(null);
 
@@ -2828,53 +2839,28 @@ const handleprofilechange = async (e) => {
     imageinputref.current.value = "";
   }
 
-
-
-
-
-
-  try{
-
-    const imageconfiguration = {
-      maximagemb: 1,
-      maxworh: 800,
-      useWebWorker: true,
-      initialQuality: 0.8
-    };
-
-
-    const compressedimageprofile = await imageCompression(file, imageconfiguration);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-
-      if(reader.error){
-        console.error("Error processing image file : ", reader.error);
-        alert("Error processing image file. Try again");
-        return;
-      }
-      setpreviewimage(reader.result);
-    };
-
-
-    reader.onerror = () => {
-      console.error("File Reader Error : ", reader.error);
-      alert("Error reading file. Try again");
-      return;
-    };
-
-    reader.readAsDataURL(compressedimageprofile);
-    setselectedprofile(compressedimageprofile);
-  
-
-  } catch (error) {
-
-    console.error("Image file compression failed : ", error.message);
-    alert("Image file compression failed. Try again");
-    return;
-
-  }
+  try {
+    // Upload to Cloudinary
+    const result = await uploadProfilePicture(file, formdata.patientemail || 'unknown', 'patient');
     
-
+    if (result.success) {
+      console.log('Patient profile upload successful:', result);
+      setpreviewimage(result.data.imageUrl);
+      setselectedprofile(file);
+      
+      // Update form data with Cloudinary URL
+      setformdata(prev => ({
+        ...prev,
+        patientprofilepicture: result.data.imageUrl
+      }));
+    } else {
+      console.error('Patient profile upload failed:', result.message);
+      alert(`Upload failed: ${result.message || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error("Patient profile upload error:", error);
+    alert("Upload failed. Please try again.");
+  }
 };
 
 //Handles the click event of upload button
@@ -4086,20 +4072,19 @@ const staffhandlechange = (e) => {
 
     if (!file) return;
 
-
     const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
     if(!imagefiletype.includes(file.type)) {
       alert("Please select an image file (JPG or PNG)");
       return;
     }
 
-
-    const maximagefile = 1;
+    const maximagefile = 10; // Increased to 10MB for Cloudinary
     if(file.size > maximagefile * 1024 * 1024){
-      alert("Image is too large. Please select image under 1MB");
+      alert("Image is too large. Please select image under 10MB");
       return;
     }
 
+    // Reset states
     setownerselectedprofile(null);
     setownerpreviewimage(null);
 
@@ -4107,53 +4092,28 @@ const staffhandlechange = (e) => {
       ownerimageinputref.current.value = "";
     }
 
-
-
-
-
-
-    try{
-
-      const imageconfiguration = {
-        maximagemb: 1,
-        maxworh: 800,
-        useWebWorker: true,
-        initialQuality: 0.8
-      };
-
-
-      const compressedimageprofile = await imageCompression(file, imageconfiguration);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-
-        if(reader.error){
-          console.error("Error processing image file : ", reader.error);
-          alert("Error processing image file. Try again");
-          return;
-        }
-        setownerpreviewimage(reader.result);
-      };
-
-
-      reader.onerror = () => {
-        console.error("File Reader Error : ", reader.error);
-        alert("Error reading file. Try again");
-        return;
-      };
-
-      reader.readAsDataURL(compressedimageprofile);
-      setownerselectedprofile(compressedimageprofile);
-    
-
-    } catch (error) {
-
-      console.error("Image file compression failed : ", error.message);
-      alert("Image file compression failed. Try again");
-      return;
-
-    }
+    try {
+      // Upload to Cloudinary
+      const result = await uploadProfilePicture(file, ownerformdata.owneremail || 'unknown', 'owner');
       
-
+      if (result && result.imageUrl) {
+        console.log('Owner profile upload successful:', result);
+        setownerpreviewimage(result.imageUrl);
+        setownerselectedprofile(file);
+        
+        // Update form data with Cloudinary URL
+        setownerformdata(prev => ({
+          ...prev,
+          ownerprofilepicture: result.imageUrl
+        }));
+      } else {
+        console.error('Owner profile upload failed: No image URL returned', result);
+        alert('Upload failed: No image URL returned from server');
+      }
+    } catch (error) {
+      console.error("Owner profile upload error:", error);
+      alert(`Upload failed: ${error.message || 'Unknown error occurred'}`);
+    }
   };
 
   //Handles the click event of upload button
@@ -4270,7 +4230,7 @@ const staffhandlechange = (e) => {
         ...ownerformdata,
         ownerclinic: ownerformdata.ownerclinic,
         owneriseyespecialist: ownerformdata.owneriseyespecialist,
-        ownerprofilepicture: ownerpreviewimage || ownerformdata.ownerprofilepicture
+        ownerprofilepicture: ownerformdata.ownerprofilepicture || 'default-profile-url' // Use Cloudinary URL
       };
 
       console.log("Submitting", owneraccsubmission);
@@ -4389,7 +4349,7 @@ const staffhandlechange = (e) => {
 
         const updateowneraccountdetails = {
           ...ownerformdata,
-          ownerprofilepicture: ownerpreviewimage || ownerformdata.ownerprofilepicture
+          ownerprofilepicture: ownerformdata.ownerprofilepicture || 'default-profile-url' // Use Cloudinary URL
         };
 
         const response = await fetch(`/api/owneraccounts/${selectededitowneraccount.id}`,{
@@ -4695,20 +4655,19 @@ const file = e.target.files[0];
 
 if (!file) return;
 
-
 const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
 if(!imagefiletype.includes(file.type)) {
   alert("Please select an image file (JPG or PNG)");
   return;
 }
 
-
-const maximagefile = 1;
+const maximagefile = 10; // Increased to 10MB for Cloudinary
 if(file.size > maximagefile * 1024 * 1024){
-  alert("Image is too large. Please select image under 1MB");
+  alert("Image is too large. Please select image under 10MB");
   return;
 }
 
+// Reset states
 setadminselectedprofile(null);
 setadminpreviewimage(null);
 
@@ -4716,52 +4675,28 @@ if(adminimageinputref.current){
   adminimageinputref.current.value = "";
 }
 
-
-
-
-
-
-try{
-
-  const imageconfiguration = {
-    maximagemb: 1,
-    maxworh: 800,
-    useWebWorker: true,
-    initialQuality: 0.8
-  };
-
-
-  const compressedimageprofile = await imageCompression(file, imageconfiguration);
-  const reader = new FileReader();
-  reader.onloadend = () => {
-
-    if(reader.error){
-      console.error("Error processing image file : ", reader.error);
-      alert("Error processing image file. Try again");
-      return;
-    }
-    setadminpreviewimage(reader.result);
-  };
-
-
-  reader.onerror = () => {
-    console.error("File Reader Error : ", reader.error);
-    alert("Error reading file. Try again");
-    return;
-  };
-
-  reader.readAsDataURL(compressedimageprofile);
-  setadminselectedprofile(compressedimageprofile);
-
-
-} catch (error) {
-
-  console.error("Image file compression failed : ", error.message);
-  alert("Image file compression failed. Try again");
-  return;
-
-}
+try {
+  // Upload to Cloudinary
+  const result = await uploadProfilePicture(file, adminformdata.adminemail || 'unknown', 'admin');
   
+  if (result && result.imageUrl) {
+    console.log('Admin profile upload successful:', result);
+    setadminpreviewimage(result.imageUrl);
+    setadminselectedprofile(file);
+    
+    // Update form data with Cloudinary URL
+    setadminformdata(prev => ({
+      ...prev,
+      adminprofilepicture: result.imageUrl
+    }));
+  } else {
+    console.error('Admin profile upload failed: No image URL returned', result);
+    alert('Upload failed: No image URL returned from server');
+  }
+} catch (error) {
+  console.error("Admin profile upload error:", error);
+  alert(`Upload failed: ${error.message || 'Unknown error occurred'}`);
+}
 
 };
 
@@ -4877,7 +4812,7 @@ try{
   
   const adminaccsubmission = {
     ...adminformdata,
-    adminprofilepicture: adminpreviewimage || adminformdata.adminprofilepicture
+    adminprofilepicture: adminformdata.adminprofilepicture || 'default-profile-url' // Use Cloudinary URL
   };
 
 
@@ -6640,20 +6575,19 @@ const otherclinichandleprofilechange = async (e) => {
 
   if (!file) return;
 
-
   const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
   if(!imagefiletype.includes(file.type)) {
     alert("Please select an image file (JPG or PNG)");
     return;
   }
 
-
-  const maximagefile = 2;
+  const maximagefile = 10; // Increased to 10MB for Cloudinary
   if(file.size > maximagefile * 1024 * 1024){
-    alert("Image is too large. Please select image under 2MB");
+    alert("Image is too large. Please select image under 10MB");
     return;
   }
 
+  // Reset states
   setotherclinicselectedimage(null);
   setotherclinicpreviewimage(null);
 
@@ -6661,53 +6595,27 @@ const otherclinichandleprofilechange = async (e) => {
     otherclinicimageinputref.current.value = "";
   }
 
-
-
-
-
-
-  try{
-
-    const imageconfiguration = {
-      maximagemb: 1,
-      maxworh: 800,
-      useWebWorker: true,
-      initialQuality: 0.8
-    };
-
-
-    const compressedimageprofile = await imageCompression(file, imageconfiguration);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-
-      if(reader.error){
-        console.error("Error processing image file : ", reader.error);
-        alert("Error processing image file. Try again");
-        return;
-      }
-      setotherclinicpreviewimage(reader.result);
-    };
-
-
-    reader.onerror = () => {
-      console.error("File Reader Error : ", reader.error);
-      alert("Error reading file. Try again");
-      return;
-    };
-
-    reader.readAsDataURL(compressedimageprofile);
-    setotherclinicselectedimage(compressedimageprofile);
-  
-
-  } catch (error) {
-
-    console.error("Image file compression failed : ", error.message);
-    alert("Image file compression failed. Try again");
-    return;
-
-  }
+  try {
+    // For other clinic records, we'll upload as 'other' type with the patient email
+    const patientEmail = selectedpatientappointment?.patientemail || 'unknown';
+    const result = await uploadProfilePicture(file, patientEmail, 'other');
     
-
+    if (result.success) {
+      console.log('Other clinic record upload successful:', result);
+      setotherclinicpreviewimage(result.data.imageUrl);
+      setotherclinicselectedimage(file);
+      
+      // The Cloudinary URL will be used when submitting the form
+      // Store it in a way that can be accessed during submission
+      window.cloudinaryOtherClinicImage = result.data.imageUrl;
+    } else {
+      console.error('Other clinic record upload failed:', result.message);
+      alert(`Upload failed: ${result.message || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error("Other clinic record upload error:", error);
+    alert("Upload failed. Please try again.");
+  }
 };
 
 //Handles the click event of upload button
@@ -7731,7 +7639,7 @@ const maximagefile = 2;
 
 for(const file of files) {
   if(!imagefiletype.includes(file.type)) {
-    alert("Please select image files (JPG / PNG");
+    alert("Please select image files (JPG / PNG)");
     return;
   }
 
@@ -7740,8 +7648,6 @@ for(const file of files) {
     return;
   }
 }
-
-
 
 try{
   const compressedimages = await Promise.all(
@@ -7758,26 +7664,22 @@ try{
     })
   );
 
-
-
-  const previewurls = await Promise.all(
-    compressedimages.map(async (image) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve(reader.result);
-        };
-        reader.readAsDataURL(image);
-      });
-    })
-  );
-
-
-
-  setaddambherinventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
-  setaddambherinventoryproductimagepreviewimages(prev => [...prev, ...previewurls]);
-  setcurrentimageindex(0);
-
+  // Upload compressed images to Cloudinary
+  try {
+    const uploadResult = await uploadProductImages(compressedimages, 'temp', 'ambher');
+    
+    // Use Cloudinary URLs as preview images instead of BASE64
+    const cloudinaryUrls = uploadResult.imageUrls;
+    
+    setaddambherinventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
+    setaddambherinventoryproductimagepreviewimages(prev => [...prev, ...cloudinaryUrls]);
+    setcurrentimageindex(0);
+    
+  } catch (uploadError) {
+    console.error("Cloudinary upload failed: ", uploadError.message);
+    alert("Image upload failed. Please try again.");
+    return;
+  }
 
 }catch(error){
   console.error("Image compression failed: ", error.message);
@@ -8270,7 +8172,7 @@ if (bautistainventoryproducts.length > 0) {
         
           for(const file of files) {
             if(!imagefiletype.includes(file.type)) {
-              alert("Please select image files (JPG / PNG");
+              alert("Please select image files (JPG / PNG)");
               return;
             }
         
@@ -8279,8 +8181,6 @@ if (bautistainventoryproducts.length > 0) {
               return;
             }
           }
-        
-        
         
           try{
             const compressedimages = await Promise.all(
@@ -8297,26 +8197,22 @@ if (bautistainventoryproducts.length > 0) {
               })
             );
         
-        
-        
-            const previewurls = await Promise.all(
-              compressedimages.map(async (image) => {
-                return new Promise((resolve) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    resolve(reader.result);
-                  };
-                  reader.readAsDataURL(image);
-                });
-              })
-            );
-        
-        
-        
-            setaddbautistainventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
-            setaddbautistainventoryproductimagepreviewimages(prev => [...prev, ...previewurls]);
-            setbautistacurrentimageindex(0);
-        
+            // Upload compressed images to Cloudinary
+            try {
+              const uploadResult = await uploadProductImages(compressedimages, 'temp', 'bautista');
+              
+              // Use Cloudinary URLs as preview images instead of BASE64
+              const cloudinaryUrls = uploadResult.imageUrls;
+              
+              setaddbautistainventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
+              setaddbautistainventoryproductimagepreviewimages(prev => [...prev, ...cloudinaryUrls]);
+              setbautistacurrentimageindex(0);
+              
+            } catch (uploadError) {
+              console.error("Cloudinary upload failed: ", uploadError.message);
+              alert("Image upload failed. Please try again.");
+              return;
+            }
         
           }catch(error){
             console.error("Image compression failed: ", error.message);
@@ -19718,18 +19614,7 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
         <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[20px]">Birthdate :</h1>
         <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[19px]">{formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate)}</p>
        </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[18px]">Home Address :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patienthomeaddress}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[17px]">Emergency Contact :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patientemergencycontactname}</p>
-       </div>
-        <div className="mt-3   flex  items-center h-auto w-full">
-        <h1 className=" w-[130px] font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">Emergency Phone :</h1>
-        <p className=" text-center  bg-[#e5e7eb] px-4 rounded-2xl py-1 font-albertsans font-semibold italic text-[#3d3d3d] text-[16px]">{selectedpatientmedicalrecord.patientemergencycontactnumber}</p>
-       </div>
+
                     
 
 
@@ -20084,7 +19969,9 @@ return filteredRecords.map((record) => (
 <div onClick={() => setshowotherclinicrecordimage(false)} className="absolute top-3 right-3 flex justify-center items-center align-middle p-1 bg-[#333333] rounded-full hover:cursor-pointer transition-all z-[1000]" ><i className="bx bx-x font-bold text-[30px] text-white"/></div>
 {selectedpatientappointment?.patientotherclinicrecordimage ? (
 <img 
-src={selectedpatientappointment.patientotherclinicrecordimage.startsWith('data:') 
+src={selectedpatientappointment.patientotherclinicrecordimage.startsWith('http') 
+? selectedpatientappointment.patientotherclinicrecordimage 
+: selectedpatientappointment.patientotherclinicrecordimage.startsWith('data:') 
 ? selectedpatientappointment.patientotherclinicrecordimage 
 : `data:image/jpeg;base64,${selectedpatientappointment.patientotherclinicrecordimage}`} 
 alt="Other Clinic Record" 

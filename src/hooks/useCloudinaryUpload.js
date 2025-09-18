@@ -48,7 +48,7 @@ const useCloudinaryUpload = () => {
       }
 
       setUploadProgress(100);
-      return result.data;
+      return result;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -96,7 +96,7 @@ const useCloudinaryUpload = () => {
       }
 
       setUploadProgress(100);
-      return result.data;
+      return result;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -139,7 +139,7 @@ const useCloudinaryUpload = () => {
       }
 
       setUploadProgress(100);
-      return result.data;
+      return result;
     } catch (err) {
       setError(err.message);
       throw err;

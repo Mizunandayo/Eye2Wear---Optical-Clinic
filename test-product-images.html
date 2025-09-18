@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Upload Test Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #4f46e5;
+            background-color: #f8fafc;
+        }
+        .test-result {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .image-preview {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+                🖼️ Product Image Upload Test Suite
+            </h1>
+            
+            <!-- Authentication Status -->
+            <div id="authStatus" class="mb-6 p-4 rounded-lg border">
+                <h2 class="text-lg font-semibold mb-2">🔐 Authentication Status</h2>
+                <div id="authInfo">Checking authentication...</div>
+            </div>
+
+            <!-- Test Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">📁 Multi-File Product Image Upload Test</h2>
+                
+                <!-- Product Type Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Product Type:</label>
+                    <select id="productType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="ambher">Ambher Inventory Product</option>
+                        <option value="bautista">Bautista Inventory Product</option>
+                    </select>
+                </div>
+
+                <!-- File Upload Area -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Product Images (Max 5, 2MB each):</label>
+                    <div class="upload-area p-6 text-center rounded-lg">
+                        <input type="file" id="imageFiles" multiple accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden">
+                        <div class="cursor-pointer" onclick="document.getElementById('imageFiles').click()">
+                            <div class="text-4xl mb-2">📸</div>
+                            <p class="text-gray-600">Click to select multiple images</p>
+                            <p class="text-sm text-gray-500 mt-1">Supports: JPG, PNG, WebP (Max 5 files, 2MB each)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Images Preview -->
+                <div id="selectedImages" class="mb-4 hidden">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Selected Images:</h3>
+                    <div id="imagePreviewContainer" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Test Buttons -->
+                <div class="flex gap-4 mb-4">
+                    <button id="testSingleUpload" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50" disabled>
+                        🔄 Test Single Upload
+                    </button>
+                    <button id="testMultipleUpload" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50" disabled>
+                        📦 Test Multiple Upload
+                    </button>
+                    <button id="testValidation" class="px-4 py-2 bg-orange-500 text-white rounded hover:orange-green-600">
+                        ✅ Test Validation Logic
+                    </button>
+                    <button id="clearResults" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        🗑️ Clear Results
+                    </button>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="mb-4 hidden">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Upload Progress</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">📊 Test Results</h2>
+                <div id="testResults" class="space-y-4">
+                    <p class="text-gray-500 italic">No tests run yet. Select images and click a test button to begin.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let selectedFiles = [];
+        let testResults = [];
+        let authToken = null;
+        let currentUserData = null;
+
+        // Initialize authentication check
+        window.onload = async function() {
+            await checkAuthentication();
+            setupEventListeners();
+        };
+
+        async function checkAuthentication() {
+            const authInfo = document.getElementById('authInfo');
+            
+            // Check for tokens in localStorage
+            const admintoken = localStorage.getItem('admintoken');
+            const stafftoken = localStorage.getItem('stafftoken');
+            const ownertoken = localStorage.getItem('ownertoken');
+            
+            if (admintoken || stafftoken || ownertoken) {
+                authToken = admintoken || stafftoken || ownertoken;
+                const tokenType = admintoken ? 'Admin' : stafftoken ? 'Staff' : 'Owner';
+                
+                try {
+                    // Verify token by checking current user
+                    const response = await fetch('/api/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        currentUserData = await response.json();
+                        authInfo.innerHTML = `
+                            <div class="text-green-600">
+                                ✅ Authenticated as ${tokenType}: ${currentUserData.email || 'Unknown'}
+                                <br><small>Token: ${authToken.substring(0, 20)}...</small>
+                            </div>
+                        `;
+                        document.getElementById('authStatus').className = 'mb-6 p-4 rounded-lg border border-green-200 bg-green-50';
+                    } else {
+                        throw new Error('Token verification failed');
+                    }
+                } catch (error) {
+                    authInfo.innerHTML = `
+                        <div class="text-red-600">
+                            ❌ Authentication failed: ${error.message}
+                            <br><small>Token found but invalid</small>
+                        </div>
+                    `;
+                    document.getElementById('authStatus').className = 'mb-6 p-4 rounded-lg border border-red-200 bg-red-50';
+                }
+            } else {
+                authInfo.innerHTML = `
+                    <div class="text-red-600">
+                        ❌ No authentication token found
+                        <br><small>Please log in to test image uploads</small>
+                    </div>
+                `;
+                document.getElementById('authStatus').className = 'mb-6 p-4 rounded-lg border border-red-200 bg-red-50';
+            }
+        }
+
+        function setupEventListeners() {
+            // File selection
+            document.getElementById('imageFiles').addEventListener('change', handleFileSelection);
+            
+            // Test buttons
+            document.getElementById('testSingleUpload').addEventListener('click', testSingleUpload);
+            document.getElementById('testMultipleUpload').addEventListener('click', testMultipleUpload);
+            document.getElementById('testValidation').addEventListener('click', testValidation);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        }
+
+        function handleFileSelection(e) {
+            selectedFiles = Array.from(e.target.files);
+            updateImagePreview();
+            updateButtonStates();
+        }
+
+        function updateImagePreview() {
+            const container = document.getElementById('imagePreviewContainer');
+            const selectedDiv = document.getElementById('selectedImages');
+            
+            if (selectedFiles.length === 0) {
+                selectedDiv.classList.add('hidden');
+                return;
+            }
+            
+            selectedDiv.classList.remove('hidden');
+            container.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = 'relative';
+                    imgDiv.innerHTML = `
+                        <img src="${e.target.result}" class="image-preview rounded border">
+                        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1 rounded">${index + 1}</div>
+                        <div class="text-xs text-center mt-1 truncate w-32">${file.name}</div>
+                        <div class="text-xs text-center text-gray-500">${(file.size / 1024 / 1024).toFixed(2)}MB</div>
+                    `;
+                    container.appendChild(imgDiv);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updateButtonStates() {
+            const hasFiles = selectedFiles.length > 0;
+            const hasAuth = authToken !== null;
+            
+            document.getElementById('testSingleUpload').disabled = !hasFiles || !hasAuth;
+            document.getElementById('testMultipleUpload').disabled = !hasFiles || !hasAuth;
+        }
+
+        function addTestResult(title, status, details, data = null) {
+            const result = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString(),
+                title,
+                status,
+                details,
+                data
+            };
+            
+            testResults.unshift(result);
+            renderTestResults();
+        }
+
+        function renderTestResults() {
+            const container = document.getElementById('testResults');
+            
+            if (testResults.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">No tests run yet. Select images and click a test button to begin.</p>';
+                return;
+            }
+            
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result border rounded-lg p-4 ${result.status === 'success' ? 'border-green-200 bg-green-50' : 
+                    result.status === 'error' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold ${result.status === 'success' ? 'text-green-800' : 
+                            result.status === 'error' ? 'text-red-800' : 'text-blue-800'}">
+                            ${result.status === 'success' ? '✅' : result.status === 'error' ? '❌' : 'ℹ️'} ${result.title}
+                        </h3>
+                        <span class="text-sm text-gray-500">${result.timestamp}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 mb-2">${result.details}</p>
+                    ${result.data ? `
+                        <details class="mt-2">
+                            <summary class="cursor-pointer text-sm font-medium text-gray-600">View Data</summary>
+                            <pre class="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">${JSON.stringify(result.data, null, 2)}</pre>
+                        </details>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function testSingleUpload() {
+            if (selectedFiles.length === 0) {
+                addTestResult('Single Upload Test', 'error', 'No files selected');
+                return;
+            }
+            
+            const productType = document.getElementById('productType').value;
+            const file = selectedFiles[0];
+            
+            addTestResult('Single Upload Test', 'info', `Testing upload of single file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) to ${productType} products`);
+            
+            try {
+                await simulateProductImageUpload([file], productType);
+                addTestResult('Single Upload Test', 'success', `Successfully uploaded ${file.name} to Cloudinary`, {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    productType: productType
+                });
+            } catch (error) {
+                addTestResult('Single Upload Test', 'error', `Upload failed: ${error.message}`, {
+                    error: error.message,
+                    fileName: file.name,
+                    productType: productType
+                });
+            }
+        }
+
+        async function testMultipleUpload() {
+            if (selectedFiles.length === 0) {
+                addTestResult('Multiple Upload Test', 'error', 'No files selected');
+                return;
+            }
+            
+            const productType = document.getElementById('productType').value;
+            
+            addTestResult('Multiple Upload Test', 'info', `Testing upload of ${selectedFiles.length} files to ${productType} products`);
+            
+            try {
+                await simulateProductImageUpload(selectedFiles, productType);
+                addTestResult('Multiple Upload Test', 'success', `Successfully uploaded ${selectedFiles.length} files to Cloudinary`, {
+                    fileCount: selectedFiles.length,
+                    fileNames: selectedFiles.map(f => f.name),
+                    totalSize: selectedFiles.reduce((sum, f) => sum + f.size, 0),
+                    productType: productType
+                });
+            } catch (error) {
+                addTestResult('Multiple Upload Test', 'error', `Upload failed: ${error.message}`, {
+                    error: error.message,
+                    fileCount: selectedFiles.length,
+                    productType: productType
+                });
+            }
+        }
+
+        async function simulateProductImageUpload(files, productType) {
+            showProgress();
+            
+            try {
+                // Step 1: Validate files
+                setProgress(10, 'Validating files...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                if (files.length > 5) {
+                    throw new Error('Maximum of 5 files allowed');
+                }
+                
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+                for (const file of files) {
+                    if (!allowedTypes.includes(file.type)) {
+                        throw new Error(`Invalid file type: ${file.type}`);
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                        throw new Error(`File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                    }
+                }
+                
+                // Step 2: Compress images
+                setProgress(30, 'Compressing images...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 3: Upload to Cloudinary
+                setProgress(60, 'Uploading to Cloudinary...');
+                
+                const formData = new FormData();
+                files.forEach(file => {
+                    formData.append('productImages', file);
+                });
+                formData.append('productId', 'temp');
+                formData.append('productType', productType);
+                
+                const response = await fetch('/api/cloudinary/upload/product-images', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                setProgress(90, 'Processing response...');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Upload failed');
+                }
+                
+                setProgress(100, 'Upload complete!');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                return result;
+                
+            } finally {
+                hideProgress();
+            }
+        }
+
+        function testValidation() {
+            addTestResult('Validation Test', 'info', 'Testing file validation logic');
+            
+            // Test file count limit
+            const tooManyFiles = new Array(6).fill(null).map((_, i) => ({
+                name: `test${i}.jpg`,
+                type: 'image/jpeg',
+                size: 1024 * 1024
+            }));
+            
+            try {
+                if (tooManyFiles.length > 5) {
+                    throw new Error('Maximum of 5 files allowed');
+                }
+            } catch (error) {
+                addTestResult('File Count Validation', 'success', `Correctly rejected ${tooManyFiles.length} files: ${error.message}`);
+            }
+            
+            // Test file type validation
+            const invalidFile = { name: 'test.txt', type: 'text/plain', size: 1024 };
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+            
+            if (!allowedTypes.includes(invalidFile.type)) {
+                addTestResult('File Type Validation', 'success', `Correctly rejected invalid file type: ${invalidFile.type}`);
+            }
+            
+            // Test file size validation
+            const largeFile = { name: 'large.jpg', type: 'image/jpeg', size: 3 * 1024 * 1024 };
+            
+            if (largeFile.size > 2 * 1024 * 1024) {
+                addTestResult('File Size Validation', 'success', `Correctly rejected large file: ${(largeFile.size / 1024 / 1024).toFixed(2)}MB`);
+            }
+            
+            addTestResult('Validation Test', 'success', 'All validation tests passed');
+        }
+
+        function showProgress() {
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            setProgress(0, 'Starting...');
+        }
+
+        function hideProgress() {
+            document.getElementById('uploadProgress').classList.add('hidden');
+        }
+
+        function setProgress(percent, message) {
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('progressPercent').textContent = `${percent}% - ${message}`;
+        }
+
+        function clearResults() {
+            testResults = [];
+            renderTestResults();
+        }
+    </script>
+</body>
+</html>

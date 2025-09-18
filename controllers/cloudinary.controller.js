@@ -89,6 +89,21 @@ export const uploadProfilePicture = [
           publicIdField = 'ownerprofilepicture_public_id';
           break;
         }
+        case 'admin': {
+          const Adminaccount = (await import('../models/adminaccount.js')).default;
+          Model = Adminaccount;
+          updateField = 'adminprofilepicture';
+          publicIdField = 'adminprofilepicture_public_id';
+          break;
+        }
+        case 'other': {
+          // For other clinic records, we'll just upload to Cloudinary without updating any model
+          // The frontend will handle storing the URL
+          Model = null;
+          updateField = null;
+          publicIdField = null;
+          break;
+        }
         default:
           return res.status(400).json({
             success: false,
@@ -98,6 +113,18 @@ export const uploadProfilePicture = [
 
       // Get current user to delete old image if exists
       let currentUser;
+      
+      // Handle 'other' type (no database update needed)
+      if (userType === 'other') {
+        return res.status(200).json({
+          success: true,
+          message: 'Image uploaded successfully to Cloudinary',
+          data: {
+            imageUrl: uploadResult.url,
+            public_id: uploadResult.public_id
+          }
+        });
+      }
       
       if (userType === 'patient') {
         // For patients, try to find by ID first, then by email if ID doesn't work
@@ -139,6 +166,20 @@ export const uploadProfilePicture = [
           } catch {
             // If ID is invalid, try to find by email in case userId is actually an email
             currentUser = await Model.findOne({ owneremail: userId });
+          }
+        }
+      } else if (userType === 'admin') {
+        // For admins, handle email identifier properly
+        if (userId.includes('@')) {
+          // If userId looks like an email, search by email
+          currentUser = await Model.findOne({ adminemail: userId });
+        } else {
+          // Try to find by ID first
+          try {
+            currentUser = await Model.findById(userId);
+          } catch {
+            // If ID is invalid, try to find by email in case userId is actually an email
+            currentUser = await Model.findOne({ adminemail: userId });
           }
         }
       } else {
@@ -280,6 +321,18 @@ export const uploadProductImages = [
       // Extract URLs and public_ids
       const imageUrls = uploadResults.map(result => result.url);
       const publicIds = uploadResults.map(result => result.public_id);
+
+      // If productId is 'temp', just return the URLs without updating database
+      if (productId === 'temp') {
+        return res.status(200).json({
+          success: true,
+          message: 'Product images uploaded successfully (temporary)',
+          data: {
+            imageUrls: imageUrls,
+            public_ids: publicIds
+          }
+        });
+      }
 
       // Determine which model to update
       let Model;

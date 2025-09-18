@@ -17,6 +17,8 @@ ambherinventorycategoryname:{type: String, required: true, unique: true},
 
 
 ambherinventorycategoryaddedbyprofilepicture: String,
+// Cloudinary public_id for added by profile picture
+ambherinventorycategoryaddedbyprofilepicture_public_id: {type: String, default: null},
 ambherinventorycategoryaddedbylastname:{type: String, required: true},
 ambherinventorycategoryaddedbyfirstname:{type: String, required: true},
 ambherinventorycategoryaddedbymiddlename: String,

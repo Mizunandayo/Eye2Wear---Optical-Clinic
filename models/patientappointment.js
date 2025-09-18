@@ -210,6 +210,11 @@ patientadditionalappointmentnotesimage: {
         required: true,
         default:"default-profile-url"
       },
+// Cloudinary public_id for appointment notes image
+patientadditionalappointmentnotesimage_public_id: {
+        type: String, 
+        default: null
+      },
 // Supporting documents and images (up to 5 files)
 patientsupportingdocuments: [{
     filename: {

@@ -36,6 +36,11 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  // Cloudinary public_id for message image
+  imageUrl_public_id: {
+    type: String,
+    default: null
+  },
   documentUrl: {
     type: String,
     required: false

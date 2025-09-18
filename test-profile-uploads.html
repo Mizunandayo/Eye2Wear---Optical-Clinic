@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Upload Cloudinary Test Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 text-center text-blue-600">Profile Upload Cloudinary Test Suite</h1>
+        
+        <!-- Authentication Status -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Authentication Status</h2>
+            <div id="authStatus" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Test Controls</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="runAllTests()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    🧪 Run All Tests
+                </button>
+                <button onclick="clearResults()" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">
+                    🗑️ Clear Results
+                </button>
+                <button onclick="checkAuthTokens()" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                    🔑 Check Auth Tokens
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Patient Profile Upload Test -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-blue-600">👤 Patient Profile Upload</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Patient Email:</label>
+                    <input type="email" id="patientEmail" class="w-full p-2 border rounded" 
+                           placeholder="patient@test.com" value="patient@test.com">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Profile Picture:</label>
+                    <input type="file" id="patientFile" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="testPatientUpload()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Patient Upload
+                </button>
+                <div id="patientResult" class="mt-4"></div>
+            </div>
+
+            <!-- Staff Profile Upload Test -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-green-600">👨‍💼 Staff Profile Upload</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Staff Email:</label>
+                    <input type="email" id="staffEmail" class="w-full p-2 border rounded" 
+                           placeholder="staff@test.com" value="staff@test.com">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Profile Picture:</label>
+                    <input type="file" id="staffFile" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="testStaffUpload()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test Staff Upload
+                </button>
+                <div id="staffResult" class="mt-4"></div>
+            </div>
+
+            <!-- Owner Profile Upload Test -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-purple-600">👑 Owner Profile Upload</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Owner Email:</label>
+                    <input type="email" id="ownerEmail" class="w-full p-2 border rounded" 
+                           placeholder="owner@test.com" value="owner@test.com">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Profile Picture:</label>
+                    <input type="file" id="ownerFile" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="testOwnerUpload()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Test Owner Upload
+                </button>
+                <div id="ownerResult" class="mt-4"></div>
+            </div>
+
+            <!-- Admin Profile Upload Test -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-red-600">⚡ Admin Profile Upload</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Admin Email:</label>
+                    <input type="email" id="adminEmail" class="w-full p-2 border rounded" 
+                           placeholder="admin@test.com" value="admin@test.com">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Profile Picture:</label>
+                    <input type="file" id="adminFile" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="testAdminUpload()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    Test Admin Upload
+                </button>
+                <div id="adminResult" class="mt-4"></div>
+            </div>
+
+            <!-- Other Clinic Record Upload Test -->
+            <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
+                <h3 class="text-xl font-semibold mb-4 text-orange-600">🏥 Other Clinic Record Upload</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Patient Email:</label>
+                        <input type="email" id="otherClinicEmail" class="w-full p-2 border rounded" 
+                               placeholder="patient@test.com" value="patient@test.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Clinic Record Image:</label>
+                        <input type="file" id="otherClinicFile" accept="image/*" class="w-full p-2 border rounded">
+                    </div>
+                </div>
+                <button onclick="testOtherClinicUpload()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    Test Other Clinic Upload
+                </button>
+                <div id="otherClinicResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-8">
+            <h2 class="text-2xl font-semibold mb-4">📊 Test Results Summary</h2>
+            <div id="testSummary" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication tokens
+        const tokens = {
+            admin: localStorage.getItem('admintoken'),
+            staff: localStorage.getItem('stafftoken'),
+            owner: localStorage.getItem('ownertoken'),
+            patient: localStorage.getItem('patienttoken')
+        };
+
+        // Test results tracking
+        let testResults = {
+            patient: null,
+            staff: null,
+            owner: null,
+            admin: null,
+            otherClinic: null
+        };
+
+        function logResult(type, message, isSuccess = true, imageUrl = null) {
+            testResults[type] = { success: isSuccess, message, imageUrl, timestamp: new Date() };
+            
+            const resultDiv = document.getElementById(`${type}Result`);
+            const resultElement = document.createElement('div');
+            resultElement.className = `p-3 rounded mt-2 ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            
+            let content = `<strong>${isSuccess ? '✅' : '❌'} ${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+            
+            if (imageUrl && isSuccess) {
+                content += `<br><a href="${imageUrl}" target="_blank" class="text-blue-600 underline">View Uploaded Image</a>`;
+                content += `<br><img src="${imageUrl}" alt="Uploaded" class="mt-2 max-w-xs max-h-32 object-cover rounded border">`;
+            }
+            
+            resultElement.innerHTML = content;
+            resultDiv.appendChild(resultElement);
+            
+            updateTestSummary();
+        }
+
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            summary.innerHTML = '';
+            
+            Object.entries(testResults).forEach(([type, result]) => {
+                if (result) {
+                    const item = document.createElement('div');
+                    item.className = `flex items-center justify-between p-2 rounded ${result.success ? 'bg-green-50' : 'bg-red-50'}`;
+                    item.innerHTML = `
+                        <span><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${result.success ? 'PASSED' : 'FAILED'}</span>
+                        <span class="text-sm text-gray-500">${result.timestamp.toLocaleTimeString()}</span>
+                    `;
+                    summary.appendChild(item);
+                }
+            });
+        }
+
+        function checkAuthTokens() {
+            const authDiv = document.getElementById('authStatus');
+            authDiv.innerHTML = '';
+            
+            Object.entries(tokens).forEach(([type, token]) => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded ${token ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+                item.innerHTML = `
+                    <strong>${type.charAt(0).toUpperCase() + type.slice(1)} Token:</strong> 
+                    ${token ? '✅ Available' : '❌ Missing'}
+                `;
+                authDiv.appendChild(item);
+            });
+        }
+
+        async function testPatientUpload() {
+            const email = document.getElementById('patientEmail').value;
+            const file = document.getElementById('patientFile').files[0];
+            
+            if (!file) {
+                logResult('patient', 'Please select a file first', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+                formData.append('userId', email);
+                formData.append('userType', 'patient');
+
+                console.log('Testing patient upload:', { email, userType: 'patient' });
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tokens.admin || tokens.staff || tokens.owner}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Patient upload response:', result);
+
+                if (result.success) {
+                    logResult('patient', `Success! Upload completed`, true, result.data?.imageUrl);
+                } else {
+                    logResult('patient', `Failed: ${result.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Patient upload error:', error);
+                logResult('patient', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testStaffUpload() {
+            const email = document.getElementById('staffEmail').value;
+            const file = document.getElementById('staffFile').files[0];
+            
+            if (!file) {
+                logResult('staff', 'Please select a file first', false);
+                return;
+            }
+
+            if (!tokens.staff && !tokens.admin) {
+                logResult('staff', 'No staff or admin token available', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+                formData.append('userId', email);
+                formData.append('userType', 'staff');
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tokens.staff || tokens.admin}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Staff upload response:', result);
+
+                if (result.success) {
+                    logResult('staff', 'Success! Upload completed', true, result.data?.imageUrl);
+                } else {
+                    logResult('staff', `Failed: ${result.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Staff upload error:', error);
+                logResult('staff', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testOwnerUpload() {
+            const email = document.getElementById('ownerEmail').value;
+            const file = document.getElementById('ownerFile').files[0];
+            
+            if (!file) {
+                logResult('owner', 'Please select a file first', false);
+                return;
+            }
+
+            if (!tokens.owner && !tokens.admin) {
+                logResult('owner', 'No owner or admin token available', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+                formData.append('userId', email);
+                formData.append('userType', 'owner');
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tokens.owner || tokens.admin}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Owner upload response:', result);
+
+                if (result.success) {
+                    logResult('owner', 'Success! Upload completed', true, result.data?.imageUrl);
+                } else {
+                    logResult('owner', `Failed: ${result.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Owner upload error:', error);
+                logResult('owner', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testAdminUpload() {
+            const email = document.getElementById('adminEmail').value;
+            const file = document.getElementById('adminFile').files[0];
+            
+            if (!file) {
+                logResult('admin', 'Please select a file first', false);
+                return;
+            }
+
+            if (!tokens.admin) {
+                logResult('admin', 'No admin token available', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+                formData.append('userId', email);
+                formData.append('userType', 'admin');
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tokens.admin}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Admin upload response:', result);
+
+                if (result.success) {
+                    logResult('admin', 'Success! Upload completed', true, result.data?.imageUrl);
+                } else {
+                    logResult('admin', `Failed: ${result.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Admin upload error:', error);
+                logResult('admin', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testOtherClinicUpload() {
+            const email = document.getElementById('otherClinicEmail').value;
+            const file = document.getElementById('otherClinicFile').files[0];
+            
+            if (!file) {
+                logResult('otherClinic', 'Please select a file first', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+                formData.append('userId', email);
+                formData.append('userType', 'other');
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tokens.admin || tokens.staff || tokens.owner}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Other clinic upload response:', result);
+
+                if (result.success) {
+                    logResult('otherClinic', 'Success! Upload completed', true, result.data?.imageUrl);
+                } else {
+                    logResult('otherClinic', `Failed: ${result.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Other clinic upload error:', error);
+                logResult('otherClinic', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function runAllTests() {
+            console.log('Running all tests...');
+            
+            // Check if files are selected
+            const files = {
+                patient: document.getElementById('patientFile').files[0],
+                staff: document.getElementById('staffFile').files[0],
+                owner: document.getElementById('ownerFile').files[0],
+                admin: document.getElementById('adminFile').files[0],
+                otherClinic: document.getElementById('otherClinicFile').files[0]
+            };
+
+            const missingFiles = Object.entries(files).filter(([key, file]) => !file).map(([key]) => key);
+            
+            if (missingFiles.length > 0) {
+                alert(`Please select files for: ${missingFiles.join(', ')}`);
+                return;
+            }
+
+            // Run tests in sequence with delays to avoid overwhelming the server
+            clearResults();
+            
+            await testPatientUpload();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testStaffUpload();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testOwnerUpload();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAdminUpload();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testOtherClinicUpload();
+        }
+
+        function clearResults() {
+            ['patient', 'staff', 'owner', 'admin', 'otherClinic'].forEach(type => {
+                document.getElementById(`${type}Result`).innerHTML = '';
+            });
+            testResults = { patient: null, staff: null, owner: null, admin: null, otherClinic: null };
+            updateTestSummary();
+        }
+
+        // Initialize
+        checkAuthTokens();
+    </script>
+</body>
+</html>

@@ -17,6 +17,8 @@ bautistainventorycategoryname:{type: String, required: true, unique: true},
 
 
 bautistainventorycategoryaddedbyprofilepicture: String,
+// Cloudinary public_id for added by profile picture
+bautistainventorycategoryaddedbyprofilepicture_public_id: {type: String, default: null},
 bautistainventorycategoryaddedbylastname:{type: String, required: true},
 bautistainventorycategoryaddedbyfirstname:{type: String, required: true},
 bautistainventorycategoryaddedbymiddlename: String,

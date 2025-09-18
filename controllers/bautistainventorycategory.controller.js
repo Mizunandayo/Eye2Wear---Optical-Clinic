@@ -28,16 +28,26 @@ import BautistaInventoryCategory from "../models/bautistainventorycategory.js";
     //Get All Clinic BautistaInventoryCategory
     export const getallbautistainventorycategory = async (req, res) => {
         try{
-            // Optimized query with field selection, lean(), and proper sorting
-            const bautistainventorycategorys = await BautistaInventoryCategory.find({})
-                .select('bautistainventorycategoryid bautistainventorycategoryname bautistainventorycategoryaddedbyprofilepicture bautistainventorycategoryaddedbylastname bautistainventorycategoryaddedbyfirstname bautistainventorycategoryaddedbytype createdAt')
-                .sort({bautistainventorycategoryid: -1})
-                .lean(); // Returns plain JavaScript objects for better performance
+            console.log('Attempting to fetch bautista inventory categories...');
             
+            // Try a simpler query first
+            const count = await BautistaInventoryCategory.countDocuments();
+            console.log('Total bautista categories count:', count);
+            
+            // Add timeout and simplify query for better performance
+            const bautistainventorycategorys = await BautistaInventoryCategory.find({})
+                .select('bautistainventorycategoryid bautistainventorycategoryname')
+                .sort({_id: -1}) // Use _id instead of categoryid for better index performance
+                .limit(10) // Limit to 10 results for testing
+                .lean() // Returns plain JavaScript objects for better performance
+                .maxTimeMS(5000); // 5 second timeout
+            
+            console.log('Successfully fetched categories:', bautistainventorycategorys.length);
             res.json(bautistainventorycategorys);
     
         }catch(error){
-            res.status(500).json({message: error.message});
+            console.error('Error fetching bautista inventory categories:', error);
+            res.status(500).json({message: error.message, error: error.toString()});
         }
     };
 

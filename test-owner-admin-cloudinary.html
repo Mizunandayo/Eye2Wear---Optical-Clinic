@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Owner & Admin Cloudinary Upload</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Owner & Admin Cloudinary Upload Test</h1>
+        
+        <!-- Owner Test Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Owner Profile Upload Test</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Owner Email:</label>
+                <input type="email" id="ownerEmail" class="w-full p-2 border rounded" 
+                       placeholder="owner@example.com" value="owner@test.com">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Select Owner Profile Picture:</label>
+                <input type="file" id="ownerFileInput" accept="image/*" class="w-full p-2 border rounded">
+            </div>
+            <button onclick="testOwnerUpload()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test Owner Upload
+            </button>
+            <div id="ownerResult" class="mt-4"></div>
+        </div>
+
+        <!-- Admin Test Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Admin Profile Upload Test</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Admin Email:</label>
+                <input type="email" id="adminEmail" class="w-full p-2 border rounded" 
+                       placeholder="admin@example.com" value="admin@test.com">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Select Admin Profile Picture:</label>
+                <input type="file" id="adminFileInput" accept="image/*" class="w-full p-2 border rounded">
+            </div>
+            <button onclick="testAdminUpload()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Test Admin Upload
+            </button>
+            <div id="adminResult" class="mt-4"></div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Test Results</h2>
+            <div id="testResults" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get admin token from localStorage (assuming user is logged in)
+        const adminToken = localStorage.getItem('admintoken');
+        
+        function logResult(type, message, isSuccess = true) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultElement = document.createElement('div');
+            resultElement.className = `p-3 rounded ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            resultElement.innerHTML = `<strong>${type}:</strong> ${message}`;
+            resultsDiv.appendChild(resultElement);
+        }
+
+        async function testOwnerUpload() {
+            const fileInput = document.getElementById('ownerFileInput');
+            const email = document.getElementById('ownerEmail').value;
+            const resultDiv = document.getElementById('ownerResult');
+            
+            if (!fileInput.files[0]) {
+                logResult('Owner Upload', 'Please select a file first', false);
+                return;
+            }
+            
+            if (!email) {
+                logResult('Owner Upload', 'Please enter an email', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', fileInput.files[0]);
+                formData.append('userId', email);
+                formData.append('userType', 'owner');
+
+                console.log('Testing owner upload with:', {
+                    file: fileInput.files[0].name,
+                    email: email,
+                    userType: 'owner'
+                });
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Owner upload response:', result);
+
+                if (result.success) {
+                    logResult('Owner Upload', `Success! Image URL: ${result.imageUrl}`);
+                    resultDiv.innerHTML = `
+                        <div class="bg-green-100 p-3 rounded">
+                            <p class="text-green-800"><strong>Success!</strong></p>
+                            <p>Image URL: <a href="${result.imageUrl}" target="_blank" class="text-blue-600">${result.imageUrl}</a></p>
+                            <img src="${result.imageUrl}" alt="Uploaded" class="mt-2 max-w-xs max-h-32 object-cover rounded">
+                        </div>
+                    `;
+                } else {
+                    logResult('Owner Upload', `Failed: ${result.message}`, false);
+                    resultDiv.innerHTML = `<div class="bg-red-100 p-3 rounded text-red-800">Failed: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Owner upload error:', error);
+                logResult('Owner Upload', `Error: ${error.message}`, false);
+                resultDiv.innerHTML = `<div class="bg-red-100 p-3 rounded text-red-800">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAdminUpload() {
+            const fileInput = document.getElementById('adminFileInput');
+            const email = document.getElementById('adminEmail').value;
+            const resultDiv = document.getElementById('adminResult');
+            
+            if (!fileInput.files[0]) {
+                logResult('Admin Upload', 'Please select a file first', false);
+                return;
+            }
+            
+            if (!email) {
+                logResult('Admin Upload', 'Please enter an email', false);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profilePicture', fileInput.files[0]);
+                formData.append('userId', email);
+                formData.append('userType', 'admin');
+
+                console.log('Testing admin upload with:', {
+                    file: fileInput.files[0].name,
+                    email: email,
+                    userType: 'admin'
+                });
+
+                const response = await fetch('/api/upload/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Admin upload response:', result);
+
+                if (result.success) {
+                    logResult('Admin Upload', `Success! Image URL: ${result.imageUrl}`);
+                    resultDiv.innerHTML = `
+                        <div class="bg-green-100 p-3 rounded">
+                            <p class="text-green-800"><strong>Success!</strong></p>
+                            <p>Image URL: <a href="${result.imageUrl}" target="_blank" class="text-blue-600">${result.imageUrl}</a></p>
+                            <img src="${result.imageUrl}" alt="Uploaded" class="mt-2 max-w-xs max-h-32 object-cover rounded">
+                        </div>
+                    `;
+                } else {
+                    logResult('Admin Upload', `Failed: ${result.message}`, false);
+                    resultDiv.innerHTML = `<div class="bg-red-100 p-3 rounded text-red-800">Failed: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Admin upload error:', error);
+                logResult('Admin Upload', `Error: ${error.message}`, false);
+                resultDiv.innerHTML = `<div class="bg-red-100 p-3 rounded text-red-800">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Check if admin token exists
+        if (!adminToken) {
+            logResult('Authentication', 'No admin token found. Please log in as admin first.', false);
+        } else {
+            logResult('Authentication', 'Admin token found. Ready to test uploads.');
+        }
+    </script>
+</body>
+</html>
