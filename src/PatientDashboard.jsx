@@ -111,6 +111,122 @@ const AppointmentTableSkeleton = () => (
     </div>
   </div>
 );
+
+// Pagination Component
+const PaginationComponent = ({ 
+  currentPage, 
+  totalItems, 
+  itemsPerPage, 
+  onPageChange,
+  itemName = "items"
+}) => {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const start = Math.max(1, currentPage - 2);
+      const end = Math.min(totalPages, start + maxVisiblePages - 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center w-full px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl">
+      <div className="flex-1 flex justify-between sm:hidden">
+        <div
+          onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+            currentPage === 1 
+              ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-100' 
+              : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
+          }`}
+        >
+          Previous
+        </div>
+        <div
+          onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+          className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+            currentPage === totalPages 
+              ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-100' 
+              : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
+          }`}
+        >
+          Next
+        </div>
+      </div>
+      
+      <div className="hidden sm:flex-1 sm:flex sm:items-center gap-5">
+        <div>
+          <p className="text-sm text-gray-700 font-albertsans">
+            Showing <span className="font-medium">{startItem}</span> to{' '}
+            <span className="font-medium">{endItem}</span> of{' '}
+            <span className="font-medium">{totalItems}</span> {itemName}
+          </p>
+        </div>
+        
+        <div>
+          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {/* Previous Button */}
+            <div
+              onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                currentPage === 1 
+                  ? 'opacity-50 cursor-not-allowed text-gray-400' 
+                  : 'text-gray-500 hover:bg-gray-50 cursor-pointer'
+              }`}
+            >
+              <i className="bx bx-chevron-left text-lg"></i>
+            </div>
+            
+            {/* Page Numbers */}
+            {getPageNumbers().map((pageNum) => (
+              <div
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`cursor-pointer relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                  pageNum === currentPage
+                    ? 'z-10 bg-[#2781af] border-[#2781af] text-white'
+                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                {pageNum}
+              </div>
+            ))}
+            
+            {/* Next Button */}
+            <div
+              onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                currentPage === totalPages 
+                  ? 'opacity-50 cursor-not-allowed text-gray-400' 
+                  : 'text-gray-500 hover:bg-gray-50 cursor-pointer'
+              }`}
+            >
+              <i className="bx bx-chevron-right text-lg"></i>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function PatientDashboard(){
 
   const _apiUrl = import.meta.env.VITE_API_URL;
@@ -847,11 +963,105 @@ const handleviewappointment = (appointment) => {
  const [justSubmittedAppointment, setjustSubmittedAppointment] = useState(false); // Flag to prevent cache interference after submission
  const [lastRefreshTime, setlastRefreshTime] = useState(0); // Track when we last refreshed
 
+ // Pagination state for appointments
+ const [currentPage, setCurrentPage] = useState(1);
+ const appointmentsPerPage = 6; // Number of appointments to display per page
+
+ // Search functionality for appointments
+ const [searchAppointments, setSearchAppointments] = useState('');
+ const [filteredAppointments, setFilteredAppointments] = useState([]);
+
  
  // Add a ref to track if we're already fetching to prevent duplicate calls
  const isFetchingRef = useRef(false);
  const lastFetchTimeRef = useRef(0);
  const FETCH_COOLDOWN = 1000; // 1 second cooldown between fetches
+
+// Debounce utility function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Search functionality with debounce
+const searchAppointmentsDebounce = useCallback((searchTerm) => {
+  if (!searchTerm.trim()) {
+    setFilteredAppointments([]);
+    setCurrentPage(1);
+    return;
+  }
+
+  const filtered = patientappointments.filter(appointment => {
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in appointment ID
+    const appointmentId = appointment.patientappointmentid?.toString().toLowerCase() || '';
+    
+    // Search in created date
+    const createdDate = formatappointmatedates(appointment.createdAt)?.toLowerCase() || '';
+    
+    // Search in Ambher appointment details
+    const ambherDate = appointment.patientambherappointmentdate ? 
+      formatappointmatedates(appointment.patientambherappointmentdate)?.toLowerCase() : '';
+    const ambherTime = appointment.patientambherappointmenttime ? 
+      formatappointmenttimes(appointment.patientambherappointmenttime)?.toLowerCase() : '';
+    const ambherStatus = appointment.patientambherappointmentstatus?.toLowerCase() || '';
+    const ambherLocation = appointment.patientambherappointmentlocation?.toLowerCase() || '';
+    
+    // Search in Bautista appointment details
+    const bautistaDate = appointment.patientbautistaappointmentdate ? 
+      formatappointmatedates(appointment.patientbautistaappointmentdate)?.toLowerCase() : '';
+    const bautistaTime = appointment.patientbautistaappointmenttime ? 
+      formatappointmenttimes(appointment.patientbautistaappointmenttime)?.toLowerCase() : '';
+    const bautistaStatus = appointment.patientbautistaappointmentstatus?.toLowerCase() || '';
+    const bautistaLocation = appointment.patientbautistaappointmentlocation?.toLowerCase() || '';
+    
+    return appointmentId.includes(searchLower) ||
+           createdDate.includes(searchLower) ||
+           ambherDate.includes(searchLower) ||
+           ambherTime.includes(searchLower) ||
+           ambherStatus.includes(searchLower) ||
+           ambherLocation.includes(searchLower) ||
+           bautistaDate.includes(searchLower) ||
+           bautistaTime.includes(searchLower) ||
+           bautistaStatus.includes(searchLower) ||
+           bautistaLocation.includes(searchLower);
+  });
+
+  setFilteredAppointments(filtered);
+  setCurrentPage(1); // Reset to first page when searching
+}, [patientappointments]);
+
+// Create debounced search function using useRef to persist the debounced function
+const debouncedSearchRef = useRef();
+
+// Pagination helper functions
+const handlePageChange = (page) => {
+  setCurrentPage(page);
+};
+
+const getPaginatedAppointments = () => {
+  const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
+  const startIndex = (currentPage - 1) * appointmentsPerPage;
+  const endIndex = startIndex + appointmentsPerPage;
+  return dataToDisplay.slice(startIndex, endIndex);
+};
+
+// Handle search input change
+const handleSearchAppointments = (e) => {
+  const value = e.target.value;
+  setSearchAppointments(value);
+  if (debouncedSearchRef.current) {
+    debouncedSearchRef.current(value);
+  }
+};
 
  // Dedicated function for refreshing appointments after submission
  const refreshAppointmentsAfterSubmission = useCallback(async () => {
@@ -1051,6 +1261,13 @@ const canCancelPendingAppointment = (appointment, clinicType) => {
   
   return false;
 };
+
+// Initialize debounced search function
+useEffect(() => {
+  debouncedSearchRef.current = debounce((searchTerm) => {
+    searchAppointmentsDebounce(searchTerm);
+  }, 300);
+}, [searchAppointmentsDebounce]);
 
 
 
@@ -2634,9 +2851,38 @@ useEffect(() => {
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
   {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/} {/*Patient Appointment List*/}
-      { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-16 animate-fadeInUp flex flex-col items-start border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl" >
-                
-                <div className="mb-40 flex justify-center items-start h-[500px] w-full rounded-3xl ">
+      { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-16 animate-fadeInUp flex flex-col items-start  w-[100%] h-[83%] rounded-2xl" >
+         
+         
+               <div className="  flex flex-col sm:flex-row justify-center items-start sm:items-center mb-4 w-full">
+                <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3 mb-2 sm:mb-0 flex-shrink-0">Search: </h2>
+                <div className="relative flex items-center justify-center gap-3 w-full flex-1">
+                  <i className="bx bx-search absolute left-3 text-2xl text-gray-500 z-10"></i>
+                  <input       
+                    type="text" 
+                    placeholder="Enter appointment details..."   
+                    value={searchAppointments}
+                    onChange={handleSearchAppointments}
+                    className=" transition-all duration-300 ease-in-out py-2 pl-10 pr-12 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                  />
+                  {searchAppointments && (
+                    <div
+                      onClick={() => {
+                        setSearchAppointments('');
+                        setFilteredAppointments([]);
+                        setCurrentPage(1);
+                      }}
+                      className="absolute right-3 text-xl text-gray-500 hover:text-gray-700 z-10 transition-colors duration-200"
+                      title="Clear search"
+                    >
+                      <i className="bx bx-x"></i>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+
+                <div className="mb-40 flex flex-col justify-center items-start h-[500px] w-full rounded-3xl ">
 
       {loadingappointmens && !hasInitialLoad ? (
         <AppointmentTableSkeleton />
@@ -2665,7 +2911,7 @@ useEffect(() => {
     
 
   ) : (
-    <div className="rounded-2xl shadow-lg w-full h-full overflow-hidden">
+ <div className="rounded-t-2xl bg-white shadow-lg w-full h-full overflow-hidden">
       {/* Desktop Table View */}
       <div className="hidden md:block h-full overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -2679,7 +2925,7 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-          {patientappointments.map((appointment) => (
+          {getPaginatedAppointments().map((appointment) => (
             <tr 
               key={appointment._id}
               className="hover:bg-gray-50 transition-all ease-in-out duration-100 border-b-2"
@@ -2711,7 +2957,7 @@ useEffect(() => {
                     <span className="font-semibold">{formatappointmatedates(appointment.patientbautistaappointmentdate)}</span> 
                     <span className="ml-1 font-semibold">({formatappointmenttimes(appointment.patientbautistaappointmenttime)})</span> 
                     
-<span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
+ <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
   ${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
     appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
     appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
@@ -2740,8 +2986,8 @@ useEffect(() => {
       </div>
 
       {/* Mobile Card View */}
-      <div className="md:hidden p-4 h-full overflow-y-auto">
-        {patientappointments.map((appointment) => (
+      <div className="md:hidden p-4 h-[400px] overflow-y-auto">
+        {getPaginatedAppointments().map((appointment) => (
           <div key={appointment._id} className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
             {/* Card Header */}
             <div className="flex justify-between items-center mb-3">
@@ -2895,8 +3141,28 @@ useEffect(() => {
           </div>
         </div>
       )}
+      
     </div>
-  )}
+    
+  )}  {/* Pagination Component for Appointments */}
+  {(() => {
+    const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
+    const totalAppointments = dataToDisplay.length;
+    const totalPages = Math.ceil(totalAppointments / appointmentsPerPage);
+    
+    return totalAppointments > 0 && (
+      <PaginationComponent
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        totalItems={totalAppointments}
+        itemsPerPage={appointmentsPerPage}
+        itemName="appointments"
+      />
+    );
+  })()}
+
+
                 </div>
 
              </div> )}
