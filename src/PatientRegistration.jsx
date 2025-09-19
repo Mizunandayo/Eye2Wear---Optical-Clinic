@@ -38,6 +38,7 @@ function PatientRegistration() {
     const [emailexist, setemailexist] = useState(false);
     const [checkemail, setcheckemail] = useState(false);
     const [emailerror, setemailerror] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
 
 
@@ -311,8 +312,60 @@ function PatientRegistration() {
 
       <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
       <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="passwrd">Password :</label>
-      <div className="flex-1 lg:ml-6">
-      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your password..." type="password" name="patientpassword" id="patientpassword" value={formdata.patientpassword} onChange={handlechange} required min="6"/>
+      <div className="space-y-2 lg:ml-6 flex-1">
+        <div className="relative">
+          <input 
+            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+              !formdata.patientpassword || formdata.patientpassword.length === 0 
+                ? 'border-gray-300'
+                : formdata.patientpassword.length >= 6 
+                  ? 'border-green-300' 
+                  : 'border-red-300'
+            }`}
+            placeholder="Enter your password..." 
+            type={showPassword ? "text" : "password"}
+            name="patientpassword" 
+            id="patientpassword" 
+            value={formdata.patientpassword} 
+            onChange={handlechange} 
+            required 
+            min="6"
+          />
+          <button
+            type="button"
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              right: 0,
+              display: 'flex',
+              alignItems: 'center',
+              paddingRight: '12px',
+              color: '#9ca3af',
+              cursor: 'pointer',
+              border: 'none',
+              background: 'transparent',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+            onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+          </button>
+        </div>
+        {formdata.patientpassword && formdata.patientpassword.length > 0 && (
+          <p className={`text-sm mt-1 transition-colors duration-200 ${
+            formdata.patientpassword.length >= 6 
+              ? 'text-green-600' 
+              : 'text-red-600'
+          }`}>
+            {formdata.patientpassword.length >= 6 
+              ? '✓ Password meets minimum length requirement' 
+              : `Password must be at least 6 characters (${formdata.patientpassword.length}/6)`
+            }
+          </p>
+        )}
       </div>
       </div>
 

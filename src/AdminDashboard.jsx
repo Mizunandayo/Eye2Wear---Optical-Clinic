@@ -2261,6 +2261,24 @@ function AdminDashboard(){
     return 'Ambher Optical'; // Default for admin and others
   }, [currentuserloggedin, staffclinic, ownerownedclinic]);
 
+  // Helper function to filter accounts by clinic based on user permissions
+  const filterAccountsByClinic = useCallback((accounts, clinicField = 'clinic') => {
+    // Admin can see all accounts
+    if (currentuserloggedin === "Admin") {
+      return accounts;
+    }
+
+    // Apply clinic filtering for Staff and Owner users
+    if (isAmbherOnlyUser()) {
+      return accounts.filter(account => account[clinicField] === "Ambher Optical");
+    } else if (isBautistaOnlyUser()) {
+      return accounts.filter(account => account[clinicField] === "Bautista Eye Center");
+    }
+
+    // Default to showing all accounts if no specific clinic restriction
+    return accounts;
+  }, [currentuserloggedin, isAmbherOnlyUser, isBautistaOnlyUser]);
+
   // Helper function to check if user has permission to perform operations on an appointment
   const canAccessAppointment = useCallback((appointment, clinicType = null) => {
     // Admin can access all appointments
@@ -2541,6 +2559,7 @@ const emailcharacters = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const [issubmitting, setissubmitting] = useState(false);
 const [isdeletingpatient, setisdeletingpatient] = useState(false);
 const [message, setmessage] = useState({ text:'', type:''});
+const [showPatientPassword, setShowPatientPassword] = useState(false);
 
 
 //Blank variables that stores all data to be sent to database
@@ -3054,6 +3073,25 @@ const handlechange = (e) => {
 
     await response.json();
     setmessage({text:"Registration Sucessful!",type:"success"});
+    
+    // Refresh the patient list to show the new patient
+    try {
+      const fetchresponse = await fetch('/api/patientaccounts', {
+        headers:{
+          'Authorization':`Bearer ${currentusertoken}`
+        }
+      });
+      
+      if(fetchresponse.ok) {
+        const patientaccounts = await fetchresponse.json();
+        setpatients(patientaccounts);
+      }
+    } catch(fetchError) {
+      console.error("Failed to refresh patient list:", fetchError);
+    }
+
+    // Close the modal after successful creation
+    setshowaddpatientdialog(false);
       
   
       //Resets the input forms except the profile picture
@@ -3242,6 +3280,7 @@ const staffemailcharacters = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const [staffissubmitting, setstaffissubmitting] = useState(false);
 const [isdeletingstaff, setisdeletingstaff] = useState(false);
 const [staffmessage, setstaffmessage] = useState({ text:'', type:''});
+const [showStaffPassword, setShowStaffPassword] = useState(false);
 
 
 //Blank variables that stores all data to be sent to database
@@ -3637,12 +3676,47 @@ const staffhandlechange = (e) => {
 
   try{
 
+    let profilePictureUrl = staffformdata.staffprofilepicture || defaultprofilepic;
+    let profilePicturePublicId = '';
+
+    // If there's a profile picture file to upload
+    if (staffselectedprofile) {
+      setstaffmessage({text: 'Uploading profile picture...', type: 'info'});
+      
+      console.log('About to upload profile picture:', {
+        file: staffselectedprofile,
+        userId: staffformdata.staffemail,
+        userType: 'staff'
+      });
+      
+      try {
+        const uploadResult = await uploadProfilePicture(
+          staffselectedprofile, 
+          staffformdata.staffemail, 
+          'staff'
+        );
+        
+        if (uploadResult.success) {
+          profilePictureUrl = uploadResult.imageUrl;
+          profilePicturePublicId = uploadResult.public_id;
+          setstaffmessage({text: 'Profile picture uploaded successfully!', type: 'success'});
+        } else {
+          throw new Error(uploadResult.message || 'Failed to upload profile picture');
+        }
+      } catch (uploadError) {
+        console.error('Profile picture upload error:', uploadError);
+        setstaffmessage({text: `Upload failed: ${uploadError.message}`, type: 'error'});
+        setstaffissubmitting(false);
+        return;
+      }
+    }
     
     const staffaccsubmission = {
       ...staffformdata,
       staffclinic: ownerownedclinic,
       staffiseyespecialist: staffformdata.staffiseyespecialist,
-      staffprofilepicture: staffformdata.staffprofilepicture || defaultprofilepic
+      staffprofilepicture: profilePictureUrl,
+      staffprofilepicture_public_id: profilePicturePublicId
     };
 
     console.log(staffaccsubmission);
@@ -3667,6 +3741,26 @@ const staffhandlechange = (e) => {
     await response.json();
     setstaffmessage({text:"Registration Sucessful!",type:"success"});
     
+    // Refresh the staff list to show the new staff member
+    try {
+      const fetchresponse = await fetch('/api/staffaccounts', {
+        headers:{
+          'Authorization':`Bearer ${currentusertoken}`
+        }
+      });
+      
+      if(fetchresponse.ok) {
+        let staffaccounts = await fetchresponse.json();
+        // Apply clinic filtering
+        staffaccounts = filterAccountsByClinic(staffaccounts, 'staffclinic');
+        setstaffs(staffaccounts);
+      }
+    } catch(fetchError) {
+      console.error("Failed to refresh staff list:", fetchError);
+    }
+
+    // Close the modal after successful creation
+    setshowaddstaffdialog(false);
       
        
       //Resets the input forms except the profile picture
@@ -3728,7 +3822,7 @@ const staffhandlechange = (e) => {
 
       const fetchresponse = await fetch('/api/staffaccounts', {
           headers:{
-            'Authorization':`Bearer ${localStorage.getItem('admintoken')}`
+            'Authorization':`Bearer ${currentusertoken}`
           }
       });
       
@@ -3736,7 +3830,9 @@ const staffhandlechange = (e) => {
         throw new Error("Failed to retrieve updated staffaccounts table");
       }
 
-      const staffaccounts = await fetchresponse.json();
+      let staffaccounts = await fetchresponse.json();
+      // Apply clinic filtering
+      staffaccounts = filterAccountsByClinic(staffaccounts, 'staffclinic');
       setstaffs(staffaccounts);
 
       setshowdeletestaffdialog(false);
@@ -3782,8 +3878,8 @@ const staffhandlechange = (e) => {
           );
           
           if (uploadResult.success) {
-            profilePictureUrl = uploadResult.data.url;
-            profilePicturePublicId = uploadResult.data.public_id;
+            profilePictureUrl = uploadResult.imageUrl;
+            profilePicturePublicId = uploadResult.public_id;
             setstaffmessage({text: 'Profile picture uploaded successfully!', type: 'success'});
           } else {
             throw new Error(uploadResult.message || 'Failed to upload profile picture');
@@ -3830,7 +3926,9 @@ const staffhandlechange = (e) => {
       }
 
       //Success account update
-      const staffdata = await fetchresponse.json();
+      let staffdata = await fetchresponse.json();
+      // Apply clinic filtering
+      staffdata = filterAccountsByClinic(staffdata, 'staffclinic');
       setstaffs(staffdata);
       setstaffmessage({text:"Staff Account Updated Successfully!", type:"success"});
 
@@ -3898,6 +3996,7 @@ const staffhandlechange = (e) => {
   const [ownerissubmitting, setownerissubmitting] = useState(false);
   const [isdeletingowner, setisdeletingowner] = useState(false);
   const [ownermessage, setownermessage] = useState({ text:'', type:''});
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
 
   //Blank variables that stores all data to be sent to database
@@ -4320,6 +4419,26 @@ const staffhandlechange = (e) => {
       //If response is success, it will send data to the api and to the database   
       setownermessage({text:"Registration Sucessful!",type:"success"});
       
+      // Refresh the owner list to show the new owner
+      try {
+        const fetchresponse = await fetch('/api/owneraccounts', {
+          headers:{
+            'Authorization':`Bearer ${currentusertoken}`
+          }
+        });
+        
+        if(fetchresponse.ok) {
+          let owneraccounts = await fetchresponse.json();
+          // Apply clinic filtering
+          owneraccounts = filterAccountsByClinic(owneraccounts, 'ownerclinic');
+          setowners(owneraccounts);
+        }
+      } catch(fetchError) {
+        console.error("Failed to refresh owner list:", fetchError);
+      }
+
+      // Close the modal after successful creation
+      setshowaddownerdialog(false);
         
          
         //Resets the input forms except the profile picture
@@ -4386,7 +4505,9 @@ const staffhandlechange = (e) => {
           throw new Error("Failed to retrieve updated owneraccounts table");
         }
 
-        const owneraccounts = await fetchresponse.json();
+        let owneraccounts = await fetchresponse.json();
+        // Apply clinic filtering
+        owneraccounts = filterAccountsByClinic(owneraccounts, 'ownerclinic');
         setowners(owneraccounts);
 
         setshowdeleteownerdialog(false);
@@ -4442,7 +4563,9 @@ const staffhandlechange = (e) => {
         }
 
         //Success account update
-        const ownerdata = await fetchresponse.json();
+        let ownerdata = await fetchresponse.json();
+        // Apply clinic filtering
+        ownerdata = filterAccountsByClinic(ownerdata, 'ownerclinic');
         setowners(ownerdata);
         setownermessage({text:"Owner Account Updated Successfully!", type:"success"});
 
@@ -4504,6 +4627,7 @@ const adminemailcharacters = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const [adminissubmitting, setadminissubmitting] = useState(false);
 const [isdeletingadmin, setisdeletingadmin] = useState(false);
 const [adminmessage, setadminmessage] = useState({ text:'', type:''});
+const [showAdminPassword, setShowAdminPassword] = useState(false);
 
 
 //Blank variables that stores all data to be sent to database
@@ -4908,6 +5032,25 @@ try{
   //If response is success, it will send data to the api and to the database   
   await response.json();
   setadminmessage({text:"Registration Sucessful!",type:"success"});
+  
+  // Refresh the admin list to show the new admin
+  try {
+    const fetchresponse = await fetch('/api/adminaccounts', {
+      headers:{
+        'Authorization':`Bearer ${currentusertoken}`
+      }
+    });
+    
+    if(fetchresponse.ok) {
+      const adminaccounts = await fetchresponse.json();
+      setadmins(adminaccounts);
+    }
+  } catch(fetchError) {
+    console.error("Failed to refresh admin list:", fetchError);
+  }
+
+  // Close the modal after successful creation
+  setshowaddadmindialog(false);
   
     
      
@@ -16946,7 +17089,7 @@ useEffect(() => {
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
-{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className=" rounded-2xl shadow-lg border-1  flex justify-center items-center w-[100%] h-[100%] rounded-2xl" > 
+{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className=" rounded-2xl shadow-lg border-1npm  flex justify-center items-center w-[100%] h-[100%] rounded-2xl" > 
                 
 
 
@@ -17127,17 +17270,59 @@ useEffect(() => {
                       <label className="flex items-center text-sm font-medium text-gray-700">
                         Password
                       </label>
-                      <input 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                        placeholder="Enter your password..." 
-                        type="password" 
-                        name="patientpassword" 
-                        id="patientpassword" 
-                        value={formdata.patientpassword} 
-                        onChange={handlechange} 
-                        required 
-                        min="6"
-                      />
+                      <div className="relative">
+                        <input 
+                          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+                            !formdata.patientpassword || formdata.patientpassword.length === 0 
+                              ? 'border-gray-300'
+                              : formdata.patientpassword.length >= 6 
+                                ? 'border-green-300' 
+                                : 'border-red-300'
+                          }`}
+                          placeholder="Enter your password..." 
+                          type={showPatientPassword ? "text" : "password"}
+                          name="patientpassword" 
+                          id="patientpassword" 
+                          value={formdata.patientpassword} 
+                          onChange={handlechange} 
+                          required 
+                          min="6"
+                        />
+                        <button
+                          type="button"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            bottom: 0,
+                            right: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            paddingRight: '12px',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            border: 'none',
+                            background: 'transparent',
+                            transition: 'color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                          onClick={() => setShowPatientPassword(!showPatientPassword)}
+                        >
+                          <i className={`bx ${showPatientPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+                        </button>
+                      </div>
+                      {formdata.patientpassword && formdata.patientpassword.length > 0 && (
+                        <p className={`text-sm mt-1 transition-colors duration-200 ${
+                          formdata.patientpassword.length >= 6 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {formdata.patientpassword.length >= 6 
+                            ? '✓ Password meets minimum length requirement' 
+                            : `Password must be at least 6 characters (${formdata.patientpassword.length}/6)`
+                          }
+                        </p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -17643,17 +17828,59 @@ useEffect(() => {
           <label className="flex items-center text-sm font-medium text-gray-700">
             Password
           </label>
-          <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-            placeholder="Enter your password..." 
-            type="password" 
-            name="staffpassword" 
-            id="staffpassword" 
-            value={staffformdata.staffpassword} 
-            onChange={staffhandlechange} 
-            required 
-            min="6"
-          />
+          <div className="relative">
+            <input 
+              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+                !staffformdata.staffpassword || staffformdata.staffpassword.length === 0 
+                  ? 'border-gray-300'
+                  : staffformdata.staffpassword.length >= 6 
+                    ? 'border-green-300' 
+                    : 'border-red-300'
+              }`}
+              placeholder="Enter your password..." 
+              type={showStaffPassword ? "text" : "password"}
+              name="staffpassword" 
+              id="staffpassword" 
+              value={staffformdata.staffpassword} 
+              onChange={staffhandlechange} 
+              required 
+              min="6"
+            />
+            <button
+              type="button"
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                display: 'flex',
+                alignItems: 'center',
+                paddingRight: '12px',
+                color: '#9ca3af',
+                cursor: 'pointer',
+                border: 'none',
+                background: 'transparent',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+              onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+              onClick={() => setShowStaffPassword(!showStaffPassword)}
+            >
+              <i className={`bx ${showStaffPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+            </button>
+          </div>
+          {staffformdata.staffpassword && staffformdata.staffpassword.length > 0 && (
+            <p className={`text-sm mt-1 transition-colors duration-200 ${
+              staffformdata.staffpassword.length >= 6 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {staffformdata.staffpassword.length >= 6 
+                ? '✓ Password meets minimum length requirement' 
+                : `Password must be at least 6 characters (${staffformdata.staffpassword.length}/6)`
+              }
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -18146,17 +18373,59 @@ useEffect(() => {
           <label className="flex items-center text-sm font-medium text-gray-700">
             Password
           </label>
-          <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-            placeholder="Enter your password..." 
-            type="password" 
-            name="ownerpassword" 
-            id="ownerpassword" 
-            value={ownerformdata.ownerpassword} 
-            onChange={ownerhandlechange} 
-            required 
-            min="6"
-          />
+          <div className="relative">
+            <input 
+              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+                !ownerformdata.ownerpassword || ownerformdata.ownerpassword.length === 0 
+                  ? 'border-gray-300'
+                  : ownerformdata.ownerpassword.length >= 6 
+                    ? 'border-green-300' 
+                    : 'border-red-300'
+              }`}
+              placeholder="Enter your password..." 
+              type={showOwnerPassword ? "text" : "password"}
+              name="ownerpassword" 
+              id="ownerpassword" 
+              value={ownerformdata.ownerpassword} 
+              onChange={ownerhandlechange} 
+              required 
+              min="6"
+            />
+            <button
+              type="button"
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                display: 'flex',
+                alignItems: 'center',
+                paddingRight: '12px',
+                color: '#9ca3af',
+                cursor: 'pointer',
+                border: 'none',
+                background: 'transparent',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+              onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+              onClick={() => setShowOwnerPassword(!showOwnerPassword)}
+            >
+              <i className={`bx ${showOwnerPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+            </button>
+          </div>
+          {ownerformdata.ownerpassword && ownerformdata.ownerpassword.length > 0 && (
+            <p className={`text-sm mt-1 transition-colors duration-200 ${
+              ownerformdata.ownerpassword.length >= 6 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {ownerformdata.ownerpassword.length >= 6 
+                ? '✓ Password meets minimum length requirement' 
+                : `Password must be at least 6 characters (${ownerformdata.ownerpassword.length}/6)`
+              }
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -18668,23 +18937,47 @@ useEffect(() => {
           }`}>
             Password
           </label>
-          <input 
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
-              !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
-                ? 'border-gray-300'
-                : adminformdata.adminpassword.length >= 6 
-                  ? 'border-green-300' 
-                  : 'border-red-300'
-            }`}
-            placeholder="Enter your password..." 
-            type="password" 
-            name="adminpassword" 
-            id="adminpassword" 
-            value={adminformdata.adminpassword || ''} 
-            onChange={adminhandlechange} 
-            required 
-            min="6"
-          />
+          <div className="relative">
+            <input 
+              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+                !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
+                  ? 'border-gray-300'
+                  : adminformdata.adminpassword.length >= 6 
+                    ? 'border-green-300' 
+                    : 'border-red-300'
+              }`}
+              placeholder="Enter your password..." 
+              type={showAdminPassword ? "text" : "password"}
+              name="adminpassword" 
+              id="adminpassword" 
+              value={adminformdata.adminpassword || ''} 
+              onChange={adminhandlechange} 
+              required 
+              min="6"
+            />
+            <button
+              type="button"
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                display: 'flex',
+                alignItems: 'center',
+                paddingRight: '12px',
+                color: '#9ca3af',
+                cursor: 'pointer',
+                border: 'none',
+                background: 'transparent',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+              onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+              onClick={() => setShowAdminPassword(!showAdminPassword)}
+            >
+              <i className={`bx ${showAdminPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+            </button>
+          </div>
           {adminformdata.adminpassword && adminformdata.adminpassword.length > 0 && (
             <p className={`text-sm mt-1 transition-colors duration-200 ${
               adminformdata.adminpassword.length >= 6 
@@ -19242,8 +19535,10 @@ useEffect(() => {
                             Birthdate
                           </label>
                           <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            value={demoformdata.patientbirthdate} 
+
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+
+value={demoformdata.patientbirthdate} 
                             onChange={(e) => {
                               const newpatientBirthdate = e.target.value;
                               setdemoformdata({
@@ -19641,7 +19936,7 @@ useEffect(() => {
                             Birthdate
                           </label>
                           <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                             value={demoformdata.patientbirthdate} 
                             onChange={(e) => {
                               const newBirthdate = e.target.value;
@@ -27781,7 +28076,7 @@ paginatedBautistaOrders.map((order) => (
                             value={selectedPickupDate}
                             onChange={handlePickupDateChange}
                             min={getMinDate()}
-                            className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm font-albertsans"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                           />
                           {selectedPickupDate && (
                             <p className="mt-2 text-xs text-yellow-700 font-albertsans">

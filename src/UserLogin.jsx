@@ -34,6 +34,7 @@ function UserLogin(){
          const [loginnotice, setloginnotice] = useState({text:'', type:''});
          const [showResendVerification, setShowResendVerification] = useState(false);
          const [isResendingVerification, setIsResendingVerification] = useState(false);
+         const [showPassword, setShowPassword] = useState(false);
          const navigate = useNavigate();
 
 
@@ -422,7 +423,42 @@ else if(user === 'Owner'){
 
           <div className="form-group mt-4 lg:mt-5 flex flex-col lg:flex-row lg:items-center">
             <label className="font-albertsans font-bold italic text-[#595968] text-lg lg:text-[21px] mb-2 lg:mb-0 lg:w-28" htmlFor="loginpassword">Password :</label>
-            <input className="bg-gray-200 text-lg lg:text-[20px] text-gray-600 pl-3 rounded-2xl lg:ml-6 h-10 w-full lg:w-auto lg:flex-1" placeholder="Enter your password..."  type="password" name="loginpassword" id="loginpassword" value={logindetails.loginpassword} onChange={handleloginchange} required min="6"/></div>
+            <div style={{ position: 'relative', width: '100%', flex: 1, marginLeft: '1.5rem' }}>
+              <input 
+                className="bg-gray-200 text-lg lg:text-[20px] text-gray-600 pl-3 pr-12 rounded-2xl h-10 w-full lg:w-auto lg:flex-1" 
+                placeholder="Enter your password..."  
+                type={showPassword ? "text" : "password"} 
+                name="loginpassword" 
+                id="loginpassword" 
+                value={logindetails.loginpassword} 
+                onChange={handleloginchange} 
+                required 
+                min="6"
+              />
+              <button
+                type="button"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingRight: '12px',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'transparent',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#4b5563'}
+                onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
+              </button>
+            </div>
+          </div>
           
           <div className="h-[30px] mt-2 flex justify-center lg:justify-end items-center pr-2"><p  onClick={() => setshowforgotpasswordform(true)} className="text-xs lg:text-[14px] hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out font-albertsans font-medium text-[#1b5770]">Forgot Password?</p></div>
 
