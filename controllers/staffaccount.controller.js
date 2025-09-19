@@ -1,4 +1,16 @@
-/* eslint-dis//Retrieve (All Staff) //Retrieve (Single Staff) Controller
+/* eslint-disable no-undef */
+import Staffaccount from "../models/staffacount.js";
+import AmbherInventoryCategory from "../models/ambherinventorycategory.js";
+import BautistaInventoryCategory from "../models/bautistainventorycategory.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+dotenv.config();
+
+//Retrieve (Single Staff) Controller
 export const getstaffaccountbyid = async (req, res) => {
   try {
     const { id } = req.params;
@@ -26,40 +38,7 @@ export const getstaffaccounts = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};ndef */
-import Staffaccount from "../models/staffacount.js";
-import bcrypt  from "bcryptjs";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-
-dotenv.config();
-
-
-
-
-
-//Retrieve (All staff) Controller
-export const getstaffaccounts = async (req, res) => {
-  try {
-    const staffacc = await Staffaccount.find({});
-    res.status(200).json(staffacc);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 };
-
-//Retrieve (Single ) Controller
-export const getstaffaccountbyid = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const staffacc = await Staffaccount.findById(id);
-    res.status(200).json(staffacc);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 
 //Retrieve (Single by lastname ) Controller
 export const getstaffaccountbylastname = async (req, res) => {
@@ -187,15 +166,106 @@ export const createStaff = async (req, res) => {
 export const updateStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    const staffacc = await Staffaccount.findByIdAndUpdate(id, req.body);
-
-    if (!staffacc) {
+    
+    // Get the current staff before updating to compare changes
+    const currentStaff = await Staffaccount.findById(id);
+    if (!currentStaff) {
       return res.status(404).json({ message: "Staff not found" });
     }
 
+    // Update the staff account
+    const _staffacc = await Staffaccount.findByIdAndUpdate(id, req.body);
     const updatedstaffacc = await Staffaccount.findById(id);
+
+    // Check if profile-related fields were updated
+    const profileFieldsChanged = 
+      req.body.staffprofilepicture && req.body.staffprofilepicture !== currentStaff.staffprofilepicture ||
+      req.body.staffprofilepicture_public_id && req.body.staffprofilepicture_public_id !== currentStaff.staffprofilepicture_public_id ||
+      req.body.stafffirstname && req.body.stafffirstname !== currentStaff.stafffirstname ||
+      req.body.stafflastname && req.body.stafflastname !== currentStaff.stafflastname ||
+      req.body.staffmiddlename && req.body.staffmiddlename !== currentStaff.staffmiddlename;
+
+    // If profile fields changed, cascade updates to inventory categories
+    if (profileFieldsChanged) {
+      console.log('Staff profile fields changed, cascading updates to inventory categories...');
+      console.log('Changed fields:', {
+        profilePicture: req.body.staffprofilepicture !== currentStaff.staffprofilepicture,
+        profilePicturePublicId: req.body.staffprofilepicture_public_id !== currentStaff.staffprofilepicture_public_id,
+        firstName: req.body.stafffirstname !== currentStaff.stafffirstname,
+        lastName: req.body.stafflastname !== currentStaff.stafflastname,
+        middleName: req.body.staffmiddlename !== currentStaff.staffmiddlename
+      });
+      
+      const updateData = {};
+      
+      // Only update fields that were actually changed
+      if (req.body.staffprofilepicture && req.body.staffprofilepicture !== currentStaff.staffprofilepicture) {
+        console.log('Updating staff profile picture from', currentStaff.staffprofilepicture, 'to', req.body.staffprofilepicture);
+        updateData.ambherinventorycategoryaddedbyprofilepicture = req.body.staffprofilepicture;
+        updateData.bautistainventorycategoryaddedbyprofilepicture = req.body.staffprofilepicture;
+      }
+      
+      if (req.body.staffprofilepicture_public_id && req.body.staffprofilepicture_public_id !== currentStaff.staffprofilepicture_public_id) {
+        console.log('Updating staff profile picture public_id from', currentStaff.staffprofilepicture_public_id, 'to', req.body.staffprofilepicture_public_id);
+        updateData.ambherinventorycategoryaddedbyprofilepicture_public_id = req.body.staffprofilepicture_public_id;
+        updateData.bautistainventorycategoryaddedbyprofilepicture_public_id = req.body.staffprofilepicture_public_id;
+      }
+      
+      if (req.body.stafffirstname && req.body.stafffirstname !== currentStaff.stafffirstname) {
+        updateData.ambherinventorycategoryaddedbyfirstname = req.body.stafffirstname;
+        updateData.bautistainventorycategoryaddedbyfirstname = req.body.stafffirstname;
+      }
+      
+      if (req.body.stafflastname && req.body.stafflastname !== currentStaff.stafflastname) {
+        updateData.ambherinventorycategoryaddedbylastname = req.body.stafflastname;
+        updateData.bautistainventorycategoryaddedbylastname = req.body.stafflastname;
+      }
+      
+      if (req.body.staffmiddlename && req.body.staffmiddlename !== currentStaff.staffmiddlename) {
+        updateData.ambherinventorycategoryaddedbymiddlename = req.body.staffmiddlename;
+        updateData.bautistainventorycategoryaddedbymiddlename = req.body.staffmiddlename;
+      }
+
+      console.log('Final staff updateData object:', updateData);
+
+      // Update Ambher inventory categories created by this staff
+      const ambherUpdateData = {};
+      Object.keys(updateData).forEach(key => {
+        if (key.startsWith('ambher')) {
+          ambherUpdateData[key] = updateData[key];
+        }
+      });
+
+      console.log('Staff Ambher update data:', ambherUpdateData);
+      if (Object.keys(ambherUpdateData).length > 0) {
+        const result = await AmbherInventoryCategory.updateMany(
+          { ambherinventorycategoryaddedbyemail: currentStaff.staffemail },
+          { $set: { ...ambherUpdateData, updatedAt: new Date() } }
+        );
+        console.log(`Updated ${result.modifiedCount} Ambher inventory categories for staff: ${currentStaff.staffemail}`);
+      }
+
+      // Update Bautista inventory categories created by this staff
+      const bautistaUpdateData = {};
+      Object.keys(updateData).forEach(key => {
+        if (key.startsWith('bautista')) {
+          bautistaUpdateData[key] = updateData[key];
+        }
+      });
+
+      console.log('Staff Bautista update data:', bautistaUpdateData);
+      if (Object.keys(bautistaUpdateData).length > 0) {
+        const result = await BautistaInventoryCategory.updateMany(
+          { bautistainventorycategoryaddedbyemail: currentStaff.staffemail },
+          { $set: { ...bautistaUpdateData, updatedAt: new Date() } }
+        );
+        console.log(`Updated ${result.modifiedCount} Bautista inventory categories for staff: ${currentStaff.staffemail}`);
+      }
+    }
+
     res.status(200).json(updatedstaffacc);
   } catch (error) {
+    console.error('Error updating staff account and cascading updates:', error);
     res.status(500).json({ message: error.message });
   }
 };

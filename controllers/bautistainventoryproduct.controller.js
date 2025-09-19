@@ -31,7 +31,7 @@ import PatientDemographic from "../models/patientdemographic.js";
         try{
             // Optimized query with field selection, lean(), and proper sorting
             const bautistainventoryproducts = await BautistaInventoryProduct.find({})
-                .select('bautistainventoryproductid bautistainventoryproductcategory bautistainventoryproductname bautistainventoryproductbrand bautistainventoryproductmodelnumber bautistainventoryproductdescription bautistainventoryproductprice bautistainventoryproductquantity bautistainventoryproductimagepreviewimages bautistainventoryproductwishlistcount createdAt')
+                .select('bautistainventoryproductid bautistainventoryproductcategory bautistainventoryproductname bautistainventoryproductbrand bautistainventoryproductmodelnumber bautistainventoryproductdescription bautistainventoryproductprice bautistainventoryproductquantity bautistainventoryproductimagepreviewimages bautistainventoryproductwishlistcount isArchived createdAt')
                 .sort({bautistainventoryproductid: -1})
                 .lean(); // Returns plain JavaScript objects for better performance
             
@@ -50,7 +50,7 @@ import PatientDemographic from "../models/patientdemographic.js";
             const bautistainventoryproduct = await BautistaInventoryProduct.findOne({ 
                 bautistainventoryproductid: id 
             })
-                .select('bautistainventoryproductid bautistainventoryproductcategory bautistainventoryproductname bautistainventoryproductbrand bautistainventoryproductmodelnumber bautistainventoryproductdescription bautistainventoryproductprice bautistainventoryproductquantity bautistainventoryproductimagepreviewimages bautistainventoryproductwishlistcount createdAt')
+                .select('bautistainventoryproductid bautistainventoryproductcategory bautistainventoryproductname bautistainventoryproductbrand bautistainventoryproductmodelnumber bautistainventoryproductdescription bautistainventoryproductprice bautistainventoryproductquantity bautistainventoryproductimagepreviewimages bautistainventoryproductwishlistcount isArchived createdAt')
                 .lean(); // Returns plain JavaScript objects for better performance
             
             if (!bautistainventoryproduct) {
@@ -190,6 +190,64 @@ import PatientDemographic from "../models/patientdemographic.js";
     
         } catch (error) {
             res.status(500).json({message: error.message});
+        }
+    };
+
+    // Archive Bautista Inventory Product
+    export const archivebautistainventoryproductbyid = async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const updatedProduct = await BautistaInventoryProduct.findOneAndUpdate(
+                { bautistainventoryproductid: id },
+                { 
+                    isArchived: true,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: "Bautista Inventory Product not found" });
+            }
+
+            res.status(200).json({
+                message: "Product archived successfully",
+                product: updatedProduct
+            });
+
+        } catch (error) {
+            console.error("Error archiving Bautista Inventory Product:", error);
+            res.status(500).json({ message: error.message });
+        }
+    };
+
+    // Unarchive Bautista Inventory Product
+    export const unarchivebautistainventoryproductbyid = async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const updatedProduct = await BautistaInventoryProduct.findOneAndUpdate(
+                { bautistainventoryproductid: id },
+                { 
+                    isArchived: false,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: "Bautista Inventory Product not found" });
+            }
+
+            res.status(200).json({
+                message: "Product unarchived successfully",
+                product: updatedProduct
+            });
+
+        } catch (error) {
+            console.error("Error unarchiving Bautista Inventory Product:", error);
+            res.status(500).json({ message: error.message });
         }
     };
 

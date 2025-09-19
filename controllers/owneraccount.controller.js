@@ -1,6 +1,8 @@
 /* eslint-disable no-undef */
 import Owneraccount from "../models/owneraccount.js";
-import bcrypt  from "bcryptjs";
+import AmbherInventoryCategory from "../models/ambherinventorycategory.js";
+import BautistaInventoryCategory from "../models/bautistainventorycategory.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
@@ -172,15 +174,106 @@ export const createOwner = async (req, res) => {
 export const updateOwner = async (req, res) => {
   try {
     const { id } = req.params;
-    const owneracc = await Owneraccount.findByIdAndUpdate(id, req.body);
-
-    if (!owneracc) {
+    
+    // Get the current owner before updating to compare changes
+    const currentOwner = await Owneraccount.findById(id);
+    if (!currentOwner) {
       return res.status(404).json({ message: "Owner not found" });
     }
 
+    // Update the owner account
+    const _owneracc = await Owneraccount.findByIdAndUpdate(id, req.body);
     const updatedowneracc = await Owneraccount.findById(id);
+
+    // Check if profile-related fields were updated
+    const profileFieldsChanged = 
+      req.body.ownerprofilepicture && req.body.ownerprofilepicture !== currentOwner.ownerprofilepicture ||
+      req.body.ownerprofilepicture_public_id && req.body.ownerprofilepicture_public_id !== currentOwner.ownerprofilepicture_public_id ||
+      req.body.ownerfirstname && req.body.ownerfirstname !== currentOwner.ownerfirstname ||
+      req.body.ownerlastname && req.body.ownerlastname !== currentOwner.ownerlastname ||
+      req.body.ownermiddlename && req.body.ownermiddlename !== currentOwner.ownermiddlename;
+
+    // If profile fields changed, cascade updates to inventory categories
+    if (profileFieldsChanged) {
+      console.log('Owner profile fields changed, cascading updates to inventory categories...');
+      console.log('Changed fields:', {
+        profilePicture: req.body.ownerprofilepicture !== currentOwner.ownerprofilepicture,
+        profilePicturePublicId: req.body.ownerprofilepicture_public_id !== currentOwner.ownerprofilepicture_public_id,
+        firstName: req.body.ownerfirstname !== currentOwner.ownerfirstname,
+        lastName: req.body.ownerlastname !== currentOwner.ownerlastname,
+        middleName: req.body.ownermiddlename !== currentOwner.ownermiddlename
+      });
+      
+      const updateData = {};
+      
+      // Only update fields that were actually changed
+      if (req.body.ownerprofilepicture && req.body.ownerprofilepicture !== currentOwner.ownerprofilepicture) {
+        console.log('Updating profile picture from', currentOwner.ownerprofilepicture, 'to', req.body.ownerprofilepicture);
+        updateData.ambherinventorycategoryaddedbyprofilepicture = req.body.ownerprofilepicture;
+        updateData.bautistainventorycategoryaddedbyprofilepicture = req.body.ownerprofilepicture;
+      }
+      
+      if (req.body.ownerprofilepicture_public_id && req.body.ownerprofilepicture_public_id !== currentOwner.ownerprofilepicture_public_id) {
+        console.log('Updating profile picture public_id from', currentOwner.ownerprofilepicture_public_id, 'to', req.body.ownerprofilepicture_public_id);
+        updateData.ambherinventorycategoryaddedbyprofilepicture_public_id = req.body.ownerprofilepicture_public_id;
+        updateData.bautistainventorycategoryaddedbyprofilepicture_public_id = req.body.ownerprofilepicture_public_id;
+      }
+      
+      if (req.body.ownerfirstname && req.body.ownerfirstname !== currentOwner.ownerfirstname) {
+        updateData.ambherinventorycategoryaddedbyfirstname = req.body.ownerfirstname;
+        updateData.bautistainventorycategoryaddedbyfirstname = req.body.ownerfirstname;
+      }
+      
+      if (req.body.ownerlastname && req.body.ownerlastname !== currentOwner.ownerlastname) {
+        updateData.ambherinventorycategoryaddedbylastname = req.body.ownerlastname;
+        updateData.bautistainventorycategoryaddedbylastname = req.body.ownerlastname;
+      }
+      
+      if (req.body.ownermiddlename && req.body.ownermiddlename !== currentOwner.ownermiddlename) {
+        updateData.ambherinventorycategoryaddedbymiddlename = req.body.ownermiddlename;
+        updateData.bautistainventorycategoryaddedbymiddlename = req.body.ownermiddlename;
+      }
+
+      console.log('Final updateData object:', updateData);
+
+      // Update Ambher inventory categories created by this owner
+      const ambherUpdateData = {};
+      Object.keys(updateData).forEach(key => {
+        if (key.startsWith('ambher')) {
+          ambherUpdateData[key] = updateData[key];
+        }
+      });
+
+      console.log('Ambher update data:', ambherUpdateData);
+      if (Object.keys(ambherUpdateData).length > 0) {
+        const result = await AmbherInventoryCategory.updateMany(
+          { ambherinventorycategoryaddedbyemail: currentOwner.owneremail },
+          { $set: { ...ambherUpdateData, updatedAt: new Date() } }
+        );
+        console.log(`Updated ${result.modifiedCount} Ambher inventory categories for owner: ${currentOwner.owneremail}`);
+      }
+
+      // Update Bautista inventory categories created by this owner
+      const bautistaUpdateData = {};
+      Object.keys(updateData).forEach(key => {
+        if (key.startsWith('bautista')) {
+          bautistaUpdateData[key] = updateData[key];
+        }
+      });
+
+      console.log('Bautista update data:', bautistaUpdateData);
+      if (Object.keys(bautistaUpdateData).length > 0) {
+        const result = await BautistaInventoryCategory.updateMany(
+          { bautistainventorycategoryaddedbyemail: currentOwner.owneremail },
+          { $set: { ...bautistaUpdateData, updatedAt: new Date() } }
+        );
+        console.log(`Updated ${result.modifiedCount} Bautista inventory categories for owner: ${currentOwner.owneremail}`);
+      }
+    }
+
     res.status(200).json(updatedowneracc);
   } catch (error) {
+    console.error('Error updating owner account and cascading updates:', error);
     res.status(500).json({ message: error.message });
   }
 };

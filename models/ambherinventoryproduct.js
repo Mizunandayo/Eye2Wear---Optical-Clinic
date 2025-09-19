@@ -39,9 +39,8 @@ ambherinventoryproductaddedbyemail: {type: String, required: true},
 
 ambherinventoryproductwishlistcount: {type: Number, default: 0},
 
-
-
-
+// Archive status for products with sales history
+isArchived: {type: Boolean, default: false},
 
 
 //TIMESTAMPS

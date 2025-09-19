@@ -1,4 +1,5 @@
 import express from 'express';
+import { protect } from "../middleware/authMiddleware.js";
 import {
      createpatientorderambher,
      getallpatientorderambhers,
@@ -13,14 +14,14 @@ import {
 
 const patientorderambherrouter = express.Router();
 
-patientorderambherrouter.post('/', createpatientorderambher);
-patientorderambherrouter.get('/', getallpatientorderambhers);
-patientorderambherrouter.get('/email/:email', getorderambhersbyemail);
-patientorderambherrouter.get('/:id', getpatientorderambherbyid);
-patientorderambherrouter.get("/ambherproductsoldcount/:productid", getambherproductsoldcountbyid);
-patientorderambherrouter.put('/:id', updateorderambherbyid);
-patientorderambherrouter.put('/update-payment/:id', updatePaymentAmbher);
-patientorderambherrouter.delete('/:id', deleteorderambherbyid);
+patientorderambherrouter.post('/', protect, createpatientorderambher);
+patientorderambherrouter.get('/', protect, getallpatientorderambhers);
+patientorderambherrouter.get('/email/:email', protect, getorderambhersbyemail);
+patientorderambherrouter.get('/:id', protect, getpatientorderambherbyid);
+patientorderambherrouter.get("/ambherproductsoldcount/:productid", protect, getambherproductsoldcountbyid);
+patientorderambherrouter.put('/:id', protect, updateorderambherbyid);
+patientorderambherrouter.put('/update-payment/:id', protect, updatePaymentAmbher);
+patientorderambherrouter.delete('/:id', protect, deleteorderambherbyid);
 
 
 export default patientorderambherrouter;

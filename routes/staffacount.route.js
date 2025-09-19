@@ -1,4 +1,5 @@
       import express from "express";
+      import { protect } from "../middleware/authMiddleware.js";
       import {
             stafflogin,
 
@@ -16,30 +17,30 @@
 
       const staffrouter = express.Router();
 
-      //Retrieve staff data
-      staffrouter.get("/", getstaffaccounts);
-      staffrouter.get("/id/:id", getstaffaccountbyid);
-      staffrouter.get("/stafflastname/:stafflastname", getstaffaccountbylastname);
+      //Retrieve staff data (protected)
+      staffrouter.get("/", protect, getstaffaccounts);
+      staffrouter.get("/id/:id", protect, getstaffaccountbyid);
+      staffrouter.get("/stafflastname/:stafflastname", protect, getstaffaccountbylastname);
       staffrouter.get("/me", verifyloggedinstaffacc, getloggedinstaffacc);
 
 
 
-      //Retrieve Existing Email datas
+      //Retrieve Existing Email datas (public for registration)
       staffrouter.get("/check-email/:staffemail", existingemail);
 
 
-      //Create staff data
-      staffrouter.post("/", createStaff);
+      //Create staff data (protected)
+      staffrouter.post("/", protect, createStaff);
 
-      //Update staff data
-      staffrouter.put("/:id", updateStaff);
+      //Update staff data (protected)
+      staffrouter.put("/:id", protect, updateStaff);
 
-      //Delete staff data
-      staffrouter.delete("/:id", deleteStaff);
+      //Delete staff data (protected)
+      staffrouter.delete("/:id", protect, deleteStaff);
 
 
 
-      //Login staff
+      //Login staff (public)
       staffrouter.post("/login", stafflogin);
 
 

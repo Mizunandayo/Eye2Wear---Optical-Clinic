@@ -31,7 +31,7 @@ import PatientDemographic from "../models/patientdemographic.js";
         try{
             // Optimized query with field selection, lean(), and proper sorting
             const ambherinventoryproducts = await AmbherInventoryProduct.find({})
-                .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount createdAt')
+                .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount isArchived createdAt')
                 .sort({ambherinventoryproductid: -1})
                 .lean(); // Returns plain JavaScript objects for better performance
             
@@ -50,7 +50,7 @@ import PatientDemographic from "../models/patientdemographic.js";
             const ambherinventoryproduct = await AmbherInventoryProduct.findOne({ 
                 ambherinventoryproductid: id 
             })
-                .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount createdAt')
+                .select('ambherinventoryproductid ambherinventoryproductcategory ambherinventoryproductname ambherinventoryproductbrand ambherinventoryproductmodelnumber ambherinventoryproductdescription ambherinventoryproductprice ambherinventoryproductquantity ambherinventoryproductimagepreviewimages ambherinventoryproductwishlistcount isArchived createdAt')
                 .lean();
             
             if (!ambherinventoryproduct) {
@@ -190,6 +190,64 @@ import PatientDemographic from "../models/patientdemographic.js";
     
         } catch (error) {
             res.status(500).json({message: error.message});
+        }
+    };
+
+    // Archive Ambher Inventory Product
+    export const archiveambherinventoryproductbyid = async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const updatedProduct = await AmbherInventoryProduct.findOneAndUpdate(
+                { ambherinventoryproductid: id },
+                { 
+                    isArchived: true,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: "Ambher Inventory Product not found" });
+            }
+
+            res.status(200).json({
+                message: "Product archived successfully",
+                product: updatedProduct
+            });
+
+        } catch (error) {
+            console.error("Error archiving Ambher Inventory Product:", error);
+            res.status(500).json({ message: error.message });
+        }
+    };
+
+    // Unarchive Ambher Inventory Product
+    export const unarchiveambherinventoryproductbyid = async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const updatedProduct = await AmbherInventoryProduct.findOneAndUpdate(
+                { ambherinventoryproductid: id },
+                { 
+                    isArchived: false,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: "Ambher Inventory Product not found" });
+            }
+
+            res.status(200).json({
+                message: "Product unarchived successfully",
+                product: updatedProduct
+            });
+
+        } catch (error) {
+            console.error("Error unarchiving Ambher Inventory Product:", error);
+            res.status(500).json({ message: error.message });
         }
     };
 

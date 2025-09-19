@@ -1060,6 +1060,9 @@ const sortProductsByQuantity = (products, sortOrder, productType) => {
 //Ambher filtering products
 const ambherfilteredproducts = () => {
   let filtered = ambherinventoryproducts.filter(product => {
+    // Archive filter - exclude archived products
+    const notArchived = !product.isArchived;
+    
     // Category filter
     const categoryMatch = activeambherinventorycategorytable === 'all' ||
       product.ambherinventoryproductcategory === activeambherinventorycategorytable;
@@ -1087,7 +1090,7 @@ const ambherfilteredproducts = () => {
         advancedMatch = product.ambherinventoryproductfor?.toLowerCase().includes('unisex') || nameDesc.includes('unisex');
     }
     
-    return categoryMatch && searchMatch && advancedMatch;
+    return notArchived && categoryMatch && searchMatch && advancedMatch;
   });
   
   // Apply stock-based sorting first (Normal → Low → Critical → Out of Stock)
@@ -1118,6 +1121,9 @@ const ambherfilteredproducts = () => {
 //Bautista filtering products
 const bautistafilteredproducts = () => {
   let filtered = bautistainventoryproducts.filter(product => {
+    // Archive filter - exclude archived products
+    const notArchived = !product.isArchived;
+    
     // Category filter
     const categoryMatch = activebautistainventorycategorytable === 'all' ||
       product.bautistainventoryproductcategory === activebautistainventorycategorytable;
@@ -1145,7 +1151,7 @@ const bautistafilteredproducts = () => {
         advancedMatch = product.bautistainventoryproductfor?.toLowerCase().includes('unisex') || nameDesc.includes('unisex');
     }
     
-    return categoryMatch && searchMatch && advancedMatch;
+    return notArchived && categoryMatch && searchMatch && advancedMatch;
   });
   
   // Apply stock-based sorting first (Normal → Low → Critical → Out of Stock)
@@ -1993,7 +1999,7 @@ useEffect(() => {
                   >
                     <span>All</span>
                     <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
-                      {ambherinventoryproducts.length}
+                      {ambherinventoryproducts.filter(product => !product.isArchived).length}
                     </span>
                   </div>
 
@@ -2002,7 +2008,7 @@ useEffect(() => {
                   ) : (
                     ambherinventorycategorylist.map(category => {
                       const productcount = ambherinventoryproducts.filter(product =>
-                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname).length;
+                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname && !product.isArchived).length;
                       return(
                         <div key={category._id}
                           onClick={() => setactiveambherinventorycategorytable(category.ambherinventorycategoryname)}
@@ -2038,6 +2044,9 @@ useEffect(() => {
                   {ambherProductFilters.map(filter => {
                     // Count products matching this filter
                     const count = ambherinventoryproducts.filter(product => {
+                      // Exclude archived products
+                      if (product.isArchived) return false;
+                      
                       const nameDesc = `${product.ambherinventoryproductname || ''} ${product.ambherinventoryproductdescription || ''}`.toLowerCase();
                       if (filter.id === 'polarized')
                         return product.ambherinventoryproducttype?.toLowerCase().includes('polarized') || nameDesc.includes('polarized');
@@ -2530,7 +2539,7 @@ useEffect(() => {
                   >
                     <span>All</span>
                     <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
-                      {bautistainventoryproducts.length}
+                      {bautistainventoryproducts.filter(product => !product.isArchived).length}
                     </span>
                   </div>
 
@@ -2539,7 +2548,7 @@ useEffect(() => {
                   ) : (
                     bautistainventorycategorylist.map(category => {
                       const productcount = bautistainventoryproducts.filter(product =>
-                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname).length;
+                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname && !product.isArchived).length;
                       return(
                         <div key={category._id}
                           onClick={() => setactivebautistainventorycategorytable(category.bautistainventorycategoryname)}
@@ -2575,6 +2584,9 @@ useEffect(() => {
                   {bautistaProductFilters.map(filter => {
                     // Count products matching this filter
                     const count = bautistainventoryproducts.filter(product => {
+                      // Exclude archived products
+                      if (product.isArchived) return false;
+                      
                       const nameDesc = `${product.bautistainventoryproductname || ''} ${product.bautistainventoryproductdescription || ''}`.toLowerCase();
                       if (filter.id === 'polarized')
                         return product.bautistainventoryproducttype?.toLowerCase().includes('polarized') || nameDesc.includes('polarized');
@@ -2592,7 +2604,7 @@ useEffect(() => {
                     }).length;
                     return (
                       <div key={filter.id}
-                        className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
+                        className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center 
                           ${activeBautistaProductFilter === filter.id
                             ? 'bg-[#2781af] rounded-2xl text-white'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
@@ -3455,13 +3467,13 @@ useEffect(() => {
                         borderRadius: '9999px',
                         fontSize: '12px'
                       }}>
-                        {ambherinventoryproducts.length}
+                        {ambherinventoryproducts.filter(product => !product.isArchived).length}
                       </span>
                     </button>
 
                     {ambherinventorycategorylist.map(category => {
                       const productcount = ambherinventoryproducts.filter(product =>
-                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname).length;
+                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname && !product.isArchived).length;
                       const isActive = activeambherinventorycategorytable === category.ambherinventorycategoryname;
                       return(
                         <button 
@@ -3825,13 +3837,13 @@ useEffect(() => {
                         borderRadius: '9999px',
                         fontSize: '12px'
                       }}>
-                        {bautistainventoryproducts.length}
+                        {bautistainventoryproducts.filter(product => !product.isArchived).length}
                       </span>
                     </button>
 
                     {bautistainventorycategorylist.map(category => {
                       const productcount = bautistainventoryproducts.filter(product =>
-                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname).length;
+                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname && !product.isArchived).length;
                       const isActive = activebautistainventorycategorytable === category.bautistainventorycategoryname;
                       return(
                         <button 

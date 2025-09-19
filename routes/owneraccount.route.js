@@ -1,4 +1,5 @@
       import express from "express";
+      import { protect } from "../middleware/authMiddleware.js";
       import {
             ownerlogin,
 
@@ -16,30 +17,30 @@
 
       const ownerrouter = express.Router();
 
-      //Retrieve owner data
-      ownerrouter.get("/", getowneraccounts);
-      ownerrouter.get("/id/:id", getowneraccountbyid);
-      ownerrouter.get("/ownerlastname/:ownerlastname", getowneraccountbylastname);
+      //Retrieve owner data (public for admin purposes)
+      ownerrouter.get("/", protect, getowneraccounts);
+      ownerrouter.get("/id/:id", protect, getowneraccountbyid);
+      ownerrouter.get("/ownerlastname/:ownerlastname", protect, getowneraccountbylastname);
       ownerrouter.get("/me", verifyloggedinowneracc, getloggedinowneracc);
 
 
 
-      //Retrieve Existing Email datas
+      //Retrieve Existing Email datas (public for registration)
       ownerrouter.get("/check-email/:owneremail", existingemail);
 
 
-      //Create owner data
-      ownerrouter.post("/", createOwner);
+      //Create owner data (protected)
+      ownerrouter.post("/", protect, createOwner);
 
-      //Update owner data
-      ownerrouter.put("/:id", updateOwner);
+      //Update owner data (protected)
+      ownerrouter.put("/:id", protect, updateOwner);
 
-      //Delete owner data
-      ownerrouter.delete("/:id", deleteOwner);
+      //Delete owner data (protected)
+      ownerrouter.delete("/:id", protect, deleteOwner);
 
 
 
-      //Login owner
+      //Login owner (public)
       ownerrouter.post("/login", ownerlogin);
 
 

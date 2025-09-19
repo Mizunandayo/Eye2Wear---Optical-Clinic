@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState,useRef, useEffect, useCallback, useMemo } from "react";
-import { Link} from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
 import landinglogo from "../src/assets/images/landinglogo.png";
 import { useAuth as useAdminAuth} from "./hooks/adminuseAuth";
 import { useAuth as useStaffAuth} from "./hooks/staffuseAuth";
@@ -699,7 +699,7 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="w-full sm:w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            className="w-full sm:w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
             aria-label="Select time range"
           >
             <option value="365d">Last Year</option>
@@ -711,7 +711,7 @@ const InteractiveAppointmentChart = ({ appointmentsData, isAmbherOnlyUser, isBau
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
               aria-label="Select year for appointments"
             >
               {getAvailableYearsFromAppointments().map(year => (
@@ -1013,7 +1013,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
           <select
             value={dataFilter}
             onChange={(e) => setDataFilter(e.target.value)}
-            className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
             aria-label="Select data type"
           >
             <option value="all">All</option>
@@ -1025,7 +1025,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="w-[160px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+            className="w-[160px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
             aria-label="Select time range"
           >
             <option value="365d">Last Year</option>
@@ -1039,7 +1039,7 @@ const InteractiveRevenueChart = ({ rawOrderData, rawAppointmentData, isAmbherOnl
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
               aria-label="Select year for revenue"
             >
               {getAvailableYearsFromRevenue().map(year => (
@@ -1520,7 +1520,7 @@ const MedicalRecordImageViewer = ({ record, loadMedicalRecordImage, onImageClick
       <div className="flex flex-col justify-center items-center w-fit h-fit mt-5">
         <div className="hover:cursor-pointer object-cover w-80 h-80 bg-gray-200 rounded-2xl flex items-center justify-center animate-pulse">
           <div className="text-gray-500 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-500 mx-auto mb-2"></div>
             <p className="text-sm">Loading image...</p>
           </div>
         </div>
@@ -1658,7 +1658,7 @@ const TopProductsChart = ({ data, filter, year, onFilterChange, onYearChange, ge
             <select
               value={filter}
               onChange={(e) => onFilterChange(e.target.value)}
-              className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+              className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
               aria-label="Select date range for top products"
             >
               <option value="thisWeek">This Week</option>
@@ -1672,7 +1672,7 @@ const TopProductsChart = ({ data, filter, year, onFilterChange, onYearChange, ge
               <select
                 value={year}
                 onChange={(e) => onYearChange(parseInt(e.target.value))}
-                className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
                 aria-label="Select year for top products"
               >
                 {getAvailableYears().map(yearOption => (
@@ -1926,6 +1926,47 @@ function AdminDashboard(){
   const {stafflogout, fetchstaffdetails, showLogoutModal: showStaffLogoutModal, confirmLogout: confirmStaffLogout, cancelLogout: cancelStaffLogout} = useStaffAuth();
   const {ownerlogout, fetchownerdetails, showLogoutModal: showOwnerLogoutModal, confirmLogout: confirmOwnerLogout, cancelLogout: cancelOwnerLogout} = useOwnerAuth();
   const {adminlogout, fetchadmindetails, showLogoutModal, confirmLogout, cancelLogout} = useAdminAuth();
+
+  const navigate = useNavigate();
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
+
+  // Authentication check - redirect to login if no valid tokens found
+  useEffect(() => {
+    const checkAuthentication = () => {
+      const staffToken = localStorage.getItem('stafftoken');
+      const ownerToken = localStorage.getItem('ownertoken');
+      const adminToken = localStorage.getItem('admintoken');
+      const generalToken = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+
+      // Check if user has any valid authentication tokens
+      const hasValidToken = staffToken || ownerToken || adminToken || generalToken;
+      const hasValidRole = role && (role === 'staff' || role === 'owner' || role === 'admin');
+
+      // If no valid token or role, redirect to login
+      if (!hasValidToken || !hasValidRole) {
+        console.log('No valid authentication found, redirecting to login...');
+        localStorage.clear(); // Clear any invalid/partial data
+        navigate('/userlogin');
+        return;
+      }
+
+      // Additional check: ensure the role matches the token
+      if ((role === 'staff' && !staffToken) || 
+          (role === 'owner' && !ownerToken) || 
+          (role === 'admin' && !adminToken)) {
+        console.log('Token-role mismatch detected, redirecting to login...');
+        localStorage.clear();
+        navigate('/userlogin');
+        return;
+      }
+
+      console.log('Authentication verified for role:', role);
+      setIsAuthenticating(false); // Authentication passed, allow dashboard to render
+    };
+
+    checkAuthentication();
+  }, [navigate]);
 
   const [ownerownedclinic,setownerownedclinic] = useState('');
   const [staffclinic, setStaffClinic] = useState('');
@@ -2596,7 +2637,7 @@ if (loadingpatients) {
               <th className="pb-3 pt-3 pl-2 pr-2 text-center">Firstname</th>
               <th className="pb-3 pt-3 pl-2 pr-2 text-center">Middlename</th>
               <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
+              <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
               <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>          
               <th className="pb-3 pt-3 text-center pr-3 rounded-tr-2xl">Actions</th>
             </tr>
@@ -2624,7 +2665,7 @@ if (failedloadingpatients) {
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Firstname</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Middlename</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
+            <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>          
             <th className="pb-3 pt-3 text-center pr-3 rounded-tr-2xl">Actions</th>
           </tr>
@@ -2653,7 +2694,7 @@ if(searchpatients && filteredpatients.length == 0){
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Firstname</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Middlename</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
+            <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>          
             <th className="pb-3 pt-3 text-center pr-3 rounded-tr-2xl">Actions</th>
           </tr>
@@ -2682,7 +2723,7 @@ return (
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Firstname</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Middlename</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Email</th>
-            <th className="pb-3 pt-3 pl-2 pr-2 text-center">isVerified</th>
+            <th className="pb-3 pt-3 pl-2 pr-2 text-center">Status</th>
             <th className="pb-3 pt-3 pl-2 pr-2 text-center">Date Created</th>          
             <th className="pb-3 pt-3 text-center pr-3 rounded-tr-2xl">Actions</th>
           </tr>
@@ -7848,6 +7889,7 @@ const [addambherinventoryproductimagepreviewimages, setaddambherinventoryproduct
 const [currentimageindex, setcurrentimageindex] = useState(0);
 const addambherinventoryproductimageimageinputref = useRef(null);
 const [ambherinventoryproductissubmitting, setambherinventoryproductissubmitting] = useState(false);
+const [ambherinventoryproductimagesuploading, setambherinventoryproductimagesuploading] = useState(false);
 const [ambherinventoryproducts, setambherinventoryproducts] = useState([]);
 const [ambherloadingproducts, setambherloadingproducts] = useState(true);
 const [selectedambherproduct, setselectedambherproduct] = useState(null);
@@ -8026,20 +8068,35 @@ const sortedFilteredAmbherProducts = [...filteredAmbherProducts].sort((a, b) => 
 
 // Filter out of stock products if needed
 const finalFilteredAmbherProducts = (() => {
+  let filteredProducts;
   if (quantitySortingProducts === 'Outofstock') {
-    return sortedFilteredAmbherProducts.filter(product => (product.ambherinventoryproductquantity || 0) === 0);
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => (product.ambherinventoryproductquantity || 0) === 0);
   } else if (quantitySortingProducts === 'LowStock') {
-    return sortedFilteredAmbherProducts.filter(product => {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => {
       const qty = product.ambherinventoryproductquantity || 0;
       return qty >= 4 && qty <= 6;
     });
   } else if (quantitySortingProducts === 'CriticalStock') {
-    return sortedFilteredAmbherProducts.filter(product => {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => {
       const qty = product.ambherinventoryproductquantity || 0;
       return qty >= 1 && qty <= 3;
     });
+  } else if (quantitySortingProducts === 'Archived') {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => product.isArchived === true);
+  } else {
+    filteredProducts = sortedFilteredAmbherProducts;
   }
-  return sortedFilteredAmbherProducts;
+  
+  // Sort to place archived products at the end (only if not specifically filtering for archived products)
+  if (quantitySortingProducts !== 'Archived') {
+    return filteredProducts.sort((a, b) => {
+      if (a.isArchived && !b.isArchived) return 1; // a is archived, b is not - a comes after b
+      if (!a.isArchived && b.isArchived) return -1; // a is not archived, b is - a comes before b
+      return 0; // Both have same archive status, maintain current order
+    });
+  }
+  
+  return filteredProducts;
 })();
 
 const ambherinventoryproductcount = ambherinventoryproducts.filter(
@@ -8073,6 +8130,9 @@ for(const file of files) {
     return;
   }
 }
+
+// Set loading state to true when starting upload
+setambherinventoryproductimagesuploading(true);
 
 try{
   const compressedimages = await Promise.all(
@@ -8122,6 +8182,9 @@ try{
 }catch(error){
   console.error("Image compression failed: ", error.message);
   alert("Image compression failed");
+} finally {
+  // Always set loading state to false when finished (success or error)
+  setambherinventoryproductimagesuploading(false);
 }
 
 if(addambherinventoryproductimageimageinputref.current){
@@ -8451,6 +8514,79 @@ const deleteambherproduct = async (e) => {
 
 };
 
+// Archive Ambher Product Handler
+const handleArchiveAmbherProduct = async (product) => {
+  try {
+    const response = await fetch(`/api/ambherinventoryproduct/${product.ambherinventoryproductid}/archive`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to archive product: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Update the product in the local state
+    setambherinventoryproducts(prev => 
+      prev.map(p => 
+        p.ambherinventoryproductid === product.ambherinventoryproductid 
+          ? { ...p, isArchived: true }
+          : p
+      )
+    );
+
+    // Update the selected product if it's the same one
+    if (selectedambherproduct?.ambherinventoryproductid === product.ambherinventoryproductid) {
+      setselectedambherproduct(prev => ({ ...prev, isArchived: true }));
+    }
+
+
+  } catch (error) {
+    console.error('Error archiving ambher product:', error);
+    alert('Failed to archive product');
+  }
+};
+
+// Unarchive Ambher Product Handler
+const handleUnarchiveAmbherProduct = async (product) => {
+  try {
+    const response = await fetch(`/api/ambherinventoryproduct/${product.ambherinventoryproductid}/unarchive`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to unarchive product: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Update the product in the local state
+    setambherinventoryproducts(prev => 
+      prev.map(p => 
+        p.ambherinventoryproductid === product.ambherinventoryproductid 
+          ? { ...p, isArchived: false }
+          : p
+      )
+    );
+
+    // Update the selected product if it's the same one
+    if (selectedambherproduct?.ambherinventoryproductid === product.ambherinventoryproductid) {
+      setselectedambherproduct(prev => ({ ...prev, isArchived: false }));
+    }
+
+
+  } catch (error) {
+    console.error('Error unarchiving ambher product:', error);
+    alert('Failed to unarchive product');
+  }
+};
 
 
 
@@ -8483,6 +8619,7 @@ const [addbautistainventoryproductimagepreviewimages, setaddbautistainventorypro
 const [bautistacurrentimageindex, setbautistacurrentimageindex] = useState(0);
 const addbautistainventoryproductimageimageinputref = useRef(null);
 const [bautistainventoryproductissubmitting, setbautistainventoryproductissubmitting] = useState(false);
+const [bautistainventoryproductimagesuploading, setbautistainventoryproductimagesuploading] = useState(false);
 const [bautistainventoryproducts, setbautistainventoryproducts] = useState([]);
 const [bautistaloadingproducts, setbautistaloadingproducts] = useState(true);
 const [selectedbautistaproduct, setselectedbautistaproduct] = useState(null);
@@ -8580,20 +8717,35 @@ const sortedFilteredBautistaProducts = [...filteredBautistaProducts].sort((a, b)
 
 // Filter out of stock products if needed
 const finalFilteredBautistaProducts = (() => {
+  let filteredProducts;
   if (bautistaQuantitySortingProducts === 'Outofstock') {
-    return sortedFilteredBautistaProducts.filter(product => (product.bautistainventoryproductquantity || 0) === 0);
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => (product.bautistainventoryproductquantity || 0) === 0);
   } else if (bautistaQuantitySortingProducts === 'LowStock') {
-    return sortedFilteredBautistaProducts.filter(product => {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => {
       const qty = product.bautistainventoryproductquantity || 0;
       return qty >= 4 && qty <= 6;
     });
   } else if (bautistaQuantitySortingProducts === 'CriticalStock') {
-    return sortedFilteredBautistaProducts.filter(product => {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => {
       const qty = product.bautistainventoryproductquantity || 0;
       return qty >= 1 && qty <= 3;
     });
+  } else if (bautistaQuantitySortingProducts === 'Archived') {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => product.isArchived === true);
+  } else {
+    filteredProducts = sortedFilteredBautistaProducts;
   }
-  return sortedFilteredBautistaProducts;
+  
+  // Sort to place archived products at the end (only if not specifically filtering for archived products)
+  if (bautistaQuantitySortingProducts !== 'Archived') {
+    return filteredProducts.sort((a, b) => {
+      if (a.isArchived && !b.isArchived) return 1; // a is archived, b is not - a comes after b
+      if (!a.isArchived && b.isArchived) return -1; // a is not archived, b is - a comes before b
+      return 0; // Both have same archive status, maintain current order
+    });
+  }
+  
+  return filteredProducts;
 })();
 
 const bautistainventoryproductcount = bautistainventoryproducts.filter(
@@ -8649,6 +8801,9 @@ if (bautistainventoryproducts.length > 0) {
             }
           }
         
+          // Set loading state to true when starting upload
+          setbautistainventoryproductimagesuploading(true);
+        
           try{
             const compressedimages = await Promise.all(
               files.map(async (file) => {
@@ -8697,6 +8852,9 @@ if (bautistainventoryproducts.length > 0) {
           }catch(error){
             console.error("Image compression failed: ", error.message);
             alert("Image compression failed");
+          } finally {
+            // Always set loading state to false when finished (success or error)
+            setbautistainventoryproductimagesuploading(false);
           }
         
           if(addbautistainventoryproductimageimageinputref.current){
@@ -8820,6 +8978,11 @@ if (bautistainventoryproducts.length > 0) {
         
            if (addbautistainventoryproductimagepreviewimages.length === 0) {
             alert("Upload at least 1 product image");
+                   return;
+            }
+
+           if (!bautistainventorycategorynamebox || bautistainventorycategorynamebox.trim() === '') {
+            alert("Please select a product category");
                    return;
             }
         
@@ -8997,6 +9160,78 @@ if (bautistainventoryproducts.length > 0) {
         
         };
 
+        // Archive Bautista Product Handler
+        const handleArchiveBautistaProduct = async (product) => {
+          try {
+            const response = await fetch(`/api/bautistainventoryproduct/${product.bautistainventoryproductid}/archive`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to archive product: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Update the product in the local state
+            setbautistainventoryproducts(prev => 
+              prev.map(p => 
+                p.bautistainventoryproductid === product.bautistainventoryproductid 
+                  ? { ...p, isArchived: true }
+                  : p
+              )
+            );
+
+            // Update the selected product if it's the same one
+            if (selectedbautistaproduct?.bautistainventoryproductid === product.bautistainventoryproductid) {
+              setselectedbautistaproduct(prev => ({ ...prev, isArchived: true }));
+            }
+
+          } catch (error) {
+            console.error('Error archiving bautista product:', error);
+            alert('Failed to archive product');
+          }
+        };
+
+        // Unarchive Bautista Product Handler
+        const handleUnarchiveBautistaProduct = async (product) => {
+          try {
+            const response = await fetch(`/api/bautistainventoryproduct/${product.bautistainventoryproductid}/unarchive`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to unarchive product: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Update the product in the local state
+            setbautistainventoryproducts(prev => 
+              prev.map(p => 
+                p.bautistainventoryproductid === product.bautistainventoryproductid 
+                  ? { ...p, isArchived: false }
+                  : p
+              )
+            );
+
+            // Update the selected product if it's the same one
+            if (selectedbautistaproduct?.bautistainventoryproductid === product.bautistainventoryproductid) {
+              setselectedbautistaproduct(prev => ({ ...prev, isArchived: false }));
+            }
+
+
+          } catch (error) {
+            console.error('Error unarchiving bautista product:', error);
+            alert('Failed to unarchive product');
+          }
+        };
 
 
 
@@ -9314,7 +9549,12 @@ const fetchSoldCount = async () => {
   if (!selectedorderambherproduct?.ambherinventoryproductid) return;
 
   try {
-    const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${selectedorderambherproduct.ambherinventoryproductid}`);
+    const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${selectedorderambherproduct.ambherinventoryproductid}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
     if (!response.ok) throw new Error("Failed to fetch sold count");
     const data = await response.json();
     setambherproductsoldCount(data.sold || 0);
@@ -9324,7 +9564,7 @@ const fetchSoldCount = async () => {
 };
 
 fetchSoldCount();
-}, [selectedorderambherproduct]);
+}, [selectedorderambherproduct, currentusertoken]);
 
 
 
@@ -9336,7 +9576,12 @@ const fetchSoldCount = async () => {
   if (!selectedorderbautistaproduct?.bautistainventoryproductid) return;
 
   try {
-    const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${selectedorderbautistaproduct.bautistainventoryproductid}`);
+    const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${selectedorderbautistaproduct.bautistainventoryproductid}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
     if (!response.ok) throw new Error("Failed to fetch sold count");
     const data = await response.json();
     setbautistaproductsoldCount(data.sold || 0);
@@ -9346,7 +9591,7 @@ const fetchSoldCount = async () => {
 };
 
 fetchSoldCount();
-}, [selectedorderbautistaproduct]);
+}, [selectedorderbautistaproduct, currentusertoken]);
 
 
 
@@ -9360,7 +9605,12 @@ const fetchAllSoldCounts = async () => {
   await Promise.all(
     ambherinventoryproducts.map(async (product) => {
       try {
-        const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${product.ambherinventoryproductid}`);
+        const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${product.ambherinventoryproductid}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch");
 
         const data = await response.json();
@@ -9378,7 +9628,7 @@ const fetchAllSoldCounts = async () => {
 if (ambherinventoryproducts.length > 0) {
   fetchAllSoldCounts();
 }
-}, [ambherinventoryproducts]);
+}, [ambherinventoryproducts, currentusertoken]);
 
 
 
@@ -9395,7 +9645,12 @@ const fetchAllSoldCounts = async () => {
   await Promise.all(
     bautistainventoryproducts.map(async (product) => {
       try {
-        const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${product.bautistainventoryproductid}`);
+        const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${product.bautistainventoryproductid}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch");
 
         const data = await response.json();
@@ -9413,7 +9668,7 @@ const fetchAllSoldCounts = async () => {
 if (bautistainventoryproducts.length > 0) {
   fetchAllSoldCounts();
 }
-}, [bautistainventoryproducts]);
+}, [bautistainventoryproducts, currentusertoken]);
 
 
 
@@ -13048,8 +13303,8 @@ try {
 
   // Chart colors
   const CHART_COLORS = [
-    '#184d85', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd',
-    '#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'
+    '#184d85', '#2563eb', '#1c96c5', '#60a5fa', '#93c5fd',
+    '#1e40af', '#1d4ed8', '#2563eb', '#1c96c5', '#60a5fa'
   ];
 
   // Optimized Effects with better dependency management
@@ -14175,7 +14430,7 @@ const getUserLocation = useCallback(() => {
           paint: {
             'circle-radius': Math.max(8, Math.min(accuracy / 2, 25)),
             'circle-color': accuracy <= 10 ? '#10b981' :  // Green (high precision)
-                           accuracy <= 50 ? '#3b82f6' :  // Blue (good precision)
+                           accuracy <= 50 ? '#1c96c5' :  // Blue (good precision)
                            '#f59e0b',                     // Amber (fair precision)
             'circle-opacity': 0.6,
             'circle-stroke-width': 2,
@@ -16503,9 +16758,21 @@ useEffect(() => {
 
   return (
     <>
+      {/* Authentication Loading Screen */}
+      {isAuthenticating && (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-100">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-xl font-medium text-gray-700">Verifying authentication...</p>
+          </div>
+        </div>
+      )}
 
-     {/* NavBar */}
-<div className="rounded-full mt-2 ml-3 mr-3 bg-[#003366] ">
+      {/* Main Dashboard Content - Only show after authentication is verified */}
+      {!isAuthenticating && (
+        <>
+          {/* NavBar */}
+          <div className="rounded-full mt-2 ml-3 mr-3 bg-[#003366] ">
       <header id="header" className="flex justify-between items-center text-black py-4 px-8 md:px-20  ">
         <a id:logocontain href="#" >
    
@@ -19186,7 +19453,7 @@ useEffect(() => {
         {showdeletepatientprofiledialog && (
           <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
             <div className="flex flex-col items-center bg-white rounded-2xl w-[600px] h-fit animate-fadeInUp">
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
+              <div className="w-full flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
                 <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1]" />
                 <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1>
               </div>
@@ -19602,7 +19869,7 @@ useEffect(() => {
           )}
           {updatePatientProfileToastMessage}
 
-          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${updatePatientProfileToastType === 'success' ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: updatePatientProfileProgressWidth, transition: 'width 4s linear'}}/>
+          <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${updatePatientProfileToastType === 'success' ? 'bg-sky-500' : 'bg-red-500'}`} style={{width: updatePatientProfileProgressWidth, transition: 'width 4s linear'}}/>
         </div>
       </div>  
     )}
@@ -19878,30 +20145,22 @@ itemName="appointments"
                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
                  
                  {/* Header */}
-                 <div className="bg-gradient-to-r from-blue-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                 <div className="~ px-8 py-6 border-b border-gray-100">
                    <div className="flex items-center justify-between">
                      <div className="flex items-center gap-6">
-                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                         <i className="bx bx-calendar-check text-blue-600 text-2xl"></i>
-                       </div>
-                       <div>
-                         <h1 className="text-2xl font-bold text-gray-800 font-albertsans">Appointment Management</h1>
-                         <p className="text-gray-600 mt-1">Review and manage patient appointment details</p>
-                       </div>
-                       {/* Patient Card */}
-                       <div className="flex items-center gap-4 bg-white bg-opacity-80 rounded-2xl px-6 py-4 border border-gray-200">
-                         <img 
-                           src={selectedpatientappointment?.patientappointmentprofilepicture || defaultprofilepic} 
-                           alt="Profile" 
-                           className="h-16 w-16 rounded-full object-cover shadow-sm"
-                         />
-                         <div>
-                           <h2 className="font-albertsans font-bold text-lg text-gray-800">
-                             {selectedpatientappointment?.patientappointmentfirstname || ''} {selectedpatientappointment?.patientappointmentlastname || ''}
-                           </h2>
-                           <p className="text-gray-600 text-sm">{selectedpatientappointment?.patientappointmentemail || ''}</p>
-                         </div>
-                       </div>
+
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-calendar text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Appointment Management
+            </h2>
+            <p className="text-sm text-gray-500">Review and manage patient appointment details</p>
+          </div>
+        </div>
+ 
                      </div>
                      <button 
                        onClick={() => {setviewpatientappointment(false); setbautistaeyespecialist(''); setambhereyespecialist('');}} 
@@ -19938,8 +20197,23 @@ itemName="appointments"
                  </div>
 
                  <div className="p-8 overflow-y-auto flex-1">
+                                        {/* Patient Card */}
+                       <div className="mb-4 flex items-center gap-4 bg-white bg-opacity-80 rounded-2xl px-6 py-4 border border-gray-200">
+                         <img  
+                           src={selectedpatientappointment?.patientappointmentprofilepicture || defaultprofilepic} 
+                           alt="Profile" 
+                           className="h-16 w-16 rounded-full object-cover shadow-sm"
+                         />
+                         <div>
+                           <h2 className="font-albertsans font-bold text-lg text-gray-800">
+                             {selectedpatientappointment?.patientappointmentfirstname || ''} {selectedpatientappointment?.patientappointmentlastname || ''}
+                           </h2>
+                           <p className="text-gray-600 text-sm">{selectedpatientappointment?.patientappointmentemail || ''}</p>
+                         </div>
+                       </div>
                    {/* Clinic Cards */}
                    <div className="grid lg:grid-cols-2 gap-8 mb-8">
+
 
 {selectedpatientappointment.patientambherappointmentdate && (
   <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
@@ -20943,7 +21217,7 @@ itemName="appointments"
           </div>
 
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
-            <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
+            <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-sky-500">
               <span className="text-sm font-medium text-blue-700">Payment Total:</span>
               <p className="text-blue-800 font-bold text-lg">
                 ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
@@ -20978,7 +21252,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21008,7 +21282,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21038,7 +21312,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21068,7 +21342,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21098,7 +21372,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21128,7 +21402,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21158,7 +21432,7 @@ itemName="appointments"
                       }
                     }}
                     disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                       selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                         ? 'cursor-not-allowed opacity-60' 
                         : 'cursor-pointer'
@@ -21191,7 +21465,7 @@ itemName="appointments"
                         }
                       }}
                       disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                      className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                      className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
                         selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
                           ? 'cursor-not-allowed opacity-60' 
                           : 'cursor-pointer'
@@ -21220,7 +21494,7 @@ itemName="appointments"
                             }));
                           }}
                           placeholder="Specify other service"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                         />
                       )}
                     </div>
@@ -21389,7 +21663,7 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Total Billing:</label>
               <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-gray-700" 
                 value={bautistaappointmentpaymentotal} 
                 onChange={(e) => setbautistaappointmentpaymentotal(e.target.value)} 
                 type="text" 
@@ -21402,7 +21676,7 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Consultation Subject:</label>
               <textarea 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 resize-none" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-gray-700 resize-none" 
                 ref={textarearef} 
                 rows={2} 
                 value={bautistaappointmentconsultationremarkssubject} 
@@ -21414,7 +21688,7 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Consultation Remarks:</label>
               <textarea 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 resize-none" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-gray-700 resize-none" 
                 ref={textarearef} 
                 rows={3} 
                 value={bautistaappointmentconsultationremarks} 
@@ -21426,7 +21700,7 @@ itemName="appointments"
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Prescription:</label>
               <textarea 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 resize-none" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-gray-700 resize-none" 
                 ref={textarearef} 
                 rows={3} 
                 value={bautistaappointmentprescription} 
@@ -21625,7 +21899,7 @@ itemName="appointments"
                        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
                          <div className="flex items-center justify-between">
                            <div className="flex items-center gap-3">
-                             <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                             <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-sky-500 rounded-full flex items-center justify-center">
                                <i className="bx bx-receipt text-white text-xl"></i>
                              </div>
                              <div>
@@ -21690,7 +21964,7 @@ itemName="appointments"
                                    <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
                                      doc.mimetype.startsWith('image/') ? 'text-green-500' :
                                      doc.mimetype === 'application/pdf' ? 'text-red-500' :
-                                     doc.mimetype.includes('word') ? 'text-blue-500' :
+                                     doc.mimetype.includes('word') ? 'text-sky-500' :
                                      'text-gray-500'
                                    }`}></i>
                                    <div className="flex-1 min-w-0">
@@ -21927,9 +22201,9 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
       e.target.src = 'default-profile-url';
     }}
   />
-  <h1 className="font-albertsans text-[#171717]  text-center text-[15px] font-medium ">{patients.patientfirstname} {patients.patientmiddlename} {patients.patientlastname}</h1>
-  <p className="text-[12px] text-gray-500">{patients.patientage} years old • {patients.patientgender}</p>
-  <p className="text-[11px] text-gray-400">{patients.patientcontactnumber}</p>
+  <h1 className="font-albertsans text-[#171717]  text-center text-[15px] font-medium ml-3 ">{patients.patientfirstname} {patients.patientmiddlename} {patients.patientlastname}</h1>
+  <p className="text-[12px] text-gray-500 ml-1">{patients.patientage} years old • {patients.patientgender}</p>
+
   </div>
 </td>
 
@@ -21998,10 +22272,17 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 <div id="patientdemographicprofileform" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50 ">
 <div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[1300px] h-[780px] p-8 animate-fadeInUp">
 <div className="flex justify-between items-center w-full h-[60px] mb-6">
-  <div className="flex items-center gap-4">
-    <img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-12 h-12 transition-transform hover:scale-105"></img>
-    <h1 className="text-gray-800 font-albertsans font-semibold text-2xl">Patient Medical Record</h1>
-  </div>
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-data text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Patient Medical Record
+            </h2>
+            <p className="text-sm text-gray-500">Medical Record History</p>
+          </div>
+        </div>
   <div 
     onClick={() => setshowpatientmedicalrecord(false)} 
     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
@@ -22056,27 +22337,27 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
   
   <div className="flex flex-col w-[65%]">
       <div className="flex gap-3 mb-4">
-        <button 
+        <div 
           onClick={() => showpatientmedicalrecordstable('medicalrecordsconsultationtable')}  
-          className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+          className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
             activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' 
-              ? 'bg-blue-600 text-white shadow-md' 
+              ? 'bg-sky-800 text-white shadow-md' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           Consultation
-        </button>
+        </div>
         
-        <button 
+        <div
           onClick={() => showpatientmedicalrecordstable('medicalrecordspastvisitstable')}  
-          className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+          className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
             activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' 
-              ? 'bg-blue-600 text-white shadow-md' 
+              ? 'bg-sky-800 text-white shadow-md' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           Other Clinic Records
-        </button>
+        </div>
       </div>
 
  { activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' && (
@@ -22192,13 +22473,13 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 
  { activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' && (
   <div id='medicalrecordspastvisitstable' className="w-full flex-1 flex flex-col">  
-     <button 
+     <div 
        onClick={() => setshowpatientaddothermedicalrecord(true)}  
-       className="mb-4 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+       className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
      >
        <i className="bx bx-user-plus text-lg"/>
        <span>Add Record</span>
-     </button>
+     </div>
      
   <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
 
@@ -22905,6 +23186,16 @@ Lowest to Highest
       Low Stock (4-6)
     </div>
 
+    <div
+      onClick={() => setQuantitySortingProducts('Archived')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${quantitySortingProducts === 'Archived'
+          ? 'bg-gray-600 text-white border-gray-600'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+    >
+
+      Archived Products
+    </div>
 
   </div>
 
@@ -22942,13 +23233,23 @@ Lowest to Highest
                                                              setaddambherinventoryproductprice(product?.ambherinventoryproductprice || 0);
                                                              setaddambherinventoryproductquantity(product?.ambherinventoryproductquantity || 0);
                                                              setaddambherinventoryproductimagepreviewimages(product?.ambherinventoryproductimagepreviewimages || []);
-}} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl ">
-  <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.ambherinventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+}} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl relative">
+  <img src={product.ambherinventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.ambherinventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.ambherinventoryproductquantity === 0 || product.isArchived ? 'opacity-50': ''}`}/>
   
+  {/* Archived Overlay */}
+  {product.isArchived && (
+    <div className="absolute inset-0 bg-black/70 bg-opacity-70 rounded-2xl flex items-center justify-center z-10">
+      <div className="text-center">
+        <i className="bx bx-archive text-white text-4xl mb-2"></i>
+        <h1 className="font-albertsans font-bold text-white text-lg">ARCHIVED</h1>
+        <p className="font-albertsans font-medium text-gray-300 text-sm">Product archived</p>
+      </div>
+    </div>
+  )}
   
-  {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
-   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
-   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+  {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.ambherinventoryproductcategory}</h1></div>
@@ -23014,141 +23315,267 @@ Lowest to Highest
 {/*Ambher Inventory Category*/}
 {showaddambherinventorycategorydialog && (
 
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Category Management</h1></div>
-  <div onClick={() => setshowaddambherinventorycategorydialog(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
 
-<div className="flex flex-col justify-center items-center h-[84%] rounded-2xl w-full">
-  <div className=" h-[10%] mb-2 mt-2 w-full rounded-2xl flex justify-end items-center">
-        <div onClick={() => setshowaddambheraddinventorycategory(true)}  className="py-2 w-[200px] mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-categories text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Category</p></div>
-
+{/* Modal Header */}
+<div className="flex items-center justify-between p-6 border-b border-gray-100">
+  <div className="flex items-center space-x-4">
+    <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500  rounded-xl flex items-center justify-center">
+      <i className="bx bx-category text-white text-xl"></i>
+    </div>
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900">Category Management</h2>
+      <p className="text-sm text-gray-500">Ambher Inventory Categories</p>
+    </div>
   </div>
-  <div  className="p-2  animate-fadeInUp flex  items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
-<div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
-{ambherinventorycategorylist.length === 0 ? (
-<div className="bg-yellow-100 w-full py-3 rounded-tl-2xl rounded-tr-2xl flex justify-center items-center"><h1 className="text-yellow-900 font-albertsans font-medium ">No Ambher Optical Inventory Categories</h1></div>
-):(
-<table className="min-w-full divide-y divide-gray-200">
-<thead className="bg-">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Category</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Created By</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Date Created</th>
-
-
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
-
-
-
-
-<tbody className="divide-y divide-gray-200 bg-white">
-{loadingambherinventorycategorylist ? (
-<>
-{[...Array(5)].map((_, index) => (
-<CategoryTableSkeleton key={index} />
-))}
-</>
-): (
-ambherinventorycategorylist.map((category) => (
-
-<tr 
-key={category._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-{category.ambherinventorycategoryname}
-</td>
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-<div className="flex items-center justify-center">
-<img 
-src={category.ambherinventorycategoryaddedbyprofilepicture || 'default-profile.png'}
-alt="Profile" 
-className="rounded-full h-12 w-12 object-cover mr-3"
-onError={(e) => {
-  e.target.src = 'default-profile.png';
-}}
-/>
-<div>
-<p className="font-medium">
-  {category.ambherinventorycategoryaddedbyfirstname} {category.ambherinventorycategoryaddedbylastname}
-</p>
-<p className="text-gray-500 text-sm ">
-  {category.ambherinventorycategoryaddedbytype}
-</p>
-</div>
-</div>
-</td>
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-{new Date(category.createdAt).toLocaleDateString()}
-</td>
-<td className="flex justify-center items-center  font-medium px-5 py-4 whitespace-nowrap text-sm  ">
-
-
-<div onClick={() => {setshowdeleteambherinventorycategorydialog(true);
-                  setselectedambherinventorycategory(category);}} className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-</td>
-</tr>
-))
-)}
-</tbody>
-</table>
-)}
-
-</div>
+  <div 
+    onClick={() => setshowaddambherinventorycategorydialog(false)}
+    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"></i>
   </div>
 </div>
 
+{/* Modal Content */}
+<div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+  <div className="p-6">
+    <div className="flex justify-end mb-6">
+      <div 
+        onClick={() => setshowaddambheraddinventorycategory(true)}
+        className="cursor-pointer px-6 py-3 bg-[#6aa84f] hover:bg-[#5f9747] text-white rounded-3xl font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+      >
+        <i className="bx bx-plus text-lg"></i>
+        <span>Add Category</span>
+      </div>
+    </div>
+    
+    <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
+      {ambherinventorycategorylist.length === 0 ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          <i className="bx bx-info-circle text-yellow-500 text-3xl mb-2"></i>
+          <h3 className="text-yellow-800 font-medium text-lg">No Categories Found</h3>
+          <p className="text-yellow-600 text-sm">No Ambher Optical Inventory Categories available</p>
+        </div>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">Category</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loadingambherinventorycategorylist ? (
+              <>
+                {[...Array(5)].map((_, index) => (
+                  <CategoryTableSkeleton key={index} />
+                ))}
+              </>
+            ) : (
+              ambherinventorycategorylist.map((category) => (
+                <tr 
+                  key={category._id}
+                  className="hover:bg-gray-50 transition-all ease-in-out duration-200"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {category.ambherinventorycategoryname}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img 
+                        src={category.ambherinventorycategoryaddedbyprofilepicture || 'default-profile.png'}
+                        alt="Profile" 
+                        className="rounded-full h-10 w-10 object-cover mr-3"
+                        onError={(e) => {
+                          e.target.src = 'default-profile.png';
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {category.ambherinventorycategoryaddedbyfirstname} {category.ambherinventorycategoryaddedbylastname}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {category.ambherinventorycategoryaddedbytype}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(category.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const categoryUsedInOrders = ambherorders.some(order => 
+                        order.patientorderambherproductcategory === category.ambherinventorycategoryname
+                      );
+                      
+                      const categoryUsedInInventory = ambherinventoryproducts.some(product => 
+                        product.ambherinventoryproductcategory === category.ambherinventorycategoryname
+                      );
+                      
+                      if (categoryUsedInOrders && categoryUsedInInventory) {
+                        return (
+                          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-error-circle text-sm"></i>
+                            <span>Used in orders & inventory</span>
+                          </div>
+                        );
+                      } else if (categoryUsedInOrders) {
+                        return (
+                          <div className="bg-orange-50 border border-orange-200 text-orange-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-info-circle text-sm"></i>
+                            <span>Used in orders</span>
+                          </div>
+                        );
+                      } else if (categoryUsedInInventory) {
+                        return (
+                          <div className="bg-blue-50 border border-blue-200 text-blue-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-package text-sm"></i>
+                            <span>Used in inventory</span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div 
+                            onClick={() => {
+                              setshowdeleteambherinventorycategorydialog(true);
+                              setselectedambherinventorycategory(category);
+                            }} 
+                            className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200"
+                          >
+                            <i className="bx bxs-trash text-sm"></i>
+                            <span>Delete</span>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </div>
+</div>
 
 </div>
 </div>
-
-
 
 )}
 
 {showaddambheraddinventorycategory && (
 
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[700px] h-[270px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Category Name</h1></div>
-  <div onClick={() => setshowaddambheraddinventorycategory(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-<form onSubmit={submitambherinventorycategory}>
-<div className="flex flex-col justify-center items-center h-[84%] rounded-2xl w-full">
-  <div className="  mt-10 h-auto  w-full rounded-2xl flex flex-col  justify-center items-end">
-         <div className="w-full ">
-            <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="lastname">Category Name :</label>
-            <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-120"  value={ambherinventorycategorynameset} onChange={(e) => setambherinventorycategorynameset(e.target.value)} type="text" name="patientlastname" id="patientlastname"  required/></div>
-       
-            {ambherinventorycategorynamecheck && (
-               <div className="mt-1 w-120">
-                        <p className="text-gray-500  font-medium font-albertsans">Checking Category Name...</p>
-               </div>
-            )}
-            
-            {ambherinventorycategorynameexist && (
-               <div className="mt-1 w-120">
-                        <p className="text-red-500 font-medium font-albertsans">Category is already existing...</p>
-               </div>
-            )}
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
 
-
-
-        <button type="submit" disabled={ambherinventorycategoryissubmitting} className="submit-btn mt-2 w-full" style={{ backgroundColor: "#4ca22b", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px", width: "200px"  }}>
-          {ambherinventorycategoryissubmitting ? "Adding..." : "Add"}
-        </button>       
-
-
+{/* Modal Header */}
+<div className="flex items-center justify-between p-6 border-b border-gray-100">
+  <div className="flex items-center space-x-4">
+    <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+      <i className="bx bx-plus text-white text-xl"></i>
+    </div>
+    <div>
+      <h2 className="text-xl font-bold text-gray-900">Add Category</h2>
+      <p className="text-sm text-gray-500">Create new inventory category</p>
+    </div>
   </div>
-  <div className=" h-full w-full rounded-2xl"></div>
+  <div 
+    onClick={() => setshowaddambheraddinventorycategory(false)}
+    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"></i>
+  </div>
+</div>
 
+{/* Modal Content */}
+<form onSubmit={submitambherinventorycategory}>
+<div className="p-6 space-y-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="lastname">
+      Category Name
+    </label>
+    <input 
+      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
+      placeholder="Enter category name..."
+      value={ambherinventorycategorynameset} 
+      onChange={(e) => setambherinventorycategorynameset(e.target.value)} 
+      type="text" 
+      name="patientlastname" 
+      id="patientlastname"  
+      required
+    />
+    
+    {ambherinventorycategorynamecheck && (
+      <div className="mt-2">
+        <p className="text-blue-600 text-sm font-medium flex items-center">
+          <i className="bx bx-loader-alt animate-spin mr-2"></i>
+          Checking category name...
+        </p>
+      </div>
+    )}
+    
+    {ambherinventorycategorynameexist && (
+      <div className="mt-2">
+        <p className="text-red-600 text-sm font-medium flex items-center">
+          <i className="bx bx-error-circle mr-2"></i>
+          Category already exists
+        </p>
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Action Buttons */}
+<div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+  <button 
+    type="button"
+    onClick={() => setshowaddambheraddinventorycategory(false)}
+    style={{
+      cursor: 'pointer',
+      padding: '0.75rem 1.5rem',
+      backgroundColor: '#f3f4f6',
+      color: '#374151',
+      borderRadius: '0.75rem',
+      fontWeight: '500',
+      transition: 'all 0.2s ease-in-out',
+      border: 'none'
+    }}
+    onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+    onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+  >
+    Cancel
+  </button>
+  <button
+    type="submit"
+    disabled={ambherinventorycategoryissubmitting}
+    style={{
+      cursor: ambherinventorycategoryissubmitting ? 'not-allowed' : 'pointer',
+      padding: '0.75rem 1.5rem',
+      backgroundColor: ambherinventorycategoryissubmitting ? '#9ca3af' : '#6aa84f',
+      color: '#ffffff',
+      borderRadius: '0.75rem',
+      fontWeight: '500',
+      transition: 'all 0.2s ease-in-out',
+      border: 'none'
+    }}
+    onMouseEnter={(e) => {
+      if (!ambherinventorycategoryissubmitting) {
+        e.target.style.backgroundColor = '#5f9747';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!ambherinventorycategoryissubmitting) {
+        e.target.style.backgroundColor = '#6aa84f';
+      }
+    }}
+  >
+    {ambherinventorycategoryissubmitting ? "Adding..." : "Add Category"}
+  </button>
 </div>
 </form>
 </div>
@@ -23178,150 +23605,511 @@ onError={(e) => {
          </div>
 )}
 
-{/*Ambher Inventory Product*/}
+{/*Ambher Inventory Product Modal*/}
 {showaddambherinventoryproductdialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <style>
+      {`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}
+    </style>
+    <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-package text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {selectedambherproduct ? "Edit Product" : "Add Product"}
+            </h2>
+            <p className="text-sm text-gray-500">Ambher Inventory Management</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => {setshowaddambherinventoryproductdialog(false); resetaddambherinventoryproductdialog();}}
+          style={{
+            width: '2.5rem',
+            height: '2.5rem',
+            borderRadius: '50%',
+            backgroundColor: '#f3f4f6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease-in-out',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </button>
+      </div>
 
-           <div className="overflow-y-auto h-auto  bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="motion-preset-fade  mt-10 pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-auto mb-10 animate-fadeInUp ">
-                  <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                    <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">{selectedambherproduct ?  "Edit Product" : "Add Product"}</h1></div>
-                    <div onClick={() => {setshowaddambherinventoryproductdialog(false);  resetaddambherinventoryproductdialog(); }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                  </div>
+      {/* Modal Content */}
+      <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+        <form onSubmit={selectedambherproduct ? handleupdateambherinventoryproduct : handlesubmitaddambherinventoryproduct} className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* Image Upload Section */}
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <img 
+                    className="w-100 h-100 object-cover rounded-2xl shadow-lg" 
+                    src={(addambherinventoryproductimagepreviewimages?.[currentimageindex]) || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[currentimageindex]) || defaultimageplaceholder}
+                    alt="Product preview"
+                  />
+                  {((addambherinventoryproductimagepreviewimages?.length || selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1) && (
+                    <>
+                      <button 
+                        type="button" 
+                        onClick={handlepreviousimage}  
+                        style={{
+                          position: 'absolute',
+                          left: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: 'white',
+                          padding: '0.5rem',
+                          borderRadius: '50%',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease-in-out'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.75)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
+                      >
+                        <i className="bx bx-chevron-left text-xl"></i>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={handlenextimage}  
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: 'white',
+                          padding: '0.5rem',
+                          borderRadius: '50%',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease-in-out'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.75)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
+                      >
+                        <i className="bx bx-chevron-right text-xl"></i>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
 
-            <form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={selectedambherproduct ? handleupdateambherinventoryproduct : handlesubmitaddambherinventoryproduct}>
-                  <div className="flex justify-center items-start bg-[#fcfcfc] rounded-2xl w-full h-auto">
-                    <div className="pb-10 w-full h-full mr-15 rounded-2xl flex justify-center mt-5">
-
-
-
-                        <div className="h-fit w-fit ">
-
-                  <div className="relative">
-                  <img  className="w-120 object-cover rounded-2xl h-120" src={(addambherinventoryproductimagepreviewimages?.[currentimageindex]) || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.[currentimageindex]) || defaultimageplaceholder}/>
-
-
-                       {((addambherinventoryproductimagepreviewimages?.length || selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length || 0) > 1) && (
-                           <>
-                             <button type="button" onClick={handlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-full text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-black"><i className="bx bx-chevron-left text-2xl" /></button>
-
-                             <button type="button" onClick={handlenextimage}  className="rounded-full absolute bg-opacity-50 text-white p-2 transform -translate-y-1/2 bg-black hover:bg-opacity-75 right-2 top-1/2">  <i className="bx bx-chevron-right text-2xl" /></button>
-
-                           </>
-                         )}
-                       </div>
-                        
-                        
-                          {(addambherinventoryproductimagepreviewimages.length > 0 || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length > 0)) && (
-                            <div className="overflow-x-auto flex gap-2 mt-2 ">
-                              {(addambherinventoryproductimagepreviewimages.length > 0 ? addambherinventoryproductimagepreviewimages : selectedambherproduct?.ambherinventoryproductimagepreviewimages || []).map((preview, index) => (
-                                  <div key={index} className="relative">
-                                  <img src={preview} onClick={() => setcurrentimageindex(index)} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${currentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
-                                  {addambherinventoryproductimagepreviewimages.length > 0 && (
-                                    <button onClick={() => addambherinventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
-                                  )}
-                                  </div>
-                              ))}
-                            </div>
-                          )}
-                        
-                        
-                          <input className="hidden"  multiple type="file" accept="image/jpeg, image/jpg, image/png" ref={addambherinventoryproductimageimageinputref} onChange={addambherinventoryproductimagehandlechange}    />
-
-                          <div onClick={addambherinventoryproductimagehandleuploadclick} className="hover:cursor-pointer  hover:scale-105 transition-all mt-3 rounded-2xl flex justify-center items-center align-middle p-3 bg-[#0ea0cd]  " ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/>
-                            <p className="text-white font-semibold text-[20px] ">Upload {addambherinventoryproductimagepreviewimages.length}/5 Images</p>
-
-                          </div>
-                        </div>
-
-
-
-
-
-
-
-
-
+              {/* Thumbnail Gallery */}
+              {(addambherinventoryproductimagepreviewimages.length > 0 || (selectedambherproduct?.ambherinventoryproductimagepreviewimages?.length > 0)) && (
+                <div className="flex gap-3 justify-center flex-wrap">
+                  {(addambherinventoryproductimagepreviewimages.length > 0 ? addambherinventoryproductimagepreviewimages : selectedambherproduct?.ambherinventoryproductimagepreviewimages || []).map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={preview} 
+                        onClick={() => setcurrentimageindex(index)} 
+                        className={`w-16 h-16 object-cover rounded-lg cursor-pointer transition-all duration-200 ${currentimageindex === index ? 'ring-2 ring-sky-500 shadow-md' : 'hover:ring-2 hover:ring-gray-300'}`} 
+                      />
+                      {addambherinventoryproductimagepreviewimages.length > 0 && (
+                        <button 
+                          onClick={() => addambherinventoryproductimagehandleremove(index)}   
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors duration-200"
+                        > 
+                          <i className="bx bx-x"></i>
+                        </button>
+                      )}
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    <div className="w-full h-auto flex items-start mb-10 rounded-2xl">
-                          <div className=" w-full h-auto  rounded-4xl">
-                    
-                    
-
-                          <div className="registration-container">
-                       
-                          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Product Details</h1>
-                          {message.text && (
-                            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-                              {message.text}
-                            </div>
-                          )}
-                    
-                          <h1 className=" font-albertsans font-semibold italic text-[#595968] text-[20px]">Let's add product inventory!</h1>
-                    
-                    
-                    
-                    
-                          <div className="form-group mt-10  flex">
-                          <label className="  font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="ambherinventorycategorynamebox">Category :</label>
-                          <div className="flex flex-col">
-                          <div className="ml-13"> <AmbherinventorycategoryBox  value={ambherinventorycategorynamebox} loading={loadingambherinventorycategorylist} onChange={(e) => setambherinventorycategorynamebox(e.target.value)} categories={ambherinventorycategorylist}/></div>
-                          </div>
-                          </div>
-                    
-                    
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductname">Product Name : </label>
-                          <input className="bg-gray-200 text-[18px] text-gray-600 pl-3 rounded-2xl ml-1 h-10 w-70" placeholder="Enter Product Name..." type="text" name="addambherinventoryproductname" id="addambherinventoryproductname" value={addambherinventoryproductname} onChange={(e) => setaddambherinventoryproductname(e.target.value)} required /></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductbrand">Product Brand : </label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-1 h-10 w-70" placeholder="Enter Product Brand..." type="text" name="addambherinventoryproductbrand" id="addambherinventoryproductbrand" value={addambherinventoryproductbrand} onChange={(e) => setaddambherinventoryproductbrand(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductmodelnumber">Model Number :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Model Number..." type="text" name="addambherinventoryproductmodelnumber" id="addambherinventoryproductmodelnumber" value={addambherinventoryproductmodelnumber} onChange={(e) => setaddambherinventoryproductmodelnumber(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5 flex flex-col">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductdescription">Product Description:</label>
-                           <textarea className="w-full text-[18px]  text-gray-600 rounded-md  border-2  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={addambherinventoryproductdescription} onChange={(e) => {setaddambherinventoryproductdescription(e.target.value); adjusttextareaheight();}} placeholder="Product description..."/>
-                          </div>
-
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductprice">Price :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Price..." type="number" name="addambherinventoryproductprice" id="addambherinventoryproductprice" value={addambherinventoryproductprice} onChange={(e) => setaddambherinventoryproductprice(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addambherinventoryproductquantity">Quantity :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Quantity..." type="number" name="addambherinventoryproductquantity" id="addambherinventoryproductquantity" value={addambherinventoryproductquantity} onChange={(e) => setaddambherinventoryproductquantity(e.target.value)} required/></div>
-                    
-
-                          <button type="submit" disabled={ambherinventoryproductissubmitting} className="submit-btn mt-12 w-full" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                                      {ambherinventoryproductissubmitting 
-                                     ? (selectedambherproduct ? "Updating..." : "Adding...") 
-                                     : (selectedambherproduct ? "Update Product" : "Add Product")}
-                          </button>
-                        {selectedambherproduct && (
-                         <div className="mt-3 w-full hover:cursor-pointer bg-[#4e0f0f] justify-center flex items-center  rounded-2xl h-fit w-fit px-7 py-3  transition-all duration-300 ease-in-out" onClick={() => {setshowdeleteambherproduct(true); setselecteddeleteambherproduct(selectedambherproduct);}}><p className=" text-[#ffffff] font-semibold font-albertsans text-[20px]">Delete</p></div>
-
-                        )}
-
-                    
-                    
-                          </div>
+              {/* Upload Button */}
+              <input 
+                className="hidden" 
+                multiple 
+                type="file" 
+                accept="image/jpeg, image/jpg, image/png" 
+                ref={addambherinventoryproductimageimageinputref} 
+                onChange={addambherinventoryproductimagehandlechange}    
+              />
+              <div
+                onDragOver={(e) => {
+                  if (ambherinventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#60a5fa';
+                  e.currentTarget.style.backgroundColor = '#eff6ff';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#1c96c5';
+                  if (primaryText) primaryText.style.color = '#2563eb';
+                }}
+                onDragLeave={(e) => {
+                  if (ambherinventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#1c96c5';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
+                }}
+                onDrop={(e) => {
+                  if (ambherinventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#1c96c5';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
                   
-                    
-                    
-                          </div>
+                  const files = Array.from(e.dataTransfer.files);
+                  const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                  
+                  if (imageFiles.length > 0) {
+                    // Create a synthetic event to pass to the existing handler
+                    const syntheticEvent = {
+                      target: {
+                        files: imageFiles
+                      }
+                    };
+                    addambherinventoryproductimagehandlechange(syntheticEvent);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px dashed #1c96c5',
+                  borderRadius: '1rem',
+                  backgroundColor: 'transparent',
+                  cursor: ambherinventoryproductimagesuploading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  opacity: ambherinventoryproductimagesuploading ? 0.7 : 1
+                }}
+                onClick={ambherinventoryproductimagesuploading ? undefined : addambherinventoryproductimagehandleuploadclick}
+                onMouseEnter={(e) => {
+                  if (ambherinventoryproductimagesuploading) return;
+                  e.target.style.borderColor = '#60a5fa';
+                  e.target.style.backgroundColor = '#eff6ff';
+                  const icon = e.target.querySelector('i');
+                  const primaryText = e.target.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#1c96c5';
+                  if (primaryText) primaryText.style.color = '#2563eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (ambherinventoryproductimagesuploading) return;
+                  e.target.style.borderColor = '#1c96c5';
+                  e.target.style.backgroundColor = 'transparent';
+                  const icon = e.target.querySelector('i');
+                  const primaryText = e.target.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  {ambherinventoryproductimagesuploading ? (
+                    <>
+                      <div style={{ 
+                        width: '2rem', 
+                        height: '2rem', 
+                        border: '3px solid #e5e7eb',
+                        borderTop: '3px solid #1c96c5',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }}></div>
+                      <p style={{ color: '#1c96c5', fontWeight: '500' }}>
+                        Uploading Images...
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Please wait</p>
+                    </>
+                  ) : (
+                    <>
+                      <i style={{ fontSize: '1.875rem', color: '#9ca3af', transition: 'color 0.2s ease-in-out' }} className="bx bx-cloud-upload"></i>
+                      <p style={{ color: '#4b5563', fontWeight: '500', transition: 'color 0.2s ease-in-out' }}>
+                        Upload Images ({addambherinventoryproductimagepreviewimages.length}/5)
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Click to browse or drag & drop images here</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
 
+            {/* Form Fields Section */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Product Details</h3>
+                
+                {message.text && (
+                  <div className={`p-4 rounded-xl mb-6 ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                    <div className="flex items-center space-x-2">
+                      <i className={`bx ${message.type === 'error' ? 'bx-error-circle' : 'bx-check-circle'} text-lg`}></i>
+                      <span className="font-medium">{message.text}</span>
                     </div>
                   </div>
-                  </form>
-             </div>
-           </div>
+                )}
+              </div>
 
+              <div className="space-y-4">
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="ambherinventorycategorynamebox">
+                    Category
+                  </label>
+                  <AmbherinventorycategoryBox  
+                    value={ambherinventorycategorynamebox} 
+                    loading={loadingambherinventorycategorylist} 
+                    onChange={(e) => setambherinventorycategorynamebox(e.target.value)} 
+                    categories={ambherinventorycategorylist}
+                  />
+                </div>
 
+                {/* Product Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductname">
+                    Product Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter product name..." 
+                    type="text" 
+                    name="addambherinventoryproductname" 
+                    id="addambherinventoryproductname" 
+                    value={addambherinventoryproductname} 
+                    onChange={(e) => setaddambherinventoryproductname(e.target.value)} 
+                    required 
+                  />
+                </div>
+
+                {/* Product Brand */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductbrand">
+                    Product Brand
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter product brand..." 
+                    type="text" 
+                    name="addambherinventoryproductbrand" 
+                    id="addambherinventoryproductbrand" 
+                    value={addambherinventoryproductbrand} 
+                    onChange={(e) => setaddambherinventoryproductbrand(e.target.value)} 
+                    required
+                  />
+                </div>
+
+                {/* Model Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductmodelnumber">
+                    Model Number
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter model number..." 
+                    type="text" 
+                    name="addambherinventoryproductmodelnumber" 
+                    id="addambherinventoryproductmodelnumber" 
+                    value={addambherinventoryproductmodelnumber} 
+                    onChange={(e) => setaddambherinventoryproductmodelnumber(e.target.value)} 
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductdescription">
+                    Product Description
+                  </label>
+                  <textarea 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 resize-none" 
+                    ref={textarearef} 
+                    rows={3} 
+                    style={{minHeight:'80px'}} 
+                    value={addambherinventoryproductdescription} 
+                    onChange={(e) => {setaddambherinventoryproductdescription(e.target.value); adjusttextareaheight();}} 
+                    placeholder="Enter product description..."
+                  />
+                </div>
+
+                {/* Price and Quantity */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductprice">
+                      Price
+                    </label>
+                    <input 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                      placeholder="0.00" 
+                      type="number" 
+                      step="0.01"
+                      name="addambherinventoryproductprice" 
+                      id="addambherinventoryproductprice" 
+                      value={addambherinventoryproductprice} 
+                      onChange={(e) => setaddambherinventoryproductprice(e.target.value)} 
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductquantity">
+                      Quantity
+                    </label>
+                    <input 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                      placeholder="0" 
+                      type="number" 
+                      name="addambherinventoryproductquantity" 
+                      id="addambherinventoryproductquantity" 
+                      value={addambherinventoryproductquantity} 
+                      onChange={(e) => setaddambherinventoryproductquantity(e.target.value)} 
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'flex-end', 
+            gap: '1rem', 
+            marginTop: '2rem', 
+            paddingTop: '1.5rem', 
+            borderTop: '1px solid #f3f4f6' 
+          }}>
+            {selectedambherproduct && (
+              <>
+                {(ambherproductsoldCounts[selectedambherproduct.ambherinventoryproductid] ?? 0) >= 1 ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (selectedambherproduct.isArchived) {
+                        handleUnarchiveAmbherProduct(selectedambherproduct);
+                      } else {
+                        handleArchiveAmbherProduct(selectedambherproduct);
+                      }
+                    }}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: selectedambherproduct.isArchived ? '#f0f9ff' : '#fef3c7',
+                      color: selectedambherproduct.isArchived ? '#0369a1' : '#d97706',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = selectedambherproduct.isArchived ? '#e0f2fe' : '#fef3c7';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = selectedambherproduct.isArchived ? '#f0f9ff' : '#fef3c7';
+                    }}
+                  >
+                    {selectedambherproduct.isArchived ? 'Unarchive Product' : 'Archive Product'}
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => {setshowdeleteambherproduct(true); setselecteddeleteambherproduct(selectedambherproduct);}}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: '#fef2f2',
+                      color: '#dc2626',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#fee2e2'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#fef2f2'}
+                  >
+                    Delete Product
+                  </button>
+                )}
+              </>
+            )}
+            <button 
+              type="button"
+              onClick={() => {setshowaddambherinventoryproductdialog(false); resetaddambherinventoryproductdialog();}}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                borderRadius: '0.75rem',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={ambherinventoryproductissubmitting} 
+              style={{
+                padding: '0.75rem 2rem',
+                background: ambherinventoryproductissubmitting 
+                  ? '#484848' 
+                  : '#6AA84F',
+                color: 'white',
+                borderRadius: '0.75rem',
+                border: 'none',
+                fontWeight: '500',
+                cursor: ambherinventoryproductissubmitting ? 'not-allowed' : 'pointer',
+                opacity: ambherinventoryproductissubmitting ? 0.5 : 1,
+                transition: 'all 0.2s ease-in-out',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+              }}
+              onMouseEnter={(e) => {
+                if (!ambherinventoryproductissubmitting) {
+                  e.target.style.background = '#5f9747';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!ambherinventoryproductissubmitting) {
+                  e.target.style.background = '#6AA84F';
+                }
+              }}
+            >
+              {ambherinventoryproductissubmitting 
+                ? (selectedambherproduct ? "Updating..." : "Adding...") 
+                : (selectedambherproduct ? "Update Product" : "Add Product")
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 )}
 
 
@@ -23632,6 +24420,16 @@ onError={(e) => {
       Low Stock (4-6)
     </div>
 
+    <div
+      onClick={() => setBautistaQuantitySortingProducts('Archived')}
+      className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
+        ${bautistaQuantitySortingProducts === 'Archived'
+          ? 'bg-gray-600 text-white border-gray-600'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+    >
+  
+      Archived Products
+    </div>
 
   </div>
 
@@ -23669,13 +24467,23 @@ onError={(e) => {
                                                              setaddbautistainventoryproductprice(product?.bautistainventoryproductprice || 0);
                                                              setaddbautistainventoryproductquantity(product?.bautistainventoryproductquantity || 0);
                                                              setaddbautistainventoryproductimagepreviewimages(product?.bautistainventoryproductimagepreviewimages || []);
-}} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl ">
-  <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.bautistainventoryproductquantity === 0 ? 'opacity-50': ''}`}/>
+}} className="motion-preset-slide-up mr-3 mb-3 flex flex-col items-start justify-start w-[220px] h-auto shadow-md bg-white rounded-2xl relative">
+  <img src={product.bautistainventoryproductimagepreviewimages[0] || defaultimageplaceholder}  alt={product.bautistainventoryproductname} className={`rounded-tr-2xl  rounded-tl-2xl w-full h-45 ${product.bautistainventoryproductquantity === 0 || product.isArchived ? 'opacity-50': ''}`}/>
   
+  {/* Archived Overlay */}
+  {product.isArchived && (
+    <div className="absolute inset-0 bg-black/70 bg-opacity-70 rounded-2xl flex items-center justify-center z-10">
+      <div className="text-center">
+        <i className="bx bx-archive text-white text-4xl mb-2"></i>
+        <h1 className="font-albertsans font-bold text-white text-lg">ARCHIVED</h1>
+        <p className="font-albertsans font-medium text-gray-300 text-sm">Product archived</p>
+      </div>
+    </div>
+  )}
   
-  {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200"><h1 className="text-red-900">Out of Stock</h1></div>): 
-   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200"><h1 className="text-orange-900">Critical Stock</h1></div>):
-   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+  {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.bautistainventoryproductcategory}</h1></div>
@@ -23733,144 +24541,270 @@ onError={(e) => {
 
 
 
-{/*Ambher Inventory Category*/}
+{/*Bautista Inventory Category*/}
 {showaddbautistainventorycategorydialog && (
 
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-[700px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Category Management</h1></div>
-  <div onClick={() => setshowaddbautistainventorycategorydialog(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
 
-<div className="flex flex-col justify-center items-center h-[84%] rounded-2xl w-full">
-  <div className=" h-[10%] mb-2 mt-2 w-full rounded-2xl flex justify-end items-center">
-        <div onClick={() => setshowaddbautistaaddinventorycategory(true)}  className="py-2 w-[200px] mt-1 mb-1 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx bx-categories text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Category</p></div>
-
+{/* Modal Header */}
+<div className="flex items-center justify-between p-6 border-b border-gray-100">
+  <div className="flex items-center space-x-4">
+    <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+      <i className="bx bx-category text-white text-xl"></i>
+    </div>
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900">Category Management</h2>
+      <p className="text-sm text-gray-500">Bautista Eye Center Categories</p>
+    </div>
   </div>
-  <div  className="p-2  animate-fadeInUp flex  items-center border-t-2  border-[#909090] w-[100%] h-[83%] rounded-2xl mt-5" >
-<div className=" rounded-3xl h-full w-full mt-2 bg-[#f7f7f7]">
-{bautistainventorycategorylist.length === 0 ? (
-<div className="bg-yellow-100 w-full py-3 rounded-tl-2xl rounded-tr-2xl flex justify-center items-center"><h1 className="text-yellow-900 font-albertsans font-medium ">No Bautista Eye Center Inventory Categories</h1></div>
-):(
-<table className="min-w-full divide-y divide-gray-200">
-<thead className="bg-">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">Category</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Created By</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Date Created</th>
-
-
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
-
-
-
-
-<tbody className="divide-y divide-gray-200 bg-white">
-{loadingbautistainventorycategorylist ? (
-<>
-{[...Array(5)].map((_, index) => (
-<CategoryTableSkeleton key={index} />
-))}
-</>
-): (
-bautistainventorycategorylist.map((category) => (
-
-<tr 
-key={category._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-{category.bautistainventorycategoryname}
-</td>
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-<div className="flex items-center justify-center">
-<img 
-src={category.bautistainventorycategoryaddedbyprofilepicture || 'default-profile.png'}
-alt="Profile" 
-className="rounded-full h-12 w-12 object-cover mr-3"
-onError={(e) => {
-  e.target.src = 'default-profile.png';
-}}
-/>
-<div>
-<p className="font-medium">
-  {category.bautistainventorycategoryaddedbyfirstname} {category.bautistainventorycategoryaddedbylastname}
-</p>
-<p className="text-gray-500 text-sm ">
-  {category.bautistainventorycategoryaddedbytype}
-</p>
-</div>
-</div>
-</td>
-<td className="px-5 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-{new Date(category.createdAt).toLocaleDateString()}
-</td>
-<td className="flex justify-center items-center  font-medium px-5 py-4 whitespace-nowrap text-sm  ">
-
-
-<div onClick={() => {setshowdeletebautistainventorycategorydialog(true);
-                  setselectedbautistainventorycategory(category);}} className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-</td>
-</tr>
-))
-)}
-</tbody>
-</table>
-)}
-
-</div>
+  <div 
+    onClick={() => setshowaddbautistainventorycategorydialog(false)}
+    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"></i>
   </div>
 </div>
 
+{/* Modal Content */}
+<div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+  <div className="p-6">
+    <div className="flex justify-end mb-6">
+      <div 
+        onClick={() => setshowaddbautistaaddinventorycategory(true)}
+        className="cursor-pointer px-6 py-3 bg-[#6aa84f] hover:bg-[#5f9747] text-white rounded-3xl font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+      >
+        <i className="bx bx-plus text-lg"></i>
+        <span>Add Category</span>
+      </div>
+    </div>
+    
+    <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
+      {bautistainventorycategorylist.length === 0 ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          <i className="bx bx-info-circle text-yellow-500 text-3xl mb-2"></i>
+          <h3 className="text-yellow-800 font-medium text-lg">No Categories Found</h3>
+          <p className="text-yellow-600 text-sm">No Bautista Eye Center Inventory Categories available</p>
+        </div>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">Category</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loadingbautistainventorycategorylist ? (
+              <>
+                {[...Array(5)].map((_, index) => (
+                  <CategoryTableSkeleton key={index} />
+                ))}
+              </>
+            ) : (
+              bautistainventorycategorylist.map((category) => (
+                <tr 
+                  key={category._id}
+                  className="hover:bg-gray-50 transition-all ease-in-out duration-200"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {category.bautistainventorycategoryname}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img 
+                        src={category.bautistainventorycategoryaddedbyprofilepicture || 'default-profile.png'}
+                        alt="Profile" 
+                        className="rounded-full h-10 w-10 object-cover mr-3"
+                        onError={(e) => {
+                          e.target.src = 'default-profile.png';
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {category.bautistainventorycategoryaddedbyfirstname} {category.bautistainventorycategoryaddedbylastname}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {category.bautistainventorycategoryaddedbytype}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(category.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const categoryUsedInOrders = bautistaorders.some(order => 
+                        order.patientorderbautistaproductcategory === category.bautistainventorycategoryname
+                      );
+                      
+                      const categoryUsedInInventory = bautistainventoryproducts.some(product => 
+                        product.bautistainventoryproductcategory === category.bautistainventorycategoryname
+                      );
+                      
+                      if (categoryUsedInOrders && categoryUsedInInventory) {
+                        return (
+                          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-error-circle text-sm"></i>
+                            <span>Used in orders & inventory</span>
+                          </div>
+                        );
+                      } else if (categoryUsedInOrders) {
+                        return (
+                          <div className="bg-orange-50 border border-orange-200 text-orange-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-info-circle text-sm"></i>
+                            <span>Used in orders</span>
+                          </div>
+                        );
+                      } else if (categoryUsedInInventory) {
+                        return (
+                          <div className="bg-blue-50 border border-blue-200 text-blue-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+                            <i className="bx bx-package text-sm"></i>
+                            <span>Used in inventory</span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div 
+                            onClick={() => {
+                              setshowdeletebautistainventorycategorydialog(true);
+                              setselectedbautistainventorycategory(category);
+                            }} 
+                            className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200"
+                          >
+                            <i className="bx bxs-trash text-sm"></i>
+                            <span>Delete</span>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </div>
+</div>
 
 </div>
 </div>
-
-
 
 )}
 
 {showaddbautistaaddinventorycategory && (
 
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="pl-5 pr-5 bg-white rounded-2xl w-[700px] h-[270px]  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Category Name</h1></div>
-  <div onClick={() => setshowaddbautistaaddinventorycategory(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-<form onSubmit={submitbautistainventorycategory}>
-<div className="flex flex-col justify-center items-center h-[84%] rounded-2xl w-full">
-  <div className="  mt-10 h-auto  w-full rounded-2xl flex flex-col  justify-center items-end">
-         <div className="w-full ">
-            <label className="font-albertsans font-bold italic text-[#595968] text-[21px]" htmlFor="lastname">Category Name :</label>
-            <input className="bg-gray-200 text-[20px]  text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-120"  value={bautistainventorycategorynameset} onChange={(e) => setbautistainventorycategorynameset(e.target.value)} type="text" name="patientlastname" id="patientlastname"  required/></div>
-       
-            {bautistainventorycategorynamecheck && (
-               <div className="mt-1 w-120">
-                        <p className="text-gray-500  font-medium font-albertsans">Checking Category Name...</p>
-               </div>
-            )}
-            
-            {bautistainventorycategorynameexist && (
-               <div className="mt-1 w-120">
-                        <p className="text-red-500 font-medium font-albertsans">Category is already existing...</p>
-               </div>
-            )}
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+<div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
 
-
-
-        <button type="submit" disabled={bautistainventorycategoryissubmitting} className="submit-btn mt-2 w-full" style={{ backgroundColor: "#4ca22b", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px", width: "200px"  }}>
-          {bautistainventorycategoryissubmitting ? "Adding..." : "Add"}
-        </button>       
-
-
+{/* Modal Header */}
+<div className="flex items-center justify-between p-6 border-b border-gray-100">
+  <div className="flex items-center space-x-4">
+    <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+      <i className="bx bx-plus text-white text-xl"></i>
+    </div>
+    <div>
+      <h2 className="text-xl font-bold text-gray-900">Add Category</h2>
+      <p className="text-sm text-gray-500">Create new inventory category</p>
+    </div>
   </div>
-  <div className=" h-full w-full rounded-2xl"></div>
+  <div 
+    onClick={() => setshowaddbautistaaddinventorycategory(false)}
+    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"></i>
+  </div>
+</div>
 
+{/* Modal Content */}
+<form onSubmit={submitbautistainventorycategory}>
+<div className="p-6 space-y-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="lastname">
+      Category Name
+    </label>
+    <input 
+      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
+      placeholder="Enter category name..."
+      value={bautistainventorycategorynameset} 
+      onChange={(e) => setbautistainventorycategorynameset(e.target.value)} 
+      type="text" 
+      name="patientlastname" 
+      id="patientlastname"  
+      required
+    />
+    
+    {bautistainventorycategorynamecheck && (
+      <div className="mt-2">
+        <p className="text-blue-600 text-sm font-medium flex items-center">
+          <i className="bx bx-loader-alt animate-spin mr-2"></i>
+          Checking category name...
+        </p>
+      </div>
+    )}
+    
+    {bautistainventorycategorynameexist && (
+      <div className="mt-2">
+        <p className="text-red-600 text-sm font-medium flex items-center">
+          <i className="bx bx-error-circle mr-2"></i>
+          Category already exists
+        </p>
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Action Buttons */}
+<div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+  <button 
+    type="button"
+    onClick={() => setshowaddbautistaaddinventorycategory(false)}
+    style={{
+      cursor: 'pointer',
+      padding: '0.75rem 1.5rem',
+      backgroundColor: '#f3f4f6',
+      color: '#374151',
+      borderRadius: '0.75rem',
+      fontWeight: '500',
+      transition: 'all 0.2s ease-in-out',
+      border: 'none'
+    }}
+    onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+    onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+  >
+    Cancel
+  </button>
+  <button 
+    type="submit" 
+    disabled={bautistainventorycategoryissubmitting}
+    style={{
+      cursor: bautistainventorycategoryissubmitting ? 'not-allowed' : 'pointer',
+      padding: '0.75rem 1.5rem',
+      backgroundColor: bautistainventorycategoryissubmitting ? '#9ca3af' : '#6aa84f',
+      color: '#ffffff',
+      borderRadius: '0.75rem',
+      fontWeight: '500',
+      transition: 'all 0.2s ease-in-out',
+      border: 'none'
+    }}
+    onMouseEnter={(e) => {
+      if (!bautistainventorycategoryissubmitting) {
+        e.target.style.backgroundColor = '#5f9747';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!bautistainventorycategoryissubmitting) {
+        e.target.style.backgroundColor = '#6aa84f';
+      }
+    }}
+  >
+    {bautistainventorycategoryissubmitting ? "Adding..." : "Add Category"}
+  </button>
 </div>
 </form>
 </div>
@@ -23900,150 +24834,514 @@ onError={(e) => {
          </div>
 )}
 
-{/*Ambher Inventory Product*/}
+{/*Bautista Inventory Product Modal*/}
 {showaddbautistainventoryproductdialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-package text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {selectedbautistaproduct ? "Edit Product" : "Add Product"}
+            </h2>
+            <p className="text-sm text-gray-500">Bautista Inventory Management</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => {setshowaddbautistainventoryproductdialog(false); resetaddbautistainventoryproductdialog();}}
+          style={{
+            width: '2.5rem',
+            height: '2.5rem',
+            borderRadius: '50%',
+            backgroundColor: '#f3f4f6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease-in-out',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </button>
+      </div>
 
-           <div className="overflow-y-auto h-auto  bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="motion-preset-fade  mt-10 pl-5 pr-5 bg-white rounded-2xl w-[1300px] h-auto mb-10 animate-fadeInUp ">
-                  <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                    <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">{selectedbautistaproduct ?  "Edit Product" : "Add Product"}</h1></div>
-                    <div onClick={() => {setshowaddbautistainventoryproductdialog(false);  resetaddbautistainventoryproductdialog(); }} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-                  </div>
+      {/* Modal Content */}
+      <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+        <form onSubmit={selectedbautistaproduct ? handleupdatebautistainventoryproduct : handlesubmitaddbautistainventoryproduct} className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* Image Upload Section */}
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <img 
+                    className="w-100 h-100 object-cover rounded-2xl shadow-lg" 
+                    src={(addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}
+                    alt="Product preview"
+                  />
+                  {((addbautistainventoryproductimagepreviewimages?.length || selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1) && (
+                    <>
+                      <button 
+                        type="button" 
+                        onClick={bautistahandlepreviousimage}  
+                        style={{
+                          position: 'absolute',
+                          left: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: 'white',
+                          padding: '0.5rem',
+                          borderRadius: '50%',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease-in-out'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.75)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
+                      >
+                        <i className="bx bx-chevron-left text-xl"></i>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={bautistahandlenextimage}  
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: 'white',
+                          padding: '0.5rem',
+                          borderRadius: '50%',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease-in-out'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.75)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
+                      >
+                        <i className="bx bx-chevron-right text-xl"></i>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
 
-            <form className="flex flex-col  ml-15 mr-15 mt-5   w-fullx" onSubmit={selectedbautistaproduct ? handleupdatebautistainventoryproduct : handlesubmitaddbautistainventoryproduct}>
-                  <div className="flex justify-center items-start bg-[#fcfcfc] rounded-2xl w-full h-auto">
-                    <div className="pb-10 w-full h-full mr-15 rounded-2xl flex justify-center mt-5">
-
-
-
-                        <div className="h-fit w-fit ">
-
-                  <div className="relative">
-                  <img  className="w-120 object-cover rounded-2xl h-120" src={(addbautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.[bautistacurrentimageindex]) || defaultimageplaceholder}/>
-
-
-                       {((addbautistainventoryproductimagepreviewimages?.length || selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length || 0) > 1) && (
-                           <>
-                             <button type="button" onClick={bautistahandlepreviousimage}  className="bg-opacity-50 hover:bg-opacity-75 rounded-full text-white p-2 absolute left-2 top-1/2 transform -translate-y-1/2 bg-black"><i className="bx bx-chevron-left text-2xl" /></button>
-
-                             <button type="button" onClick={bautistahandlenextimage}  className="rounded-full absolute bg-opacity-50 text-white p-2 transform -translate-y-1/2 bg-black hover:bg-opacity-75 right-2 top-1/2">  <i className="bx bx-chevron-right text-2xl" /></button>
-
-                           </>
-                         )}
-                       </div>
-                        
-                        
-                          {(addbautistainventoryproductimagepreviewimages.length > 0 || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length > 0)) && (
-                            <div className="overflow-x-auto flex gap-2 mt-2 ">
-                              {(addbautistainventoryproductimagepreviewimages.length > 0 ? addbautistainventoryproductimagepreviewimages : selectedbautistaproduct?.bautistainventoryproductimagepreviewimages || []).map((preview, index) => (
-                                  <div key={index} className="relative">
-                                  <img src={preview} onClick={() => setbautistacurrentimageindex(index)} className={`rounded-lg cursor-pointer object-cover w-20 h-20 ${bautistacurrentimageindex === index ? 'ring-2 ring-blue-500' : ''}`} />
-                                  {addbautistainventoryproductimagepreviewimages.length > 0 && (
-                                    <button onClick={() => addbautistainventoryproductimagehandleremove(index)}   className="absolute -top-2 -right-2  rounded-full p-1 hover:bg-red-600 bg-red-500 text-white  " > <i className="bx bx-x text-lg" /></button>
-                                  )}
-                                  </div>
-                              ))}
-                            </div>
-                          )}
-                        
-                        
-                          <input className="hidden"  multiple type="file" accept="image/jpeg, image/jpg, image/png" ref={addbautistainventoryproductimageimageinputref} onChange={addbautistainventoryproductimagehandlechange}    />
-
-                          <div onClick={addbautistainventoryproductimagehandleuploadclick} className="hover:cursor-pointer  hover:scale-105 transition-all mt-3 rounded-2xl flex justify-center items-center align-middle p-3 bg-[#0ea0cd]  " ><i className="bx bx-image pr-2 font-bold text-[22px] text-white"/>
-                            <p className="text-white font-semibold text-[20px] ">Upload {addbautistainventoryproductimagepreviewimages.length}/5 Images</p>
-
-                          </div>
-                        </div>
-
-
-
-
-
-
-
-
-
+              {/* Thumbnail Gallery */}
+              {(addbautistainventoryproductimagepreviewimages.length > 0 || (selectedbautistaproduct?.bautistainventoryproductimagepreviewimages?.length > 0)) && (
+                <div className="flex gap-3 justify-center flex-wrap">
+                  {(addbautistainventoryproductimagepreviewimages.length > 0 ? addbautistainventoryproductimagepreviewimages : selectedbautistaproduct?.bautistainventoryproductimagepreviewimages || []).map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={preview} 
+                        onClick={() => setbautistacurrentimageindex(index)} 
+                        className={`w-16 h-16 object-cover rounded-lg cursor-pointer transition-all duration-200 ${bautistacurrentimageindex === index ? 'ring-2 ring-sky-500 shadow-md' : 'hover:ring-2 hover:ring-gray-300'}`} 
+                      />
+                      {addbautistainventoryproductimagepreviewimages.length > 0 && (
+                        <button 
+                          onClick={() => addbautistainventoryproductimagehandleremove(index)}   
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors duration-200"
+                        > 
+                          <i className="bx bx-x"></i>
+                        </button>
+                      )}
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    <div className="w-full h-auto flex items-start mb-10 rounded-2xl">
-                          <div className=" w-full h-auto  rounded-4xl">
-                    
-                    
-
-                          <div className="registration-container">
-                       
-                          <h1 className=" font-league text-[#3da9d1] text-[27px] ">Product Details</h1>
-                          {message.text && (
-                            <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold`}>
-                              {message.text}
-                            </div>
-                          )}
-                    
-                          <h1 className=" font-albertsans font-semibold italic text-[#595968] text-[20px]">Let's add product inventory!</h1>
-                    
-                    
-                    
-                    
-                          <div className="form-group mt-10  flex">
-                          <label className="  font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="bautistainventorycategorynamebox">Category :</label>
-                          <div className="flex flex-col">
-                          <div className="ml-13"> <BautistainventorycategoryBox  value={bautistainventorycategorynamebox} loading={loadingbautistainventorycategorylist} onChange={(e) => setbautistainventorycategorynamebox(e.target.value)} categories={bautistainventorycategorylist}/></div>
-                          </div>
-                          </div>
-                    
-                    
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductname">Product Name : </label>
-                          <input className="bg-gray-200 text-[18px] text-gray-600 pl-3 rounded-2xl ml-1 h-10 w-70" placeholder="Enter Product Name..." type="text" name="addbautistainventoryproductname" id="addbautistainventoryproductname" value={addbautistainventoryproductname} onChange={(e) => setaddbautistainventoryproductname(e.target.value)} required /></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductbrand">Product Brand : </label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-1 h-10 w-70" placeholder="Enter Product Brand..." type="text" name="addbautistainventoryproductbrand" id="addbautistainventoryproductbrand" value={addbautistainventoryproductbrand} onChange={(e) => setaddbautistainventoryproductbrand(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductmodelnumber">Model Number :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Model Number..." type="text" name="addbautistainventoryproductmodelnumber" id="addbautistainventoryproductmodelnumber" value={addbautistainventoryproductmodelnumber} onChange={(e) => setaddbautistainventoryproductmodelnumber(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5 flex flex-col">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductdescription">Product Description:</label>
-                           <textarea className="w-full text-[18px]  text-gray-600 rounded-md  border-2  " ref={textarearef} rows={1} style={{minHeight:'44px'}} type="text" value={addbautistainventoryproductdescription} onChange={(e) => {setaddbautistainventoryproductdescription(e.target.value); adjusttextareaheight();}} placeholder="Product description..."/>
-                          </div>
-
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductprice">Price :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Price..." type="number" name="addbautistainventoryproductprice" id="addbautistainventoryproductprice" value={addbautistainventoryproductprice} onChange={(e) => setaddbautistainventoryproductprice(e.target.value)} required/></div>
-                    
-                          <div className="form-group mt-5">
-                          <label className="font-albertsans font-bold italic text-[#595968] text-[19px]" htmlFor="addbautistainventoryproductquantity">Quantity :</label>
-                          <input className="bg-gray-200 text-[18px]  text-gray-600 pl-3 rounded-2xl ml-2  h-10 w-70" placeholder="Enter Quantity..." type="number" name="addbautistainventoryproductquantity" id="addbautistainventoryproductquantity" value={addbautistainventoryproductquantity} onChange={(e) => setaddbautistainventoryproductquantity(e.target.value)} required/></div>
-                    
-
-                          <button type="submit" disabled={bautistainventoryproductissubmitting} className="submit-btn mt-12 w-full" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-                                      {bautistainventoryproductissubmitting 
-                                     ? (selectedbautistaproduct ? "Updating..." : "Adding...") 
-                                     : (selectedbautistaproduct ? "Update Product" : "Add Product")}
-                          </button>
-                        {selectedbautistaproduct && (
-                         <div className="mt-3 w-full hover:cursor-pointer bg-[#4e0f0f] justify-center flex items-center  rounded-2xl h-fit w-fit px-7 py-3  transition-all duration-300 ease-in-out" onClick={() => {setshowdeletebautistaproduct(true); setselecteddeletebautistaproduct(selectedbautistaproduct);}}><p className=" text-[#ffffff] font-semibold font-albertsans text-[20px]">Delete</p></div>
-
-                        )}
-
-                    
-                    
-                          </div>
+    
+   {/* Upload Button */}
+              <input 
+                className="hidden" 
+                multiple 
+                type="file" 
+                accept="image/jpeg, image/jpg, image/png" 
+                ref={addbautistainventoryproductimageimageinputref} 
+                onChange={addbautistainventoryproductimagehandlechange}    
+              />
+              <div
+                onDragOver={(e) => {
+                  if (bautistainventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#60a5fa';
+                  e.currentTarget.style.backgroundColor = '#eff6ff';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#1c96c5';
+                  if (primaryText) primaryText.style.color = '#2563eb';
+                }}
+                onDragLeave={(e) => {
+                  if (bautistainventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#1c96c5';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
+                }}
+                onDrop={(e) => {
+                  if (bautistainventoryproductimagesuploading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.style.borderColor = '#1c96c5';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  const icon = e.currentTarget.querySelector('i');
+                  const primaryText = e.currentTarget.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
                   
-                    
-                    
-                          </div>
+                  const files = Array.from(e.dataTransfer.files);
+                  const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                  
+                  if (imageFiles.length > 0) {
+                    // Create a synthetic event to pass to the existing handler
+                    const syntheticEvent = {
+                      target: {
+                        files: imageFiles
+                      }
+                    };
+                    addbautistainventoryproductimagehandlechange(syntheticEvent);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px dashed #1c96c5',
+                  borderRadius: '1rem',
+                  backgroundColor: 'transparent',
+                  cursor: bautistainventoryproductimagesuploading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  opacity: bautistainventoryproductimagesuploading ? 0.7 : 1
+                }}
+                onClick={bautistainventoryproductimagesuploading ? undefined : addbautistainventoryproductimagehandleuploadclick}
+                onMouseEnter={(e) => {
+                  if (bautistainventoryproductimagesuploading) return;
+                  e.target.style.borderColor = '#60a5fa';
+                  e.target.style.backgroundColor = '#eff6ff';
+                  const icon = e.target.querySelector('i');
+                  const primaryText = e.target.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#1c96c5';
+                  if (primaryText) primaryText.style.color = '#2563eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (bautistainventoryproductimagesuploading) return;
+                  e.target.style.borderColor = '#1c96c5';
+                  e.target.style.backgroundColor = 'transparent';
+                  const icon = e.target.querySelector('i');
+                  const primaryText = e.target.querySelector('p:first-of-type');
+                  if (icon) icon.style.color = '#9ca3af';
+                  if (primaryText) primaryText.style.color = '#4b5563';
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  {bautistainventoryproductimagesuploading ? (
+                    <>
+                      <div style={{ 
+                        width: '2rem', 
+                        height: '2rem', 
+                        border: '3px solid #e5e7eb',
+                        borderTop: '3px solid #1c96c5',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }}></div>
+                      <p style={{ color: '#1c96c5', fontWeight: '500' }}>
+                        Uploading Images...
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Please wait</p>
+                    </>
+                  ) : (
+                    <>
+                      <i style={{ fontSize: '1.875rem', color: '#9ca3af', transition: 'color 0.2s ease-in-out' }} className="bx bx-cloud-upload"></i>
+                      <p style={{ color: '#4b5563', fontWeight: '500', transition: 'color 0.2s ease-in-out' }}>
+                        Upload Images ({addbautistainventoryproductimagepreviewimages.length}/5)
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Click to browse or drag & drop images here</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            {/* Form Fields Section */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Product Details</h3>
+                
+                {message.text && (
+                  <div className={`p-4 rounded-xl mb-6 ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                    <div className="flex items-center space-x-2">
+                      <i className={`bx ${message.type === 'error' ? 'bx-error-circle' : 'bx-check-circle'} text-lg`}></i>
+                      <span className="font-medium">{message.text}</span>
                     </div>
                   </div>
-                  </form>
-             </div>
-           </div>
+                )}
+              </div>
 
+              <div className="space-y-4">
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="bautistainventorycategorynamebox">
+                    Category
+                  </label>
+                  <BautistainventorycategoryBox  
+                    value={bautistainventorycategorynamebox} 
+                    loading={loadingbautistainventorycategorylist} 
+                    onChange={(e) => setbautistainventorycategorynamebox(e.target.value)} 
+                    categories={bautistainventorycategorylist}
+                  />
+                </div>
 
+                {/* Product Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductname">
+                    Product Name
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter product name..." 
+                    type="text" 
+                    name="addbautistainventoryproductname" 
+                    id="addbautistainventoryproductname" 
+                    value={addbautistainventoryproductname} 
+                    onChange={(e) => setaddbautistainventoryproductname(e.target.value)} 
+                    required 
+                  />
+                </div>
+
+                {/* Product Brand */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductbrand">
+                    Product Brand
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter product brand..." 
+                    type="text" 
+                    name="addbautistainventoryproductbrand" 
+                    id="addbautistainventoryproductbrand" 
+                    value={addbautistainventoryproductbrand} 
+                    onChange={(e) => setaddbautistainventoryproductbrand(e.target.value)} 
+                    required
+                  />
+                </div>
+
+                {/* Model Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductmodelnumber">
+                    Model Number
+                  </label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                    placeholder="Enter model number..." 
+                    type="text" 
+                    name="addbautistainventoryproductmodelnumber" 
+                    id="addbautistainventoryproductmodelnumber" 
+                    value={addbautistainventoryproductmodelnumber} 
+                    onChange={(e) => setaddbautistainventoryproductmodelnumber(e.target.value)} 
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductdescription">
+                    Product Description
+                  </label>
+                  <textarea 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 resize-none" 
+                    ref={textarearef} 
+                    rows={3} 
+                    style={{minHeight:'80px'}} 
+                    value={addbautistainventoryproductdescription} 
+                    onChange={(e) => {setaddbautistainventoryproductdescription(e.target.value); adjusttextareaheight();}} 
+                    placeholder="Enter product description..."
+                  />
+                </div>
+
+                {/* Price and Quantity */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductprice">
+                      Price
+                    </label>
+                    <input 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                      placeholder="0.00" 
+                      type="number" 
+                      step="0.01"
+                      name="addbautistainventoryproductprice" 
+                      id="addbautistainventoryproductprice" 
+                      value={addbautistainventoryproductprice} 
+                      onChange={(e) => setaddbautistainventoryproductprice(e.target.value)} 
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductquantity">
+                      Quantity
+                    </label>
+                    <input 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+                      placeholder="0" 
+                      type="number" 
+                      name="addbautistainventoryproductquantity" 
+                      id="addbautistainventoryproductquantity" 
+                      value={addbautistainventoryproductquantity} 
+                      onChange={(e) => setaddbautistainventoryproductquantity(e.target.value)} 
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+ {/* Action Buttons */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'flex-end', 
+            gap: '1rem', 
+            marginTop: '2rem', 
+            paddingTop: '1.5rem', 
+            borderTop: '1px solid #f3f4f6' 
+          }}>
+            {selectedbautistaproduct && (
+              <>
+                {(bautistaproductsoldCounts[selectedbautistaproduct.bautistainventoryproductid] ?? 0) >= 1 ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (selectedbautistaproduct.isArchived) {
+                        handleUnarchiveBautistaProduct(selectedbautistaproduct);
+                      } else {
+                        handleArchiveBautistaProduct(selectedbautistaproduct);
+                      }
+                    }}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: selectedbautistaproduct.isArchived ? '#f0f9ff' : '#fef3c7',
+                      color: selectedbautistaproduct.isArchived ? '#0369a1' : '#d97706',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = selectedbautistaproduct.isArchived ? '#e0f2fe' : '#fef3c7';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = selectedbautistaproduct.isArchived ? '#f0f9ff' : '#fef3c7';
+                    }}
+                  >
+                    {selectedbautistaproduct.isArchived ? 'Unarchive Product' : 'Archive Product'}
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => {setshowdeletebautistaproduct(true); setselecteddeletebautistaproduct(selectedbautistaproduct);}}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: '#fef2f2',
+                      color: '#dc2626',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#fee2e2'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#fef2f2'}
+                  >
+                    Delete Product
+                  </button>
+                )}
+              </>
+            )}
+            <button 
+              type="button"
+              onClick={() => {setshowaddbautistainventoryproductdialog(false); resetaddbautistainventoryproductdialog();}}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                borderRadius: '0.75rem',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={bautistainventoryproductissubmitting} 
+              style={{
+                padding: '0.75rem 2rem',
+                background: bautistainventoryproductissubmitting 
+                  ? '#484848' 
+                  : '#6AA84F',
+                color: 'white',
+                borderRadius: '0.75rem',
+                border: 'none',
+                fontWeight: '500',
+                cursor: bautistainventoryproductissubmitting ? 'not-allowed' : 'pointer',
+                opacity: bautistainventoryproductissubmitting ? 0.5 : 1,
+                transition: 'all 0.2s ease-in-out',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+              }}
+              onMouseEnter={(e) => {
+                if (!bautistainventoryproductissubmitting) {
+                  e.target.style.background = '#5f9747';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!bautistainventoryproductissubmitting) {
+                  e.target.style.background = '#6AA84F';
+                }
+              }}
+            >
+              {bautistainventoryproductissubmitting 
+                ? (selectedbautistaproduct ? "Updating..." : "Adding...") 
+                : (selectedbautistaproduct ? "Update Product" : "Add Product")
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 )}
 
 
@@ -24250,7 +25548,7 @@ paginatedAmbherOrders.map((order) => (
       <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex ${
       order.patientorderambherstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
       order.patientorderambherstatus === 'Processing' ? 'bg-blue-100 text-blue-800' :
-      order.patientorderambherstatus === 'Ready for Pickup' ? 'bg-purple-100 text-purple-800' :
+      order.patientorderambherstatus === 'Ready for Pickup' ? 'bg-sky-100 text-sky-800' :
       order.patientorderambherstatus === 'Completed' ? 'bg-green-100 text-green-800' :
       'bg-red-100 text-red-800'
     }`}>
@@ -24282,9 +25580,19 @@ paginatedAmbherOrders.map((order) => (
 {showpatientorderambher && (
 
            <div className="overflow-y-auto h-auto px-10 bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="motion-preset-fade  h-auto min-h-180  mb-7 mt-7 pl-5 pr-5 bg-white rounded-2xl w-full  animate-fadeInUp ">
+             <div className="  h-auto min-h-180  mb-7 mt-7 pl-5 pr-5 bg-white rounded-2xl w-full  animate-fadeInUp ">
                   <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                    <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Set Order</h1></div>
+                            <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-receipt text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Set Order
+            </h2>
+            <p className="text-sm text-gray-500">Review and set order for customers</p>
+          </div>
+        </div>
                     <div onClick={() => {
                        setorderambherEmail('');
                        setorderambherprofilePicture('');
@@ -24303,7 +25611,7 @@ paginatedAmbherOrders.map((order) => (
                        setambherpickupStatus('Later');
                        setambherproductsoldCount(0);
                        setselectedorderambherproduct(null);
-                       setshowpatientorderambher(false);}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                       setshowpatientorderambher(false);}} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"><i className="bx bx-x text-gray-600 text-xl "/></div>
                   </div>
 
 
@@ -25146,7 +26454,7 @@ paginatedBautistaOrders.map((order) => (
           <div className="flex justify-between w-full"><h1 className="font-semibold font-albertsans text-[20px] text-[#1f1f1f]">{order.patientorderbautistaproductname}</h1>                   <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex ${
       order.patientorderbautistastatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
       order.patientorderbautistastatus === 'Processing' ? 'bg-blue-100 text-blue-800' :
-      order.patientorderbautistastatus === 'Ready for Pickup' ? 'bg-purple-100 text-purple-800' :
+      order.patientorderbautistastatus === 'Ready for Pickup' ? 'bg-sky-100 text-sky-800' :
       order.patientorderbautistastatus === 'Completed' ? 'bg-green-100 text-green-800' :
       'bg-red-100 text-red-800'
     }`}>
@@ -25179,10 +26487,20 @@ paginatedBautistaOrders.map((order) => (
 {showpatientorderbautista && (
 
            <div className="overflow-y-auto h-auto px-10 bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-             <div className="motion-preset-fade  h-auto min-h-180  mb-7 mt-7 pl-5 pr-5 bg-white rounded-2xl w-full  animate-fadeInUp ">
+             <div className="  h-auto min-h-180  mb-7 mt-7 pl-5 pr-5 bg-white rounded-2xl w-full  animate-fadeInUp ">
                   <div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-                    <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Set Order</h1></div>
-                    <div onClick={() => {
+                            <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-receipt text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Set Order
+            </h2>
+            <p className="text-sm text-gray-500">Review and set order for customers</p>
+          </div>
+          </div>
+                              <div onClick={() => {
                        setorderbautistaEmail('');
                        setorderbautistaprofilePicture('');
                        setorderbautistafullName('');
@@ -25200,7 +26518,7 @@ paginatedBautistaOrders.map((order) => (
                        setambherpickupStatus('Later');
                        setbautistaproductsoldCount(0);
                        setselectedorderbautistaproduct(null);
-                       setshowpatientorderbautista(false);}} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+                       setshowpatientorderbautista(false);}} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"><i className="bx bx-x text-gray-600 text-xl "/></div>
                   </div>                               
 
 
@@ -26084,7 +27402,7 @@ paginatedBautistaOrders.map((order) => (
                         src={image}
                         alt={`${productName} ${index + 1}`}
                         className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-3 transition-all shadow-md hover:shadow-lg ${
-                          index === viewOrderCurrentImageIndex ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200 hover:border-gray-300'
+                          index === viewOrderCurrentImageIndex ? 'border-sky-500 ring-2 ring-blue-300' : 'border-gray-200 hover:border-gray-300'
                         }`}
                         onClick={() => setViewOrderCurrentImageIndex(index)}
                       />
@@ -26537,10 +27855,10 @@ paginatedBautistaOrders.map((order) => (
            <div className="bg-[#626c92] text-white rounded-xl p-6 shadow-lg">
              <div className="flex items-center justify-between">
                <div>
-                 <p className="text-purple-100 text-sm font-albertsans">Appointments</p>
+                 <p className="text-sky-100 text-sm font-albertsans">Appointments</p>
                  <p className="text-3xl font-bold font-albertsans">{calculateMetrics().totalAppointments}</p>
                </div>
-               <i className="bx bx-calendar text-3xl text-purple-200"></i>
+               <i className="bx bx-calendar text-3xl text-sky-200"></i>
              </div>
            </div>
            
@@ -26606,7 +27924,7 @@ paginatedBautistaOrders.map((order) => (
                  <select
                    value={salesCategoryFilter}
                    onChange={(e) => setSalesCategoryFilter(e.target.value)}
-                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
                    aria-label="Select date range for sales by category"
                  >
                    <option value="thisWeek">This Week</option>
@@ -26620,7 +27938,7 @@ paginatedBautistaOrders.map((order) => (
                    <select
                      value={salesCategoryYear}
                      onChange={(e) => setSalesCategoryYear(parseInt(e.target.value))}
-                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
                      aria-label="Select year for sales by category"
                    >
                      {getAvailableYears().map(year => (
@@ -26740,7 +28058,7 @@ paginatedBautistaOrders.map((order) => (
                  <select
                    value={orderStatusFilter}
                    onChange={(e) => setOrderStatusFilter(e.target.value)}
-                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                   className="w-[140px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
                    aria-label="Select date range for order status"
                  >
                    <option value="thisWeek">This Week</option>
@@ -26754,7 +28072,7 @@ paginatedBautistaOrders.map((order) => (
                    <select
                      value={orderStatusYear}
                      onChange={(e) => setOrderStatusYear(parseInt(e.target.value))}
-                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-albertsans"
+                     className="w-[100px] rounded-lg px-3 py-2 border border-gray-300 text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent font-albertsans"
                      aria-label="Select year for order status"
                    >
                      {getAvailableYears().map(year => (
@@ -27248,7 +28566,7 @@ paginatedBautistaOrders.map((order) => (
 
                         <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap">
                           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            sms.type === 'Appointment' ? 'bg-purple-100 text-purple-800' :
+                            sms.type === 'Appointment' ? 'bg-sky-100 text-sky-800' :
                             sms.type === 'Order Status' ? 'bg-orange-100 text-orange-800' :
                             sms.type === 'Promotional' ? 'bg-pink-100 text-pink-800' :
                             sms.type === 'Wishlist' ? 'bg-indigo-100 text-indigo-800' :
@@ -27412,7 +28730,7 @@ paginatedBautistaOrders.map((order) => (
                value={promotionalSmsSubject}
                onChange={(e) => setPromotionalSmsSubject(e.target.value)}
                placeholder="Enter SMS subject..."
-               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                maxLength={50}
              />
              <p className="text-xs text-gray-500 mt-1">{promotionalSmsSubject.length} characters</p>
@@ -27427,7 +28745,7 @@ paginatedBautistaOrders.map((order) => (
                onChange={(e) => setPromotionalSmsMessage(e.target.value)}
                placeholder="Enter your promotional message..."
                rows={4}
-               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
                maxLength={1500}
              />
              <p className="text-xs text-gray-500 mt-1">{promotionalSmsMessage.length} characters</p>
@@ -27504,7 +28822,7 @@ paginatedBautistaOrders.map((order) => (
          )}
          {pdfToastMessage}
 
-         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: pdfProgressWidth, transition: 'width 4s linear'}}/>
+         <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${pdfIsClicked ? 'bg-sky-500' : 'bg-red-500'}`} style={{width: pdfProgressWidth, transition: 'width 4s linear'}}/>
        </div>
      </div>  
    )}
@@ -27591,7 +28909,7 @@ paginatedBautistaOrders.map((order) => (
       {loadingClinicLocations && (
           <div className="transition-all duration-300 ease-in-out mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center">
-              <i className="bx bx-loader-alt bx-spin text-blue-500 mr-2"></i>
+              <i className="bx bx-loader-alt bx-spin text-sky-500 mr-2"></i>
               <span className="text-blue-700">Loading clinic locations...</span>
             </div>
           </div>
@@ -27775,7 +29093,7 @@ paginatedBautistaOrders.map((order) => (
           <div className="flex-1   overflow-y-auto p-4 space-y-3">
             {loadingClinicLocations ? (
               <div className="text-center text-gray-500 py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto mb-3"></div>
                 <p>Loading clinic locations...</p>
               </div>
             ) : !clinicLocations || clinicLocations.length === 0 ? (
@@ -27788,7 +29106,7 @@ paginatedBautistaOrders.map((order) => (
                     resetClinicForm();
                     setShowAddClinicDialog(true);
                   }}
-                  className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  className="mt-3 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                 >
                   <i className="bx bx-plus mr-1"></i>
                   Add First Clinic
@@ -27923,7 +29241,7 @@ paginatedBautistaOrders.map((order) => (
                               });
                               setShowEditClinicDialog(true);
                             }}
-                            className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
+                            className="flex-1 bg-sky-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
                           >
                             <i className="bx bx-edit"></i>
                             Edit
@@ -27998,7 +29316,7 @@ paginatedBautistaOrders.map((order) => (
             type="text"
             value={clinicFormData?.clinicName || ''}
             onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicName: e.target.value }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter clinic name"
             required
           />
@@ -28011,7 +29329,7 @@ paginatedBautistaOrders.map((order) => (
           <select
             value={clinicFormData?.clinicType || getUserDefaultClinicType()}
             onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicType: e.target.value }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             required
             disabled={getUserAllowedClinicTypes().length === 1}
           >
@@ -28037,7 +29355,7 @@ paginatedBautistaOrders.map((order) => (
             ...prev, 
             address: { ...prev.address, fullAddress: e.target.value }
           }))}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 h-20 resize-none"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500 h-20 resize-none"
           placeholder="Enter complete address"
           required
         />
@@ -28056,7 +29374,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               contactInfo: { ...prev.contactInfo, phone: e.target.value }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter phone number"
           />
         </div>
@@ -28072,7 +29390,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               contactInfo: { ...prev.contactInfo, email: e.target.value }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter email address"
           />
         </div>
@@ -28092,7 +29410,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               coordinates: { ...prev.coordinates, longitude: parseFloat(e.target.value) || 0 }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Click map or enter longitude"
             required
           />
@@ -28110,7 +29428,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               coordinates: { ...prev.coordinates, latitude: parseFloat(e.target.value) || 0 }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Click map or enter latitude"
             required
           />
@@ -28142,7 +29460,7 @@ paginatedBautistaOrders.map((order) => (
         <button
           onClick={handleSaveClinicLocation}
           disabled={isSavingLocation}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
+          className="flex-1 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
         >
           {isSavingLocation ? 'Saving...' : 'Save Location'}
         </button>
@@ -28177,7 +29495,7 @@ paginatedBautistaOrders.map((order) => (
             type="text"
             value={clinicFormData?.clinicName || ''}
             onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicName: e.target.value }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter clinic name"
             required
           />
@@ -28190,7 +29508,7 @@ paginatedBautistaOrders.map((order) => (
           <select
             value={clinicFormData?.clinicType || getUserDefaultClinicType()}
             onChange={(e) => setClinicFormData(prev => ({ ...prev, clinicType: e.target.value }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             required
             disabled={getUserAllowedClinicTypes().length === 1}
           >
@@ -28216,7 +29534,7 @@ paginatedBautistaOrders.map((order) => (
             ...prev, 
             address: { ...prev.address, fullAddress: e.target.value }
           }))}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 h-20 resize-none"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500 h-20 resize-none"
           placeholder="Enter complete address"
           required
         />
@@ -28234,7 +29552,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               contactInfo: { ...prev.contactInfo, phone: e.target.value }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter phone number"
           />
         </div>
@@ -28250,7 +29568,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               contactInfo: { ...prev.contactInfo, email: e.target.value }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Enter email address"
           />
         </div>
@@ -28269,7 +29587,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               coordinates: { ...prev.coordinates, longitude: parseFloat(e.target.value) || 0 }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Click map or enter longitude"
             required
           />
@@ -28287,7 +29605,7 @@ paginatedBautistaOrders.map((order) => (
               ...prev, 
               coordinates: { ...prev.coordinates, latitude: parseFloat(e.target.value) || 0 }
             }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-sky-500"
             placeholder="Click map or enter latitude"
             required
           />
@@ -28304,7 +29622,7 @@ paginatedBautistaOrders.map((order) => (
         <button
           onClick={handleUpdateClinicLocation}
           disabled={isSavingLocation}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
+          className="flex-1 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
         >
           {isSavingLocation ? 'Updating...' : 'Update Location'}
         </button>
@@ -28442,7 +29760,7 @@ paginatedBautistaOrders.map((order) => (
               setShowClinicDetailsDialog(false);
               setShowEditClinicDialog(true);
             }}
-            className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex-1 bg-sky-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Edit
           </button>
@@ -28787,7 +30105,8 @@ paginatedBautistaOrders.map((order) => (
           </div></div>
           </section>
 
-
+        </>
+      )}
 
     </>
   )

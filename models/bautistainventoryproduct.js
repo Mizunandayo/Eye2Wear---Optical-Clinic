@@ -38,7 +38,8 @@ bautistainventoryproductaddedbyemail: {type: String, required: true},
 
 bautistainventoryproductwishlistcount: {type: Number, default: 0},
 
-
+// Archive status for products with sales history
+isArchived: {type: Boolean, default: false},
 
 //TIMESTAMPS
 createdAt: {type: Date, default: Date.now},
