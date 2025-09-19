@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Account Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .token-input { width: 100%; padding: 8px; margin: 10px 0; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Staff Account Management Auth Test</h1>
+    <p>This test checks if staff account CRUD operations work with proper authentication.</p>
+    
+    <div class="test-section">
+        <h3>Test Token</h3>
+        <label>User Token (Staff/Owner/Admin):</label>
+        <input type="text" id="userToken" class="token-input" placeholder="Enter your currentusertoken">
+        <button onclick="testStaffAccountAPI()">Test Staff Account API</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Test Results</h3>
+        <div id="testOutput" class="result">Click "Test Staff Account API" to start testing...</div>
+    </div>
+
+    <script>
+        async function testStaffAccountAPI() {
+            const token = document.getElementById('userToken').value;
+            const output = document.getElementById('testOutput');
+            
+            if (!token) {
+                output.textContent = '❌ Please enter a token first';
+                output.className = 'result error';
+                return;
+            }
+
+            output.textContent = 'Testing Staff Account API calls...\n';
+            output.className = 'result';
+
+            // Test the staff account API calls
+            const tests = [
+                {
+                    name: 'GET Staff Accounts',
+                    url: '/api/staffaccounts',
+                    method: 'GET'
+                },
+                {
+                    name: 'GET Owner Accounts', 
+                    url: '/api/owneraccounts',
+                    method: 'GET'
+                },
+                {
+                    name: 'GET Admin Accounts',
+                    url: '/api/adminaccounts', 
+                    method: 'GET'
+                }
+            ];
+
+            let allPassed = true;
+            let results = '';
+
+            for (const test of tests) {
+                try {
+                    results += `\n🔍 Testing: ${test.name}\n`;
+                    results += `   URL: ${test.method} ${test.url}\n`;
+                    
+                    const response = await fetch(test.url, {
+                        method: test.method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        results += `   ✅ SUCCESS: Status ${response.status}, Found ${data.length} records\n`;
+                    } else {
+                        allPassed = false;
+                        const errorText = await response.text();
+                        results += `   ❌ FAILED: Status ${response.status} - ${response.statusText}\n`;
+                        results += `   Error: ${errorText}\n`;
+                    }
+                } catch (error) {
+                    allPassed = false;
+                    results += `   ❌ ERROR: ${error.message}\n`;
+                }
+            }
+
+            // Test specific UPDATE operation that was failing
+            results += `\n🔍 Testing Staff Update (simulated)\n`;
+            try {
+                // We won't actually update, just test if the endpoint accepts the auth
+                const response = await fetch('/api/staffaccounts/test-id', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ test: true })
+                });
+
+                if (response.status === 404) {
+                    results += `   ✅ AUTH OK: 404 Not Found (expected for test-id)\n`;
+                } else if (response.status === 401) {
+                    allPassed = false;
+                    results += `   ❌ AUTH FAILED: 401 Unauthorized\n`;
+                } else {
+                    results += `   ✅ AUTH OK: Status ${response.status}\n`;
+                }
+            } catch (error) {
+                allPassed = false;
+                results += `   ❌ ERROR: ${error.message}\n`;
+            }
+
+            // Summary
+            results += `\n${'='.repeat(50)}\n`;
+            if (allPassed) {
+                results += '🎉 ALL TESTS PASSED!\n';
+                results += 'Staff/Owner/Admin account CRUD should now work.\n';
+                output.className = 'result success';
+            } else {
+                results += '⚠️ SOME TESTS FAILED!\n';
+                results += 'There may still be authentication issues.\n';
+                output.className = 'result error';
+            }
+
+            output.textContent = results;
+        }
+    </script>
+</body>
+</html>

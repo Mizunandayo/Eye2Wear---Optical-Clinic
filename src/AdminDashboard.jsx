@@ -3111,7 +3111,7 @@ const handlechange = (e) => {
 
       const fetchresponse = await fetch('/api/patientaccounts', {
           headers:{
-            'Authorization':`Bearer ${localStorage.getItem('admintoken')}`
+            'Authorization':`Bearer ${currentusertoken}`
           }
       });
 
@@ -3152,7 +3152,7 @@ const handlechange = (e) => {
         method:'PUT',
         headers: {
           'Content-Type' : 'application/json',
-          'Authorization' : `Bearer ${localStorage.getItem('admintoken')}`
+          'Authorization' : `Bearer ${currentusertoken}`
         },
         body: JSON.stringify(updatepatientaccountdetails)
       });
@@ -3165,7 +3165,7 @@ const handlechange = (e) => {
 
       const fetchresponse = await fetch('/api/patientaccounts',{
         headers: {
-          'Authorization' : `Bearer ${localStorage.getItem('admintoken')}` 
+          'Authorization' : `Bearer ${currentusertoken}` 
         }
       });
 
@@ -3807,7 +3807,7 @@ const staffhandlechange = (e) => {
         method:'PUT',
         headers: {
           'Content-Type' : 'application/json',
-          'Authorization' : `Bearer ${localStorage.getItem('admintoken')}`
+          'Authorization' : `Bearer ${currentusertoken}`
         },
         body: JSON.stringify(updatestaffaccountdetails)
       });
@@ -3820,7 +3820,7 @@ const staffhandlechange = (e) => {
 
       const fetchresponse = await fetch('/api/staffaccounts',{
         headers: {
-          'Authorization' : `Bearer ${localStorage.getItem('admintoken')}` 
+          'Authorization' : `Bearer ${currentusertoken}` 
         }
       });
 
@@ -6420,6 +6420,7 @@ try{
     method: "PUT",
     headers: {
       "Content-Type" : "application/json",
+      "Authorization": `Bearer ${currentusertoken}`
     },
     body:JSON.stringify({
       [`patient${clinicType}appointmentstatus`]: 'Accepted',
@@ -6546,6 +6547,7 @@ const handleDeclineAppointment = async (appointmentId, clinicType) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${currentusertoken}`
       },
       body: JSON.stringify({
         [`patient${clinicType}appointmentstatus`]: 'Declined',
@@ -6662,6 +6664,7 @@ const handleCancelAppointment = async (appointmentId, clinicType) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${currentusertoken}`
       },
       body: JSON.stringify({
         [`patient${clinicType}appointmentstatus`]: 'Cancelled',
@@ -11546,7 +11549,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('admintoken')}` // Using admin token
+      'Authorization': `Bearer ${currentusertoken}` // Using current user token
     },
     body: JSON.stringify(orderData)
   });
@@ -11883,7 +11886,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('admintoken')}` // Using admin token
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
     },
     body: JSON.stringify(orderData)
   });
@@ -12200,7 +12203,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('admintoken')}` // Using admin token
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
     },
     body: JSON.stringify(orderData)
   });
@@ -12320,7 +12323,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('admintoken')}` // Using admin token
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
     },
     body: JSON.stringify(orderData)
   });
@@ -12427,7 +12430,10 @@ try {
             async () => {
               const response = await fetch('/api/patientorderambher/', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
               });
               if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
               return response.json();
@@ -12445,7 +12451,10 @@ try {
             async () => {
               const response = await fetch('/api/patientorderbautista/', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
               });
               if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
               return response.json();
@@ -12462,7 +12471,10 @@ try {
             async () => {
               const response = await fetch('/api/patientorderambher/', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
               });
               if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
               return response.json();
@@ -12475,7 +12487,10 @@ try {
             async () => {
               const response = await fetch('/api/patientorderbautista/', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
               });
               if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
               return response.json();
@@ -12544,7 +12559,7 @@ try {
         error: 'Failed to fetch reports data'
       }));
     }
-  }, [smartFetch, CACHE_DURATIONS, getCurrentUserClinic]);
+  }, [smartFetch, CACHE_DURATIONS, getCurrentUserClinic, currentusertoken]);
 
   // Refresh reports data function - clears cache and reloads data
   const refreshReportsData = useCallback(async () => {
@@ -16931,62 +16946,9 @@ useEffect(() => {
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
-{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="   flex justify-center items-center w-[100%] h-[100%] rounded-2xl" > 
+{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className=" rounded-2xl shadow-lg border-1  flex justify-center items-center w-[100%] h-[100%] rounded-2xl" > 
                 
-    {/* Left */}
-    <div className="pl-5 w-[35%] h-full rounded-2xl flex flex-col justify-center items-center mr-2">
 
-     <div id="todaysappointmentcontainer"  className="flex flex-col   h-[100%] bg-[#ffffff]    shadow-lg w-full  rounded-2xl pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out ">
-
-        <div className="flex items-center"><i className="bx bxs-calendar text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Today's Appointment</h1></div>
-        <p className="font-geistmedium text-[13px] text-[#333333]">{currenttime.toLocaleDateString(undefined, currentdateoption)}</p>
-        <p className="font-geistmedium text-[13px] text-[#333333]">{currenttime.toLocaleTimeString(undefined, currenttimeoption)}</p>
-
-
-      </div>
-
-
-
-
-    </div>
-
-
-    {/* Right */}
-    <div className=" w-[65%] h-[100%] rounded-2xl flex flex-col justify-center items-center ml-2">
-      <div className=" w-full h-[40%] rounded-2xl mb-2 flex justify-center items-center">
-
-
-
-        <div className="pl-5 pr-5 pb-4 pt-4  transition-all duration-300 ease-in-out  shadow-lg w-[55%] mr-2 h-full rounded-2xl bg-[#ffffff]   " id="stockscontainer">
-        <div className="flex items-center"><i className="bx bxs-package text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Stock Inventory</h1></div>
-
-        </div>
-
-
-
-
-
-
-        <div className="pl-5 pr-5 pb-4 pt-4 transition-all duration-300 ease-in-out  shadow-lg w-[45%] ml-2 h-full rounded-2xl bg-[#ffffff]   " id="unreadmessagescontainer">
-        <div className="flex items-center"><i className="bx bxs-message-dots text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Unread Messages</h1></div>
-
-        </div>
-
-
-
-
-
-      </div>
-
-      
-      <div id="pendingorderscontainer"  className="flex flex-col   h-[60%] bg-[#ffffff]    shadow-lg w-full  rounded-2xl pl-5 pr-5 pb-4 pt-4 transition-all duration-300  ease-in-out ">
-
-        <div className="flex items-center"><i className="bx bxs-cart-alt text-[#184d85] text-[25px] mr-2"/> <h1 className=" font-albertsans font-bold text-[#184d85] text-[25px]">Pending Orders</h1></div>
-
-
-        </div>
-
-    </div>  
 
 
   
@@ -22375,7 +22337,8 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
 
                 if(appointment.patientambherappointmentstatus === 'Completed'){
                   const ambherAppt = {
-                      ...appointment,
+                      _id: appointment._id,
+                      patientappointmentid: appointment.patientappointmentid,
                       clinicType: 'ambher',
                       profilepicture: appointment.patientappointmentprofilepicture,
                       firstname: appointment.patientappointmentfirstname,
@@ -22388,14 +22351,17 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                       eyespecialist: appointment.patientambherappointmenteyespecialist,
                       consultationremarkssubject: appointment.patientambherappointmentconsultationremarkssubject,
                       consultationremarks: appointment.patientambherappointmentconsultationremarks,
-                      consultationprescription: appointment.patientambherappointmentprescription
+                      consultationprescription: appointment.patientambherappointmentprescription,
+                      createdAt: appointment.createdAt,
+                      updatedAt: appointment.updatedAt
                   };
                   appointments.push(ambherAppt);
                 }
 
                 if(appointment.patientbautistaappointmentstatus === 'Completed'){
                   const bautistaAppt = {
-                      ...appointment,
+                      _id: appointment._id,
+                      patientappointmentid: appointment.patientappointmentid,
                       clinicType: 'bautista',
                       profilepicture: appointment.patientappointmentprofilepicture,
                       firstname: appointment.patientappointmentfirstname,
@@ -22408,7 +22374,9 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
                       eyespecialist: appointment.patientbautistaappointmenteyespecialist,
                       consultationremarkssubject: appointment.patientbautistaappointmentconsultationremarkssubject,
                       consultationremarks: appointment.patientbautistaappointmentconsultationremarks,
-                      consultationprescription: appointment.patientbautistaappointmentprescription
+                      consultationprescription: appointment.patientbautistaappointmentprescription,
+                      createdAt: appointment.createdAt,
+                      updatedAt: appointment.updatedAt
                   };
                   appointments.push(bautistaAppt);
                 }
@@ -22425,7 +22393,7 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
          <div key={index} className="p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
             <div className="flex-1 px-3">
                 <h3 className="font-medium text-gray-800 text-base truncate">
-                  {appointment.consultationremarkssubject || `${appointment.clinicType} Appointment`}
+                  {appointment.consultationremarkssubject || `${appointment.clinicType === 'ambher' ? 'Ambher' : 'Bautista'} Appointment`}
                 </h3>
                 <p className="text-xs text-gray-500">
                   {appointment.consultationremarkssubject ? 'Consultation completed' : 'Basic appointment record'}
@@ -22433,8 +22401,12 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
             </div>
 
             <div className="flex-1 px-3 text-center">
-              <p className="font-medium text-gray-800 text-sm">{formatappointmatedates(appointment.date)}</p> 
-              <p className="text-gray-500 text-xs">{formatappointmenttime(appointment.time)}</p> 
+              <p className="font-medium text-gray-800 text-sm">
+                {formatappointmatedates(appointment.date)}
+              </p> 
+              <p className="text-gray-500 text-xs">
+                {formatappointmenttime(appointment.time)}
+              </p> 
             </div>
 
             <div className="flex-1 px-3 text-center">
@@ -22447,12 +22419,16 @@ className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
             </div>
 
             <div className="px-3">
-              <button 
-                onClick={() => {setshowpatientmedicalrecordconsultation(true);setselectedpatientappointment(appointment);}} 
+              <div 
+                onClick={() => {
+                  console.log('Selected appointment data:', appointment);
+                  setshowpatientmedicalrecordconsultation(true);
+                  setselectedpatientappointment(appointment);
+                }} 
                 className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
               >
                 View
-              </button>
+              </div>
             </div>
          </div>
        ));
@@ -22563,7 +22539,19 @@ return filteredRecords.map((record) => (
       patientotherclinicrecordimage: record.patientotherclinicrecordimage
     });
   }} 
-  className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+  style={{
+    backgroundColor: "#1f2937",
+    color: "white",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  }}
+  onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
+  onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
 >
   View
 </button>
@@ -22582,7 +22570,22 @@ return filteredRecords.map((record) => (
       patientotherclinicrecordimage: record.patientotherclinicrecordimage
     });
   setshowdeleteotherclinicrecorddialog(true);}}
-  className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+  style={{
+    backgroundColor: "#dc2626",
+    color: "white",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px"
+  }}
+  onMouseEnter={(e) => e.target.style.backgroundColor = "#b91c1c"}
+  onMouseLeave={(e) => e.target.style.backgroundColor = "#dc2626"}
 >
   <i className="bx bxs-trash text-sm"/>
   Delete
@@ -22613,40 +22616,78 @@ return filteredRecords.map((record) => (
 
 
 {showpatientmedicalrecordconsultation && (
-<div id="patientdemographicprofileformconsultation" className="overflow-y-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="mt-50 mb-30 pl-5 pr-5 pb-5 bg-white rounded-2xl w-[800px] h-max  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">View Consultation</h1></div>
-  <div onClick={() => setshowpatientmedicalrecordconsultation(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
-</div>
-
-  <div className="px-2 pt-5 flex flex-col  h-max w-full rounded-2xl ">
-    <div className="w-full h-auto flex justify-between items-center">
-    <h1 className="font-albertsans font-bold text-[17px] text-[#2b2b2b]"><span className="text-[#333333] text-[19px] font-albertsans font-semibold">{selectedpatientappointment.eyespecialist}</span></h1>
-    <div className="pr-4 flex flex-col justify-center items-center">
-    <h1 className="text-[#333333] text-[17px] font-albertsans font-semibold"> {formatappointmatedates(selectedpatientappointment.date)}</h1>
-    <h1 className="text-[#333333] text-[15px] font-albertsans font-medium"> {formatappointmenttime(selectedpatientappointment.time)}</h1>
-    </div>
+<div id="patientdemographicprofileformconsultation" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[900px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-conversation text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              View Consultation
+            </h2>
+            <p className="text-sm text-gray-500">Consultation Details & Prescription</p>
+          </div>
+        </div>
+  <div 
+    onClick={() => setshowpatientmedicalrecordconsultation(false)} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"/>
   </div>
-
-
-      <h1 className="text-[#333333] text-[16px] mt-15 font-albertsans font-semibold">{selectedpatientappointment.consultationremarkssubject}</h1>
-      <h1 className="text-[#333333] text-[15px]  font-albertsans font-medium mt-1"> - {selectedpatientappointment.consultationremarks}</h1>
-    <div className="p-2 w-full h-auto rounded-2xl border-3 mt-3 bg-[#e5e7eb]">
-
-      <h1 className="text-[#333333] text-[15px] font-albertsans font-bold mt-1">Prescription</h1>
-      <h1 className="break-words min-w-0 text-[#333333] text-[15px] font-albertsans font-medium mt-1"> {selectedpatientappointment.consultationprescription}</h1>
-    </div>
-
-  </div>
-
-
-
 </div>
 
 
+<div className="space-y-6">
+    <div className="flex justify-between items-start bg-gray-50 rounded-2xl p-6">
+      <div className="flex-1">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Eye Specialist</h3>
+        <p className="text-gray-700 font-medium">
+          {selectedpatientappointment?.eyespecialist || 'No specialist assigned'}
+        </p>
+      </div>
+      <div className="flex flex-col items-end">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Consultation Date</h3>
+        <p className="text-gray-700 font-medium">
+          {formatappointmatedates(selectedpatientappointment?.date)}
+        </p>
+        <p className="text-gray-500 text-sm">
+          {formatappointmenttime(selectedpatientappointment?.time)}
+        </p>
+      </div>
+    </div>
 
+    <div className="space-y-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Consultation Subject</h3>
+        <p className="text-gray-700">
+          {selectedpatientappointment?.consultationremarkssubject || 'No consultation subject recorded'}
+        </p>
+      </div>
 
+      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Consultation Remarks</h3>
+        <p className="text-gray-700">
+          {selectedpatientappointment?.consultationremarks || 'No consultation remarks recorded'}
+        </p>
+      </div>
+
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+          <i className="bx bx-health mr-2"></i>
+          Prescription
+        </h3>
+        <div className="bg-white rounded-lg p-4 border border-blue-100">
+          <p className="text-gray-700 whitespace-pre-wrap break-words">
+            {selectedpatientappointment?.consultationprescription || 'No prescription recorded'}
+          </p>
+        </div>
+      </div>
+    </div>
+</div>
+
+</div>
 </div>)}
 
 
@@ -22656,70 +22697,163 @@ return filteredRecords.map((record) => (
 
 
 {showpatientaddothermedicalrecord && (
-<div id="patientshowpatientaddothermedicalrecord" className=" bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="  pl-5 pr-5 pb-5 bg-white rounded-2xl w-[800px] h-max  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Add Other Clinic Record</h1></div>
-  <div onClick={() => setshowpatientaddothermedicalrecord(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+<div id="patientshowpatientaddothermedicalrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[900px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-plus-medical text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Add Other Clinic Record
+            </h2>
+            <p className="text-sm text-gray-500">Add Medical Record from Another Clinic</p>
+          </div>
+        </div>
+  <div 
+    onClick={() => setshowpatientaddothermedicalrecord(false)} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"/>
+  </div>
 </div>
 
 <form onSubmit={submitotherclinicdata}>
-<div className="px-2 pt-5 flex flex-col justify-center items-center  h-max w-full rounded-2xl ">
-           <div className=" form-group flex justify-center items-center mb-3">
-               <label className=" w-[180px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]" htmlFor="otherclinicname">Clinic :</label>
-               <div className="flex flex-col ">
-               <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-114" value={otherclinicname} onChange={(e) => setotherclinicname(e.target.value)} id="otherclinicname" name="otherclinicname" required  placeholder="Other clinic name..."/>
+<div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700" htmlFor="otherclinicname">
+                Clinic Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+                value={otherclinicname} 
+                onChange={(e) => setotherclinicname(e.target.value)} 
+                id="otherclinicname" 
+                name="otherclinicname" 
+                required  
+                placeholder="Enter clinic name..."
+            />
+        </div>
+
+        <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700" htmlFor="othercliniceyespecialist">
+                Eye Specialist <span className="text-red-500">*</span>
+            </label>
+            <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+                value={othercliniceyespecialist} 
+                onChange={(e) => setothercliniceyespecialist(e.target.value)} 
+                id="othercliniceyespecialist" 
+                name="othercliniceyespecialist" 
+                required  
+                placeholder="Enter eye specialist name..."
+            />
+        </div>
+    </div>
+
+    <div className="space-y-2">
+        <label className="block text-sm font-semibold text-gray-700" htmlFor="otherclinicconsultationdate">
+            Consulted Date <span className="text-red-500">*</span>
+        </label>
+        <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]" 
+            value={otherclinicconsultationdate} 
+            onChange={(e) => setotherclinicconsultationdate(e.target.value)} 
+            type="date" 
+            name="patientambherappointmentdate" 
+            id="patientambherappointmentdate" 
+            required
+        />
+    </div>
+
+    <div className="space-y-4">
+        <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">
+                Medical Record Image <span className="text-red-500">*</span>
+            </label>
+            <p className="text-sm text-gray-500">Upload an image of the medical record or prescription</p>
+        </div>
+
+        <div className="flex justify-center">
+            {!otherclinicselectedimage && (
+                <div 
+                    onClick={otherclinichandleuploadclick}  
+                    className="w-80 h-80 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all duration-200 bg-gray-50"
+                >
+                    <img src={addimage} className="w-20 h-20 object-cover mb-4 opacity-60"/>
+                    <p className="text-gray-500 font-medium">Click to upload image</p>
+                    <p className="text-gray-400 text-sm">JPEG, JPG, PNG formats</p>
                 </div>
-            </div>
-
-
-            <div className=" form-group flex justify-center items-center mb-3">
-               <label className=" w-[180px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]" htmlFor="othercliniceyespecialist">Eye Specialist :</label>
-               <div className="flex flex-col ">
-               <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-114" value={othercliniceyespecialist} onChange={(e) => setothercliniceyespecialist(e.target.value)} id="othercliniceyespecialist" name="othercliniceyespecialist" required  placeholder="Eye specialist name..."/>
-                </div>
-            </div>
-
-            <div className="form-group flex  items-center mb-3">
-               <label className=" w-[192px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]"htmlFor="otherclinicconsultationdate">Consulted Date: </label>     
-               <input className=" h-10 w-114 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold" value={otherclinicconsultationdate} onChange={(e) => setotherclinicconsultationdate(e.target.value)} type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" /> </div>
-       
-
-
-            <div className="flex flex-col justify center items-center w-fit h-fit mt-5">
-
-              {!otherclinicselectedimage && (<div onClick={otherclinichandleuploadclick}  className="  w-80 h-80 mt-5 flex justify-center items-center    rounded-2xl cursor-pointer transition-all" ><img src={addimage} className=" w-60 h-60 object-cover"/></div>
-              )}      
-
-              {otherclinicselectedimage && 
-              (
-                <div className="w-80 h-80 flex justify-center items-center relative rounded-2xl overflow-hidden">
-               <div onClick={otherclinichandleremoveprofile} className="absolute top-0 right-0   flex justify-center items-center align-middle p-1 bg-[#333333] rounded-full hover:cursor-pointer transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/></div>
-                <img onClick={() => setshowotherclinicrecordimage(true)} className=" cursor-pointer hover:cursor-pointer object-cover w-80 h-80 rounded-2xl" src={otherclinicpreviewimage || defaultimageplaceholder}/></div>
-              )}      
- 
-                                
-                <input  className="hidden" type="file" onChange={otherclinichandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={otherclinicimageinputref} />
-          
-
-
-            {otherclinicselectedimage && otherclinicname !== "" && othercliniceyespecialist!== "" &&  otherclinicconsultationdate !== "" && (
-
-         <button type="submit" disabled={otherclinicrecordissubmitting} className="submit-btn mt-12 w-full" style={{ backgroundColor: "#2b2b44", fontSize: "20px", padding: "10px 20px", color: "white", borderRadius: "20px",   }}>
-           {otherclinicrecordissubmitting ? "Submitting..." : "Submit"}
-         </button>
             )}      
-            </div>
-</div>
 
+            {otherclinicselectedimage && (
+                <div className="relative">
+                    <div className="w-80 h-80 rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                        <img 
+                            onClick={() => setshowotherclinicrecordimage(true)} 
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200" 
+                            src={otherclinicpreviewimage || defaultimageplaceholder}
+                            alt="Medical record preview"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={otherclinichandleremoveprofile} 
+                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                    >
+                        <i className="bx bx-x text-lg"/>
+                    </button>
+                </div>
+            )}      
+        </div>
+                            
+        <input  
+            className="hidden" 
+            type="file" 
+            onChange={otherclinichandleprofilechange} 
+            accept="image/jpeg, image/jpg, image/png" 
+            ref={otherclinicimageinputref} 
+        />
+
+        {otherclinicselectedimage && otherclinicname !== "" && othercliniceyespecialist !== "" && otherclinicconsultationdate !== "" && (
+            <div className="flex justify-center pt-4">
+                <button 
+                    type="submit" 
+                    disabled={otherclinicrecordissubmitting} 
+                    style={{ 
+                        backgroundColor: otherclinicrecordissubmitting ? "#9CA3AF" : "#059669", 
+                        fontSize: "16px", 
+                        padding: "12px 32px", 
+                        color: "white", 
+                        borderRadius: "12px",
+                        fontWeight: "600",
+                        border: "none",
+                        cursor: otherclinicrecordissubmitting ? "not-allowed" : "pointer",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)"
+                    }}
+                >
+                    {otherclinicrecordissubmitting ? (
+                        <>
+                            <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                            Submitting...
+                        </>
+                    ) : (
+                        <>
+                            <i className="bx bx-check mr-2"></i>
+                            Submit Record
+                        </>
+                    )}
+                </button>
+            </div>
+        )}      
+    </div>
+</div>
 </form>
 
-
 </div>
-
-
-
-
 </div>)}
 
 
@@ -22751,45 +22885,93 @@ className="max-w-full max-h-full"
 
 {showotherclinicrecord && (
 
-<div id="patientshowpatientaddothermedicalrecord" className="overflow-y-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-<div className="mt-30 mb-30 pl-5 pr-5 pb-5 bg-white rounded-2xl w-[800px] h-max  animate-fadeInUp ">
-<div className=" mt-5 border-3 flex justify-between items-center border-[#2d2d4400] w-full h-[70px]">
-  <div className="flex justify-center items-center"><img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all   p-1"></img><h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">View Clinic Record</h1></div>
-  <div onClick={() => setshowotherclinicrecord(false)} className="bg-[#333232] px-10 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out"><i className="bx bx-x text-white text-[40px] "/></div>
+<div id="patientshowpatientaddothermedicalrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[900px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+            <i className="bx bxs-clinic text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              View Clinic Record
+            </h2>
+            <p className="text-sm text-gray-500">Other Clinic Medical Record</p>
+          </div>
+        </div>
+  <div 
+    onClick={() => setshowotherclinicrecord(false)} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"/>
+  </div>
 </div>
 
 <form onSubmit={submitotherclinicdata}>
-<div className="px-2 pt-5 flex flex-col justify-center items-center  h-max w-full rounded-2xl ">
-           <div className=" form-group flex justify-center items-center mb-3">
-               <label className=" w-[180px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]" htmlFor="otherclinicname">Clinic :</label>
-               <div className="flex flex-col ">
-               <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-114" value={selectedpatientappointment.clinicname || ''} readOnly id="otherclinicname" name="otherclinicname" placeholder="Other clinic name..."/>
-                </div>
-            </div>
-
-
-            <div className=" form-group flex justify-center items-center mb-3">
-               <label className=" w-[180px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]" htmlFor="othercliniceyespecialist">Eye Specialist :</label>
-               <div className="flex flex-col ">
-               <input className="bg-gray-200 text-[20px] text-gray-600 pl-3 rounded-2xl ml-3 h-10 w-114" value={selectedpatientappointment.eyespecialist || ''} readOnly id="othercliniceyespecialist" name="othercliniceyespecialist" placeholder="Eye specialist name..."/>
-                </div>
-            </div>
-
-            <div className="form-group flex  items-center mb-3">
-               <label className=" w-[192px] font-albertsans font-bold italic text-[#3d3d3d] text-[20px]"htmlFor="otherclinicconsultationdate">Consulted Date: </label>     
-               <input className=" h-10 w-114 p-3 mt-2 justify-center border-b-2 border-gray-600 bg-gray-200 rounded-2xl text-[#2d2d44] text-[18px]  font-semibold" value={selectedpatientappointment.date || ''} readOnly type="date" name="patientambherappointmentdate" id="patientambherappointmentdate" placeholder="" /> </div>
-       
-
-
-            <MedicalRecordImageViewer 
-              record={selectedpatientappointment}
-              loadMedicalRecordImage={loadMedicalRecordImage}
-              onImageClick={() => setshowotherclinicrecordimage(true)}
-             
+<div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700" htmlFor="otherclinicname">
+                Clinic Name
+            </label>
+            <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                value={selectedpatientappointment.clinicname || ''} 
+                readOnly 
+                id="otherclinicname" 
+                name="otherclinicname" 
+                placeholder="Other clinic name..."
             />
-                                
-            <input  classNam="hover:cursor-pointer object-cover w-80 h-80" className="hidden" type="file" onChange={otherclinichandleprofilechange} accept="image/jpeg, image/jpg, image/png" ref={otherclinicimageinputref} />
+        </div>
 
+        <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700" htmlFor="othercliniceyespecialist">
+                Eye Specialist
+            </label>
+            <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                value={selectedpatientappointment.eyespecialist || ''} 
+                readOnly 
+                id="othercliniceyespecialist" 
+                name="othercliniceyespecialist" 
+                placeholder="Eye specialist name..."
+            />
+        </div>
+    </div>
+
+    <div className="space-y-2">
+        <label className="block text-sm font-semibold text-gray-700" htmlFor="otherclinicconsultationdate">
+            Consulted Date
+        </label>
+        <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+            value={selectedpatientappointment.date || ''} 
+            readOnly 
+            type="date" 
+            name="patientambherappointmentdate" 
+            id="patientambherappointmentdate" 
+        />
+    </div>
+
+    <div className="bg-gray-50 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i className="bx bx-image mr-2"></i>
+            Medical Record Image
+        </h3>
+        <MedicalRecordImageViewer 
+          record={selectedpatientappointment}
+          loadMedicalRecordImage={loadMedicalRecordImage}
+          onImageClick={() => setshowotherclinicrecordimage(true)}
+        />
+    </div>
+                            
+    <input  
+        className="hidden" 
+        type="file" 
+        onChange={otherclinichandleprofilechange} 
+        accept="image/jpeg, image/jpg, image/png" 
+        ref={otherclinicimageinputref} 
+    />
 </div>
 </form>
 </div>
@@ -23862,14 +24044,7 @@ Lowest to Highest
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-6">Product Details</h3>
                 
-                {message.text && (
-                  <div className={`p-4 rounded-xl mb-6 ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                    <div className="flex items-center space-x-2">
-                      <i className={`bx ${message.type === 'error' ? 'bx-error-circle' : 'bx-check-circle'} text-lg`}></i>
-                      <span className="font-medium">{message.text}</span>
-                    </div>
-                  </div>
-                )}
+
               </div>
 
               <div className="space-y-4">
@@ -25094,14 +25269,7 @@ Lowest to Highest
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-6">Product Details</h3>
                 
-                {message.text && (
-                  <div className={`p-4 rounded-xl mb-6 ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                    <div className="flex items-center space-x-2">
-                      <i className={`bx ${message.type === 'error' ? 'bx-error-circle' : 'bx-check-circle'} text-lg`}></i>
-                      <span className="font-medium">{message.text}</span>
-                    </div>
-                  </div>
-                )}
+
               </div>
 
               <div className="space-y-4">

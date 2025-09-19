@@ -17,7 +17,7 @@
 
       const ownerrouter = express.Router();
 
-      //Retrieve owner data (public for admin purposes)
+      //Retrieve owner data
       ownerrouter.get("/", protect, getowneraccounts);
       ownerrouter.get("/id/:id", protect, getowneraccountbyid);
       ownerrouter.get("/ownerlastname/:ownerlastname", protect, getowneraccountbylastname);
@@ -25,22 +25,22 @@
 
 
 
-      //Retrieve Existing Email datas (public for registration)
+      //Retrieve Existing Email datas
       ownerrouter.get("/check-email/:owneremail", existingemail);
 
 
-      //Create owner data (protected)
+      //Create owner data
       ownerrouter.post("/", protect, createOwner);
 
-      //Update owner data (protected)
+      //Update owner data
       ownerrouter.put("/:id", protect, updateOwner);
 
-      //Delete owner data (protected)
+      //Delete owner data
       ownerrouter.delete("/:id", protect, deleteOwner);
 
 
 
-      //Login owner (public)
+      //Login owner
       ownerrouter.post("/login", ownerlogin);
 
 

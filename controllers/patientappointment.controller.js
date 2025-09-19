@@ -145,9 +145,41 @@
     //Get All Patient Appointments
     export const getallpatientappointments = async (req, res) => {
         try{
+            let query = {};
+            
+            // Apply clinic filtering for staff and owners
+            if (req.clinicFilter && (req.user?.role === 'staff' || req.user?.role === 'owner')) {
+                const clinic = req.clinicFilter.toLowerCase();
+                
+                // Filter appointments based on user's clinic
+                if (clinic.includes('ambher')) {
+                    query = {
+                        $or: [
+                            { patientambherappointmentlocation: { $regex: clinic, $options: 'i' } },
+                            { patientambherappointmentdate: { $exists: true, $nin: [null, ''] } }
+                        ]
+                    };
+                } else if (clinic.includes('bautista')) {
+                    query = {
+                        $or: [
+                            { patientbautistaappointmentlocation: { $regex: clinic, $options: 'i' } },
+                            { patientbautistaappointmentdate: { $exists: true, $nin: [null, ''] } }
+                        ]
+                    };
+                } else {
+                    // For other clinics, try to match location fields
+                    query = {
+                        $or: [
+                            { patientambherappointmentlocation: { $regex: clinic, $options: 'i' } },
+                            { patientbautistaappointmentlocation: { $regex: clinic, $options: 'i' } }
+                        ]
+                    };
+                }
+            }
+
             // Optimized query with lean() and field selection for better performance
-            const patientappointments = await PatientAppointment.find()
-                .select('patientappointmentid patientappointmentprofilepicture patientappointmentfirstname patientappointmentlastname patientappointmentemail patientappointmentstatus patientambherappointmentdate patientambherappointmenttime patientambherappointmentstatus patientambherappointmentpaymentotal patientbautistaappointmentdate patientbautistaappointmenttime patientbautistaappointmentstatus patientbautistaappointmentpaymentotal createdAt updatedAt')
+            const patientappointments = await PatientAppointment.find(query)
+                .select('patientappointmentid patientappointmentprofilepicture patientappointmentfirstname patientappointmentmiddlename patientappointmentlastname patientappointmentemail patientappointmentstatus patientambherappointmentdate patientambherappointmenttime patientambherappointmentstatus patientambherappointmentpaymentotal patientambherappointmenteyespecialist patientambherappointmentconsultationremarkssubject patientambherappointmentconsultationremarks patientambherappointmentprescription patientbautistaappointmentdate patientbautistaappointmenttime patientbautistaappointmentstatus patientbautistaappointmentpaymentotal patientbautistaappointmenteyespecialist patientbautistaappointmentconsultationremarkssubject patientbautistaappointmentconsultationremarks patientbautistaappointmentprescription createdAt updatedAt')
                 .sort({patientappointmentid: -1})
                 .lean(); // Returns plain JavaScript objects instead of Mongoose documents
             
@@ -235,6 +267,38 @@
             res.json(appointments);
 
 
+          } catch (error) {
+            res.status(500).json({ message: error.message });
+          }
+        };
+
+        // Get Ambher appointments by date, time, and location
+        export const getambherappointmentsbydatetimeandlocation = async (req, res) => {
+          try {
+            const appointments = await PatientAppointment.find({
+              patientambherappointmentdate: req.params.date,
+              patientambherappointmenttime: req.params.time,
+              patientambherappointmentlocation: req.params.location,
+              patientambherappointmentstatus: { $in: ['Pending', 'Accepted'] }
+            });
+
+            res.json(appointments);
+          } catch (error) {
+            res.status(500).json({ message: error.message });
+          }
+        };
+
+        // Get Bautista appointments by date, time, and location
+        export const getbautistaappointmentsbydatetimeandlocation = async (req, res) => {
+          try {
+            const appointments = await PatientAppointment.find({
+               patientbautistaappointmentdate: req.params.date,
+               patientbautistaappointmenttime: req.params.time,
+               patientbautistaappointmentlocation: req.params.location,
+               patientbautistaappointmentstatus: { $in: ['Pending', 'Accepted'] }
+            });
+
+            res.json(appointments);
           } catch (error) {
             res.status(500).json({ message: error.message });
           }

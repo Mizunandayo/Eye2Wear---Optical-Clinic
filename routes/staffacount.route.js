@@ -17,7 +17,7 @@
 
       const staffrouter = express.Router();
 
-      //Retrieve staff data (protected)
+      //Retrieve staff data
       staffrouter.get("/", protect, getstaffaccounts);
       staffrouter.get("/id/:id", protect, getstaffaccountbyid);
       staffrouter.get("/stafflastname/:stafflastname", protect, getstaffaccountbylastname);
@@ -25,22 +25,22 @@
 
 
 
-      //Retrieve Existing Email datas (public for registration)
+      //Retrieve Existing Email datas
       staffrouter.get("/check-email/:staffemail", existingemail);
 
 
-      //Create staff data (protected)
+      //Create staff data
       staffrouter.post("/", protect, createStaff);
 
-      //Update staff data (protected)
+      //Update staff data
       staffrouter.put("/:id", protect, updateStaff);
 
-      //Delete staff data (protected)
+      //Delete staff data
       staffrouter.delete("/:id", protect, deleteStaff);
 
 
 
-      //Login staff (public)
+      //Login staff
       staffrouter.post("/login", stafflogin);
 
 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports Analytics Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .token-input { width: 100%; padding: 8px; margin: 10px 0; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Reports & Analytics Auth Test</h1>
+    <p>This test checks if the Reports section API calls that were giving 401 errors are now fixed.</p>
+    
+    <div class="test-section">
+        <h3>Test Token</h3>
+        <label>User Token (Staff/Owner/Admin):</label>
+        <input type="text" id="userToken" class="token-input" placeholder="Enter your currentusertoken">
+        <button onclick="testReportsAPI()">Test Reports API Calls</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Test Results</h3>
+        <div id="testOutput" class="result">Click "Test Reports API Calls" to start testing...</div>
+    </div>
+
+    <script>
+        async function testReportsAPI() {
+            const token = document.getElementById('userToken').value;
+            const output = document.getElementById('testOutput');
+            
+            if (!token) {
+                output.textContent = '❌ Please enter a token first';
+                output.className = 'result error';
+                return;
+            }
+
+            output.textContent = 'Testing Reports API calls...\n';
+            output.className = 'result';
+
+            // Test the exact API calls that were failing in the Reports section
+            const tests = [
+                {
+                    name: 'Ambher Orders (for Reports)',
+                    url: '/api/patientorderambher/',
+                    method: 'GET'
+                },
+                {
+                    name: 'Bautista Orders (for Reports)', 
+                    url: '/api/patientorderbautista/',
+                    method: 'GET'
+                }
+            ];
+
+            let allPassed = true;
+            let results = '';
+
+            for (const test of tests) {
+                try {
+                    results += `\n🔍 Testing: ${test.name}\n`;
+                    results += `   URL: ${test.method} ${test.url}\n`;
+                    
+                    const response = await fetch(test.url, {
+                        method: test.method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        results += `   ✅ SUCCESS: Status ${response.status}, Found ${data.length} records\n`;
+                    } else {
+                        allPassed = false;
+                        const errorText = await response.text();
+                        results += `   ❌ FAILED: Status ${response.status} - ${response.statusText}\n`;
+                        results += `   Error: ${errorText}\n`;
+                    }
+                } catch (error) {
+                    allPassed = false;
+                    results += `   ❌ ERROR: ${error.message}\n`;
+                }
+            }
+
+            // Summary
+            results += `\n${'='.repeat(50)}\n`;
+            if (allPassed) {
+                results += '🎉 ALL TESTS PASSED!\n';
+                results += 'Reports & Analytics should now work for staff/owners.\n';
+                output.className = 'result success';
+            } else {
+                results += '⚠️ SOME TESTS FAILED!\n';
+                results += 'There may still be authentication issues.\n';
+                output.className = 'result error';
+            }
+
+            output.textContent = results;
+        }
+    </script>
+</body>
+</html>

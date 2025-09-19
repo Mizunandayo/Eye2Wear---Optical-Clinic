@@ -1,5 +1,4 @@
 import express from 'express';
-import { protect } from "../middleware/authMiddleware.js";
 import {
      createpatientorderambher,
      getallpatientorderambhers,
@@ -10,6 +9,7 @@ import {
      getambherproductsoldcountbyid,
      updatePaymentAmbher,
 } from '../controllers/patientorderambher.controller.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 
 const patientorderambherrouter = express.Router();

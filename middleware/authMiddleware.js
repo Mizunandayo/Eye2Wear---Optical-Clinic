@@ -45,6 +45,7 @@ export const protect = async (req, res, next) => {
       userId: user._id.toString(), // Ensure this is a string
       role: decoded.role,
       name: user.patientfirstname || user.stafffirstname || user.ownerfirstname,
+      email: user.patientemail || user.staffemail || user.owneremail, // Add email field
       clinic: user.staffclinic || user.ownerclinic || null
     };
     

@@ -644,6 +644,12 @@ const patientsubmitappointment = async (formData) => {
     // Switch to appointment list AFTER refresh completes
     setactiveappointmenttable('appointmentlist');
     
+    // Scroll to top of the page smoothly
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
     // Clear the flag after a delay to allow normal fetching again
     setTimeout(() => {
       console.log('🔄 Resetting justSubmittedAppointment flag after 3 seconds');
@@ -685,32 +691,33 @@ const checkclinicscheduledappointments = async (formData) => {
   try {
     const existingappointmentambherDate = formData.get('patientambherappointmentdate');
     const existingappointmentambherTime = formData.get('patientambherappointmenttime');
+    const existingappointmentambherLocation = formData.get('patientambherappointmentlocation');
     const existingappointmentbautistaDate = formData.get('patientbautistaappointmentdate');
     const existingappointmentbautistaTime = formData.get('patientbautistaappointmenttime');
+    const existingappointmentbautistaLocation = formData.get('patientbautistaappointmentlocation');
 
-    //Checks existing appointment schedules for Ambher Optical
-    if (existingappointmentambherDate && existingappointmentambherTime) {
-      const ambherexistingscheduleresponse = await fetch(`/api/patientappointments/appointments/ambher/${existingappointmentambherDate}/${existingappointmentambherTime}`, {
+    //Checks existing appointment schedules for Ambher Optical (with location)
+    if (existingappointmentambherDate && existingappointmentambherTime && existingappointmentambherLocation) {
+      const ambherexistingscheduleresponse = await fetch(`/api/patientappointments/appointments/ambher/${existingappointmentambherDate}/${existingappointmentambherTime}/${existingappointmentambherLocation}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('patienttoken')}`
         }
       });
       
-
       if (ambherexistingscheduleresponse.ok) {
         const existingAmbherAppointments = await ambherexistingscheduleresponse.json();
         if (existingAmbherAppointments.length > 0) {
           return {
             conflict: true,
-            message: "Selected date and time for Ambher Optical is already booked by another patient."
+            message: "Selected date, time and location for Ambher Optical is already booked by another patient."
           };
         }
       }
     }
 
-    //Checks existing appointment schedules for Bautista Eye Center
-    if (existingappointmentbautistaDate && existingappointmentbautistaTime) {
-      const bautisaexistingscheduleresponse = await fetch(`/api/patientappointments/appointments/bautista/${existingappointmentbautistaDate}/${existingappointmentbautistaTime}`, {
+    //Checks existing appointment schedules for Bautista Eye Center (with location)
+    if (existingappointmentbautistaDate && existingappointmentbautistaTime && existingappointmentbautistaLocation) {
+      const bautisaexistingscheduleresponse = await fetch(`/api/patientappointments/appointments/bautista/${existingappointmentbautistaDate}/${existingappointmentbautistaTime}/${existingappointmentbautistaLocation}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('patienttoken')}`
         }
@@ -721,12 +728,13 @@ const checkclinicscheduledappointments = async (formData) => {
         if (existingBautistaAppointments.length > 0) {
           return {
             conflict: true,
-            message: "Selected date and time for Bautista Eye Center is already booked by another patient."};}}
-          
+            message: "Selected date, time and location for Bautista Eye Center is already booked by another patient."
+          };
+        }
+      }
+    }
 
-      }return { conflict: false };
-      
-
+    return { conflict: false };
 
   } catch (error) {
     console.error("Failed to check existing appointments:", error);
@@ -2554,7 +2562,7 @@ useEffect(() => {
                               <div>
                                 <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <i className="bx bx-list-check text-blue-600"></i>
+                                    <i className="bx bx-list-check text-sky-600"></i>
                                     Our Services
                                   </div>
                                   <button
@@ -2585,47 +2593,47 @@ useEffect(() => {
                                 <div className={`md:block ${showBautistaServices ? 'block' : 'hidden'}`}>
                                 <div className="bg-white rounded-xl p-4 sm:p-6 border border-blue-200">
                                   <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
-                                    <span className="font-semibold text-blue-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
+                                    <span className="font-semibold text-sky-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
                                   </p>
                                   
                                   <div className="space-y-2 sm:space-y-3 text-gray-600">
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-blue-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
                                         <span className="font-medium text-gray-700">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
                                       </div>
@@ -2674,7 +2682,7 @@ useEffect(() => {
                                 {/* Multiple documents upload */}
                                 <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 bg-blue-50">
                                   <div className="text-center mb-4">
-                                    <i className="bx bx-file-plus text-4xl text-blue-500 mb-2"></i>
+                                    <i className="bx bx-file-plus text-4xl text-sky-500 mb-2"></i>
                                     <p className="text-sm text-gray-600 mb-4">
                                       Upload up to {MAX_SUPPORTING_DOCUMENTS} files
                                     </p>
@@ -2726,7 +2734,7 @@ useEffect(() => {
                                               <i className={`bx ${getFileIcon(doc.type)} text-2xl ${
                                                 doc.type.startsWith('image/') ? 'text-green-500' :
                                                 doc.type === 'application/pdf' ? 'text-red-500' :
-                                                doc.type.includes('word') ? 'text-blue-500' :
+                                                doc.type.includes('word') ? 'text-sky-500' :
                                                 'text-gray-500'
                                               }`}></i>
                                               <div className="flex-1 min-w-0">
@@ -2939,11 +2947,12 @@ useEffect(() => {
                     <span className="font-semibold items-start">{formatappointmatedates(appointment.patientambherappointmentdate)} </span> 
                     <span className="ml-1 font-semibold items-start">({formatappointmenttimes(appointment.patientambherappointmenttime)})</span> 
                     <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
+  ${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+    appointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
     appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
     appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
     appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-    'bg-red-100 text-red-800'}`}>{appointment.patientambherappointmentstatus}</span>
+    'bg-gray-100 text-gray-800'}`}>{appointment.patientambherappointmentstatus}</span>
                   </div>
                 )}
               </td>
@@ -2958,11 +2967,12 @@ useEffect(() => {
                     <span className="ml-1 font-semibold">({formatappointmenttimes(appointment.patientbautistaappointmenttime)})</span> 
                     
  <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-[#9f6e61] text-[#421a10]':
+  ${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+    appointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
     appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
     appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-    appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#103d4a]':
-    'bg-red-100 text-red-800'}`}>{appointment.patientbautistaappointmentstatus}</span>
+    appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+    'bg-gray-100 text-gray-800'}`}>{appointment.patientbautistaappointmentstatus}</span>
                   </div>
                 )}
               </td>
@@ -3025,10 +3035,11 @@ useEffect(() => {
                   <div className="flex justify-between items-center pt-1">
                     <span className="text-gray-600">Status:</span>
                     <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
-                      appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900' :
+                      appointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800' :
                       appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800' :
-                      appointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                      appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]' :
+                      appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {appointment.patientambherappointmentstatus}
@@ -3043,7 +3054,7 @@ useEffect(() => {
               <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 mb-2">
                   <img src={bautistalogo} className="w-6 h-6 rounded" alt="Bautista"/>
-                  <h3 className="text-sm font-bold text-blue-800">Bautista Eye Center</h3>
+                  <h3 className="text-sm font-bold text-sky-800">Bautista Eye Center</h3>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between items-center">
@@ -3061,10 +3072,11 @@ useEffect(() => {
                   <div className="flex justify-between items-center pt-1">
                     <span className="text-gray-600">Status:</span>
                     <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
-                      appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900' :
+                      appointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800' :
                       appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800' :
-                      appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                      appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]' :
+                      appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {appointment.patientbautistaappointmentstatus}
@@ -3178,7 +3190,7 @@ useEffect(() => {
  {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/} {/*Viewing Appointment Details*/}
                          {viewpatientappointment && selectedpatientappointment && (
                          <div id="viewpatientappointment" className="pt-30 h-auto bg-opacity-0 flex justify-center items-center z-[60] fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-8">
-                           <div className="animate-fadeInUp w-full max-w-7xl mx-auto max-h-full flex flex-col">
+                           <div className="mt-20 animate-fadeInUp w-full max-w-7xl mx-auto max-h-full flex flex-col">
                              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden max-h-full flex flex-col">
                                
                                {/* Header */}
@@ -3186,7 +3198,7 @@ useEffect(() => {
                                  <div className="flex items-center justify-between">
                                    <div className="flex items-center gap-3">
                                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                       <i className="bx bx-calendar-check text-blue-600 text-xl sm:text-2xl"></i>
+                                       <i className="bx bx-calendar-check text-sky-600 text-xl sm:text-2xl"></i>
                                      </div>
                                      <div>
                                        <h1 className="text-lg sm:text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
@@ -3218,11 +3230,12 @@ useEffect(() => {
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+            selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
             selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
-            'bg-red-100 text-red-800'}`}>
+            selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
+            selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+            'bg-gray-100 text-gray-800'}`}>
           {selectedpatientappointment.patientambherappointmentstatus}
         </span>
       </div>
@@ -3290,9 +3303,10 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Services - Only show if not Pending or Accepted */}
+      {/* Services - Only show if not Pending, Accepted, or Cancelled */}
       {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && 
-       selectedpatientappointment.patientambherappointmentstatus !== "Accepted" && (
+       selectedpatientappointment.patientambherappointmentstatus !== "Accepted" && 
+       selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-green-600"></i>
@@ -3442,11 +3456,12 @@ useEffect(() => {
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-red-100 text-red-800':
+          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
-            'bg-red-100 text-red-800'}`}>
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+            'bg-gray-100 text-gray-800'}`}>
           {selectedpatientappointment.patientbautistaappointmentstatus}
         </span>
       </div>
@@ -3456,7 +3471,7 @@ useEffect(() => {
       {/* Appointment Details */}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <i className="bx bx-calendar text-blue-600"></i>
+          <i className="bx bx-calendar text-sky-600"></i>
           Appointment Details
         </h3>
         <div className="bg-white rounded-xl p-4 border border-blue-200">
@@ -3483,8 +3498,8 @@ useEffect(() => {
 
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
-              <span className="text-sm font-medium text-blue-700">Payment Total:</span>
-              <p className="text-blue-800 font-bold text-lg">
+              <span className="text-sm font-medium text-sky-700">Payment Total:</span>
+              <p className="text-sky-800 font-bold text-lg">
                 ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
               </p>
             </div>
@@ -3505,7 +3520,7 @@ useEffect(() => {
             </p>
             <div
               onClick={() => handleCancelAppointment(selectedpatientappointment.patientappointmentid, 'bautista')}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              className="cursor-pointer w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
               <i className=" cursor-pointer bx bx-x-circle text-lg"></i>
               Cancel Bautista Eye Center Appointment
@@ -3514,61 +3529,62 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Services - Only show if not Pending or Accepted */}
+      {/* Services - Only show if not Pending, Accepted, or Cancelled */}
       {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && 
-       selectedpatientappointment.patientbautistaappointmentstatus !== "Accepted" && (
+       selectedpatientappointment.patientbautistaappointmentstatus !== "Accepted" && 
+       selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="bx bx-list-check text-blue-600"></i>
+            <i className="bx bx-list-check text-sky-600"></i>
             Selected Services
           </h3>
           <div className="bg-white rounded-xl p-4 border border-blue-200">
             <div className="space-y-3">
               {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Comprehensive Eye Exam</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Diabetic Retinopathy</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentglaucoma && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Glaucoma</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Hypertensive Retinopathy</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Retinal Problem</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Cataract Surgery</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
                 <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                   <span className="text-gray-700 font-medium">Pterygium Surgery</span>
                 </div>
               )}
@@ -3576,11 +3592,11 @@ useEffect(() => {
               {selectedpatientappointment.patientbautistaappointmentotherservice && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <i className="bx bx-check-circle text-blue-500 text-lg"></i>
+                    <i className="bx bx-check-circle text-sky-500 text-lg"></i>
                     <span className="text-gray-700 font-medium">Other Service</span>
                   </div>
                   <div className="ml-8 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                    <p className="text-blue-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
+                    <p className="text-sky-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
                   </div>
                 </div>
               )}
@@ -3593,7 +3609,7 @@ useEffect(() => {
       {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="bx bx-clipboard text-blue-600"></i>
+            <i className="bx bx-clipboard text-sky-600"></i>
             Consultation Details
           </h3>
           <div className="bg-white rounded-xl p-4 border border-blue-200 space-y-4">
@@ -3625,7 +3641,7 @@ useEffect(() => {
       {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="bx bx-star text-blue-600"></i>
+            <i className="bx bx-star text-sky-600"></i>
             Feedback
           </h3>
           
@@ -3724,7 +3740,7 @@ useEffect(() => {
                                                <i className={`bx ${getFileIcon(doc.mimetype)} text-2xl ${
                                                  doc.mimetype.startsWith('image/') ? 'text-green-500' :
                                                  doc.mimetype === 'application/pdf' ? 'text-red-500' :
-                                                 doc.mimetype.includes('word') ? 'text-blue-500' :
+                                                 doc.mimetype.includes('word') ? 'text-sky-500' :
                                                  'text-gray-500'
                                                }`}></i>
                                                <div className="flex-1 min-w-0">
@@ -3757,7 +3773,7 @@ useEffect(() => {
                                                target="_blank"
                                                rel="noopener noreferrer"
                                                download={doc.originalname}
-                                               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200 w-full justify-center"
+                                               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-sky-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200 w-full justify-center"
                                                onClick={(e) => e.stopPropagation()}
                                              >
                                                <i className="bx bx-download text-sm"></i>

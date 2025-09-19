@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .token-input { width: 100%; padding: 8px; margin: 10px 0; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Order Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Settings</h3>
+        <label>User Token:</label>
+        <input type="text" id="userToken" class="token-input" placeholder="Enter staff/owner/admin token">
+        <button onclick="testTokenValidation()">Validate Token</button>
+        <div id="tokenResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Order API Tests</h3>
+        <button onclick="testGetAmbherOrders()">Test GET Ambher Orders</button>
+        <button onclick="testGetBautistaOrders()">Test GET Bautista Orders</button>
+        <button onclick="testCreateOrder()">Test Create Order (POST)</button>
+        <div id="apiResults" class="result"></div>
+    </div>
+
+    <script>
+        let currentToken = '';
+
+        function setToken() {
+            currentToken = document.getElementById('userToken').value;
+            if (!currentToken) {
+                alert('Please enter a token first');
+                return false;
+            }
+            return true;
+        }
+
+        async function testTokenValidation() {
+            if (!setToken()) return;
+            
+            const resultDiv = document.getElementById('tokenResult');
+            resultDiv.innerHTML = 'Testing token validation...';
+            
+            try {
+                const response = await fetch('/api/auth/validate-token', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ Token Valid - User: ${data.role} (${data.firstname} ${data.lastname})`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ Token Invalid - Status: ${response.status}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testGetAmbherOrders() {
+            if (!setToken()) return;
+            
+            const resultDiv = document.getElementById('apiResults');
+            resultDiv.innerHTML = 'Testing GET /api/patientorderambher...';
+            
+            try {
+                const response = await fetch('/api/patientorderambher', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ GET Ambher Orders Success - Found ${data.length} orders`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `❌ GET Ambher Orders Failed - Status: ${response.status}<br>Error: ${errorText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testGetBautistaOrders() {
+            if (!setToken()) return;
+            
+            const resultDiv = document.getElementById('apiResults');
+            resultDiv.innerHTML = 'Testing GET /api/patientorderbautista...';
+            
+            try {
+                const response = await fetch('/api/patientorderbautista', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ GET Bautista Orders Success - Found ${data.length} orders`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `❌ GET Bautista Orders Failed - Status: ${response.status}<br>Error: ${errorText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testCreateOrder() {
+            if (!setToken()) return;
+            
+            const resultDiv = document.getElementById('apiResults');
+            resultDiv.innerHTML = 'Testing POST /api/patientorderambher (dry run)...';
+            
+            // Test with minimal order data
+            const testOrderData = {
+                patientorderambherfirstName: "Test",
+                patientorderambherlastName: "User", 
+                patientorderambhercontactNumber: "09123456789",
+                patientorderambherinventoryproductid: "test123",
+                patientorderambherquantity: 1,
+                patientorderambherproducttotal: 100,
+                clinic: "Test Clinic"
+            };
+            
+            try {
+                const response = await fetch('/api/patientorderambher', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testOrderData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ POST Order Test Success - Authorization working!`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    if (response.status === 401) {
+                        resultDiv.innerHTML = `❌ POST Order Failed - 401 Unauthorized<br>Error: ${errorText}`;
+                        resultDiv.className = 'result error';
+                    } else if (response.status === 403) {
+                        resultDiv.innerHTML = `❌ POST Order Failed - 403 Forbidden<br>Error: ${errorText}`;
+                        resultDiv.className = 'result error';
+                    } else {
+                        resultDiv.innerHTML = `⚠️ POST Order Failed - Status: ${response.status} (May be validation error, not auth)<br>Error: ${errorText}`;
+                        resultDiv.className = 'result';
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>

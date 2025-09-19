@@ -1,4 +1,5 @@
       import express from "express";
+      import { protect } from "../middleware/authMiddleware.js";
       import {
             adminlogin,
 
@@ -17,9 +18,9 @@
       const adminrouter = express.Router();
 
       //Retrieve Admin data
-      adminrouter.get("/", getadminaccounts);
-      adminrouter.get("/id/:id", getadminaccountbyid);
-      adminrouter.get("/adminlastname/:adminlastname", getadminaccountbylastname);
+      adminrouter.get("/", protect, getadminaccounts);
+      adminrouter.get("/id/:id", protect, getadminaccountbyid);
+      adminrouter.get("/adminlastname/:adminlastname", protect, getadminaccountbylastname);
       adminrouter.get("/me", verifyloggedinadminacc, getloggedinadminacc);
 
 
@@ -29,13 +30,13 @@
 
 
       //Create Admin data
-      adminrouter.post("/", createAdmin);
+      adminrouter.post("/", protect, createAdmin);
 
       //Update Admin data
-      adminrouter.put("/:id", updateAdmin);
+      adminrouter.put("/:id", protect, updateAdmin);
 
       //Delete Admin data
-      adminrouter.delete("/:id", deleteAdmin);
+      adminrouter.delete("/:id", protect, deleteAdmin);
 
 
 

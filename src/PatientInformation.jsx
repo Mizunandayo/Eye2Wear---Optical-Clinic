@@ -1067,12 +1067,13 @@ const submitpatientdemographic = async (e) => {
                                 Birthdate
                               </label>
                               <input 
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                 value={demographicformdata.patientbirthdate} 
                                 onChange={handleinputchange}  
                                 type="date" 
                                 name="patientbirthdate" 
                                 id="patientbirthdate"
+                                max={new Date().toISOString().split('T')[0]}
                                 required
                               />
                             </div>
