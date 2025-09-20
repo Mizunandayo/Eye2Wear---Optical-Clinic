@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import Patientaccount from '../models/patientaccount.js';
 import Staffaccount from '../models/staffacount.js';
 import Owneraccount from '../models/owneraccount.js';
+import Adminaccount from '../models/adminaccount.js';
 
 export const protect = async (req, res, next) => {
   try {
@@ -32,6 +33,9 @@ export const protect = async (req, res, next) => {
       case 'owner':
         user = await Owneraccount.findById(decoded.id).select('-ownerpassword');
         break;
+      case 'admin':
+        user = await Adminaccount.findById(decoded.id).select('-adminpassword');
+        break;
       default:
         return res.status(401).json({ message: 'Invalid user role' });
     }
@@ -44,8 +48,8 @@ export const protect = async (req, res, next) => {
     req.user = {
       userId: user._id.toString(), // Ensure this is a string
       role: decoded.role,
-      name: user.patientfirstname || user.stafffirstname || user.ownerfirstname,
-      email: user.patientemail || user.staffemail || user.owneremail, // Add email field
+      name: user.patientfirstname || user.stafffirstname || user.ownerfirstname || user.adminfirstname,
+      email: user.patientemail || user.staffemail || user.owneremail || user.adminemail, // Add email field
       clinic: user.staffclinic || user.ownerclinic || null
     };
     

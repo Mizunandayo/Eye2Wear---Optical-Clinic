@@ -7,6 +7,7 @@ import Patientaccount from "../models/patientaccount.js";
 import Adminaccount from "../models/adminaccount.js";
 import Owneraccount from "../models/owneraccount.js";
 import Staffaccount from "../models/staffacount.js";
+import { sendAccountCreationEmail } from '../utils/emailService.js';
 
 
 

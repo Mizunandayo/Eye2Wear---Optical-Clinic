@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { sendVerificationEmail as sendVerificationEmailService } from '../utils/emailService.js';
+import Adminaccount from "../models/adminaccount.js";
+import Staffaccount from "../models/staffacount.js";
+import Owneraccount from "../models/owneraccount.js";
 
 
 dotenv.config();

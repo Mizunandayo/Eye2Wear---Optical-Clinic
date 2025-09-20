@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye2Wear Email Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #125c99;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #125c99;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0d4a7d;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Eye2Wear Email Testing Tool</h1>
+        <p>This tool helps you test email functionality in both localhost and production environments.</p>
+
+        <!-- Email Configuration Info -->
+        <div class="test-section">
+            <h3>📧 Email Configuration Info</h3>
+            <button onclick="getEmailConfig()">Get Current Configuration</button>
+            <div class="loading" id="config-loading">Getting configuration...</div>
+            <div class="result" id="config-result"></div>
+        </div>
+
+        <!-- Connection Test -->
+        <div class="test-section">
+            <h3>🔗 Test Email Connection</h3>
+            <p>Test if the email service can connect to the SMTP server.</p>
+            <button onclick="testEmailConnection()">Test Connection</button>
+            <div class="loading" id="connection-loading">Testing connection...</div>
+            <div class="result" id="connection-result"></div>
+        </div>
+
+        <!-- Verification Email Test -->
+        <div class="test-section">
+            <h3>✅ Test Verification Email</h3>
+            <input type="email" id="verification-email" placeholder="Enter email address" required>
+            <input type="text" id="verification-firstname" placeholder="Enter first name" required>
+            <input type="text" id="verification-lastname" placeholder="Enter last name" required>
+            <button onclick="testVerificationEmail()">Send Test Verification Email</button>
+            <div class="loading" id="verification-loading">Sending verification email...</div>
+            <div class="result" id="verification-result"></div>
+        </div>
+
+        <!-- Account Creation Email Test -->
+        <div class="test-section">
+            <h3>🆕 Test Account Creation Email</h3>
+            <input type="email" id="creation-email" placeholder="Enter email address" required>
+            <input type="password" id="creation-password" placeholder="Enter password" required>
+            <select id="creation-account-type">
+                <option value="Patient">Patient</option>
+                <option value="Staff">Staff</option>
+                <option value="Owner">Owner</option>
+                <option value="Admin">Admin</option>
+            </select>
+            <button onclick="testCreationEmail()">Send Test Creation Email</button>
+            <div class="loading" id="creation-loading">Sending creation email...</div>
+            <div class="result" id="creation-result"></div>
+        </div>
+
+        <!-- Account Deletion Email Test -->
+        <div class="test-section">
+            <h3>🗑️ Test Account Deletion Email</h3>
+            <input type="email" id="deletion-email" placeholder="Enter email address" required>
+            <select id="deletion-account-type">
+                <option value="Patient">Patient</option>
+                <option value="Staff">Staff</option>
+                <option value="Owner">Owner</option>
+                <option value="Admin">Admin</option>
+            </select>
+            <button onclick="testDeletionEmail()">Send Test Deletion Email</button>
+            <div class="loading" id="deletion-loading">Sending deletion email...</div>
+            <div class="result" id="deletion-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).style.display = 'block';
+        }
+
+        function hideLoading(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+            element.style.display = 'block';
+        }
+
+        async function getEmailConfig() {
+            showLoading('config-loading');
+            try {
+                const response = await fetch(`${API_BASE}/api/email-test/config`);
+                const data = await response.json();
+                
+                let configHtml = '<h4>Current Configuration:</h4>';
+                configHtml += `<p><strong>Environment:</strong> ${data.environment}</p>`;
+                configHtml += `<p><strong>Email Service:</strong> ${data.emailService}</p>`;
+                configHtml += `<p><strong>Email User:</strong> ${data.emailUser}</p>`;
+                configHtml += `<p><strong>Frontend URL:</strong> ${data.frontendUrl}</p>`;
+                configHtml += `<p><strong>API URL:</strong> ${data.apiUrl}</p>`;
+                configHtml += `<p><strong>Timeout:</strong> ${data.timeout}ms</p>`;
+                configHtml += `<p><strong>Max Retries:</strong> ${data.maxRetries}</p>`;
+                
+                showResult('config-result', configHtml, 'info');
+            } catch (error) {
+                showResult('config-result', `Failed to get configuration: ${error.message}`, 'error');
+            }
+            hideLoading('config-loading');
+        }
+
+        async function testEmailConnection() {
+            showLoading('connection-loading');
+            try {
+                const response = await fetch(`${API_BASE}/api/email-test/test-connection`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('connection-result', 
+                        `✅ Connection successful! Response time: ${data.responseTime}`, 
+                        'success');
+                } else {
+                    showResult('connection-result', 
+                        `❌ Connection failed: ${data.message}<br>Error: ${data.error}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('connection-result', 
+                    `❌ Connection test failed: ${error.message}`, 
+                    'error');
+            }
+            hideLoading('connection-loading');
+        }
+
+        async function testVerificationEmail() {
+            const email = document.getElementById('verification-email').value;
+            const firstName = document.getElementById('verification-firstname').value;
+            const lastName = document.getElementById('verification-lastname').value;
+
+            if (!email || !firstName || !lastName) {
+                showResult('verification-result', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            showLoading('verification-loading');
+            try {
+                const response = await fetch(`${API_BASE}/api/email-test/test-verification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, firstName, lastName })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('verification-result', 
+                        `✅ Verification email sent successfully to ${email}!`, 
+                        'success');
+                } else {
+                    showResult('verification-result', 
+                        `❌ Failed to send verification email: ${data.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('verification-result', 
+                    `❌ Verification email test failed: ${error.message}`, 
+                    'error');
+            }
+            hideLoading('verification-loading');
+        }
+
+        async function testCreationEmail() {
+            const email = document.getElementById('creation-email').value;
+            const password = document.getElementById('creation-password').value;
+            const accountType = document.getElementById('creation-account-type').value;
+
+            if (!email || !password) {
+                showResult('creation-result', 'Please fill in email and password', 'error');
+                return;
+            }
+
+            showLoading('creation-loading');
+            try {
+                const response = await fetch(`${API_BASE}/api/email-test/test-creation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password, accountType })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('creation-result', 
+                        `✅ Account creation email sent successfully to ${email}!`, 
+                        'success');
+                } else {
+                    showResult('creation-result', 
+                        `❌ Failed to send creation email: ${data.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('creation-result', 
+                    `❌ Creation email test failed: ${error.message}`, 
+                    'error');
+            }
+            hideLoading('creation-loading');
+        }
+
+        async function testDeletionEmail() {
+            const email = document.getElementById('deletion-email').value;
+            const accountType = document.getElementById('deletion-account-type').value;
+
+            if (!email) {
+                showResult('deletion-result', 'Please enter an email address', 'error');
+                return;
+            }
+
+            showLoading('deletion-loading');
+            try {
+                const response = await fetch(`${API_BASE}/api/email-test/test-deletion`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, accountType })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('deletion-result', 
+                        `✅ Account deletion email sent successfully to ${email}!`, 
+                        'success');
+                } else {
+                    showResult('deletion-result', 
+                        `❌ Failed to send deletion email: ${data.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('deletion-result', 
+                    `❌ Deletion email test failed: ${error.message}`, 
+                    'error');
+            }
+            hideLoading('deletion-loading');
+        }
+
+        // Auto-load config on page load
+        window.onload = function() {
+            getEmailConfig();
+        };
+    </script>
+</body>
+</html>

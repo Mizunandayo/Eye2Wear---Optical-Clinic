@@ -353,6 +353,25 @@ function PatientRegistration() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
   return (
     <>
       <section className="absolute inset-0 h-full w-full" style={{

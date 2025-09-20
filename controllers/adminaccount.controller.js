@@ -100,7 +100,7 @@ export const verifyloggedinadminacc = async (req, res, next) => {
       return res.status(401).json({message: 'Authorization required'});
     }
 
-    const tokendecoded = jwt.verify(admintoken, process.env.JWT_KEY);
+    const tokendecoded = jwt.verify(admintoken, process.env.JWT_SECRET);
     req.admin = {id: tokendecoded.id};
     next();
   
@@ -230,12 +230,14 @@ export const adminlogin = async(req, res) => {
 
     const jsontoken = jwt.sign(
       {
-        id: admin._id, email: admin.adminemail},
-     
-        process.env.JWT_KEY,
-        {expiresIn: "1h"}
-
-       );
+        id: admin._id,
+        email: admin.adminemail,
+        role: 'admin',
+        name: `${admin.adminfirstname} ${admin.adminlastname}`
+      },
+      process.env.JWT_SECRET,
+      {expiresIn: "30d"}
+    );
 
 
 
