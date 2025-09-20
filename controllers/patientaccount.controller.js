@@ -404,7 +404,8 @@ const sendVerificationEmail = async (patient) => {
       patient.patientemail,
       verificationToken,
       patient.patientfirstname,
-      'Eye2Wear' // Default clinic name, could be dynamic based on context
+      'Eye2Wear', // Default clinic name, could be dynamic based on context
+      patient._id // Add patient ID for verification URL
     );
 
     if (emailResult.success) {

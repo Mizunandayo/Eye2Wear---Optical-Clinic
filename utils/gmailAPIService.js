@@ -30,11 +30,11 @@ class GmailAPIService {
     }
   }
 
-  async sendVerificationEmailGmailAPI(email, token, firstName, clinicName) {
+  async sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId) {
     try {
       await this.initialize();
       const subject = 'Verify Your Eye2Wear Account - ' + clinicName;
-      const verificationLink = process.env.FRONTEND_URL + '/verify-email?token=' + token;
+      const verificationLink = process.env.FRONTEND_URL + '/verify-email/' + patientId + '/' + token;
       const htmlContent = '<div><h2>Welcome to Eye2Wear, ' + firstName + '!</h2><p>Please verify your email by clicking: <a href="' + verificationLink + '">Verify Email</a></p></div>';
       const textContent = 'Welcome to Eye2Wear, ' + firstName + '! Please verify your email by visiting: ' + verificationLink;
       return await this.sendEmail(email, subject, textContent, htmlContent);
@@ -107,8 +107,8 @@ export { GmailAPIService };
 const gmailService = new GmailAPIService();
 
 export default {
-  sendVerificationEmailGmailAPI: (email, token, firstName, clinicName) => 
-    gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName),
+  sendVerificationEmailGmailAPI: (email, token, firstName, clinicName, patientId) => 
+    gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId),
   sendAccountCreationEmailGmailAPI: (email, password, firstName, accountType, clinicName) => 
     gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName),
   gmailService

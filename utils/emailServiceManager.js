@@ -21,13 +21,13 @@ class EmailServiceManager {
     }
   }
 
-  async sendVerificationEmail(email, token, firstName, clinicName) {
+  async sendVerificationEmail(email, token, firstName, clinicName, patientId) {
     try {
       await this.initialize();
 
       if (this.emailProvider === 'gmail-api' && this.gmailService) {
         console.log('Using Gmail API for verification email');
-        return await this.gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName);
+        return await this.gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId);
       } else {
         console.log('Using SMTP for verification email');
         return await sendVerificationEmailSMTP(email, token, firstName, clinicName);
