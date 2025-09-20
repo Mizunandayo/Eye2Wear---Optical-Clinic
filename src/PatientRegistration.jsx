@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import defaultprofilepic from '../src/assets/images/defaulticon.png';
 import { useNavigate } from "react-router-dom";
 import landinglogodark from  "../src/assets/images/landinglogodark.png";
 import eye2wearbg from '../src/assets/images/eye2wearbg.png';
@@ -10,6 +9,7 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import useCloudinaryUpload from "./hooks/useCloudinaryUpload";
 
 
 
@@ -41,6 +41,17 @@ function PatientRegistration() {
     const [emailerror, setemailerror] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isGoogleRegistering, setIsGoogleRegistering] = useState(false);
+
+    // Cloudinary upload hook
+    const {
+      uploadProfilePicture,
+      uploading: cloudinaryUploading,
+      uploadProgress
+    } = useCloudinaryUpload();
+
+    // State for profile picture file handling
+    const [selectedProfileFile, setSelectedProfileFile] = useState(null);
+    const [profilePreview, setProfilePreview] = useState(null);
 
     // Handle Google OAuth response
     const handleGoogleResponse = useCallback(async (response) => {
@@ -202,29 +213,11 @@ function PatientRegistration() {
 
     //Loads the default profile picture for the patient when the page loads
     useEffect(() => {
-      const loaddefaultprofilepic = async () => {
-        try{
-
-          //Fetches the defaultprofile image
-          const response = await fetch(defaultprofilepic);
-          const blob = await response.blob(); //Converts image to usable string
-          const load = new FileReader();
-
-
-          //When loaded, it saves the defaultprofile to the variable profilepicture
-          load.onloadend = () => {
-            setformdata(prev => ({
-              ...prev,
-              patientprofilepicture: load.result //It now saves the profileimage to the variable
-            }));
-          };
-          load.readAsDataURL(blob); //Reads the usable image string
-
-        }catch(error){
-          console.error("Failed to load image: ", error);
-        }
-      };
-      loaddefaultprofilepic();
+      // Set default profile picture URL (not base64)
+      setformdata(prev => ({
+        ...prev,
+        patientprofilepicture: 'default-profile-url'
+      }));
     }, []);
 
 
@@ -247,6 +240,42 @@ function PatientRegistration() {
       }))
     }
 
+    // Handle file selection for profile picture
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setmessage({
+            text: 'Please select a valid image file',
+            type: 'error'
+          });
+          return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          setmessage({
+            text: 'Image file is too large. Please choose a smaller image (max 10MB)',
+            type: 'error'
+          });
+          return;
+        }
+
+        setSelectedProfileFile(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setProfilePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Clear any previous messages
+        setmessage({ text: '', type: '' });
+      }
+    };
+
 
 
   //Handles submit used in form when a button is clicked to submit request
@@ -257,28 +286,45 @@ function PatientRegistration() {
         text:'', type:''
       })
 
-
-
-
-
     try{
+      // Prepare the patient data to send
+      let patientDataToSend = { ...formdata };
 
-      //Make sure that the image is in base64 format
-      let defaultprofilepicbase64 = formdata.patientprofilepicture;
-
-      //If not, it will convert it to base64
-      if(!formdata.patientprofilepicture.startsWith('data:image')){
-        const response = await fetch(formdata.patientprofilepicture);
-        const blob = await response.blob();
-        defaultprofilepicbase64 = await new Promise((resolve) => {
-          const load = new FileReader();
-          load.onloadend = () => resolve(load.result);
-          load.readAsDataURL(blob);
-        });
+      // Handle profile picture upload to Cloudinary if a file is selected
+      if (selectedProfileFile) {
+        try {
+          console.log("Uploading profile picture to Cloudinary...");
+          
+          // Use patient email as identifier for Cloudinary folder structure
+          const identifier = formdata.patientemail || `patient_${Date.now()}`;
+          
+          const uploadResult = await uploadProfilePicture(
+            selectedProfileFile, 
+            identifier,
+            'patient'
+          );
+          
+          // Update the data with Cloudinary URL and public_id
+          patientDataToSend = {
+            ...patientDataToSend,
+            patientprofilepicture: uploadResult.imageUrl,
+            patientprofilepicture_public_id: uploadResult.public_id
+          };
+          
+          console.log("Profile picture uploaded to Cloudinary:", uploadResult);
+          
+        } catch (uploadError) {
+          console.error("Cloudinary upload error:", uploadError);
+          throw new Error(`Failed to upload profile picture: ${uploadError.message}`);
+        }
+      } else {
+        // If no file selected, use default profile URL (not base64)
+        patientDataToSend = {
+          ...patientDataToSend,
+          patientprofilepicture: 'default-profile-url',
+          patientprofilepicture_public_id: null
+        };
       }
-
-
-
 
   //Sends all patient data to the server
       const response = await fetch(`/api/patientaccounts`,{
@@ -287,10 +333,7 @@ function PatientRegistration() {
         headers:{
           "Content-Type":"application/json",
         },
-        body: JSON.stringify({ //Convert to text format for sending
-          ...formdata, //All of the patient form data
-          patientprofilepicture: defaultprofilepicbase64
-        })
+        body: JSON.stringify(patientDataToSend)
       });
 
   //If response is not ok
@@ -307,7 +350,7 @@ function PatientRegistration() {
           text: result.message,
            type:"success"});
 
-         //Resets the input forms except the profile picture
+         //Resets the input forms
         setformdata({
           role: 'Patient',
           patientemail:'',
@@ -315,8 +358,12 @@ function PatientRegistration() {
           patientlastname:'',
           patientfirstname:'',
           patientmiddlename:'',
-          patientprofilepicture:defaultprofilepicbase64
-        })
+          patientprofilepicture: ''
+        });
+
+        // Reset file selection
+        setSelectedProfileFile(null);
+        setProfilePreview(null);
 
         //Navigate to login page after successful registration
         setTimeout(() => {
@@ -334,11 +381,37 @@ function PatientRegistration() {
       
     //Error encounter  
       catch(error){
-        console.error("Error:", error)
+        console.error("Error:", error);
+        
+        // Handle different types of errors
+        let errorMessage = "Registration failed. Please try again.";
+        
+        if (error.message) {
+          if (error.message.includes("upload") || error.message.includes("Cloudinary")) {
+            errorMessage = `Image upload failed: ${error.message}. Please try a different image.`;
+          } else if (error.message.includes("413") || error.message.includes("file size") || error.message.includes("size limit") || error.message.includes("too large")) {
+            errorMessage = "Image file is too large. Please choose a smaller image (max 10MB).";
+          } else if (error.message.includes("file type") || error.message.includes("format") || error.message.includes("Invalid")) {
+            errorMessage = "Invalid file format. Please choose a valid image file.";
+          } else if (error.message.includes("400")) {
+            errorMessage = "Invalid data provided. Please check all required fields.";
+          } else if (error.message.includes("401") || error.message.includes("unauthorized")) {
+            errorMessage = "Authentication failed. Please try again.";
+          } else if (error.message.includes("403") || error.message.includes("forbidden")) {
+            errorMessage = "You don't have permission to perform this action.";
+          } else if (error.message.includes("500") || error.message.includes("Server error")) {
+            errorMessage = "Server error occurred. Please try again or contact support.";
+          } else if (error.message.includes("Network")) {
+            errorMessage = "Network error. Please check your connection and try again.";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         setmessage({
-          text: error.message || "Registration Failed. Try again", 
+          text: errorMessage, 
           type:"error"
-        })
+        });
       }finally{
         setissubmitting(false)
       }
@@ -528,6 +601,47 @@ function PatientRegistration() {
                       className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
+                  </div>
+
+                  {/* Profile Picture Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="profilePicture" className="text-gray-900 text-xs sm:text-sm">Profile Picture (Optional)</Label>
+                    <input
+                      id="profilePicture"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="bg-white border border-gray-300 text-gray-900 text-sm rounded-md px-3 py-2 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 cursor-pointer"
+                    />
+                    <p className="text-gray-500 text-xs">Choose an image file (max 10MB). If not selected, a default profile picture will be used.</p>
+                    
+                    {/* Profile Picture Preview */}
+                    {profilePreview && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-600 mb-1">Preview:</p>
+                        <img 
+                          src={profilePreview} 
+                          alt="Profile Preview" 
+                          className="w-16 h-16 rounded-full object-cover border border-gray-300"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Upload Progress */}
+                    {cloudinaryUploading && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <span>Uploading...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Register Button */}
