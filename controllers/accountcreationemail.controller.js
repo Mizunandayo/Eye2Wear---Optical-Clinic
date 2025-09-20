@@ -3,7 +3,7 @@ import Patientaccount from "../models/patientaccount.js";
 import Adminaccount from "../models/adminaccount.js";
 import Owneraccount from "../models/owneraccount.js";
 import Staffaccount from "../models/staffacount.js";
-import { sendAccountCreationEmail } from '../utils/emailService.js';
+import { emailServiceManager } from '../utils/emailServiceManager.js';
 
 
 
@@ -19,7 +19,7 @@ export const patientaccountcreationemail = async(req, res) => {
     const{email, password} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountCreationEmail(email, password, 'Patient');
+    const result = await emailServiceManager.sendAccountCreationEmail(email, password, 'Patient', 'Patient');
     
     console.log('Patient account creation email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -44,7 +44,7 @@ export const staffaccountcreationemail = async(req, res) => {
     const{email, password} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountCreationEmail(email, password, 'Staff');
+    const result = await emailServiceManager.sendAccountCreationEmail(email, password, 'Staff', 'Staff');
     
     console.log('Staff account creation email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -68,7 +68,7 @@ export const owneraccountcreationemail = async(req, res) => {
     const{email, password} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountCreationEmail(email, password, 'Owner');
+    const result = await emailServiceManager.sendAccountCreationEmail(email, password, 'Owner', 'Owner');
     
     console.log('Owner account creation email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -96,7 +96,7 @@ export const owneraccountcreationemail = async(req, res) => {
     const{email, password} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountCreationEmail(email, password, 'Admin');
+    const result = await emailServiceManager.sendAccountCreationEmail(email, password, 'Admin', 'Admin');
     
     console.log('Admin account creation email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});

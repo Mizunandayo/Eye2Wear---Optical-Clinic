@@ -2,10 +2,9 @@
 import Patientaccount from "../models/patientaccount.js";
 import bcrypt  from "bcryptjs";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { sendVerificationEmail as sendVerificationEmailService } from '../utils/emailService.js';
+import { emailServiceManager } from '../utils/emailServiceManager.js';
 import Adminaccount from "../models/adminaccount.js";
 import Staffaccount from "../models/staffacount.js";
 import Owneraccount from "../models/owneraccount.js";
@@ -400,71 +399,20 @@ const sendVerificationEmail = async (patient) => {
       verificationtokenexpires: verificationTokenExpires
     });
 
-    // Configure nodemailer
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    // Use unified email service manager (automatically selects SMTP or Gmail API)
+    const emailResult = await emailServiceManager.sendVerificationEmail(
+      patient.patientemail,
+      verificationToken,
+      patient.patientfirstname,
+      'Eye2Wear' // Default clinic name, could be dynamic based on context
+    );
 
-    // Create verification link
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${patient._id}/${verificationToken}`;
-
-    // Email template
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: patient.patientemail,
-      subject: "Eye2Wear - Email Verification",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #125c99; margin: 0;">Eye2Wear</h1>
-            <h2 style="color: #333; margin: 10px 0;">Welcome to Eye2Wear!</h2>
-          </div>
-          
-          <div style="margin-bottom: 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.5;">
-              Dear ${patient.patientfirstname} ${patient.patientlastname},
-            </p>
-            <p style="color: #333; font-size: 16px; line-height: 1.5;">
-              Thank you for registering with Eye2Wear! To complete your registration and activate your account, 
-              please click the verification button below:
-            </p>
-          </div>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}" 
-               style="background-color: #125c99; color: white; padding: 15px 30px; text-decoration: none; 
-                      border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
-              Verify Your Email
-            </a>
-          </div>
-
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p style="color: #666; font-size: 14px; line-height: 1.5;">
-              If the button above doesn't work, you can copy and paste this link into your browser:
-            </p>
-            <p style="color: #125c99; font-size: 14px; word-break: break-all;">
-              ${verificationLink}
-            </p>
-            <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
-              This verification link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.
-            </p>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p style="color: #999; font-size: 12px;">
-              © 2024 Eye2Wear. All rights reserved.
-            </p>
-          </div>
-        </div>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-    return { success: true };
+    if (emailResult.success) {
+      console.log('Verification email sent successfully');
+      return { success: true };
+    } else {
+      throw new Error('Email service returned failure');
+    }
   } catch (error) {
     console.error("Error sending verification email:", error);
     return { success: false, error: error.message };
