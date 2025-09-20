@@ -419,23 +419,25 @@ function AboutPage() {
             <div className="px-4 sm:px-8 lg:px-30 gap-4 sm:gap-6 lg:gap-10 flex flex-col sm:flex-row mt-8 sm:mt-12 lg:mt-15 w-full h-auto">
                 <div id="image1" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:rotate-1 sm:hover:rotate-0">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Francis Genese</h1>
-                        <p className="text-white text-xs sm:text-sm">Full-Stack Developer</p>
+                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Francis Daniel M. Genese</h1>
+                        <p className="text-white text-xs sm:text-sm">Full-Stack Developer - UI/UX</p>
                     </div> 
                 </div>
 
-                <div id="image3" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:-rotate-1 sm:hover:rotate-0">
+                <div id="image3" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:rotate-1 sm:hover:rotate-0">
                     <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Aljhon Lopez</h1>
-                        <p className="text-white text-xs sm:text-sm">Documentation</p>
-                    </div> 
-                </div>
-                <div id="image4" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:rotate-1 sm:hover:rotate-0">
-                    <div> 
-                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Gabriel Velasco</h1>
-                        <p className="text-white text-xs sm:text-sm">System Analyst</p> 
+                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Aljhon P. Lopez</h1>
+                        <p className="text-white text-xs sm:text-sm">Documentation</p> 
                     </div>
                 </div>
+                
+                <div id="image4" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:-rotate-1 sm:hover:rotate-0">
+                    <div> 
+                        <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Gabriel B. Velasco</h1>
+                        <p className="text-white text-xs sm:text-sm">System Analyst</p>
+                    </div> 
+                </div>
+
             </div>
 
           </div>

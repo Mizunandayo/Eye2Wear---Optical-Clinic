@@ -447,16 +447,16 @@ function PatientRegistration() {
 
   return (
     <>
-      <section className="absolute inset-0 h-full w-full" style={{
+      <section className="min-h-screen w-[99vw]" style={{
         backgroundImage: `url(${eye2wearbg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="flex flex-col gap-4 p-4 sm:p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-10 backdrop-blur-sm text-gray-900">
           
           {/* Registration Form Container */}
-          <div className="bg-white w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto shadow-lg rounded-2xl sm:rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-3 sm:gap-5 items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
+          <div className="bg-white w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl shadow-lg rounded-2xl sm:rounded-3xl border-1 border-black/50 flex flex-col gap-3 sm:gap-5 items-center justify-center px-4 sm:px-6 py-6 sm:py-8 my-8">
             {/* Logo */}
             <div className="flex justify-center gap-2 md:justify-start">
               <div className="mb-1 flex items-center gap-2">
@@ -603,46 +603,6 @@ function PatientRegistration() {
                     />
                   </div>
 
-                  {/* Profile Picture Field */}
-                  <div className="grid gap-2">
-                    <Label htmlFor="profilePicture" className="text-gray-900 text-xs sm:text-sm">Profile Picture (Optional)</Label>
-                    <input
-                      id="profilePicture"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="bg-white border border-gray-300 text-gray-900 text-sm rounded-md px-3 py-2 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 cursor-pointer"
-                    />
-                    <p className="text-gray-500 text-xs">Choose an image file (max 10MB). If not selected, a default profile picture will be used.</p>
-                    
-                    {/* Profile Picture Preview */}
-                    {profilePreview && (
-                      <div className="mt-2">
-                        <p className="text-xs text-gray-600 mb-1">Preview:</p>
-                        <img 
-                          src={profilePreview} 
-                          alt="Profile Preview" 
-                          className="w-16 h-16 rounded-full object-cover border border-gray-300"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Upload Progress */}
-                    {cloudinaryUploading && (
-                      <div className="mt-2">
-                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                          <span>Uploading...</span>
-                          <span>{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${uploadProgress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                   
                   {/* Register Button */}
                   <button 
