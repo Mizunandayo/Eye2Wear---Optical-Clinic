@@ -9,6 +9,7 @@ import adminrouter from "./routes/adminaccount.route.js";
 import staffrouter from "./routes/staffacount.route.js";
 import ownerrouter from "./routes/owneraccount.route.js";
 import forgotpassrouter from "./routes/forgotpass.route.js";
+import googleauthrouter from "./routes/googleauth.route.js";
 import patientdemographicrouter from "./routes/patientdemographic.route.js";
 import accountcreationemailrouter from "./routes/accountcreationemail.route.js";
 import accountdeletionemailrouter from "./routes/accountdeletionemail.route.js";
@@ -123,6 +124,8 @@ app.use("/api/accountdeletion", accountdeletionemailrouter);
 app.use("/api/accountcreation", accountcreationemailrouter);
 //Routes
 app.use("/api/auth", forgotpassrouter);
+//Google OAuth Routes
+app.use("/api/google-auth", googleauthrouter);
 //Routes
 app.use("/api/patientaccounts", patientrouter);
 //Routes
@@ -319,8 +322,6 @@ mongoose.set('maxTimeMS', 10000); // Global 10 second timeout
 
 // Emergency connection pool settings
 const connectionOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   maxPoolSize: 5, // Reduced pool size for emergency
   minPoolSize: 1,
   maxIdleTimeMS: 30000,

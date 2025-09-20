@@ -1,6 +1,6 @@
 
 import React from "react";
-import {useState } from 'react';
+import {useState, useEffect, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import landingbg2 from "../src/assets/images/landingbg2.png";
 import landinglogodark from  "../src/assets/images/landinglogodark.png";
@@ -39,6 +39,7 @@ function UserLogin(){
          const [showResendVerification, setShowResendVerification] = useState(false);
          const [isResendingVerification, setIsResendingVerification] = useState(false);
          const [showPassword, setShowPassword] = useState(false);
+         const [isGoogleLogging, setIsGoogleLogging] = useState(false);
          const navigate = useNavigate();
 
 
@@ -49,6 +50,73 @@ function UserLogin(){
                 ...prev,
                 [name]:value
             }));
+         };
+
+         // Handle Google OAuth response for login
+         const handleGoogleLoginResponse = useCallback(async (response) => {
+           setIsGoogleLogging(true);
+           setloginnotice({ text: '', type: '' });
+
+           try {
+             const result = await fetch('/api/google-auth/login', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({
+                 credential: response.credential
+               })
+             });
+
+             const data = await result.json();
+
+             if (data.success) {
+               // Store the token
+               localStorage.setItem('token', data.jsontoken);
+               localStorage.setItem('user', JSON.stringify(data.patient));
+               localStorage.setItem('userRole', 'patient');
+
+               setloginnotice({
+                 text: data.message + " Redirecting...",
+                 type: "success"
+               });
+
+               // Navigate to patient dashboard
+               setTimeout(() => {
+                 navigate('/patientdashboard');
+               }, 1500);
+             } else {
+               setloginnotice({
+                 text: data.message || "Google login failed. Please try again.",
+                 type: "error"
+               });
+             }
+           } catch (error) {
+             console.error("Google login error:", error);
+             setloginnotice({
+               text: "Google login failed. Please try again.",
+               type: "error"
+             });
+           } finally {
+             setIsGoogleLogging(false);
+           }
+         }, [navigate]);
+
+         // Initialize Google OAuth
+         useEffect(() => {
+           if (window.google) {
+             window.google.accounts.id.initialize({
+               client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+               callback: handleGoogleLoginResponse,
+             });
+           }
+         }, [handleGoogleLoginResponse]);
+
+         // Handle Google Sign-In button click
+         const handleGoogleSignIn = () => {
+           if (window.google) {
+             window.google.accounts.id.prompt();
+           }
          };
 
 
@@ -387,23 +455,23 @@ else if(user === 'Owner'){
   backgroundRepeat: 'no-repeat'
 }}>
 
-      <div className="flex flex-col gap-4 p-6 h-full md:p-10  backdrop-blur-sm text-gray-900">
+      <div className="flex flex-col gap-4 p-4 sm:p-6 h-full md:p-10  backdrop-blur-sm text-gray-900">
 
         
         {/* Login Form Container */}
-        <div  className=" bg-white shadow-lg rounded-3xl border-1 border-black/50  flex flex-1 flex-col gap-5 items-center justify-center">
+        <div  className="bg-white shadow-lg rounded-2xl sm:rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-3 sm:gap-5 items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
                  {/* Logo */}
         <div className=" flex justify-center gap-2 md:justify-start">
           <div className="mb-1 flex items-center gap-2">
-            <img src={landinglogodark} alt="Eye2Wear" className="h-20 w-auto" />
+            <img src={landinglogodark} alt="Eye2Wear" className="h-16 sm:h-20 w-auto" />
           </div>
         </div>
-          <div className="  w-full max-w-sm mx-auto">
+          <div className="w-full max-w-xs sm:max-w-sm mx-auto px-2 sm:px-0">
             {/* Login Form */}
-            <form className=" flex flex-col gap-6" onSubmit={handleloginsubmit}>
+            <form className="flex flex-col gap-4 sm:gap-6" onSubmit={handleloginsubmit}>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold text-sky-700">Login to your account</h1>
-                <p className="text-gray-600 text-sm">
+                <h1 className="text-xl sm:text-2xl font-bold text-sky-700">Login to your account</h1>
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Enter your email below to login to your account
                 </p>
               </div>
@@ -411,7 +479,7 @@ else if(user === 'Owner'){
               {/* Error/Success Messages */}
               {loginnotice.text && (
                 <div 
-                  className="text-center p-3 rounded-md text-sm font-medium"
+                  className="text-center p-2 sm:p-3 rounded-md text-xs sm:text-sm font-medium mx-2 sm:mx-0"
                   style={{
                     backgroundColor: loginnotice.type === 'error' ? '#fef2f2' : '#f0fdf4',
                     color: loginnotice.type === 'error' ? '#dc2626' : '#16a34a',
@@ -434,10 +502,10 @@ else if(user === 'Owner'){
                       border: 'none',
                       color: '#2563eb',
                       textDecoration: 'underline',
-                      fontSize: '14px',
+                      fontSize: '12px',
                       cursor: isResendingVerification ? 'not-allowed' : 'pointer',
                       opacity: isResendingVerification ? 0.5 : 1,
-                      padding: '8px 0'
+                      padding: '6px 0'
                     }}
                   >
                     {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
@@ -445,10 +513,10 @@ else if(user === 'Owner'){
                 </div>
               )}
 
-              <div className="grid gap-6">
+              <div className="grid gap-4 sm:gap-6">
                 {/* Email Field */}
-                <div className="grid gap-3">
-                  <Label htmlFor="loginemail" className="text-gray-900 text-sm">Email</Label>
+                <div className="grid gap-2 sm:gap-3">
+                  <Label htmlFor="loginemail" className="text-gray-900 text-xs sm:text-sm">Email</Label>
                   <Input
                     id="loginemail"
                     type="email"
@@ -456,15 +524,15 @@ else if(user === 'Owner'){
                     placeholder="m@example.com"
                     value={logindetails.loginemail}
                     onChange={handleloginchange}
-                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                     required
                   />
                 </div>
                 
                 {/* Password Field */}
-                <div className="grid gap-3">
+                <div className="grid gap-2 sm:gap-3">
                   <div className="flex items-center">
-                    <Label htmlFor="loginpassword" className="text-gray-900 text-sm">Password</Label>
+                    <Label htmlFor="loginpassword" className="text-gray-900 text-xs sm:text-sm">Password</Label>
                     <button
                       type="button"
                       onClick={() => setshowforgotpasswordform(true)}
@@ -473,11 +541,12 @@ else if(user === 'Owner'){
                         border: 'none',
                         color: '#2563eb',
                         textDecoration: 'underline',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         cursor: 'pointer',
                         padding: '0',
                         marginLeft: 'auto'
                       }}
+                      className="sm:text-xs"
                     >
                       Forgot your password?
                     </button>
@@ -490,7 +559,7 @@ else if(user === 'Owner'){
                       placeholder=""
                       value={logindetails.loginpassword}
                       onChange={handleloginchange}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
                     <button
@@ -509,9 +578,9 @@ else if(user === 'Owner'){
                       }}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
                     </button>
                   </div>
@@ -523,7 +592,7 @@ else if(user === 'Owner'){
                   disabled={islogin}
                   style={{
                     width: '100%',
-                    height: '40px',
+                    height: '44px',
                     backgroundColor: islogin ? '#9ca3af' : '#1f2937',
                     color: islogin ? '#6b7280' : '#ffffff',
                     border: 'none',
@@ -568,25 +637,27 @@ else if(user === 'Owner'){
                 </button>
                 
                 {/* Or continue with */}
-                <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-gray-300">
+                <div className="relative text-center text-xs sm:text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-gray-300">
                   <span className="relative z-10 px-2 text-gray-600 bg-white">
                     Or continue with
                   </span>
                 </div>
                 
-                {/* GitHub Login Button */}
+                {/* Google Login Button */}
                 <button 
                   type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLogging}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    backgroundColor: 'transparent',
-                    color: '#374151',
+                    height: '44px',
+                    backgroundColor: isGoogleLogging ? '#f3f4f6' : 'transparent',
+                    color: isGoogleLogging ? '#9ca3af' : '#374151',
                     border: '1px solid #d1d5db',
                     borderRadius: '6px',
                     fontSize: '14px',
                     fontWeight: '500',
-                    cursor: 'pointer',
+                    cursor: isGoogleLogging ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -594,24 +665,42 @@ else if(user === 'Owner'){
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f9fafb';
+                    if (!isGoogleLogging) {
+                      e.target.style.backgroundColor = '#f9fafb';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
+                    if (!isGoogleLogging) {
+                      e.target.style.backgroundColor = 'transparent';
+                    }
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path
-                      d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
                     />
                   </svg>
-                  Login with GitHub
+                  <span className="text-xs sm:text-sm">
+                    {isGoogleLogging ? 'Logging in with Google...' : 'Login with Google'}
+                  </span>
                 </button>
               </div>
               
               {/* Sign Up Link */}
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-xs sm:text-sm text-gray-600">
                 Don&apos;t have an account?{" "}
                 <Link 
                   to="/patientregistration" 
@@ -631,24 +720,24 @@ else if(user === 'Owner'){
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
         >
-          <div className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200">
+          <div className="w-full max-w-sm sm:max-w-md bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200">
             <form onSubmit={forgotpassword}>
               <div 
-                className="flex items-center gap-3 px-6 py-4"
+                className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4"
                 style={{ backgroundColor: '#f8fafc' }}
               >
-                <Lock className="h-6 w-6 text-gray-700" />
-                <h2 className="text-xl font-semibold text-gray-900">Forgot Password</h2>
+                <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Forgot Password</h2>
               </div>
               
-              <div className="p-6 space-y-4">
-                <p className="text-gray-600 text-sm">
+              <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Please enter your registered email below...
                 </p>
                 
                 {forgotpasswordmessage.text && (
                   <div 
-                    className="p-3 rounded-lg text-sm font-medium"
+                    className="p-2 sm:p-3 rounded-lg text-xs sm:text-sm font-medium"
                     style={{
                       backgroundColor: forgotpasswordmessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
                       color: forgotpasswordmessage.type === 'success' ? '#16a34a' : '#dc2626',
@@ -660,7 +749,7 @@ else if(user === 'Owner'){
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="forgotemail" className="text-gray-900 text-sm">Email</Label>
+                  <Label htmlFor="forgotemail" className="text-gray-900 text-xs sm:text-sm">Email</Label>
                   <Input
                     id="forgotemail"
                     type="email"
@@ -668,13 +757,13 @@ else if(user === 'Owner'){
                     placeholder="Enter your email..."
                     value={forgotpasswordemail}
                     onChange={(e) => setforgotpasswordemail(e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                     required
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end gap-3 px-6 pb-6">
+              <div className="flex justify-end gap-2 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -683,16 +772,17 @@ else if(user === 'Owner'){
                     setforgotpasswordmessage({text:'', type: ''});
                   }}
                   style={{
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     backgroundColor: 'transparent',
                     color: '#374151',
                     border: '1px solid #d1d5db',
                     borderRadius: '6px',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
+                  className="sm:text-sm sm:px-5 sm:py-2.5"
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#f9fafb';
                   }}
@@ -706,19 +796,20 @@ else if(user === 'Owner'){
                   type="submit" 
                   disabled={issendingresetlink}
                   style={{
-                    padding: '10px 24px',
+                    padding: '8px 20px',
                     backgroundColor: issendingresetlink ? '#9ca3af' : '#1f2937',
                     color: issendingresetlink ? '#6b7280' : '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     cursor: issendingresetlink ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '6px',
                     transition: 'all 0.2s ease'
                   }}
+                  className="sm:text-sm sm:px-6 sm:py-2.5 sm:gap-2"
                   onMouseEnter={(e) => {
                     if (!issendingresetlink) {
                       e.target.style.backgroundColor = '#374151';

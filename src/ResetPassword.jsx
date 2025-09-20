@@ -82,25 +82,25 @@ function ResetPassword(){
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="flex flex-col gap-4 p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
+        <div className="flex flex-col gap-4 p-4 sm:p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
           {/* Reset Password Form Container */}
-          <div className="bg-white shadow-lg rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-5 items-center justify-center">
+          <div className="bg-white shadow-lg rounded-2xl sm:rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-3 sm:gap-5 items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
             {/* Logo */}
             <div className="flex justify-center gap-2 md:justify-start">
               <div className="mb-1 flex items-center gap-2">
-                <img src={landinglogodark} alt="Eye2Wear" className="h-20 w-auto" />
+                <img src={landinglogodark} alt="Eye2Wear" className="h-16 sm:h-20 w-auto" />
               </div>
             </div>
             
-            <div className="w-full max-w-sm mx-auto">
+            <div className="w-full max-w-xs sm:max-w-sm mx-auto px-2 sm:px-0">
               {/* Reset Password Form */}
-              <form className="flex flex-col gap-6" onSubmit={resetpassword}>
+              <form className="flex flex-col gap-4 sm:gap-6" onSubmit={resetpassword}>
                 <div className="flex flex-col items-center gap-2 text-center">
                   <div className="flex items-center gap-2 mb-2">
-                    <Lock className="h-6 w-6 text-sky-700" />
-                    <h1 className="text-2xl font-bold text-sky-700">Reset Password</h1>
+                    <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-sky-700" />
+                    <h1 className="text-xl sm:text-2xl font-bold text-sky-700">Reset Password</h1>
                   </div>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-gray-600 text-xs sm:text-sm">
                     Please enter your new password below...
                   </p>
                 </div>
@@ -108,7 +108,7 @@ function ResetPassword(){
                 {/* Error/Success Messages */}
                 {resetpasswordmessage.text && (
                   <div 
-                    className="text-center p-3 rounded-md text-sm font-medium"
+                    className="text-center p-2 sm:p-3 rounded-md text-xs sm:text-sm font-medium mx-2 sm:mx-0"
                     style={{
                       backgroundColor: resetpasswordmessage.type === 'error' ? '#fef2f2' : '#f0fdf4',
                       color: resetpasswordmessage.type === 'error' ? '#dc2626' : '#16a34a',
@@ -119,10 +119,10 @@ function ResetPassword(){
                   </div>
                 )}
 
-                <div className="grid gap-6">
+                <div className="grid gap-4 sm:gap-6">
                   {/* New Password Field */}
-                  <div className="grid gap-3">
-                    <Label htmlFor="newpassword" className="text-gray-900 text-sm">New Password</Label>
+                  <div className="grid gap-2 sm:gap-3">
+                    <Label htmlFor="newpassword" className="text-gray-900 text-xs sm:text-sm">New Password</Label>
                     <div className="relative">
                       <Input
                         id="newpassword"
@@ -131,7 +131,7 @@ function ResetPassword(){
                         placeholder="Enter your new password..."
                         value={resetpasswordnew}
                         onChange={(e) => setresetpasswordnew(e.target.value)}
-                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10"
+                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10 h-10 sm:h-auto text-sm sm:text-base"
                         required
                       />
                       <button
@@ -150,9 +150,9 @@ function ResetPassword(){
                         }}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         )}
                       </button>
                     </div>
@@ -164,7 +164,7 @@ function ResetPassword(){
                     disabled={issavingnewpassword}
                     style={{
                       width: '100%',
-                      height: '40px',
+                      height: '44px',
                       backgroundColor: issavingnewpassword ? '#9ca3af' : '#1f2937',
                       color: issavingnewpassword ? '#6b7280' : '#ffffff',
                       border: 'none',
@@ -210,7 +210,7 @@ function ResetPassword(){
                 </div>
                 
                 {/* Back to Login Link */}
-                <div className="text-center text-sm text-gray-600">
+                <div className="text-center text-xs sm:text-sm text-gray-600">
                   Remember your password?{" "}
                   <Link 
                     to="/userlogin" 

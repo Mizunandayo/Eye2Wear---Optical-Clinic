@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import defaultprofilepic from '../src/assets/images/defaulticon.png';
 import { useNavigate } from "react-router-dom";
 import landinglogodark from  "../src/assets/images/landinglogodark.png";
@@ -40,6 +40,69 @@ function PatientRegistration() {
     const [checkemail, setcheckemail] = useState(false);
     const [emailerror, setemailerror] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isGoogleRegistering, setIsGoogleRegistering] = useState(false);
+
+    // Handle Google OAuth response
+    const handleGoogleResponse = useCallback(async (response) => {
+      setIsGoogleRegistering(true);
+      setmessage({ text: '', type: '' });
+
+      try {
+        const result = await fetch('/api/google-auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            credential: response.credential
+          })
+        });
+
+        const data = await result.json();
+
+        if (data.success) {
+          setmessage({
+            text: data.message + " Redirecting to login...",
+            type: "success"
+          });
+
+          // Navigate to login page after successful registration
+          setTimeout(() => {
+            navigate("/userlogin");
+          }, 2000);
+        } else {
+          setmessage({
+            text: data.message || "Google registration failed. Please try again.",
+            type: "error"
+          });
+        }
+      } catch (error) {
+        console.error("Google registration error:", error);
+        setmessage({
+          text: "Google registration failed. Please try again.",
+          type: "error"
+        });
+      } finally {
+        setIsGoogleRegistering(false);
+      }
+    }, [navigate]);
+
+    // Initialize Google OAuth
+    useEffect(() => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+        });
+      }
+    }, [handleGoogleResponse]);
+
+    // Handle Google Sign-In button click
+    const handleGoogleSignIn = () => {
+      if (window.google) {
+        window.google.accounts.id.prompt();
+      }
+    };
 
 
 
@@ -268,23 +331,23 @@ function PatientRegistration() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="flex flex-col gap-4 p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
+        <div className="flex flex-col gap-4 p-4 sm:p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
           
           {/* Registration Form Container */}
-          <div className=" bg-white w-150 shadow-lg rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-5 items-center justify-center">
+          <div className="bg-white w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto shadow-lg rounded-2xl sm:rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-3 sm:gap-5 items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
             {/* Logo */}
             <div className="flex justify-center gap-2 md:justify-start">
               <div className="mb-1 flex items-center gap-2">
-                <img src={landinglogodark} alt="Eye2Wear" className="h-20 w-auto" />
+                <img src={landinglogodark} alt="Eye2Wear" className="h-16 sm:h-20 w-auto" />
               </div>
             </div>
             
-            <div className="w-full max-w-md mx-auto">
+            <div className="w-full max-w-sm sm:max-w-md mx-auto px-2 sm:px-0">
               {/* Registration Form */}
-              <form className="flex flex-col gap-6" onSubmit={handlesubmit}>
+              <form className="flex flex-col gap-4 sm:gap-6" onSubmit={handlesubmit}>
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <h1 className="text-2xl font-bold text-sky-700">Create your account</h1>
-                  <p className="text-gray-600 text-sm">
+                  <h1 className="text-xl sm:text-2xl font-bold text-sky-700">Create your account</h1>
+                  <p className="text-gray-600 text-xs sm:text-sm">
                     Enter your details below to create your account
                   </p>
                 </div>
@@ -292,7 +355,7 @@ function PatientRegistration() {
                 {/* Error/Success Messages */}
                 {message.text && (
                   <div 
-                    className="text-center p-3 rounded-md text-sm font-medium"
+                    className="text-center p-2 sm:p-3 rounded-md text-xs sm:text-sm font-medium mx-2 sm:mx-0"
                     style={{
                       backgroundColor: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
                       color: message.type === 'error' ? '#dc2626' : '#16a34a',
@@ -306,7 +369,7 @@ function PatientRegistration() {
                 <div className="grid gap-2">
                   {/* Email Field */}
                   <div className="grid gap-2">
-                    <Label htmlFor="patientemail" className="text-gray-900 text-sm">Email</Label>
+                    <Label htmlFor="patientemail" className="text-gray-900 text-xs sm:text-sm">Email</Label>
                     <Input
                       id="patientemail"
                       type="email"
@@ -314,17 +377,17 @@ function PatientRegistration() {
                       placeholder="m@example.com"
                       value={formdata.patientemail}
                       onChange={handlechange}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
-                    {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-                    {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-                    {emailerror && emailexist && (<p className= "text-red-500 text-sm mt-1">Email already exist</p>)}
+                    {checkemail && <p className="text-gray-500 text-xs sm:text-sm mt-1">Checking Email</p>}
+                    {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-xs sm:text-sm mt-1">Enter a valid email address</p>)}
+                    {emailerror && emailexist && (<p className= "text-red-500 text-xs sm:text-sm mt-1">Email already exist</p>)}
                   </div>
                   
                   {/* Password Field */}
                   <div className="grid gap-2">
-                    <Label htmlFor="patientpassword" className="text-gray-900 text-sm">Password</Label>
+                    <Label htmlFor="patientpassword" className="text-gray-900 text-xs sm:text-sm">Password</Label>
                     <div className="relative">
                       <Input
                         id="patientpassword"
@@ -333,7 +396,7 @@ function PatientRegistration() {
                         placeholder="Enter your password..."
                         value={formdata.patientpassword}
                         onChange={handlechange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10"
+                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10 h-10 sm:h-auto text-sm sm:text-base"
                         required
                         minLength="6"
                       />
@@ -353,14 +416,14 @@ function PatientRegistration() {
                         }}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         )}
                       </button>
                     </div>
                     {formdata.patientpassword && formdata.patientpassword.length > 0 && (
-                      <p className={`text-sm mt-1 transition-colors duration-200 ${
+                      <p className={`text-xs sm:text-sm mt-1 transition-colors duration-200 ${
                         formdata.patientpassword.length >= 6 
                           ? 'text-green-600' 
                           : 'text-red-600'
@@ -375,7 +438,7 @@ function PatientRegistration() {
 
                   {/* First Name Field */}
                   <div className="grid gap-2">
-                    <Label htmlFor="patientfirstname" className="text-gray-900 text-sm">First Name</Label>
+                    <Label htmlFor="patientfirstname" className="text-gray-900 text-xs sm:text-sm">First Name</Label>
                     <Input
                       id="patientfirstname"
                       type="text"
@@ -383,14 +446,14 @@ function PatientRegistration() {
                       placeholder="Enter your first name..."
                       value={formdata.patientfirstname}
                       onChange={handlechange}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
                   </div>
 
                   {/* Last Name Field */}
                   <div className="grid gap-2">
-                    <Label htmlFor="patientlastname" className="text-gray-900 text-sm">Last Name</Label>
+                    <Label htmlFor="patientlastname" className="text-gray-900 text-xs sm:text-sm">Last Name</Label>
                     <Input
                       id="patientlastname"
                       type="text"
@@ -398,14 +461,14 @@ function PatientRegistration() {
                       placeholder="Enter your last name..."
                       value={formdata.patientlastname}
                       onChange={handlechange}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
                   </div>
 
                   {/* Middle Name Field */}
                   <div className="grid gap-2">
-                    <Label htmlFor="patientmiddlename" className="text-gray-900 text-sm">Middle Name</Label>
+                    <Label htmlFor="patientmiddlename" className="text-gray-900 text-xs sm:text-sm">Middle Name</Label>
                     <Input
                       id="patientmiddlename"
                       type="text"
@@ -413,7 +476,7 @@ function PatientRegistration() {
                       placeholder="Enter your middle name..."
                       value={formdata.patientmiddlename}
                       onChange={handlechange}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 h-10 sm:h-auto text-sm sm:text-base"
                       required
                     />
                   </div>
@@ -424,7 +487,7 @@ function PatientRegistration() {
                     disabled={issubmitting}
                     style={{
                       width: '100%',
-                      height: '40px',
+                      height: '44px',
                       backgroundColor: issubmitting ? '#9ca3af' : '#1f2937',
                       color: issubmitting ? '#6b7280' : '#ffffff',
                       border: 'none',
@@ -468,10 +531,72 @@ function PatientRegistration() {
                       "Register"
                     )}
                   </button>
+                
+                {/* Or continue with */}
+                <div className="relative text-center text-xs sm:text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-gray-300">
+                  <span className="relative z-10 px-2 text-gray-600 bg-white">
+                    Or continue with
+                  </span>
+                </div>
+                
+                {/* Google Registration Button */}
+                <button 
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleRegistering}
+                  style={{
+                    width: '100%',
+                    height: '44px',
+                    backgroundColor: isGoogleRegistering ? '#f3f4f6' : 'transparent',
+                    color: isGoogleRegistering ? '#9ca3af' : '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: isGoogleRegistering ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isGoogleRegistering) {
+                      e.target.style.backgroundColor = '#f9fafb';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isGoogleRegistering) {
+                      e.target.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  <span className="text-xs sm:text-sm">
+                    {isGoogleRegistering ? 'Registering with Google...' : 'Continue with Google'}
+                  </span>
+                </button>
                 </div>
                 
                 {/* Sign In Link */}
-                <div className="text-center text-sm text-gray-600">
+                <div className="text-center text-xs sm:text-sm text-gray-600">
                   Already have an account?{" "}
                   <Link 
                     to="/userlogin" 
