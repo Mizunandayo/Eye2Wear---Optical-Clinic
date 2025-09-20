@@ -65,7 +65,7 @@ export const forgotpassword = async(req, res) => {
       }
       });
 
-      const forgotlink = `http://localhost:5173/reset-password/${foundaccount._id}/${forgottoken}`;
+      const forgotlink = `${process.env.FRONTEND_URL}/reset-password/${foundaccount._id}/${forgottoken}`;
     
     
               const mailoptions = {

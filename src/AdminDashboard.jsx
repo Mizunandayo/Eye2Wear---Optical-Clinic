@@ -5642,7 +5642,7 @@ return (
       name: `${patient.patientfirstname} ${patient.patientlastname}`});
   }}
   
-  className="group relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer w-80 min-h-[180px]">
+  className="group relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer w-79 min-h-[180px]">
     {/* Profile Section */}
     <div className="flex items-center gap-4 mb-4">
       <div className="relative">
