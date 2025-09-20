@@ -270,6 +270,9 @@ export const sendAccountDeletionEmail = async (email, accountType = 'Patient') =
   }
 };
 
+// Export the remaining functions that weren't exported individually
+export { sendEmailWithRetry, createEmailTransporter };
+
 export default {
   sendVerificationEmail,
   sendAccountCreationEmail,
