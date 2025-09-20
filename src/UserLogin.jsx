@@ -93,9 +93,9 @@ function UserLogin(){
                  type: "success"
                });
 
-               // Navigate to patient dashboard
+               // Navigate to patient landing page (same as regular login)
                setTimeout(() => {
-                 navigate('/patientdashboard');
+                 navigate('/patientlandingpage');
                }, 1500);
              } else {
                setloginnotice({
