@@ -25,7 +25,7 @@ import { BautistainventorycategoryBox } from "./components/Bautistainventorycate
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import Footer from "./Footer";
-
+import defaulticon from "../src/assets/images/defaulticon.png";
 
 
 
@@ -1748,10 +1748,12 @@ useEffect(() => {
                   onClick={showlogout}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
                 >
-                  {!patientprofilepicture ? (
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 animate-pulse flex items-center justify-center">
-                      <FontAwesomeIcon icon={faUser} className="text-white text-sm" />
-                    </div>
+                  {!patientprofilepicture || patientprofilepicture === "default-profile-url" ? (
+                    <img 
+                      src={defaulticon} 
+                      alt="Profile" 
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
+                    />
                   ) : (
                     <img 
                       src={patientprofilepicture} 
@@ -1770,10 +1772,12 @@ useEffect(() => {
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-in fade-in-0 zoom-in-95">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
-                        {!patientprofilepicture ? (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
-                            <FontAwesomeIcon icon={faUser} className="text-white" />
-                          </div>
+                        {!patientprofilepicture || patientprofilepicture === "default-profile-url" ? (
+                          <img 
+                            src={defaulticon} 
+                            className="w-10 h-10 rounded-full object-cover"
+                            alt="Profile"
+                          />
                         ) : (
                           <img 
                             src={patientprofilepicture} 
@@ -1877,10 +1881,12 @@ useEffect(() => {
               {localStorage.getItem("patienttoken") ? (
                 <>
                   <div className="flex items-center px-4 py-3 bg-gray-50 rounded-lg mb-2">
-                    {!patientprofilepicture ? (
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center">
-                        <FontAwesomeIcon icon={faUser} className="text-white" />
-                      </div>
+                    {!patientprofilepicture || patientprofilepicture === "default-profile-url" ? (
+                      <img 
+                        src={defaulticon} 
+                        alt="Profile" 
+                        className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-200"
+                      />
                     ) : (
                       <img 
                         src={patientprofilepicture} 
