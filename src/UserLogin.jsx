@@ -71,10 +71,22 @@ function UserLogin(){
              const data = await result.json();
 
              if (data.success) {
-               // Store the token
+               // Set all localStorage items to match regular patient login
+               localStorage.setItem("patienttoken", data.jsontoken);
+               localStorage.setItem("patientdetails", JSON.stringify(data.patient));
+               localStorage.setItem("patientid", data.patient._id);
+               localStorage.setItem("patientemail", data.patient.patientemail);
+               localStorage.setItem("patientfirstname", data.patient.patientfirstname);
+               localStorage.setItem("patientlastname", data.patient.patientlastname);
+               localStorage.setItem("patientname", data.patient.patientfirstname + " " + data.patient.patientlastname);
+               localStorage.setItem('role', 'patient');
                localStorage.setItem('token', data.jsontoken);
-               localStorage.setItem('user', JSON.stringify(data.patient));
-               localStorage.setItem('userRole', 'patient');
+               localStorage.setItem('needsSocketInit', 'true');
+               
+               // Set axios default authorization header
+               if (window.axios) {
+                 window.axios.defaults.headers.common['Authorization'] = `Bearer ${data.jsontoken}`;
+               }
 
                setloginnotice({
                  text: data.message + " Redirecting...",

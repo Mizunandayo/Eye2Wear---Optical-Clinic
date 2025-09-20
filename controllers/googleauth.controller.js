@@ -134,7 +134,7 @@ export const googleRegister = async (req, res) => {
 
     const newPatient = await Patientaccount.create(patientData);
 
-    // Generate JWT token
+    // Generate JWT token for auto-login
     const token = generateAuthToken(newPatient);
 
     // Remove password from response
@@ -143,7 +143,8 @@ export const googleRegister = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Account created successfully with Google",
-      token,
+      autoLogin: true,
+      jsontoken: token,
       patient: patientResponse
     });
 

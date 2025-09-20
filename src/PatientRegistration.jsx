@@ -61,15 +61,45 @@ function PatientRegistration() {
         const data = await result.json();
 
         if (data.success) {
-          setmessage({
-            text: data.message + " Redirecting to login...",
-            type: "success"
-          });
+          // If registration is successful and user is automatically logged in
+          if (data.autoLogin && data.jsontoken && data.patient) {
+            // Set all localStorage items to match regular patient login
+            localStorage.setItem("patienttoken", data.jsontoken);
+            localStorage.setItem("patientdetails", JSON.stringify(data.patient));
+            localStorage.setItem("patientid", data.patient._id);
+            localStorage.setItem("patientemail", data.patient.patientemail);
+            localStorage.setItem("patientfirstname", data.patient.patientfirstname);
+            localStorage.setItem("patientlastname", data.patient.patientlastname);
+            localStorage.setItem("patientname", data.patient.patientfirstname + " " + data.patient.patientlastname);
+            localStorage.setItem('role', 'patient');
+            localStorage.setItem('token', data.jsontoken);
+            localStorage.setItem('needsSocketInit', 'true');
+            
+            // Set axios default authorization header
+            if (window.axios) {
+              window.axios.defaults.headers.common['Authorization'] = `Bearer ${data.jsontoken}`;
+            }
 
-          // Navigate to login page after successful registration
-          setTimeout(() => {
-            navigate("/userlogin");
-          }, 2000);
+            setmessage({
+              text: data.message + " Redirecting to dashboard...",
+              type: "success"
+            });
+
+            // Navigate to patient dashboard
+            setTimeout(() => {
+              navigate("/patientdashboard");
+            }, 2000);
+          } else {
+            // Regular registration flow - redirect to login
+            setmessage({
+              text: data.message + " Redirecting to login...",
+              type: "success"
+            });
+
+            setTimeout(() => {
+              navigate("/userlogin");
+            }, 2000);
+          }
         } else {
           setmessage({
             text: data.message || "Google registration failed. Please try again.",
