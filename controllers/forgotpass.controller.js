@@ -2,11 +2,11 @@
 
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
 import Patientaccount from "../models/patientaccount.js";
 import Adminaccount from "../models/adminaccount.js";
 import Owneraccount from "../models/owneraccount.js";
 import Staffaccount from "../models/staffacount.js";
+import { emailServiceManager } from '../utils/emailServiceManager.js';
 
 
 
@@ -57,29 +57,16 @@ export const forgotpassword = async(req, res) => {
     
       const forgottoken = jwt.sign({id: foundaccount._id, type: useraccounttype}, process.env.JWT_KEY, {expiresIn: "1d"});
          
-      const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth:{
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-      }
-      });
-
       const forgotlink = `${process.env.FRONTEND_URL}/reset-password/${foundaccount._id}/${forgottoken}`;
     
-    
-              const mailoptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Eye2Wear - Password Reset",
-                html: `<p>Click the provided link to reset your password: 
-                <a href="${forgotlink}">
-                Reset Password</a></p>`
-              };
-    
-              
-              await transporter.sendMail(mailoptions);
-              res.status(200).json({Status: "Success"});
+      // Use email service manager for production compatibility
+      await emailServiceManager.sendPasswordResetEmail(
+        email, 
+        forgotlink, 
+        foundaccount.patientfirstname || foundaccount.stafffirstname || foundaccount.ownerfirstname || foundaccount.adminfirstname || 'User'
+      );
+      
+      res.status(200).json({Status: "Success"});
               
     
             }catch(error){

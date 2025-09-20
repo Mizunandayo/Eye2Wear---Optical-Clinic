@@ -100,6 +100,62 @@ class GmailAPIService {
       throw error;
     }
   }
+
+  async sendPasswordResetEmailGmailAPI(email, resetLink, firstName) {
+    try {
+      console.log('Sending password reset email via Gmail API to:', email);
+      console.log('Reset link:', resetLink);
+
+      await this.authorize();
+
+      const subject = 'Eye2Wear - Password Reset';
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset Request</h2>
+          <p>Hello ${firstName || 'User'},</p>
+          <p>You requested a password reset for your Eye2Wear account.</p>
+          <p>Click the button below to reset your password:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+          </div>
+          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+          <p><a href="${resetLink}">${resetLink}</a></p>
+          <p>This link will expire in 1 hour for security reasons.</p>
+          <p>If you didn't request this password reset, please ignore this email.</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">This is an automated message from Eye2Wear. Please do not reply to this email.</p>
+        </div>
+      `;
+
+      const message = [
+        'Content-Type: text/html; charset="UTF-8"',
+        'MIME-Version: 1.0',
+        `To: ${email}`,
+        `Subject: ${subject}`,
+        '',
+        html
+      ].join('\n');
+
+      const encodedMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const response = await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+        },
+      });
+
+      console.log('Password reset email sent successfully via Gmail API:', response.data.id);
+      return { success: true, messageId: response.data.id };
+    } catch (error) {
+      console.error('Error sending password reset email via Gmail API:', error);
+      throw error;
+    }
+  }
 }
 
 export { GmailAPIService };
@@ -111,5 +167,7 @@ export default {
     gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId),
   sendAccountCreationEmailGmailAPI: (email, password, firstName, accountType, clinicName) => 
     gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName),
+  sendPasswordResetEmailGmailAPI: (email, resetLink, firstName) => 
+    gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName),
   gmailService
 };

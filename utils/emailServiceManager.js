@@ -78,6 +78,71 @@ class EmailServiceManager {
       throw error;
     }
   }
+
+  async sendPasswordResetEmail(email, resetLink, firstName) {
+    try {
+      await this.initialize();
+
+      if (this.emailProvider === 'gmail-api' && this.gmailService) {
+        console.log('Using Gmail API for password reset email');
+        return await this.gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName);
+      } else {
+        console.log('Using SMTP for password reset email');
+        // Create SMTP fallback
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        });
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: "Eye2Wear - Password Reset",
+          html: `<p>Click the provided link to reset your password: 
+          <a href="${resetLink}">Reset Password</a></p>`
+        };
+        
+        await transporter.sendMail(mailOptions);
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Error sending password reset email via ' + this.emailProvider + ':', error);
+      
+      if (this.emailProvider === 'gmail-api') {
+        console.log('Gmail API failed, falling back to SMTP...');
+        try {
+          const nodemailer = await import('nodemailer');
+          const transporter = nodemailer.default.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+          
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Eye2Wear - Password Reset",
+            html: `<p>Click the provided link to reset your password: 
+            <a href="${resetLink}">Reset Password</a></p>`
+          };
+          
+          await transporter.sendMail(mailOptions);
+          return { success: true };
+        } catch (smtpError) {
+          console.error('SMTP fallback also failed:', smtpError);
+          throw new Error('All email services failed');
+        }
+      }
+      
+      throw error;
+    }
+  }
 }
 
 const emailServiceManager = new EmailServiceManager();
