@@ -949,7 +949,7 @@ const submitpatientdemographic = async (e) => {
                           <div className="flex flex-col items-center space-y-4">
                             <div className="relative group">
                               <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                              {previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? (
+                              {previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '' && demographicformdata.patientprofilepicture !== 'default-profile-url') ? (
                                 <img 
                                   className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
                                   src={previewimage || demographicformdata.patientprofilepicture}
@@ -963,9 +963,9 @@ const submitpatientdemographic = async (e) => {
                               {/* Fallback placeholder when no image */}
                               <div 
                                 className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                                  previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
+                                  previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '' && demographicformdata.patientprofilepicture !== 'default-profile-url') ? 'hidden' : 'flex'
                                 }`}
-                                style={{ display: previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
+                                style={{ display: previewimage || (demographicformdata.patientprofilepicture && demographicformdata.patientprofilepicture !== '' && demographicformdata.patientprofilepicture !== 'default-profile-url') ? 'none' : 'flex' }}
                               >
                                 <div className="text-center">
                                   <FontAwesomeIcon 

@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useCallback} from "react";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import navlogo from  "../src/assets/images/navlogo.png";
@@ -230,6 +230,7 @@ const PaginationComponent = ({
 function PatientDashboard(){
 
   const _apiUrl = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
 
   
 
@@ -258,6 +259,11 @@ function PatientDashboard(){
   const [showAmbherServices, setShowAmbherServices] = useState(false);
   const [showBautistaServices, setShowBautistaServices] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
+  
+  // Demographic profile completion states
+  const [isDemographicLoading, setIsDemographicLoading] = useState(true);
+  const [isDemographicComplete, setIsDemographicComplete] = useState(false);
+  
   const showlogout = () => {
     setshowlogoutbtn(!showlogoutbtn);
   }
@@ -304,25 +310,56 @@ function PatientDashboard(){
 
   const [patientdemographics, setpatientdemographics] = useState(null);
 
+  // Enhanced demographic loading with profile completion check
   useEffect(() => {
     const loadingpatientdemographics = async (email) => {
-      try{
+      try {
+        setIsDemographicLoading(true);
         const demgoraphicdata = await fetchpatientdemographicbyemail(email);
-        setpatientdemographics(demgoraphicdata || {});
-
-      }catch(error){
+        
+        if (demgoraphicdata && demgoraphicdata._id) {
+          // Check if demographic profile has all required fields
+          const requiredFields = [
+            'patientlastname',
+            'patientfirstname', 
+            'patientmiddlename',
+            'patientage',
+            'patientbirthdate',
+            'patientgender',
+            'patientcontactnumber',
+            'patienthomeaddress',
+            'patientemergencycontactname',
+            'patientemergencycontactnumber'
+          ];
+          
+          const isComplete = requiredFields.every(field => 
+            demgoraphicdata[field] && 
+            demgoraphicdata[field].toString().trim() !== ''
+          );
+          
+          setpatientdemographics(demgoraphicdata);
+          setIsDemographicComplete(isComplete);
+        } else {
+          // No demographic profile found
+          setpatientdemographics(null);
+          setIsDemographicComplete(false);
+        }
+      } catch (error) {
         console.error("Failed fetching patientdemo", error);
+        setpatientdemographics(null);
+        setIsDemographicComplete(false);
+      } finally {
+        setIsDemographicLoading(false);
       }
     };
 
-    if(patientfirstname && !patientdemographics) {
+    if (patientfirstname) {
       const email = localStorage.getItem("patientemail");
-
-      if(email) {
+      if (email) {
         loadingpatientdemographics(email);
       }
     }
-  }, [patientfirstname, patientdemographics, fetchpatientdemographicbyemail]);
+  }, [patientfirstname, fetchpatientdemographicbyemail]);
 
 
 
@@ -1907,21 +1944,6 @@ useEffect(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   return (
     <>
       {/* CSS for animations and mobile optimizations */}
@@ -2253,7 +2275,31 @@ useEffect(() => {
 
     {/* First Section */} {/* First Section */} {/* First Section */} {/* First Section */}
     <section className="pb-50 motion-preset-slide-up bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center px-2 sm:px-4" >
-    <div className="bg-cover bg-center h-full w-full flex items-center justify-center " >
+   
+   
+   {!isDemographicComplete && (
+    <div className="w-full max-w-lg mx-auto flex items-center justify-center mt-16 sm:mt-24 md:mt-32 p-4 sm:p-6">
+      <div className="flex flex-col items-center justify-center w-full h-full p-8 sm:p-8 ">
+
+        <h1 className="font-albertsans font-bold text-[#184d85] text-lg sm:text-xl md:text-2xl mb-3 sm:mb-4 text-center leading-tight">
+          Complete Your Profile
+        </h1>
+        <p className="text-sm sm:text-base text-center text-black/70 mb-6 sm:mb-8 leading-relaxed max-w-md">
+          To access appointment features, please complete your demographic profile.
+        </p>
+        <Link to="/patientinformation" className="w-full sm:w-auto">
+          <div className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-center">
+            <h1 className="font-albertsans font-semibold text-sm sm:text-base">Go to Demographic Profile</h1>
+          </div>
+        </Link>
+      </div>
+    </div>
+   )}
+   
+   {isDemographicComplete && (
+    <div 
+      id="appointmentpanel" 
+      className="bg-cover bg-center h-full w-full flex items-center justify-center" >
 
       <div className="w-full h-full flex justify-start items-start pt-3 ">
 
@@ -3865,6 +3911,8 @@ useEffect(() => {
        </div>
       </div>
       </div>
+   )}
+
       
         </section>
 

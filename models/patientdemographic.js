@@ -200,10 +200,11 @@ PatientdemographicSchema.pre('save', function(next) {
 // ACTIVE: Re-enable post save middleware for automatic sync
 PatientdemographicSchema.post('save', async function(doc) {
   try {
-    // Only sync if fields were actually modified and it's not a new document
-    // For new documents, sync is handled separately to avoid performance issues during registration
-    const shouldSyncProfile = this._profilePictureModified && !this._isNewDocument;
-    const shouldSyncNames = this._nameFieldsModified && !this._isNewDocument;
+    // Sync if fields were modified OR if it's a new document with valid profile/name data
+    const shouldSyncProfile = this._profilePictureModified || 
+                             (this._isNewDocument && doc.patientprofilepicture && doc.patientprofilepicture !== 'default-profile-url');
+    const shouldSyncNames = this._nameFieldsModified || 
+                           (this._isNewDocument && (doc.patientlastname || doc.patientfirstname || doc.patientmiddlename));
     
     if (shouldSyncProfile || shouldSyncNames) {
       try {
@@ -215,6 +216,7 @@ PatientdemographicSchema.post('save', async function(doc) {
         const accountUpdateData = {};
         if (shouldSyncProfile) {
           accountUpdateData.patientprofilepicture = doc.patientprofilepicture;
+          accountUpdateData.patientprofilepicture_public_id = doc.patientprofilepicture_public_id;
         }
         if (shouldSyncNames) {
           accountUpdateData.patientlastname = doc.patientlastname;
@@ -229,7 +231,9 @@ PatientdemographicSchema.post('save', async function(doc) {
         );
         
         if (result.modifiedCount > 0) {
-          console.log(`✅ Patient account synced for: ${doc.patientemail}`);
+          console.log(`✅ Patient account synced for: ${doc.patientemail} (${this._isNewDocument ? 'new' : 'updated'} demographic)`);
+        } else {
+          console.log(`⚠️ No patient account found to sync for: ${doc.patientemail}`);
         }
 
         // Sync with PatientAppointment model if needed (async without blocking)
