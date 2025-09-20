@@ -2,7 +2,6 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import Patientaccount from '../models/patientaccount.js';
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -22,23 +21,8 @@ const generateAuthToken = (patient) => {
 
 // Load default profile picture as base64
 const loadDefaultProfilePic = async () => {
-  try {
-    // Use the same approach as frontend - fetch from public assets
-    const defaultImageUrl = `${process.env.FRONTEND_URL}/src/assets/images/defaulticon.png`;
-    const response = await fetch(defaultImageUrl);
-    
-    if (response.ok) {
-      const buffer = await response.buffer();
-      return `data:image/png;base64,${buffer.toString('base64')}`;
-    } else {
-      // Fallback to a simple default image
-      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0yMCA3NUMyMCA2NS4wNTg5IDI3LjE2MzQgNTcgMzYgNTdINjRDNzIuODM2NiA1NyA4MCA2NS4wNTg5IDgwIDc1VjgwSDIwVjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
-    }
-  } catch (error) {
-    console.error("Failed to load default profile picture:", error);
-    // Return a simple default avatar SVG
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0yMCA3NUMyMCA2NS4wNTg5IDI3LjE2MzQgNTcgMzYgNTdINjRDNzIuODM2NiA1NyA4MCA2NS4wNTg5IDgwIDc1VjgwSDIwVjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
-  }
+  // Return a simple default avatar SVG
+  return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0yMCA3NUMyMCA2NS4wNTg5IDI3LjE2MzQgNTcgMzYgNTdINjRDNzIuODM2NiA1NyA4MCA2NS4wNTg5IDgwIDc1VjgwSDIwVjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
 };
 
 // Helper function to parse Google name
@@ -108,12 +92,16 @@ export const googleRegister = async (req, res) => {
     // Load default profile picture or use Google picture
     let profilePicture;
     if (picture) {
+      // For now, use the Google picture URL directly or fallback to default
       try {
-        const response = await fetch(picture);
-        const buffer = await response.buffer();
-        profilePicture = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+        // Simple validation of the picture URL
+        if (picture.startsWith('https://')) {
+          profilePicture = picture;
+        } else {
+          profilePicture = await loadDefaultProfilePic();
+        }
       } catch (error) {
-        console.error("Failed to fetch Google profile picture:", error);
+        console.error("Failed to process Google profile picture:", error);
         profilePicture = await loadDefaultProfilePic();
       }
     } else {

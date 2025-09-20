@@ -78,8 +78,9 @@ const PatientaccountSchema = mongoose.Schema(
     //Middlename properties
     patientmiddlename:{
       type: String,
-      required: [true, "Please provide your middle name"],
+      required: false, // Made optional to support Google OAuth users who may not have middle names
       trim: true,
+      default: "" // Provide empty string as default
     },
 
 
