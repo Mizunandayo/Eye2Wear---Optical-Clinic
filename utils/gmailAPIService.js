@@ -106,7 +106,7 @@ class GmailAPIService {
       console.log('Sending password reset email via Gmail API to:', email);
       console.log('Reset link:', resetLink);
 
-      await this.authorize();
+      await this.initialize();
 
       const subject = 'Eye2Wear - Password Reset';
       const html = `
