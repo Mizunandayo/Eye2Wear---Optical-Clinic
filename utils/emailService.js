@@ -8,35 +8,74 @@ dotenv.config();
 const createEmailTransporter = () => {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  const config = {
+  // Base configuration
+  let config = {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    },
-    // Production-specific settings
-    ...(isProduction && {
-      secure: true, // Use TLS
-      port: 465,
-      pool: true, // Use pooled connections
-      maxConnections: 5,
-      maxMessages: 100,
-      rateLimit: 14, // Max 14 emails per second
-      connectionTimeout: 60000, // 60 seconds
-      greetingTimeout: 30000, // 30 seconds  
-      socketTimeout: 60000, // 60 seconds
-      dnsTimeout: 30000, // 30 seconds
-      tls: {
-        rejectUnauthorized: false // Allow self-signed certificates in production
+    }
+  };
+
+  if (isProduction) {
+    // Check if basic service mode is requested
+    if (process.env.EMAIL_USE_BASIC_SERVICE === 'true') {
+      config = {
+        ...config,
+        connectionTimeout: parseInt(process.env.EMAIL_TIMEOUT) || 60000,
+        greetingTimeout: 30000,
+        socketTimeout: parseInt(process.env.EMAIL_TIMEOUT) || 60000
+      };
+    } else {
+      // Production configuration with fallback options
+      const useSecure = process.env.EMAIL_FORCE_UNSECURE !== 'true';
+      const emailPort = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : (useSecure ? 465 : 587);
+      
+      config = {
+        ...config,
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: emailPort,
+        secure: useSecure && emailPort === 465, // true for 465, false for other ports
+        pool: true, // Use pooled connections
+        maxConnections: 5,
+        maxMessages: 100,
+        rateLimit: 14, // Max 14 emails per second
+        connectionTimeout: parseInt(process.env.EMAIL_TIMEOUT) || 60000,
+        greetingTimeout: 30000,
+        socketTimeout: parseInt(process.env.EMAIL_TIMEOUT) || 60000,
+        dnsTimeout: 30000,
+        tls: {
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        },
+        // Add STARTTLS for port 587
+        ...(emailPort === 587 && {
+          requireTLS: true,
+          tls: {
+            rejectUnauthorized: false
+          }
+        })
+      };
+
+      // Remove service if using custom host/port
+      if (process.env.EMAIL_HOST || process.env.EMAIL_PORT) {
+        delete config.service;
       }
-    }),
+    }
+  } else {
     // Development settings
-    ...(!isProduction && {
+    config = {
+      ...config,
       connectionTimeout: 20000,
       greetingTimeout: 10000,
       socketTimeout: 20000
-    })
-  };
+    };
+  }
+
+  console.log('Email config:', { 
+    ...config, 
+    auth: { user: config.auth.user, pass: '***' } 
+  });
 
   return nodemailer.createTransporter(config);
 };

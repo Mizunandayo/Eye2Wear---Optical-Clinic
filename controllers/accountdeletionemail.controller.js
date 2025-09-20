@@ -1,8 +1,4 @@
-/* eslint-disable no-undef */
-
-
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
 import Patientaccount from "../models/patientaccount.js";
 import Adminaccount from "../models/adminaccount.js";
 import Owneraccount from "../models/owneraccount.js";
@@ -22,37 +18,19 @@ export const patientaccountdeletionemail = async(req, res) => {
 
     const{email} =req.body;
     
-      const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth:{
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-      }
-      });
+    // Use the enhanced email service with retry logic and production optimizations
+    const result = await sendAccountDeletionEmail(email, 'Patient');
+    
+    console.log('Patient account deletion email sent successfully:', result.messageId);
+    res.status(200).json({Status: "Success", messageId: result.messageId});
+              
 
-    
-    
-              const mailoptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Eye2Wear - Patient Account Deletion",
-                html: `<p>We would like to notify you that your account has been deleted</p></br></br>
-`
-              };
-    
-              
-              await transporter.sendMail(mailoptions);
-              res.status(200).json({Status: "Success"});
-              
-    
             }catch(error){
-              console.error(error);
-              res.status(500).json({Status: "Error", message: "Server error"});
+              console.error('Error sending patient account deletion email:', error);
+              res.status(500).json({Status: "Error", message: "Failed to send account deletion email"});
             }
-    
+
           };
-
-
 
 
 
@@ -65,36 +43,19 @@ export const staffaccountdeletionemail = async(req, res) => {
 
     const{email} =req.body;
     
-      const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth:{
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-      }
-      });
+    // Use the enhanced email service with retry logic and production optimizations
+    const result = await sendAccountDeletionEmail(email, 'Staff');
+    
+    console.log('Staff account deletion email sent successfully:', result.messageId);
+    res.status(200).json({Status: "Success", messageId: result.messageId});
+              
 
-    
-    
-              const mailoptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Eye2Wear - Staff Account Deletion",
-                html: `<p>We would like to notify you that your account has been deleted</p></br></br>`
-      };
-    
-              
-              await transporter.sendMail(mailoptions);
-              res.status(200).json({Status: "Success"});
-              
-    
             }catch(error){
-              console.error(error);
-              res.status(500).json({Status: "Error", message: "Server error"});
+              console.error('Error sending staff account deletion email:', error);
+              res.status(500).json({Status: "Error", message: "Failed to send account deletion email"});
             }
-    
+
           };
-
-
 
 
 
@@ -106,36 +67,19 @@ export const owneraccountdeletionemail = async(req, res) => {
 
     const{email} =req.body;
     
-      const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth:{
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-      }
-      });
+    // Use the enhanced email service with retry logic and production optimizations
+    const result = await sendAccountDeletionEmail(email, 'Owner');
+    
+    console.log('Owner account deletion email sent successfully:', result.messageId);
+    res.status(200).json({Status: "Success", messageId: result.messageId});
+              
 
-    
-    
-              const mailoptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Eye2Wear - Owner Account Deletion",
-                html: `<p>We would like to notify you that your account has been deleted</p></br></br>`
-              };
-    
-              
-              await transporter.sendMail(mailoptions);
-              res.status(200).json({Status: "Success"});
-              
-    
             }catch(error){
-              console.error(error);
-              res.status(500).json({Status: "Error", message: "Server error"});
+              console.error('Error sending owner account deletion email:', error);
+              res.status(500).json({Status: "Error", message: "Failed to send account deletion email"});
             }
-    
-          };     
-          
- 
+
+          }; 
           
    
           
@@ -151,33 +95,16 @@ export const owneraccountdeletionemail = async(req, res) => {
 
     const{email} =req.body;
     
-      const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth:{
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-      }
-      });
+    // Use the enhanced email service with retry logic and production optimizations
+    const result = await sendAccountDeletionEmail(email, 'Admin');
+    
+    console.log('Admin account deletion email sent successfully:', result.messageId);
+    res.status(200).json({Status: "Success", messageId: result.messageId});
+              
 
-    
-    
-              const mailoptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: "Eye2Wear - Admin Account Deletion",
-                html: `<p>We would like to notify you that your account has been deleted</p></br></br>`
-              };
-    
-              
-              await transporter.sendMail(mailoptions);
-              res.status(200).json({Status: "Success"});
-              
-    
             }catch(error){
-              console.error(error);
-              res.status(500).json({Status: "Error", message: "Server error"});
+              console.error('Error sending admin account deletion email:', error);
+              res.status(500).json({Status: "Error", message: "Failed to send account deletion email"});
             }
-    
-          };                   
-             
-    
+
+          };    
