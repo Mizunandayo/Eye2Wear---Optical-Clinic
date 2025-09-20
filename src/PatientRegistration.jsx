@@ -169,23 +169,25 @@ function PatientRegistration() {
         setcheckemail (true);
 
         try{
-          //Request to server if the email exists in patientaccounts collection
-          const patientresponse = await fetch(
-            `/api/patientaccounts/check-email/${encodeURIComponent(formdata.patientemail)}`
-     
-          );
-
-          //Request to server if the email exists in adminaccounts collection
-          const adminresponse = await fetch(
-           `/api/adminaccounts/check-email/${encodeURIComponent(formdata.patientemail)}`
-     
-          );
+          // Make all email check requests concurrently using Promise.all for better performance
+          const [patientresponse, adminresponse, staffresponse, ownerresponse] = await Promise.all([
+            fetch(`/api/patientaccounts/check-email/${encodeURIComponent(formdata.patientemail)}`),
+            fetch(`/api/adminaccounts/check-email/${encodeURIComponent(formdata.patientemail)}`),
+            fetch(`/api/staffaccounts/check-email/${encodeURIComponent(formdata.patientemail)}`),
+            fetch(`/api/owneraccounts/check-email/${encodeURIComponent(formdata.patientemail)}`)
+          ]);
           
-        const patientdata = await patientresponse.json();
-        const admindata = await adminresponse.json();
-        //Save wether email existss in db
-        setemailexist(patientdata.exists  ||  admindata.exists); 
-        setemailerror(patientdata.exists  ||  admindata.exists);
+          // Parse all responses concurrently
+          const [patientdata, admindata, staffdata, ownerdata] = await Promise.all([
+            patientresponse.json(),
+            adminresponse.json(),
+            staffresponse.json(),
+            ownerresponse.json()
+          ]);
+          
+          //Save wether email exists in any account type
+          setemailexist(patientdata.exists || admindata.exists || staffdata.exists || ownerdata.exists); 
+          setemailerror(patientdata.exists || admindata.exists || staffdata.exists || ownerdata.exists);
 
 
 
@@ -504,7 +506,7 @@ function PatientRegistration() {
                     />
                     {checkemail && <p className="text-gray-500 text-xs sm:text-sm mt-1">Checking Email</p>}
                     {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-xs sm:text-sm mt-1">Enter a valid email address</p>)}
-                    {emailerror && emailexist && (<p className= "text-red-500 text-xs sm:text-sm mt-1">Email already exist</p>)}
+                    {emailerror && emailexist && (<p className= "text-red-500 text-xs sm:text-sm mt-1">Email already in use</p>)}
                   </div>
                   
                   {/* Password Field */}
