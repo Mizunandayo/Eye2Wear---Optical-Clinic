@@ -154,7 +154,7 @@ const PaginationComponent = ({
           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
             currentPage === 1 
               ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-100' 
-              : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
+              : 'text-black bg-white hover:bg-gray-50 cursor-pointer'
           }`}
         >
           Previous
@@ -164,7 +164,7 @@ const PaginationComponent = ({
           className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
             currentPage === totalPages 
               ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-100' 
-              : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
+              : 'text-black bg-white hover:bg-gray-50 cursor-pointer'
           }`}
         >
           Next
@@ -173,7 +173,7 @@ const PaginationComponent = ({
       
       <div className="hidden sm:flex-1 sm:flex sm:items-center gap-5">
         <div>
-          <p className="text-sm text-gray-700 font-albertsans">
+          <p className="text-sm text-black font-albertsans">
             Showing <span className="font-medium">{startItem}</span> to{' '}
             <span className="font-medium">{endItem}</span> of{' '}
             <span className="font-medium">{totalItems}</span> {itemName}
@@ -2000,37 +2000,37 @@ useEffect(() => {
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               <Link 
                 to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Appointments
               </Link>
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
               <Link 
                 to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Wishlist
               </Link>
               <Link 
                 to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Orders
               </Link>
               <Link 
                 to="/aboutpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 About
               </Link>
@@ -2040,7 +2040,7 @@ useEffect(() => {
             <div className="lg:hidden flex items-center space-x-4">
               <div
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="mobile-menu-button p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -2070,7 +2070,7 @@ useEffect(() => {
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -2101,7 +2101,7 @@ useEffect(() => {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -2136,42 +2136,42 @@ useEffect(() => {
             {/* Mobile Navigation Links */}
             <Link 
               to="/patientlandingpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link 
               to="/patientdashboard" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Appointments
             </Link>
             <Link 
               to="/patientproducts" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Store
             </Link>
             <Link 
               to="/patientwishlist" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Wishlist
             </Link>
             <Link 
               to="/patientorders" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Orders
             </Link>
             <Link 
               to="/aboutpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
@@ -2201,7 +2201,7 @@ useEffect(() => {
                   
                   <Link 
                     to="/patientinformation" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
@@ -2278,8 +2278,8 @@ useEffect(() => {
                       <img src={patientdemographics?.patientprofilepicture || defaultprofilepic} alt="Profile" className="h-18 w-18 rounded-full object-cover"></img>
                     </div>
                     <div className="bg-white min-w-0 flex flex-col justify-center items-start pl-2 pr-2 w-full h-full rounded-3xl">
-                      <h1 className="font-albertsans font-bold text-[15px] sm:text-[17px] truncate w-full text-[#2d3744]">{patientdemographics?.patientfirstname || ''} {patientdemographics?.patientlastname || ''}</h1>
-                      <p className="text-[11px] sm:text-[13px] truncate w-full text-[#535354]">{patientdemographics?.patientemail || ''}</p>
+                      <h1 className="font-albertsans font-bold text-[15px] sm:text-[17px] truncate w-full text-black">{patientdemographics?.patientfirstname || ''} {patientdemographics?.patientlastname || ''}</h1>
+                      <p className="text-[11px] sm:text-[13px] truncate w-full text-black/70">{patientdemographics?.patientemail || ''}</p>
                     </div>
                   </div>
                 )}
@@ -2330,11 +2330,11 @@ useEffect(() => {
                               <div className="flex flex-col items-center justify-center gap-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmentdate">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentdate">
                                     Preferred Date
                                   </label>
                                   <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                     min={getdatetomorrow()} 
                                     max={getuptothreemonthsappointmentavailability()} 
                                     type="date" 
@@ -2344,13 +2344,13 @@ useEffect(() => {
                                 </div>
                                 
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmenttime">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmenttime">
                                     Preferred Time
                                   </label>
                                   <select 
                                     name="patientambherappointmenttime" 
                                     id="patientambherappointmenttime" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                   >
                                     <option value="">Select a time</option>
                                     {ambherappointmentschedules.map((time, index) => (
@@ -2360,13 +2360,13 @@ useEffect(() => {
                                 </div>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientambherappointmentlocation">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentlocation">
                                     Clinic Location
                                   </label>
                                   <select 
                                     name="patientambherappointmentlocation" 
                                     id="patientambherappointmentlocation" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     disabled={loadinglocations}
                                   >
                                     <option value="">
@@ -2415,7 +2415,7 @@ useEffect(() => {
                                 {/* Mobile: Show when toggled, Desktop: Always show */}
                                 <div className={`md:block ${showAmbherServices ? 'block' : 'hidden'}`}>
                                 <div className="bg-white rounded-xl p-4 sm:p-6 border border-green-200">
-                                  <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
+                                  <p className="text-black leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-green-700">Ambher Optical</span> specializes in comprehensive vision care and eye wellness services. Our experienced optometrists provide:
                                   </p>
                                   
@@ -2423,42 +2423,42 @@ useEffect(() => {
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Visual & Cataract Screening</span> - Early detection and assessment of cataracts and vision problems
+                                        <span className="font-medium text-black">Visual & Cataract Screening</span> - Early detection and assessment of cataracts and vision problems
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Pediatric Eye Care</span> - Specialized assessments and optometry services for children
+                                        <span className="font-medium text-black">Pediatric Eye Care</span> - Specialized assessments and optometry services for children
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Color Vision Testing</span> - Comprehensive color blindness and vision deficiency evaluations
+                                        <span className="font-medium text-black">Color Vision Testing</span> - Comprehensive color blindness and vision deficiency evaluations
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Low Vision Solutions</span> - Assistive devices and rehabilitation for vision impairment
+                                        <span className="font-medium text-black">Low Vision Solutions</span> - Assistive devices and rehabilitation for vision impairment
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Refraction Services</span> - Precise measurement for eyeglass and contact lens prescriptions
+                                        <span className="font-medium text-black">Refraction Services</span> - Precise measurement for eyeglass and contact lens prescriptions
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Contact Lens Fitting</span> - Professional fitting and consultation for all contact lens types
+                                        <span className="font-medium text-black">Contact Lens Fitting</span> - Professional fitting and consultation for all contact lens types
                                       </div>
                                     </div>
                                   </div>
@@ -2486,11 +2486,11 @@ useEffect(() => {
                               <div className="flex flex-col items-center justify-center gap-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmentdate">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentdate">
                                     Preferred Date
                                   </label>
                                   <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                     type="date" 
                                     name="patientbautistaappointmentdate" 
                                     id="patientbautistaappointmentdate" 
@@ -2510,13 +2510,13 @@ useEffect(() => {
                                 </div>
                                 
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmenttime">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmenttime">
                                     Preferred Time
                                   </label>
                                   <select 
                                     name="patientbautistaappointmenttime" 
                                     id="patientbautistaappointmenttime" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                   >
                                     <option value="">Select a time</option>
                                     {bautistaappointmentschedules.map((time, index) => (
@@ -2526,13 +2526,13 @@ useEffect(() => {
                                 </div>
                                         </div>
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="patientbautistaappointmentlocation">
+                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentlocation">
                                     Clinic Location
                                   </label>
                                   <select 
                                     name="patientbautistaappointmentlocation" 
                                     id="patientbautistaappointmentlocation" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     disabled={loadinglocations}
                                   >
                                     <option value="">
@@ -2592,7 +2592,7 @@ useEffect(() => {
                                 {/* Mobile: Show when toggled, Desktop: Always show */}
                                 <div className={`md:block ${showBautistaServices ? 'block' : 'hidden'}`}>
                                 <div className="bg-white rounded-xl p-4 sm:p-6 border border-blue-200">
-                                  <p className="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
+                                  <p className="text-black leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                                     <span className="font-semibold text-sky-700">Bautista Eye Center</span> offers comprehensive eye care and advanced surgical procedures. Our ophthalmologists specialize in:
                                   </p>
                                   
@@ -2600,42 +2600,42 @@ useEffect(() => {
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
+                                        <span className="font-medium text-black">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
+                                        <span className="font-medium text-black">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
+                                        <span className="font-medium text-black">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
+                                        <span className="font-medium text-black">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
+                                        <span className="font-medium text-black">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
                                       </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-2 sm:gap-3">
                                       <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
                                       <div>
-                                        <span className="font-medium text-gray-700">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
+                                        <span className="font-medium text-black">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
                                       </div>
                                     </div>
                                   </div>
@@ -2660,11 +2660,11 @@ useEffect(() => {
                           <div className="flex flex-col gap-6 sm:gap-8">
                             {/* Notes Section */}
                             <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-3" htmlFor="patientadditionalappointmentnotes">
+                              <label className="block text-sm font-semibold text-black mb-3" htmlFor="patientadditionalappointmentnotes">
                                 Additional Appointment Notes
                               </label>
                               <textarea 
-                                className="w-full p-3 sm:p-4 border border-gray-300 rounded-xl text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[100px] sm:min-h-[120px] text-sm sm:text-base" 
+                                className="w-full p-3 sm:p-4 border border-gray-300 rounded-xl text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[100px] sm:min-h-[120px] text-sm sm:text-base" 
                                 ref={textarearef} 
                                 rows={4} 
                                 value={additionaldetails} 
@@ -2675,7 +2675,7 @@ useEffect(() => {
 
                             {/* Supporting Documents Upload Section */}
                             <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                              <label className="block text-sm font-semibold text-black mb-3">
                                 Supporting Documents/Images
                               </label>
                               <div className="space-y-4">
@@ -2720,7 +2720,7 @@ useEffect(() => {
                                   {/* Display uploaded supporting documents */}
                                   {supportingdocuments.length > 0 && (
                                     <div className="mt-6 space-y-3">
-                                      <h5 className="font-semibold text-gray-700 text-center">
+                                      <h5 className="font-semibold text-black text-center">
                                         Uploaded Files ({supportingdocuments.length}/{MAX_SUPPORTING_DOCUMENTS})
                                       </h5>
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2880,7 +2880,7 @@ useEffect(() => {
                         setFilteredAppointments([]);
                         setCurrentPage(1);
                       }}
-                      className="absolute right-3 text-xl text-gray-500 hover:text-gray-700 z-10 transition-colors duration-200"
+                      className="absolute right-3 text-xl text-gray-500 hover:text-black z-10 transition-colors duration-200"
                       title="Clear search"
                     >
                       <i className="bx bx-x"></i>
@@ -3317,49 +3317,49 @@ useEffect(() => {
               {selectedpatientappointment.patientambherappointmentcataractscreening && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Visual/Cataract Screening</span>
+                  <span className="text-black font-medium">Visual/Cataract Screening</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentpediatricassessment && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Pediatric Assessment</span>
+                  <span className="text-black font-medium">Pediatric Assessment</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentpediatricoptometrist && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Pediatric Optometrist</span>
+                  <span className="text-black font-medium">Pediatric Optometrist</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Color Vision Testing</span>
+                  <span className="text-black font-medium">Color Vision Testing</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentlowvisionaid && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Low Vision Aid</span>
+                  <span className="text-black font-medium">Low Vision Aid</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentrefraction && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Refraction</span>
+                  <span className="text-black font-medium">Refraction</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Contact Lens Fitting</span>
+                  <span className="text-black font-medium">Contact Lens Fitting</span>
                 </div>
               )}
               
@@ -3367,7 +3367,7 @@ useEffect(() => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                    <span className="text-gray-700 font-medium">Other Service</span>
+                    <span className="text-black font-medium">Other Service</span>
                   </div>
                   <div className="ml-8 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
                     <p className="text-green-800 text-sm">{selectedpatientappointment.patientambherappointmentotherservicenote}</p>
@@ -3390,21 +3390,21 @@ useEffect(() => {
             {selectedpatientappointment.patientambherappointmentconsultationremarkssubject && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Consultation Subject:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarkssubject}</p>
               </div>
             )}
             
             {selectedpatientappointment.patientambherappointmentconsultationremarks && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Consultation Remarks:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientambherappointmentconsultationremarks}</p>
               </div>
             )}
             
             {selectedpatientappointment.patientambherappointmentprescription && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Prescription:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientambherappointmentprescription}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientambherappointmentprescription}</p>
               </div>
             )}
           </div>
@@ -3434,7 +3434,7 @@ useEffect(() => {
                 <Stack spacing={1}>
                   <Rating size="large" value={selectedpatientappointment.patientambherappointmentrating} readOnly /> 
                 </Stack>  
-                <p className="text-gray-700 mt-2">{selectedpatientappointment.patientambherappointmentfeedback}</p>
+                <p className="text-black mt-2">{selectedpatientappointment.patientambherappointmentfeedback}</p>
               </div>
             </div>
           )}
@@ -3543,49 +3543,49 @@ useEffect(() => {
               {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Comprehensive Eye Exam</span>
+                  <span className="text-black font-medium">Comprehensive Eye Exam</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Diabetic Retinopathy</span>
+                  <span className="text-black font-medium">Diabetic Retinopathy</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentglaucoma && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Glaucoma</span>
+                  <span className="text-black font-medium">Glaucoma</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Hypertensive Retinopathy</span>
+                  <span className="text-black font-medium">Hypertensive Retinopathy</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Retinal Problem</span>
+                  <span className="text-black font-medium">Retinal Problem</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Cataract Surgery</span>
+                  <span className="text-black font-medium">Cataract Surgery</span>
                 </div>
               )}
               
               {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
                 <div className="flex items-center gap-3">
                   <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-gray-700 font-medium">Pterygium Surgery</span>
+                  <span className="text-black font-medium">Pterygium Surgery</span>
                 </div>
               )}
               
@@ -3593,7 +3593,7 @@ useEffect(() => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                    <span className="text-gray-700 font-medium">Other Service</span>
+                    <span className="text-black font-medium">Other Service</span>
                   </div>
                   <div className="ml-8 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
                     <p className="text-sky-800 text-sm">{selectedpatientappointment.patientbautistaappointmentotherservicenote}</p>
@@ -3616,21 +3616,21 @@ useEffect(() => {
             {selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Consultation Subject:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarkssubject}</p>
               </div>
             )}
             
             {selectedpatientappointment.patientbautistaappointmentconsultationremarks && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Consultation Remarks:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientbautistaappointmentconsultationremarks}</p>
               </div>
             )}
             
             {selectedpatientappointment.patientbautistaappointmentprescription && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Prescription:</span>
-                <p className="text-gray-700 mt-1">{selectedpatientappointment.patientbautistaappointmentprescription}</p>
+                <p className="text-black mt-1">{selectedpatientappointment.patientbautistaappointmentprescription}</p>
               </div>
             )}
           </div>
@@ -3660,7 +3660,7 @@ useEffect(() => {
                 <Stack spacing={1}>
                   <Rating size="large" value={selectedpatientappointment.patientbautistaappointmentrating} readOnly /> 
                 </Stack>  
-                <p className="text-gray-700 mt-2">{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
+                <p className="text-black mt-2">{selectedpatientappointment.patientbautistaappointmentfeedback}</p>
               </div>
             </div>
           )}
@@ -3713,7 +3713,7 @@ useEffect(() => {
                                      </h4>
                                      <div className="space-y-4">
                                        <div>
-                                         <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+                                         <p className="text-black leading-relaxed break-words whitespace-pre-wrap">
                                            {selectedpatientappointment.patientadditionalappointmentnotes || "No additional notes provided"}
                                          </p>
                                        </div>

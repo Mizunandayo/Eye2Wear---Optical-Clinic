@@ -120,7 +120,7 @@ function AboutPage() {
             {/* Mobile menu button */}
             <div
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="mobile-menu-button lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              className="mobile-menu-button lg:hidden p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
             >
               <svg 
                 className="w-6 h-6" 
@@ -140,21 +140,21 @@ function AboutPage() {
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               {localStorage.getItem("patienttoken") && (
                 <Link 
                   to="/patientdashboard" 
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Appointments
                 </Link>
               )}
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
@@ -162,13 +162,13 @@ function AboutPage() {
                 <>
                   <Link 
                     to="/patientwishlist" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Wishlist
                   </Link>
                   <Link 
                     to="/patientorders" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Orders
                   </Link>
@@ -200,7 +200,7 @@ function AboutPage() {
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -231,7 +231,7 @@ function AboutPage() {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -265,7 +265,7 @@ function AboutPage() {
                 <Link 
                   to="/patientlandingpage" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Home
                 </Link>
@@ -273,7 +273,7 @@ function AboutPage() {
                   <Link 
                     to="/patientdashboard" 
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Appointments
                   </Link>
@@ -281,7 +281,7 @@ function AboutPage() {
                 <Link 
                   to="/patientproducts" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Store
                 </Link>
@@ -290,14 +290,14 @@ function AboutPage() {
                     <Link 
                       to="/patientwishlist" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                      className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                     >
                       Wishlist
                     </Link>
                     <Link 
                       to="/patientorders" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                      className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                     >
                       Orders
                     </Link>
@@ -335,7 +335,7 @@ function AboutPage() {
                     <Link 
                       to="/patientinformation"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 mx-0"
+                      className="flex items-center px-3 py-2 text-sm text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 mx-0"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile

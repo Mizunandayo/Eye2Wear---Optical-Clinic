@@ -780,7 +780,7 @@ useEffect(() => {
             {/* Mobile menu button */}
             <div
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="mobile-menu-button lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              className="mobile-menu-button lg:hidden p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
             >
               <svg 
                 className="w-6 h-6" 
@@ -800,37 +800,37 @@ useEffect(() => {
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               <Link 
                 to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Appointments
               </Link>
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
               <Link 
                 to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Wishlist
               </Link>
               <Link 
                 to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Orders
               </Link>
               <Link 
                 to="/aboutpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 About
               </Link>
@@ -854,7 +854,7 @@ useEffect(() => {
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -885,7 +885,7 @@ useEffect(() => {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -918,28 +918,28 @@ useEffect(() => {
                 <Link 
                   to="/patientlandingpage" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Home
                 </Link>
                 <Link 
                   to="/patientdashboard" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Appointments
                 </Link>
                 <Link 
                   to="/patientproducts" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Store
                 </Link>
                 <Link 
                   to="/patientwishlist" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Wishlist
                 </Link>
@@ -953,7 +953,7 @@ useEffect(() => {
                 <Link 
                   to="/aboutpage" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-3 py-2 text-base font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   About
                 </Link>
@@ -982,7 +982,7 @@ useEffect(() => {
                     <Link 
                       to="/patientinformation"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 mx-0"
+                      className="flex items-center px-3 py-2 text-sm text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 mx-0"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -1244,7 +1244,7 @@ useEffect(() => {
                   })()}
                   <div 
                     onClick={closeViewOrderModal}
-                    className="cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"
+                    className="cursor-pointer text-gray-500 hover:text-black text-[50px]"
                   >
                     ×
                   </div>
@@ -1363,25 +1363,25 @@ useEffect(() => {
                           
                           <div className="space-y-4">
                             <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
-                              <span className="text-gray-700 font-medium font-albertsans">Item:</span>
+                              <span className="text-black font-medium font-albertsans">Item:</span>
                               <span className="font-semibold font-albertsans text-gray-800 text-sm text-right">{productName}</span>
                             </div>
                             <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
-                              <span className="text-gray-700 font-medium font-albertsans">Unit Price:</span>
+                              <span className="text-black font-medium font-albertsans">Unit Price:</span>
                               <span className="font-semibold font-albertsans">₱{Number(productPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             </div>
                             <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
-                              <span className="text-gray-700 font-medium font-albertsans">Quantity:</span>
+                              <span className="text-black font-medium font-albertsans">Quantity:</span>
                               <span className="font-semibold font-albertsans">x{productQuantity}</span>
                             </div>
                             <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
-                              <span className="text-gray-700 font-medium font-albertsans">Subtotal:</span>
+                              <span className="text-black font-medium font-albertsans">Subtotal:</span>
                               <span className="font-semibold font-albertsans">₱{(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             </div>
                             
                             <div className={`bg-white p-5 rounded-lg border shadow-sm ${isAmbher ? 'border-green-300' : 'border-blue-300'}`}>
                               <div className="flex justify-between items-center mb-3">
-                                <span className="text-gray-700 font-medium font-albertsans text-sm">
+                                <span className="text-black font-medium font-albertsans text-sm">
                                   {Number(amountPaid) < Number(productTotal) ? 'Down Payment:' : 'Amount Paid:'}
                                 </span>
                                 <span className="font-bold font-albertsans text-[#5c5c5c] text-lg">₱{Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -1389,7 +1389,7 @@ useEffect(() => {
                               
                               {Number(amountPaid) < Number(productTotal) && (
                                 <div className="flex justify-between items-center mb-3">
-                                  <span className="text-gray-700 font-medium font-albertsans text-sm">Remaining Balance:</span>
+                                  <span className="text-black font-medium font-albertsans text-sm">Remaining Balance:</span>
                                   <span className="font-bold font-albertsans text-[#c53636] text-lg">₱{(Number(productTotal) - Number(amountPaid)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                                 </div>
                               )}
@@ -1536,7 +1536,7 @@ useEffect(() => {
                                 </div>
                               </div>
                               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed font-albertsans">{orderNotes}</p>
+                                <p className="text-black whitespace-pre-wrap text-sm leading-relaxed font-albertsans">{orderNotes}</p>
                               </div>
                             </div>
                           )}

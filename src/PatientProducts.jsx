@@ -1683,21 +1683,21 @@ useEffect(() => {
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               {localStorage.getItem("patienttoken") && (
                 <Link 
                   to="/patientdashboard" 
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Appointments
                 </Link>
               )}
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
@@ -1705,13 +1705,13 @@ useEffect(() => {
                 <>
                   <Link 
                     to="/patientwishlist" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Wishlist
                   </Link>
                   <Link 
                     to="/patientorders" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Orders
                   </Link>
@@ -1719,7 +1719,7 @@ useEffect(() => {
               )}
               <Link 
                 to="/aboutpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 About
               </Link>
@@ -1729,7 +1729,7 @@ useEffect(() => {
             <div className="lg:hidden flex items-center space-x-4">
               <div
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="mobile-menu-button p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -1759,7 +1759,7 @@ useEffect(() => {
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -1790,7 +1790,7 @@ useEffect(() => {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -1825,7 +1825,7 @@ useEffect(() => {
             {/* Mobile Navigation Links */}
             <Link 
               to="/patientlandingpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
@@ -1833,7 +1833,7 @@ useEffect(() => {
             {localStorage.getItem("patienttoken") && (
               <Link 
                 to="/patientdashboard" 
-                className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Appointments
@@ -1841,7 +1841,7 @@ useEffect(() => {
             )}
             <Link 
               to="/patientproducts" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Store
@@ -1850,14 +1850,14 @@ useEffect(() => {
               <>
                 <Link 
                   to="/patientwishlist" 
-                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Wishlist
                 </Link>
                 <Link 
                   to="/patientorders" 
-                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Orders
@@ -1866,7 +1866,7 @@ useEffect(() => {
             )}
             <Link 
               to="/aboutpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
@@ -1896,7 +1896,7 @@ useEffect(() => {
                   
                   <Link 
                     to="/patientinformation" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
@@ -1995,7 +1995,7 @@ useEffect(() => {
                     className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
                       ${activeambherinventorycategorytable === 'all'
                         ? 'bg-[#2781af] rounded-2xl text-white'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     <span>All</span>
                     <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
@@ -2015,7 +2015,7 @@ useEffect(() => {
                           className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
                             ${activeambherinventorycategorytable === category.ambherinventorycategoryname
                               ? 'bg-[#2781af] rounded-2xl text-white'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                              : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                         >
                           <span>{category.ambherinventorycategoryname}</span>
                           <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
@@ -2067,7 +2067,7 @@ useEffect(() => {
                         className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
                           ${activeAmbherProductFilter === filter.id
                             ? 'bg-[#2781af] rounded-2xl text-white'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                            : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                         onClick={() => setActiveAmbherProductFilter(filter.id)}
                       >
                         <span>{filter.label}</span>
@@ -2094,7 +2094,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${pricesortingProducts === 'Highesttolowest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Highest to Lowest
                   </div>
@@ -2104,7 +2104,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${pricesortingProducts === 'Lowesttohighest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Lowest to Highest
                   </div>
@@ -2129,7 +2129,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'Highesttolowest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Highest to Lowest
                   </div>
@@ -2139,7 +2139,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'Lowesttohighest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Lowest to Highest
                   </div>
@@ -2149,7 +2149,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'OutOfStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Out of Stock
                   </div>
@@ -2159,7 +2159,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'CriticalStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Critical Stock (1-3)
                   </div>
@@ -2169,7 +2169,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'LowStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Low Stock (4-6)
                   </div>
@@ -2330,7 +2330,7 @@ useEffect(() => {
                            <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                 <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
                    
-                            <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}}  className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
+                            <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}}  className="mr-5 cursor-pointer text-gray-500 hover:text-black text-[50px]"> × </div>
                                 </div>
 
 
@@ -2535,7 +2535,7 @@ useEffect(() => {
                     className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
                       ${activebautistainventorycategorytable === 'all'
                         ? 'bg-[#2781af] rounded-2xl text-white'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     <span>All</span>
                     <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
@@ -2555,7 +2555,7 @@ useEffect(() => {
                           className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center w-full
                             ${activebautistainventorycategorytable === category.bautistainventorycategoryname
                               ? 'bg-[#2781af] rounded-2xl text-white'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                              : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                         >
                           <span>{category.bautistainventorycategoryname}</span>
                           <span className="ml-2 bg-gray-200 text-gray-600 font-semibold px-2 rounded-full text-xs">
@@ -2607,7 +2607,7 @@ useEffect(() => {
                         className={`cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium flex items-center justify-center 
                           ${activeBautistaProductFilter === filter.id
                             ? 'bg-[#2781af] rounded-2xl text-white'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                            : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                         onClick={() => setActiveBautistaProductFilter(filter.id)}
                       >
                         <span>{filter.label}</span>
@@ -2634,7 +2634,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${pricesortingProducts === 'Highesttolowest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Highest to Lowest
                   </div>
@@ -2644,7 +2644,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${pricesortingProducts === 'Lowesttohighest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Lowest to Highest
                   </div>
@@ -2669,7 +2669,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'Highesttolowest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Highest to Lowest
                   </div>
@@ -2679,7 +2679,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'Lowesttohighest'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Lowest to Highest
                   </div>
@@ -2689,7 +2689,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'OutOfStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Out of Stock
                   </div>
@@ -2700,7 +2700,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'CriticalStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Critical Stock (1-3)
                   </div>
@@ -2710,7 +2710,7 @@ useEffect(() => {
                     className={`text-center w-full cursor-pointer px-4 py-2 rounded-2xl border transition-all duration-200 text-sm font-medium
                       ${quantitySortingProducts === 'LowStock'
                         ? 'bg-[#2781af] text-white border-[#2781af]'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                        : 'bg-white text-black border-gray-300 hover:bg-blue-50'}`}
                   >
                     Low Stock (4-6)
                   </div>
@@ -2856,7 +2856,7 @@ useEffect(() => {
                          <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-4">
                            <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                 <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
-                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
+                                  <div onClick={() => {setbautistaCount(1); setselectedbautistaproduct(null);setshowpatientbautistaviewproduct(false)}} className="mr-5 cursor-pointer text-gray-500 hover:text-black text-[50px]"> × </div>
 
                                 </div>
 
@@ -3095,7 +3095,7 @@ useEffect(() => {
               <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
               <button 
                 onClick={closeViewOrderModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-gray-500 hover:text-black transition-colors"
               >
                 <i className="bx bx-x text-3xl"></i>
               </button>
@@ -3232,7 +3232,7 @@ useEffect(() => {
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Order Notes</h3>
                 <div className="bg-gray-50 p-4 rounded-lg min-h-24">
                   {selectedOrderForView.patientorderambherproductdescription || selectedOrderForView.patientorderbautistaproductdescription ? (
-                    <p className="text-gray-700 whitespace-pre-wrap">
+                    <p className="text-black whitespace-pre-wrap">
                       {selectedOrderForView.patientorderambherproductdescription || selectedOrderForView.patientorderbautistaproductdescription}
                     </p>
                   ) : (

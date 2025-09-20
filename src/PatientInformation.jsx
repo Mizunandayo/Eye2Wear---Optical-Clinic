@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, {useEffect, useRef, useState} from "react";
 import {Link, Navigate} from "react-router-dom";
-
+import eye2wearbg from "../src/assets/images/eye2wearbg.png";
 import landingbg2 from "../src/assets/images/landingbg2.png";
 import navlogo from  "../src/assets/images/navlogo.png";
 import Typewriter from "typewriter-effect";
@@ -877,7 +877,12 @@ const submitpatientdemographic = async (e) => {
 
 
       {/* Main Content */}
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 pt-16">
+      <div className="min-h-screen  pt-16" style={{
+        backgroundImage: `url(${eye2wearbg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
         <div className="container mx-auto px-4 py-8">
 
 

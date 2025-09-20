@@ -922,19 +922,19 @@ function PatientLandingpage() {
           
           <div class="flex items-center gap-2">
             <i class="bx bx-target-lock text-blue-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-gray-700">Accuracy: ±${Math.round(userLocation.accuracy)} meters</span>
+            <span class="text-sm text-black">Accuracy: ±${Math.round(userLocation.accuracy)} meters</span>
           </div>
           
           ${userLocation.altitude ? `
           <div class="flex items-center gap-2">
             <i class="bx bx-trending-up text-green-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-gray-700">Altitude: ${Math.round(userLocation.altitude)}m</span>
+            <span class="text-sm text-black">Altitude: ${Math.round(userLocation.altitude)}m</span>
           </div>
           ` : ''}
           
           <div class="flex items-center gap-2">
             <i class="bx bx-time text-gray-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-gray-700">Updated: ${new Date(userLocation.timestamp).toLocaleTimeString()}</span>
+            <span class="text-sm text-black">Updated: ${new Date(userLocation.timestamp).toLocaleTimeString()}</span>
           </div>
         </div>
         
@@ -1279,21 +1279,21 @@ const handleFullscreenChange = () => {
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               {localStorage.getItem("patienttoken") && (
                 <Link 
                   to="/patientdashboard" 
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 >
                   Appointments
                 </Link>
               )}
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
@@ -1301,13 +1301,13 @@ const handleFullscreenChange = () => {
                 <>
                   <Link 
                     to="/patientwishlist" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Wishlist
                   </Link>
                   <Link 
                     to="/patientorders" 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   >
                     Orders
                   </Link>
@@ -1315,7 +1315,7 @@ const handleFullscreenChange = () => {
               )}
               <Link 
                 to="/aboutpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 About
               </Link>
@@ -1325,7 +1325,7 @@ const handleFullscreenChange = () => {
             <div className="lg:hidden flex items-center space-x-4">
               <div
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="mobile-menu-button p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -1355,7 +1355,7 @@ const handleFullscreenChange = () => {
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -1386,7 +1386,7 @@ const handleFullscreenChange = () => {
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -1424,7 +1424,7 @@ const handleFullscreenChange = () => {
             {/* Mobile Navigation Links */}
             <Link 
               to="/patientlandingpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
@@ -1432,7 +1432,7 @@ const handleFullscreenChange = () => {
             {localStorage.getItem("patienttoken") && (
               <Link 
                 to="/patientdashboard" 
-                className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Appointments
@@ -1440,7 +1440,7 @@ const handleFullscreenChange = () => {
             )}
             <Link 
               to="/patientproducts" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Store
@@ -1449,14 +1449,14 @@ const handleFullscreenChange = () => {
               <>
                 <Link 
                   to="/patientwishlist" 
-                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Wishlist
                 </Link>
                 <Link 
                   to="/patientorders" 
-                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                  className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Orders
@@ -1465,7 +1465,7 @@ const handleFullscreenChange = () => {
             )}
             <Link 
               to="/aboutpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
@@ -1495,7 +1495,7 @@ const handleFullscreenChange = () => {
                   
                   <Link 
                     to="/patientinformation" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
@@ -1557,13 +1557,13 @@ const handleFullscreenChange = () => {
           <div className=" w-full lg:w-[50%] h-full items-center justify-center mb-40 px-4 sm:px-8 lg:pl-14">
 
             <img src={landinglogodark} className="w-60 sm:w-80 lg:w-130 mt-5 ml-0 lg:ml-16 mx-auto lg:mx-0"/>
-            <h1 className="text-[24px] sm:text-[32px] lg:text-[40px] text-center lg:text-left pl-0 lg:pl-17 mt-6 sm:mt-8 font-albertsans font-bold italic text-[#2d2d44]">
+            <h1 className="text-[24px] sm:text-[32px] lg:text-[40px] text-center lg:text-left pl-0 lg:pl-17 mt-6 sm:mt-8 font-albertsans font-bold italic text-black">
               <Typewriter options={{
                 strings: ['Greet the world with a better view!', 'In collaboration with:', 'Ambher Optical,', 'Bautista Eye Center,', 'and DevOps Team!'], 
                 autoStart: true, loop: true, cursor: '|'}}/>
             </h1>
             <div className=" ml-0 lg:ml-17 mr-0 lg:mr-28  pb-5">
-              <p className="text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mt-6 sm:mt-8 font-medium font-albertsans text-[#2d2d44]">"Redefining eyewear with style, innovation, and clarity. Experience the future of vision at Eye2Wear—where every eyesight tells a story."</p>
+              <p className="text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mt-6 sm:mt-8 font-medium font-albertsans text-black">"Redefining eyewear with style, innovation, and clarity. Experience the future of vision at Eye2Wear—where every eyesight tells a story."</p>
               <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-10 justify-center lg:justify-start">
                 <div className="flex justify-center align-middle p-3 bg-gray-800 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all"><i className="bx bx-expand-alt mt-1 pr-2 font-bold text-white"/><p className="font-semibold text-white">Explore</p></div>
                 {localStorage.getItem("patienttoken") && (
@@ -1601,8 +1601,8 @@ const handleFullscreenChange = () => {
       <section className="bg-white min-h-[160vh] w-[99.5%]">
         <div className="bg-cover bg-center w-full min-h-screen flex flex-col items-center px-4 sm:px-8">
           <img src={lonelogo} className="w-20 sm:w-24 lg:w-30 mt-20 sm:mt-24 lg:mt-30" style={{ animation: 'spin 8s linear infinite' }}/>
-          <h1 className="font-albertsans font-bold italic text-[#25255b] text-[18px] sm:text-[22px] lg:text-[25px] mt-5 text-center">A shared foundation to <span className="text-sky-600 font-matimo">serve the best</span> optical clinic</h1>
-          <h2 className="text-[14px] sm:text-[16px] lg:text-[18px] font-medium italic text-[#2d2d44] text-center">Redefining the patient experience</h2>
+          <h1 className="font-albertsans font-bold italic text-black text-[18px] sm:text-[22px] lg:text-[25px] mt-5 text-center">A shared foundation to <span className="text-sky-600 font-matimo">serve the best</span> optical clinic</h1>
+          <h2 className="text-[14px] sm:text-[16px] lg:text-[18px] font-medium text-black text-center">Redefining the patient experience</h2>
           <div className="w-full h-max flex justify-center align-center">
             <div className="mt-8 sm:mt-12 lg:mt-15 w-full max-w-[1400px] h-auto lg:h-[800px] flex flex-col lg:flex-row justify-between align-center gap-4 lg:gap-0">
               <div className="h-auto lg:h-full w-full lg:w-[70%]">
@@ -1915,7 +1915,7 @@ const handleFullscreenChange = () => {
                 ) : !filteredClinics || filteredClinics.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <div className="text-4xl mb-2">🏥</div>
-                    <h3 className="font-bold text-gray-700 text-lg mb-2">No Clinics Found</h3>
+                    <h3 className="font-bold text-black text-lg mb-2">No Clinics Found</h3>
                     <p className="text-sm">
                       {clinicFilter === 'all' ? 'No clinics available in this area' : 
                        clinicFilter === 'ambher' ? 'No Ambher Optical clinics found' :

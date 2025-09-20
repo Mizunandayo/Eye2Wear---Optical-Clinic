@@ -6,7 +6,11 @@ import landingbg2 from "../src/assets/images/landingbg2.png";
 import landinglogodark from  "../src/assets/images/landinglogodark.png";
 import {Link} from "react-router-dom";
 import axios from "axios";
-
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import eye2wearbg from "../src/assets/images/eye2wearbg.png";
 
 
 
@@ -374,184 +378,396 @@ else if(user === 'Owner'){
 
 
  return (
-            <>
+
+<>
+<section className="absolute inset-0 h-full w-full" style={{
+  backgroundImage: `url(${eye2wearbg})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat'
+}}>
+
+      <div className="flex flex-col gap-4 p-6 h-full md:p-10  backdrop-blur-sm text-gray-900">
+
         
+        {/* Login Form Container */}
+        <div  className=" bg-white shadow-lg rounded-3xl border-1 border-black/50  flex flex-1 flex-col gap-5 items-center justify-center">
+                 {/* Logo */}
+        <div className=" flex justify-center gap-2 md:justify-start">
+          <div className="mb-1 flex items-center gap-2">
+            <img src={landinglogodark} alt="Eye2Wear" className="h-20 w-auto" />
+          </div>
+        </div>
+          <div className="  w-full max-w-sm mx-auto">
+            {/* Login Form */}
+            <form className=" flex flex-col gap-6" onSubmit={handleloginsubmit}>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-2xl font-bold text-sky-700">Login to your account</h1>
+                <p className="text-gray-600 text-sm">
+                  Enter your email below to login to your account
+                </p>
+              </div>
+              
+              {/* Error/Success Messages */}
+              {loginnotice.text && (
+                <div 
+                  className="text-center p-3 rounded-md text-sm font-medium"
+                  style={{
+                    backgroundColor: loginnotice.type === 'error' ? '#fef2f2' : '#f0fdf4',
+                    color: loginnotice.type === 'error' ? '#dc2626' : '#16a34a',
+                    border: `1px solid ${loginnotice.type === 'error' ? '#fecaca' : '#bbf7d0'}`
+                  }}
+                >
+                  {loginnotice.text}
+                </div>
+              )}
+              
+              {/* Resend Verification Button */}
+              {showResendVerification && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResendingVerification}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563eb',
+                      textDecoration: 'underline',
+                      fontSize: '14px',
+                      cursor: isResendingVerification ? 'not-allowed' : 'pointer',
+                      opacity: isResendingVerification ? 0.5 : 1,
+                      padding: '8px 0'
+                    }}
+                  >
+                    {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                  </button>
+                </div>
+              )}
 
-
-      <section className="h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center px-4 sm:px-0" style={{ backgroundImage: `url(${landingbg2})` }}>
-
-
-
-      <div className="mb-6 sm:mb-10">
-        <img src={landinglogodark} className="w-32 sm:w-40 lg:w-130 ml-4 sm:ml-8 lg:ml-16"/>
+              <div className="grid gap-6">
+                {/* Email Field */}
+                <div className="grid gap-3">
+                  <Label htmlFor="loginemail" className="text-gray-900 text-sm">Email</Label>
+                  <Input
+                    id="loginemail"
+                    type="email"
+                    name="loginemail"
+                    placeholder="m@example.com"
+                    value={logindetails.loginemail}
+                    onChange={handleloginchange}
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                    required
+                  />
+                </div>
+                
+                {/* Password Field */}
+                <div className="grid gap-3">
+                  <div className="flex items-center">
+                    <Label htmlFor="loginpassword" className="text-gray-900 text-sm">Password</Label>
+                    <button
+                      type="button"
+                      onClick={() => setshowforgotpasswordform(true)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        textDecoration: 'underline',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        padding: '0',
+                        marginLeft: 'auto'
+                      }}
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="loginpassword"
+                      type={showPassword ? "text" : "password"}
+                      name="loginpassword"
+                      placeholder=""
+                      value={logindetails.loginpassword}
+                      onChange={handleloginchange}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        color: '#6b7280'
+                      }}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Login Button */}
+                <button 
+                  type="submit" 
+                  disabled={islogin}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    backgroundColor: islogin ? '#9ca3af' : '#1f2937',
+                    color: islogin ? '#6b7280' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: islogin ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!islogin) {
+                      e.target.style.backgroundColor = '#374151';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!islogin) {
+                      e.target.style.backgroundColor = '#1f2937';
+                    }
+                  }}
+                >
+                  {islogin ? (
+                    <>
+                      <div 
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid currentColor',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}
+                      />
+                      Logging In...
+                    </>
+                  ) : (
+                    "Login"
+                  )}
+                </button>
+                
+                {/* Or continue with */}
+                <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-gray-300">
+                  <span className="relative z-10 px-2 text-gray-600 bg-white">
+                    Or continue with
+                  </span>
+                </div>
+                
+                {/* GitHub Login Button */}
+                <button 
+                  type="button"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    backgroundColor: 'transparent',
+                    color: '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f9fafb';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4">
+                    <path
+                      d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Login with GitHub
+                </button>
+              </div>
+              
+              {/* Sign Up Link */}
+              <div className="text-center text-sm text-gray-600">
+                Don&apos;t have an account?{" "}
+                <Link 
+                  to="/patientregistration" 
+                  className="text-gray-900 underline underline-offset-4 hover:text-gray-700"
+                >
+                  Sign up
+                </Link>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
 
-
-
-
-      <div className="login-container  bg-gradient-to-tl flex rounded-2xl lg:rounded-4xl shadow-lg w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-135 lg:h-140 h-fit py-8 lg:py-0">
-
-          <form className="flex flex-col w-full px-6 lg:ml-15 lg:mt-15 lg:mr-15" onSubmit={handleloginsubmit}>
-
-          <h1 className="font-league text-[#3da9d1] text-2xl lg:text-[30px] mt-2 lg:mt-5 text-center lg:text-left">Sign In</h1>
-             {loginnotice.text && (
-              <div className={`message ${loginnotice.type} text-${loginnotice.type === 'error' ? 'red' : 'green'}-600 font-bold text-sm lg:text-base text-center lg:text-left`}>
-             {loginnotice.text}
-          </div>
-         )}
-         
-         {/* Resend Verification Button */}
-         {showResendVerification && (
-           <div className="mt-2 text-center lg:text-left">
-             <button
-               type="button"
-               onClick={handleResendVerification}
-               disabled={isResendingVerification}
-               className="text-[#125c99] hover:text-[#0f4a7a] font-medium text-sm underline disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-               {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
-             </button>
-           </div>
-         )}
-         
-              <h1 className="font-albertsans italic text-[#060606] text-base lg:text-[20px] text-center lg:text-left">Hi there nice to see you again.</h1>
-
-
-          <div className="form-group mt-6 lg:mt-10 flex flex-col lg:flex-row lg:items-center">
-            <label className="font-albertsans font-bold italic text-[#595968] text-lg lg:text-[21px] mb-2 lg:mb-0 lg:w-28" htmlFor= "loginemail">Email :</label>
-            <input className="bg-gray-200 text-lg lg:text-[20px] text-gray-600 pl-3 rounded-2xl lg:ml-6 h-10 w-full lg:w-auto lg:flex-1" placeholder="Enter your email..." type="text" name= "loginemail" id="loginemail" value={logindetails.loginemail} onChange={handleloginchange} required/></div>
-
-          <div className="form-group mt-4 lg:mt-5 flex flex-col lg:flex-row lg:items-center">
-            <label className="font-albertsans font-bold italic text-[#595968] text-lg lg:text-[21px] mb-2 lg:mb-0 lg:w-28" htmlFor="loginpassword">Password :</label>
-            <div style={{ position: 'relative', width: '100%', flex: 1, marginLeft: '1.5rem' }}>
-              <input 
-                className="bg-gray-200 text-lg lg:text-[20px] text-gray-600 pl-3 pr-12 rounded-2xl h-10 w-full lg:w-auto lg:flex-1" 
-                placeholder="Enter your password..."  
-                type={showPassword ? "text" : "password"} 
-                name="loginpassword" 
-                id="loginpassword" 
-                value={logindetails.loginpassword} 
-                onChange={handleloginchange} 
-                required 
-                min="6"
-              />
-              <button
-                type="button"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  right: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  paddingRight: '12px',
-                  color: '#9ca3af',
-                  cursor: 'pointer',
-                  border: 'none',
-                  background: 'transparent',
-                  transition: 'color 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
-                onClick={() => setShowPassword(!showPassword)}
+            {/* Forgot Password Modal */}
+      {showforgotpasswordform && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <div className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200">
+            <form onSubmit={forgotpassword}>
+              <div 
+                className="flex items-center gap-3 px-6 py-4"
+                style={{ backgroundColor: '#f8fafc' }}
               >
-                <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
-              </button>
-            </div>
+                <Lock className="h-6 w-6 text-gray-700" />
+                <h2 className="text-xl font-semibold text-gray-900">Forgot Password</h2>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <p className="text-gray-600 text-sm">
+                  Please enter your registered email below...
+                </p>
+                
+                {forgotpasswordmessage.text && (
+                  <div 
+                    className="p-3 rounded-lg text-sm font-medium"
+                    style={{
+                      backgroundColor: forgotpasswordmessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                      color: forgotpasswordmessage.type === 'success' ? '#16a34a' : '#dc2626',
+                      border: `1px solid ${forgotpasswordmessage.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                    }}
+                  >
+                    {forgotpasswordmessage.text}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="forgotemail" className="text-gray-900 text-sm">Email</Label>
+                  <Input
+                    id="forgotemail"
+                    type="email"
+                    name="forgotemail"
+                    placeholder="Enter your email..."
+                    value={forgotpasswordemail}
+                    onChange={(e) => setforgotpasswordemail(e.target.value)}
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 px-6 pb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setshowforgotpasswordform(false);
+                    setforgotpasswordemail('');
+                    setforgotpasswordmessage({text:'', type: ''});
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: 'transparent',
+                    color: '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f9fafb';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={issendingresetlink}
+                  style={{
+                    padding: '10px 24px',
+                    backgroundColor: issendingresetlink ? '#9ca3af' : '#1f2937',
+                    color: issendingresetlink ? '#6b7280' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: issendingresetlink ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!issendingresetlink) {
+                      e.target.style.backgroundColor = '#374151';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!issendingresetlink) {
+                      e.target.style.backgroundColor = '#1f2937';
+                    }
+                  }}
+                >
+                  {issendingresetlink ? (
+                    <>
+                      <div 
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid currentColor',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}
+                      />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-          
-          <div className="h-[30px] mt-2 flex justify-center lg:justify-end items-center pr-2"><p  onClick={() => setshowforgotpasswordform(true)} className="text-xs lg:text-[14px] hover:cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out font-albertsans font-medium text-[#1b5770]">Forgot Password?</p></div>
-
-
-
-
-            <button type="submit" disabled={islogin} className={`submit-btn mt-8 lg:mt-12 flex items-center justify-center gap-2 ${islogin ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out text-lg lg:text-[20px] py-2 lg:py-3 px-4 lg:px-5 text-white rounded-2xl w-full`} style={{ backgroundColor: islogin ? "#9ca3af" : "#2b2b44" }}> 
-              {islogin ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Logging In...</span>
-                </>
-              ) : (
-                "Log In"
-              )}
-            </button>
-
-
-
-            <div className="flex items-center justify-center mt-4 lg:mt-5 flex-wrap gap-1">
-              <h1 className="text-sm lg:text-[16px] font-semibold text-[#4b4b53]">Don't have an account?</h1>
-              <Link to="/patientregistration"> <div className="flex justify-center items-center p-2 lg:p-3 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-base lg:text-[18px] text-[#177084]">Sign Up</p></div></Link>
-            </div>
-
-           </form>
-
-
-
-        {showforgotpasswordform && (
-                         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 px-4">
-
-                           <div className="flex flex-col items bg-white rounded-2xl w-full max-w-lg lg:max-w-xl lg:w-[600px] h-fit animate-fadeInUp">
-                           <form className="flex flex-col w-full h-fit"  onSubmit={forgotpassword}>
-
-                              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[60px] lg:h-[70px] bg-[#125c99] px-3"><i className="bx bx-shield-quarter text-2xl lg:text-[28px] font-albertsans font-bold text-[#f1f1f1]"/><h1 className="ml-2 text-lg lg:text-[23px] font-albertsans font-bold text-[#e4e4e4]">Forgot Password</h1></div>
-                              <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
-                                  <div className="px-4 lg:px-5 flex flex-col justify-center h-fit py-4 lg:h-[130px] w-full"><p className="font-albertsans font-medium text-lg lg:text-[20px]">Please enter your registered email below...</p>
+        </div>
+      )}
       
-                                  {forgotpasswordmessage.text && (
-                                    <div className={`text-sm ${
-                                      forgotpasswordmessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                                    {forgotpasswordmessage.text}</div>
-                                  )}
+      {/* Add keyframe animation for spinner */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
 
-                                  <div className="form-group mt-4 lg:mt-5 flex flex-col lg:flex-row lg:items-center">
-                                       <label className="font-albertsans font-bold italic text-[#595968] text-lg lg:text-[21px] mb-2 lg:mb-0 lg:w-20" htmlFor= "forgotemail">Email :</label>
-                                      <input className="bg-gray-200 text-lg lg:text-[20px] text-gray-600 pl-3 rounded-2xl lg:ml-11 h-10 w-full lg:flex-1" placeholder="Enter your email..." type="email" name= "forgotemail" id="forgotemail" value={forgotpasswordemail} onChange={(e) => setforgotpasswordemail(e.target.value)} required/></div>
-                                  </div>        
-                                  <div className="px-4 lg:pr-5 flex justify-center lg:justify-end items-center h-[60px] lg:h-[80px] w-full gap-2">
-                                      <div onClick={() => {setshowforgotpasswordform(false); setforgotpasswordemail(''); setforgotpasswordmessage({text:'', type: ''});}}  className="hover:scale-105 hover:cursor-pointer transition-all duration-300 ease-in-out bg-[#363638] rounded-2xl px-4 lg:px-6 py-2 lg:py-3"><span className="font-albertsans text-white font-medium text-sm lg:text-base">Cancel</span></div>
-                    
-
-                                      <button type="submit" disabled={issendingresetlink} className={`flex items-center justify-center gap-2 ${issendingresetlink ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105 hover:cursor-pointer'} transition-all duration-300 ease-in-out rounded-2xl px-6 lg:px-9 py-2 lg:py-3`} style={{ backgroundColor: issendingresetlink ? "#9ca3af" : "#1b5f83"}}> 
-                                       {issendingresetlink ? (
-                                        <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                        <span className="font-albertsans text-white font-medium text-sm lg:text-base">Sending...</span>
-                                        </>
-                                       ):(
-                                        <span className="font-albertsans text-white font-medium text-sm lg:text-base">Send</span>
-                                       )}
-                                       </button>
-
-                                  </div>
-                              </div>
-
-                           </form>
-                           </div>
-                         </div>
-                     )} 
+</section>
 
 
 
-
-
-                  
-      
-
-
-
-    </div>
-
-
-    </section>
-
-
-
-
-
-
-             
-            </>
-          )
+    </>
+  );
         }
         
         export default UserLogin

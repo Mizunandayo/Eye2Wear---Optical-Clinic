@@ -1132,37 +1132,37 @@ const WishlistGridSkeleton = () => (
             <nav className="hidden lg:flex space-x-1">
               <Link 
                 to="/patientlandingpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Home
               </Link>
               <Link 
                 to="/patientdashboard" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Appointments
               </Link>
               <Link 
                 to="/patientproducts" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Store
               </Link>
               <Link 
                 to="/patientwishlist" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Wishlist
               </Link>
               <Link 
                 to="/patientorders" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 Orders
               </Link>
               <Link 
                 to="/aboutpage" 
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               >
                 About
               </Link>
@@ -1172,7 +1172,7 @@ const WishlistGridSkeleton = () => (
             <div className="lg:hidden flex items-center space-x-4">
               <div
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="mobile-menu-button p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="mobile-menu-button p-2 rounded-lg text-black hover:bg-gray-100 transition-colors duration-200"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -1202,8 +1202,8 @@ const WishlistGridSkeleton = () => (
                       className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-200"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">{patientfirstname}</span>
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-black hidden sm:block">{patientfirstname}</span>
+                  <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -1226,14 +1226,14 @@ const WishlistGridSkeleton = () => (
                         )}
                         <div>
                           <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
-                          <p className="text-xs text-gray-500">Patient Account</p>
+                          <p className="text-xs text-black">Patient Account</p>
                         </div>
                       </div>
                     </div>
                     
                     <Link 
                       to="/patientinformation" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                      className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 transition-colors"
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
                       Demographic Profile
@@ -1268,42 +1268,42 @@ const WishlistGridSkeleton = () => (
             {/* Mobile Navigation Links */}
             <Link 
               to="/patientlandingpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link 
               to="/patientdashboard" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Appointments
             </Link>
             <Link 
               to="/patientproducts" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Store
             </Link>
             <Link 
               to="/patientwishlist" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Wishlist
             </Link>
             <Link 
               to="/patientorders" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               Orders
             </Link>
             <Link 
               to="/aboutpage" 
-              className="block px-4 py-3 text-sm font-medium text-gray-700 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
+              className="block px-4 py-3 text-sm font-medium text-black hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
@@ -1327,13 +1327,13 @@ const WishlistGridSkeleton = () => (
                     )}
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900">{patientfirstname}</p>
-                      <p className="text-xs text-gray-500">Patient Account</p>
+                      <p className="text-xs text-black">Patient Account</p>
                     </div>
                   </div>
                   
                   <Link 
                     to="/patientinformation" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
+                    className="flex items-center px-4 py-3 text-sm text-black hover:bg-sky-50 hover:text-sky-600 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="mr-3 w-4 h-4" />
@@ -1390,17 +1390,17 @@ const WishlistGridSkeleton = () => (
                 </div>
 
     <div className="flex flex-col sm:flex-row justify-start items-center mt-3 gap-2 sm:gap-0 sm:h-[60px] px-2">
-  {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-[#5d5d5d] ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
-    <div onClick={() => showinventorytable('ambherinventorytable')} className={`w-full sm:w-auto sm:mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
+  {/*<div onClick={() => showinventorytable('allinventorytable')}  className={`hover:rounded-2xl transition-all duration-300 ease-in-out  border-2 b-[#909090] rounded-3xl pl-25 pr-25 pb-3 pt-3 text-center flex justify-center items-center ${activeinventorytable ==='allinventorytable' ? 'bg-[#2781af] rounded-2xl' : ''}`}><h1 className= {`font-albertsans font-semibold text-black ${activeinventorytable ==='allinventorytable' ? 'text-white' : ''}`}>All</h1></div>*/}
+    <div onClick={() => showinventorytable('ambherinventorytable')} className={`gap-2 w-full sm:w-auto sm:mr-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='ambherinventorytable' ? 'bg-[#238823] rounded-2xl' : ''}`}>
       <img src={ambherlogo} className="w-5 h-5"/>      
-      <h1 className={`font-albertsans font-semibold text-[14px] sm:text-[16px] ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : 'text-[#5d5d5d]'}`}>
-        Ambher Optical <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{ambherWishlist.length}</span>
+      <h1 className={` font-albertsans font-semibold text-[14px] sm:text-[16px]  ${activeinventorytable ==='ambherinventorytable' ? 'text-white' : 'text-black'}`}>
+        Ambher Optical <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-black font-semibold ml-2">{ambherWishlist.length}</span>
       </h1>
     </div>
-    <div onClick={() => showinventorytable('bautistainventorytable')} className={`w-full sm:w-auto sm:ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
+    <div onClick={() => showinventorytable('bautistainventorytable')} className={`gap-2 w-full sm:w-auto sm:ml-3 hover:rounded-2xl hover:cursor-pointer cursor-pointer transition-all duration-300 ease-in-out border-2 b-[#909090] rounded-3xl px-4 sm:px-6 lg:px-8 py-3 text-center flex justify-center items-center ${activeinventorytable ==='bautistainventorytable' ? 'bg-sky-600 rounded-2xl' : ''}`}>
       <img src={bautistalogo} className ="w-5 h-5"/>
-      <h1 className={`font-albertsans font-semibold text-[14px] sm:text-[16px] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : 'text-[#5d5d5d]'}`}>
-        Bautista Eye Center <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-gray-500 font-semibold ml-2">{bautistaWishlist.length}</span>
+      <h1 className={`font-albertsans font-semibold text-[14px] sm:text-[16px] ${activeinventorytable ==='bautistainventorytable' ? 'text-white' : 'text-black'}`}>
+        Bautista Eye Center <span className="rounded-full text-xs sm:text-sm px-2 bg-gray-200 text-black font-semibold ml-2">{bautistaWishlist.length}</span>
       </h1>
     </div>
     
@@ -1513,7 +1513,7 @@ const WishlistGridSkeleton = () => (
                            <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                 <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
                    
-                            <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}}  className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
+                            <div onClick={() => {setambherCount(1); setselectedambherproduct(null); setshowpatientambherviewproduct(false)}}  className="mr-5 cursor-pointer text-black hover:text-black text-[50px]"> × </div>
                                 </div>
 
 
@@ -1795,7 +1795,7 @@ const WishlistGridSkeleton = () => (
                                    <div className="overflow-y-auto h-auto bg-opacity-0 flex justify-center items-start z-50 fixed inset-0 bg-[#000000af] bg-opacity-50 p-2 sm:p-4">
                                      <div className="motion-opacity-in-0 mt-2 sm:mt-10 px-3 sm:px-5 py-4 bg-[#fefefe] rounded-2xl w-full max-w-6xl h-auto mb-10 animate-fadeInUp">
                                           <div className="mt-2 sm:mt-5 flex justify-end items-center left-0 w-[100%] h-auto sm:h-[70px]">
-                                            <div onClick={() => {setbautistaCount(1); setshowpatientbautistaviewproduct(false)}} className="mr-5 cursor-pointer text-gray-500 hover:text-gray-700 text-[50px]"> × </div>
+                                            <div onClick={() => {setbautistaCount(1); setshowpatientbautistaviewproduct(false)}} className="mr-5 cursor-pointer text-black hover:text-black text-[50px]"> × </div>
           
                                           </div>
           

@@ -1,22 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import defaultprofilepic from '../src/assets/images/defaulticon.png';
 import { useNavigate } from "react-router-dom";
 import landinglogodark from  "../src/assets/images/landinglogodark.png";
+import eye2wearbg from '../src/assets/images/eye2wearbg.png';
 
 import React from "react";
-import landingbg2 from "../src/assets/images/landingbg2.png";
-import regbg from  "../src/assets/images/regbg.png";
 import {Link} from "react-router-dom";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 
 
 
 function PatientRegistration() {
 
-  const apiUrl = import.meta.env.VITE_API_URL;
-
   const navigate = useNavigate();
-  const emailcharacters = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailcharacters = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/, []);
 
   //Blank variables that stores all data to be sent to database
     const [formdata, setformdata] = useState({
@@ -96,7 +97,8 @@ function PatientRegistration() {
 
       const timer = setTimeout(debounceemailcheck, 500);
       return () => clearTimeout(timer); //Cleanup
-    }, [formdata.patientemail]);
+
+    }, [formdata.patientemail, emailcharacters]);
 
 
 
@@ -260,178 +262,237 @@ function PatientRegistration() {
 
   return (
     <>
+      <section className="absolute inset-0 h-full w-full" style={{
+        backgroundImage: `url(${eye2wearbg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="flex flex-col gap-4 p-6 h-full md:p-10 backdrop-blur-sm text-gray-900">
+          
+          {/* Registration Form Container */}
+          <div className=" bg-white w-150 shadow-lg rounded-3xl border-1 border-black/50 flex flex-1 flex-col gap-5 items-center justify-center">
+            {/* Logo */}
+            <div className="flex justify-center gap-2 md:justify-start">
+              <div className="mb-1 flex items-center gap-2">
+                <img src={landinglogodark} alt="Eye2Wear" className="h-20 w-auto" />
+              </div>
+            </div>
+            
+            <div className="w-full max-w-md mx-auto">
+              {/* Registration Form */}
+              <form className="flex flex-col gap-6" onSubmit={handlesubmit}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <h1 className="text-2xl font-bold text-sky-700">Create your account</h1>
+                  <p className="text-gray-600 text-sm">
+                    Enter your details below to create your account
+                  </p>
+                </div>
+                
+                {/* Error/Success Messages */}
+                {message.text && (
+                  <div 
+                    className="text-center p-3 rounded-md text-sm font-medium"
+                    style={{
+                      backgroundColor: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
+                      color: message.type === 'error' ? '#dc2626' : '#16a34a',
+                      border: `1px solid ${message.type === 'error' ? '#fecaca' : '#bbf7d0'}`
+                    }}
+                  >
+                    {message.text}
+                  </div>
+                )}
 
+                <div className="grid gap-2">
+                  {/* Email Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientemail" className="text-gray-900 text-sm">Email</Label>
+                    <Input
+                      id="patientemail"
+                      type="email"
+                      name="patientemail"
+                      placeholder="m@example.com"
+                      value={formdata.patientemail}
+                      onChange={handlechange}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      required
+                    />
+                    {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
+                    {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
+                    {emailerror && emailexist && (<p className= "text-red-500 text-sm mt-1">Email already exist</p>)}
+                  </div>
+                  
+                  {/* Password Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientpassword" className="text-gray-900 text-sm">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="patientpassword"
+                        type={showPassword ? "text" : "password"}
+                        name="patientpassword"
+                        placeholder="Enter your password..."
+                        value={formdata.patientpassword}
+                        onChange={handlechange}
+                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400 pr-10"
+                        required
+                        minLength="6"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          color: '#6b7280'
+                        }}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    {formdata.patientpassword && formdata.patientpassword.length > 0 && (
+                      <p className={`text-sm mt-1 transition-colors duration-200 ${
+                        formdata.patientpassword.length >= 6 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        {formdata.patientpassword.length >= 6 
+                          ? '✓ Password meets minimum length requirement' 
+                          : `Password must be at least 6 characters (${formdata.patientpassword.length}/6)`
+                        }
+                      </p>
+                    )}
+                  </div>
 
+                  {/* First Name Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientfirstname" className="text-gray-900 text-sm">First Name</Label>
+                    <Input
+                      id="patientfirstname"
+                      type="text"
+                      name="patientfirstname"
+                      placeholder="Enter your first name..."
+                      value={formdata.patientfirstname}
+                      onChange={handlechange}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      required
+                    />
+                  </div>
 
+                  {/* Last Name Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientlastname" className="text-gray-900 text-sm">Last Name</Label>
+                    <Input
+                      id="patientlastname"
+                      type="text"
+                      name="patientlastname"
+                      placeholder="Enter your last name..."
+                      value={formdata.patientlastname}
+                      onChange={handlechange}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      required
+                    />
+                  </div>
 
-
-            <section className="min-h-screen w-screen bg-cover bg-center flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8" style={{ backgroundImage: `url(${landingbg2})` }}>
-      
-      
-      
- 
-      
-      
-      
-      
-            <div className="justify-center items-center login-container bg-white bg-gradient-to-tl flex flex-col lg:flex-row rounded-xl sm:rounded-2xl lg:rounded-4xl h-auto lg:h-180 w-full max-w-sm sm:max-w-lg lg:max-w-none lg:w-290 shadow-lg overflow-hidden">
-
-
-
-
-      <div className="w-full h-full rounded-xl sm:rounded-2xl lg:rounded-4xl py-6 sm:py-8 lg:py-5">
-
-
-      <form className="flex flex-col mx-4 sm:mx-8 lg:ml-15 lg:mr-15 mt-2 w-full lg:w-120" onSubmit={handlesubmit}>
-      <div className="registration-container">
-       <img src={landinglogodark} className="w-48 sm:w-60 lg:w-70 mb-4 sm:mb-6 lg:mb-8 mx-auto lg:mx-0"/>
-      <h1 className="font-league text-[#3da9d1] text-[22px] sm:text-[26px] lg:text-[27px] text-center lg:text-left mb-2">Account Creation</h1>
-      {message.text && (
-        <div className={`message ${message.type} text-${message.type === 'error' ? 'red' : 'green'}-600 font-bold text-center lg:text-left mb-3`}>
-          {message.text}
+                  {/* Middle Name Field */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientmiddlename" className="text-gray-900 text-sm">Middle Name</Label>
+                    <Input
+                      id="patientmiddlename"
+                      type="text"
+                      name="patientmiddlename"
+                      placeholder="Enter your middle name..."
+                      value={formdata.patientmiddlename}
+                      onChange={handlechange}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Register Button */}
+                  <button 
+                    type="submit" 
+                    disabled={issubmitting}
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      backgroundColor: issubmitting ? '#9ca3af' : '#1f2937',
+                      color: issubmitting ? '#6b7280' : '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: issubmitting ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      marginTop: '10px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!issubmitting) {
+                        e.target.style.backgroundColor = '#374151';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!issubmitting) {
+                        e.target.style.backgroundColor = '#1f2937';
+                      }
+                    }}
+                  >
+                    {issubmitting ? (
+                      <>
+                        <div 
+                          style={{
+                            width: '14px',
+                            height: '14px',
+                            border: '2px solid transparent',
+                            borderTop: '2px solid currentColor',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}
+                        />
+                        Registering...
+                      </>
+                    ) : (
+                      "Register"
+                    )}
+                  </button>
+                </div>
+                
+                {/* Sign In Link */}
+                <div className="text-center text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <Link 
+                    to="/userlogin" 
+                    className="text-gray-900 underline underline-offset-4 hover:text-gray-700"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-      )}
-
-      <h1 className="font-albertsans italic text-[#060606] text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mb-6 sm:mb-8 lg:mb-6">Let's create your account!</h1>
-
-
-
-
-      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="email">Email :</label>
-      <div className="flex flex-col lg:ml-6 flex-1">
-      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your email..." type="text" name="patientemail" id="patientemail" value={formdata.patientemail} onChange={handlechange} required/>
-      {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-      {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-      {emailerror && emailexist && (<p className= "text-red-500 text-sm mt-1">Email already exist</p>)}
-   
-      </div>
-      </div>
-
-
-
-      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="passwrd">Password :</label>
-      <div className="space-y-2 lg:ml-6 flex-1">
-        <div className="relative">
-          <input 
-            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
-              !formdata.patientpassword || formdata.patientpassword.length === 0 
-                ? 'border-gray-300'
-                : formdata.patientpassword.length >= 6 
-                  ? 'border-green-300' 
-                  : 'border-red-300'
-            }`}
-            placeholder="Enter your password..." 
-            type={showPassword ? "text" : "password"}
-            name="patientpassword" 
-            id="patientpassword" 
-            value={formdata.patientpassword} 
-            onChange={handlechange} 
-            required 
-            min="6"
-          />
-          <button
-            type="button"
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              right: 0,
-              display: 'flex',
-              alignItems: 'center',
-              paddingRight: '12px',
-              color: '#9ca3af',
-              cursor: 'pointer',
-              border: 'none',
-              background: 'transparent',
-              transition: 'color 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-            onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`} style={{ fontSize: '20px' }} />
-          </button>
-        </div>
-        {formdata.patientpassword && formdata.patientpassword.length > 0 && (
-          <p className={`text-sm mt-1 transition-colors duration-200 ${
-            formdata.patientpassword.length >= 6 
-              ? 'text-green-600' 
-              : 'text-red-600'
-          }`}>
-            {formdata.patientpassword.length >= 6 
-              ? '✓ Password meets minimum length requirement' 
-              : `Password must be at least 6 characters (${formdata.patientpassword.length}/6)`
-            }
-          </p>
-        )}
-      </div>
-      </div>
-
-      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="lastname">Last Name :</label>
-      <div className="flex-1 lg:ml-6">
-      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your lastname..." type="text" name="patientlastname" id="patientlastname" value={formdata.patientlastname} onChange={handlechange} required/>
-      </div>
-      </div>
-
-      <div className="form-group mb-4 sm:mb-5 lg:mb-4 flex flex-col lg:flex-row lg:items-center">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="firstname">First Name :</label>
-      <div className="flex-1 lg:ml-6">
-      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your firstname..." type="text" name="patientfirstname" id="patientfirstname" value={formdata.patientfirstname} onChange={handlechange} required/>
-      </div>
-      </div>
-
-      <div className="form-group mb-6 sm:mb-8 lg:mb-6 flex flex-col lg:flex-row lg:items-center">
-      <label className="font-albertsans font-bold italic text-[#595968] text-[16px] sm:text-[18px] lg:text-[19px] mb-2 lg:mb-0 lg:w-32" htmlFor="middlename">Middle Name :</label>
-      <div className="flex-1 lg:ml-6">
-      <input className="bg-gray-200 text-[16px] sm:text-[18px] lg:text-[18px] text-gray-600 pl-3 rounded-2xl h-10 sm:h-11 lg:h-10 w-full" placeholder="Enter your middlename..." type="text" name="patientmiddlename" id="patientmiddlename" value={formdata.patientmiddlename} onChange={handlechange} required/>
-      </div>
-      </div>
-      
-
-     
-   
-      <button type="submit" disabled={issubmitting} className={`submit-btn w-full flex items-center justify-center gap-2 ${issubmitting ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-105'} transition-all duration-300 ease-in-out`} style={{ backgroundColor: issubmitting ? "#9ca3af" : "#2b2b44", fontSize: "18px", padding: "12px 20px", color: "white", borderRadius: "20px" }}>
-        {issubmitting ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            <span className="text-[16px] sm:text-[18px] lg:text-[18px]">Registering...</span>
-          </>
-        ) : (
-          <span className="text-[16px] sm:text-[18px] lg:text-[18px]">Register</span>
-        )}
-      </button>
-   
-       <div className="flex items-center justify-center mt-4 sm:mt-5 gap-1">
-       <h1 className="text-[14px] sm:text-[15px] lg:text-[15px] font-semibold text-[#4b4b53]">Already have an account?</h1>
-       <Link to="/userlogin"> <div className="flex justify-center items-center p-2 sm:p-3 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all text-[#]"><p className="font-bold text-[16px] sm:text-[17px] lg:text-[16px] text-[#177084]">Sign In</p></div></Link>
-       </div>
-
-
-      </div>
-      </form>
-
-
-      </div>
-      
-      
-      
-      <div className="bg-cover bg-center w-full h-32 sm:h-48 lg:h-full rounded-b-xl sm:rounded-b-2xl lg:rounded-r-4xl lg:rounded-l-none shadow-lg" style={{ backgroundImage: `url(${regbg})` }}>
-
-      </div>
-
-
-
-
-
-      </div>
-
-
-
-</section>
-
+        
+        {/* Add keyframe animation for spinner */}
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </section>
     </>
   )
 }
