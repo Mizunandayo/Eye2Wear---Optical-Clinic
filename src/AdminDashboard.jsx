@@ -7065,6 +7065,9 @@ const inventoryContainerRef = useRef(null);
 const [appointmentsPerPage, setAppointmentsPerPage] = useState(6);
 const appointmentTableRef = useRef(null);
 
+// Medical records per page
+const medicalRecordsPerPage = 6;
+
 // Calculate optimal appointments per page based on container height
 const calculateAppointmentsPerPage = useCallback(() => {
   if (appointmentTableRef.current) {
@@ -7165,6 +7168,8 @@ const getPaginatedData = (data, section) => {
     itemsPerPageToUse = inventoryItemsPerPage;
   } else if (section === 'appointments') {
     itemsPerPageToUse = appointmentsPerPage;
+  } else if (section === 'medicalRecords') {
+    itemsPerPageToUse = medicalRecordsPerPage;
   } else if (section === 'patients' || section === 'staff') {
     itemsPerPageToUse = accountItemsPerPage;
   } else {
@@ -7317,6 +7322,8 @@ const fetchPatientMedicalRecords = useCallback(async (patientEmail) => {
 const filterMedicalRecords = useCallback((term) => {
   if (!term.trim()) {
     setfilteredmedicalrecords(patientdemographics || []);
+    // Reset to first page when clearing search
+    setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
     return;
   }
 
@@ -7334,6 +7341,8 @@ const filterMedicalRecords = useCallback((term) => {
   });
 
   setfilteredmedicalrecords(filtered);
+  // Reset to first page when searching
+  setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
 }, [patientdemographics]);
 
 // Update filtered records when search term changes
@@ -22353,174 +22362,199 @@ itemName="appointments"
 
 
 
+{activemedicalrecordstable === 'allmedicalrecordstable' && (
+  <div id="allmedicalrecordstable" className="animate-fadeInUp flex flex-col items-center w-[100%] h-[90%] rounded-2xl mt-5">
+    <div className="mt-5 w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+      <div className="ml-2 w-full flex items-center">
+        <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+        <div className="relative w-full flex items-center justify-center gap-3">
+          <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
+          <input 
+            type="text" 
+            placeholder="Enter medical record details..." 
+            value={searchmedicalrecords}
+            onChange={(e) => setsearchmedicalrecords(e.target.value)}
+            className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+          />
+        </div>
+      </div>
+    </div>
 
+    {loadingappointmens ? (
+      <div className="space-y-4 p-4">
+        {[...Array(4)].map((_, index) => (
+          <AppointmentSkeleton key={index} />
+        ))}
+      </div>
+    ) : errorloadingappointments ? (
+      <div className="rounded-lg p-4 bg-red-50 text-red-600">
+        Error: {errorloadingappointments}
+      </div>
+    ) : filteredmedicalrecords.length === 0 ? (
+      <div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6">
+        No patient medical records found.
+      </div>
+    ) : (
+      <div className="overflow-y-auto overflow-hidden rounded-3xl w-full mt-2 bg-[#f7f7f7]">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-">
+            <tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
+              <th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">ID</th> 
+              <th className="pb-3 pt-3 pl-2 pr-2 text-center">Patient</th> 
+              <th className="pb-3 pt-3 pl-2 pr-2 text-center">Last Ambher Appointment</th> 
+              <th className="pb-3 pt-3 pl-2 pr-2 text-center">Last Bautista Appointment</th>
+              <th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2 text-center">Actions</th>
+            </tr>
+          </thead>
 
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {(() => {
+              const dataToDisplay = searchmedicalrecords.trim() ? filteredmedicalrecords : filteredmedicalrecords;
+              const sortedMedicalRecords = dataToDisplay.sort((a, b) => {
+                // Get the latest appointment date for patient a
+                const lastAmbherA = patientappointments
+                  .filter(app => app.patientappointmentemail === a.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
+                  .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
+                
+                const lastBautistaA = patientappointments
+                  .filter(app => app.patientappointmentemail === a.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
+                  .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
+                
+                // Get the latest appointment date for patient b
+                const lastAmbherB = patientappointments
+                  .filter(app => app.patientappointmentemail === b.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
+                  .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
+                
+                const lastBautistaB = patientappointments
+                  .filter(app => app.patientappointmentemail === b.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
+                  .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
+                
+                // Find the most recent date for each patient
+                const dateA = Math.max(
+                  lastAmbherA ? new Date(lastAmbherA.patientambherappointmentdate).getTime() : 0,
+                  lastBautistaA ? new Date(lastBautistaA.patientbautistaappointmentdate).getTime() : 0
+                );
+                
+                const dateB = Math.max(
+                  lastAmbherB ? new Date(lastAmbherB.patientambherappointmentdate).getTime() : 0,
+                  lastBautistaB ? new Date(lastBautistaB.patientbautistaappointmentdate).getTime() : 0
+                );
+                
+                // Sort in descending order (most recent first)
+                return dateB - dateA;
+              });
+              
+              const paginatedMedicalRecords = getPaginatedData(sortedMedicalRecords, 'medicalRecords');
+              return paginatedMedicalRecords.map((patients) => (
+                <tr 
+                  key={patients._id}
+                  className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
+                >
+                  <td className="py-3 px-6 font-albertsans text-[#171717] text-center text-[15px] font-medium">
+                    #{patients.patientdemographicId}
+                  </td>
+                  <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+                    <div className="flex items-center">
+                      <img 
+                        src={patients.patientprofilepicture} 
+                        alt="Profile" 
+                        className="rounded-full h-12 mr-3 w-12 object-cover"
+                        onError={(e) => {
+                          e.target.src = 'default-profile-url';
+                        }}
+                      />
+                      <h1 className="font-albertsans text-[#171717] text-center text-[15px] font-medium ml-3">
+                        {patients.patientfirstname} {patients.patientmiddlename} {patients.patientlastname}
+                      </h1>
+                      <p className="text-[12px] text-gray-500 ml-1">
+                        {patients.patientage} years old • {patients.patientgender}
+                      </p>
+                    </div>
+                  </td>
 
+                  <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+                    {(() => {
+                      const lastambherappointment = patientappointments
+                        .filter(lastapp => lastapp.patientappointmentemail === patients.patientemail && lastapp.patientambherappointmentdate && lastapp.patientambherappointmentstatus === 'Completed')
+                        .sort((a,b) => new Date(b.patientambherappointmentdate) - new Date(a.patientambherappointmentdate))[0];
+                      
+                      return lastambherappointment ? (
+                        <div>
+                          <p>{formatappointmatedates(lastambherappointment.patientambherappointmentdate)}</p>
+                          <p className="text-gray-500 text-[14px]">
+                            {formatappointmenttime(lastambherappointment.patientambherappointmenttime)}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No completed appointments</p>
+                      );
+                    })()}
+                  </td>
 
+                  <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
+                    {(() => {
+                      const lastbautistaappointment = patientappointments
+                        .filter(lastapp => lastapp.patientappointmentemail === patients.patientemail && lastapp.patientbautistaappointmentdate && lastapp.patientbautistaappointmentstatus === 'Completed')
+                        .sort((a,b) => new Date(b.patientbautistaappointmentdate) - new Date(a.patientbautistaappointmentdate))[0];
+                      
+                      return lastbautistaappointment ? (
+                        <div>
+                          <p>{formatappointmatedates(lastbautistaappointment.patientbautistaappointmentdate)}</p>
+                          <p className="text-gray-500 text-[14px]">
+                            {formatappointmenttime(lastbautistaappointment.patientbautistaappointmenttime)}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No completed appointments</p>
+                      );
+                    })()}
+                  </td>
 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
+                    <div 
+                      onClick={() => { 
+                        setshowpatientmedicalrecord(true);
+                        setselectedpatientmedicalrecord(patients);
+                      }} 
+                      className="bg-[#383838] hover:bg-[#595959] mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
+                    >
+                      <h1 className="text-white">View</h1>
+                    </div>
+                  </td>
+                </tr>
+              ));
+            })()}
+          </tbody>
+        </table>
+      </div>
+    )}
 
+<div className="w-full flex items-start justify-start">
+    {/* Pagination Component for Medical Records */}
+    {(() => {
+      const dataToDisplay = searchmedicalrecords.trim() ? filteredmedicalrecords : filteredmedicalrecords;
+      const totalMedicalRecords = dataToDisplay.length;
+      const totalPages = Math.ceil(totalMedicalRecords / medicalRecordsPerPage);
 
-
-
-{ activemedicalrecordstable === 'allmedicalrecordstable' && ( <div id="allmedicalrecordstable" className="animate-fadeInUp flex flex-col items-center  w-[100%] h-[90%] rounded-2xl mt-5" >
-
-<div className=" mt-5  w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
-<div className="ml-2 w-full flex items-center"><h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3 ">Search: </h2><div className="relative w-full flex items-center justify-center gap-3"><i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i><input 
-type="text" 
-placeholder="Enter medical record details..." 
-value={searchmedicalrecords}
-onChange={(e) => setsearchmedicalrecords(e.target.value)}
-className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
-/></div></div>
-</div>
-
-{loadingappointmens ? (
-<div className="space-y-4 p-4">
-{[...Array(4)].map((_, index) => (
-<AppointmentSkeleton key={index} />
-))}
-</div>
-) : errorloadingappointments ? (
-<div className="rounded-lg p-4 bg-red-50 text-red-600">
-Error: {errorloadingappointments}
-</div>
-) : filteredmedicalrecords.length === 0 ? (
-<div className="text-yellow-600 bg-yellow-50 rounded-2xl px-4 py-6">No patient medical records found.</div>
-
-) :(
-
-<div className="overflow-y-auto overflow-hidden rounded-3xl  w-full mt-2 bg-[#f7f7f7] ">
-<table className=" min-w-full divide-y divide-gray-200 ">
-<thead className="bg-">
-<tr className="text-[#ffffff] font-albertsans font-bold bg-[#2781af] rounded-tl-2xl rounded-tr-2xl">
-<th className="rounded-tl-2xl pb-3 pt-3 pl-2 pr-2 text-center">ID</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Patient</th> 
-<th className=" pb-3 pt-3 pl-2 pr-2 text-center">Last Ambher Appointment</th> 
-<th className="pb-3 pt-3 pl-2 pr-2  text-center">Last Bautista Appointment</th>
-
-
-<th className="rounded-tr-2xl pb-3 pt-3 pl-2 pr-2  text-center">Actions</th>
-</tr>
-</thead>
-
-
-<tbody className=" divide-y divide-gray-200 bg-white  ">
-
-{filteredmedicalrecords
-  .sort((a, b) => {
-    // Get the latest appointment date for patient a
-    const lastAmbherA = patientappointments
-      .filter(app => app.patientappointmentemail === a.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
-      .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
-    
-    const lastBautistaA = patientappointments
-      .filter(app => app.patientappointmentemail === a.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
-      .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
-    
-    // Get the latest appointment date for patient b
-    const lastAmbherB = patientappointments
-      .filter(app => app.patientappointmentemail === b.patientemail && app.patientambherappointmentdate && app.patientambherappointmentstatus === 'Completed')
-      .sort((x, y) => new Date(y.patientambherappointmentdate) - new Date(x.patientambherappointmentdate))[0];
-    
-    const lastBautistaB = patientappointments
-      .filter(app => app.patientappointmentemail === b.patientemail && app.patientbautistaappointmentdate && app.patientbautistaappointmentstatus === 'Completed')
-      .sort((x, y) => new Date(y.patientbautistaappointmentdate) - new Date(x.patientbautistaappointmentdate))[0];
-    
-    // Find the most recent date for each patient
-    const dateA = Math.max(
-      lastAmbherA ? new Date(lastAmbherA.patientambherappointmentdate).getTime() : 0,
-      lastBautistaA ? new Date(lastBautistaA.patientbautistaappointmentdate).getTime() : 0
-    );
-    
-    const dateB = Math.max(
-      lastAmbherB ? new Date(lastAmbherB.patientambherappointmentdate).getTime() : 0,
-      lastBautistaB ? new Date(lastBautistaB.patientbautistaappointmentdate).getTime() : 0
-    );
-    
-    // Sort in descending order (most recent first)
-    return dateB - dateA;
-  })
-  .map((patients) => (
-<tr 
-key={patients._id}
-className="hover:bg-gray-50 transition-all ease-in-out duration-300 border-b-2"
->
-<td className="py-3 px-6 font-albertsans text-[#171717]  text-center text-[15px] font-medium ">
-#{patients.patientdemographicId}
-</td>
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium ">
-     <div className="flex  items-center">
-  <img 
-    src={patients.patientprofilepicture} 
-    alt="Profile" 
-    className=" rounded-full h-12 mr-3 w-12 object-cover"
-    onError={(e) => {
-      e.target.src = 'default-profile-url';
-    }}
-  />
-  <h1 className="font-albertsans text-[#171717]  text-center text-[15px] font-medium ml-3 ">{patients.patientfirstname} {patients.patientmiddlename} {patients.patientlastname}</h1>
-  <p className="text-[12px] text-gray-500 ml-1">{patients.patientage} years old • {patients.patientgender}</p>
-
+      return totalMedicalRecords > 0 && (
+        <PaginationComponent
+          currentPage={currentPage.medicalRecords}
+          totalPages={totalPages}
+          onPageChange={(page) => handlePageChange('medicalRecords', page)}
+          totalItems={totalMedicalRecords}
+          itemsPerPage={medicalRecordsPerPage}
+          itemName="medical records"
+        />
+      );
+    })()}
+    </div>
   </div>
-</td>
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium ">
-  {(() => {
-  const lastambherappointment = patientappointments
-                                  .filter(lastapp => lastapp.patientappointmentemail === patients.patientemail && lastapp.patientambherappointmentdate && lastapp.patientambherappointmentstatus === 'Completed')
-                                  .sort((a,b) => new Date(b.patientambherappointmentdate) - new Date(a.patientambherappointmentdate))[0];
-  
-  return lastambherappointment ? (
-    <div>
-      <p>{formatappointmatedates(lastambherappointment.patientambherappointmentdate)}</p>
-      <p className="text-gray-500 text-[14px]">{formatappointmenttime(lastambherappointment.patientambherappointmenttime)}</p>
-    </div>
-  ):(
-    <p className="text-gray-500">No completed appointments</p>
-  );
- })()}
-</td>
-
-<td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium ">
- {(() => {
-  const lastbautistaappointment = patientappointments
-                                  .filter(lastapp => lastapp.patientappointmentemail === patients.patientemail && lastapp.patientbautistaappointmentdate  && lastapp.patientbautistaappointmentstatus === 'Completed')
-                                  .sort((a,b) => new Date(b.patientbautistaappointmentdate) - new Date(a.patientbautistaappointmentdate))[0];
-  
-  return lastbautistaappointment ? (
-    <div>
-      <p>{formatappointmatedates(lastbautistaappointment.patientbautistaappointmentdate)}</p>
-      <p className="text-gray-500 text-[14px]">{formatappointmenttime(lastbautistaappointment.patientbautistaappointmenttime)}</p>
-    </div>
-  ):(
-    <p className="text-gray-500">No completed appointments</p>
-  );
- })()}
-</td>
-
-
-
-
-
-<td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
-
-<div onClick={() =>  {setshowpatientmedicalrecord(true);
-                    setselectedpatientmedicalrecord(patients);}} className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white">View</h1></div>
-
-
-
-
-      
-
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
 )}
 
-</div> )}
+
+
+
+
 
 
 
