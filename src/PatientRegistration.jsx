@@ -283,6 +283,25 @@ function PatientRegistration() {
   //Handles submit used in form when a button is clicked to submit request
     const handlesubmit = async (e) => {
       e.preventDefault()
+      
+      // Prevent submission if email already exists
+      if (emailexist) {
+        setmessage({
+          text: 'Please use a different email address. This email is already in use.',
+          type: 'error'
+        });
+        return;
+      }
+      
+      // Prevent submission if email format is invalid
+      if (!emailcharacters.test(formdata.patientemail)) {
+        setmessage({
+          text: 'Please enter a valid email address.',
+          type: 'error'
+        });
+        return;
+      }
+      
       setissubmitting(true)
       setmessage({
         text:'', type:''
@@ -609,17 +628,17 @@ function PatientRegistration() {
                   {/* Register Button */}
                   <button 
                     type="submit" 
-                    disabled={issubmitting}
+                    disabled={issubmitting || emailexist || checkemail || !emailcharacters.test(formdata.patientemail)}
                     style={{
                       width: '100%',
                       height: '44px',
-                      backgroundColor: issubmitting ? '#9ca3af' : '#1f2937',
-                      color: issubmitting ? '#6b7280' : '#ffffff',
+                      backgroundColor: (issubmitting || emailexist || checkemail || !emailcharacters.test(formdata.patientemail)) ? '#9ca3af' : '#1f2937',
+                      color: (issubmitting || emailexist || checkemail || !emailcharacters.test(formdata.patientemail)) ? '#6b7280' : '#ffffff',
                       border: 'none',
                       borderRadius: '6px',
                       fontSize: '14px',
                       fontWeight: '500',
-                      cursor: issubmitting ? 'not-allowed' : 'pointer',
+                      cursor: (issubmitting || emailexist || checkemail || !emailcharacters.test(formdata.patientemail)) ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -628,12 +647,12 @@ function PatientRegistration() {
                       marginTop: '10px'
                     }}
                     onMouseEnter={(e) => {
-                      if (!issubmitting) {
+                      if (!issubmitting && !emailexist && !checkemail && emailcharacters.test(formdata.patientemail)) {
                         e.target.style.backgroundColor = '#374151';
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (!issubmitting) {
+                      if (!issubmitting && !emailexist && !checkemail && emailcharacters.test(formdata.patientemail)) {
                         e.target.style.backgroundColor = '#1f2937';
                       }
                     }}
@@ -652,6 +671,12 @@ function PatientRegistration() {
                         />
                         Registering...
                       </>
+                    ) : checkemail ? (
+                      "Checking Email..."
+                    ) : emailexist ? (
+                      "Email Already In Use"
+                    ) : !emailcharacters.test(formdata.patientemail) && formdata.patientemail ? (
+                      "Invalid Email Format"
                     ) : (
                       "Register"
                     )}
