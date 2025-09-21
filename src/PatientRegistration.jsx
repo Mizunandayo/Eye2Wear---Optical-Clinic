@@ -112,10 +112,25 @@ function PatientRegistration() {
             }, 2000);
           }
         } else {
-          setmessage({
-            text: data.message || "Google registration failed. Please try again.",
-            type: "error"
-          });
+          // Handle specific validation errors
+          if (data.errors && Array.isArray(data.errors)) {
+            setmessage({
+              text: data.message + ": " + data.errors.join(", "),
+              type: "error"
+            });
+          } else if (data.details) {
+            // Handle detailed validation errors from Mongoose
+            const errorMessages = Object.values(data.details).map(err => err.message);
+            setmessage({
+              text: data.message + ": " + errorMessages.join(", "),
+              type: "error"
+            });
+          } else {
+            setmessage({
+              text: data.message || "Google registration failed. Please try again.",
+              type: "error"
+            });
+          }
         }
       } catch (error) {
         console.error("Google registration error:", error);

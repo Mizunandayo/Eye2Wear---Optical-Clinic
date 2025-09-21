@@ -116,7 +116,7 @@ export const googleRegister = async (req, res) => {
       patientpassword: 'google_auth_' + Math.random().toString(36), // Random password for Google users
       patientfirstname: firstName,
       patientmiddlename: middleName || '',
-      patientlastname: lastName,
+      patientlastname: lastName || 'N/A', // Provide default value if lastName is empty
       patientprofilepicture: profilePicture,
       isVerified: true // Google accounts are pre-verified
     };
@@ -139,6 +139,26 @@ export const googleRegister = async (req, res) => {
 
   } catch (error) {
     console.error("Google registration error:", error);
+    
+    // Handle Mongoose validation errors specifically
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Registration validation failed",
+        errors: validationErrors,
+        details: error.errors
+      });
+    }
+    
+    // Handle duplicate email error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "An account with this email already exists. Please use login instead."
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "Failed to register with Google",
