@@ -6,11 +6,10 @@ dotenv.config();
 
 class EmailServiceManager {
   constructor() {
-    // Temporarily force SMTP due to OAuth issues
-    this.emailProvider = process.env.EMAIL_PROVIDER === 'gmail-api' ? 'smtp' : (process.env.EMAIL_PROVIDER || 'smtp');
+    this.emailProvider = process.env.EMAIL_PROVIDER || 'smtp';
     this.gmailService = null;
     
-    console.log(`Email provider set to: ${this.emailProvider} (temporarily using SMTP due to OAuth issues)`);
+    console.log(`Email provider set to: ${this.emailProvider}`);
     
     if (this.emailProvider === 'gmail-api') {
       this.gmailService = new GmailAPIService();
@@ -27,20 +26,39 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      // Force SMTP for now due to OAuth issues
-      console.log('Using SMTP for verification email (OAuth temporarily disabled)');
-      const { sendVerificationEmail: sendVerificationEmailSMTP } = await import('./emailService.js');
-      const patientObj = {
-        _id: patientId,
-        patientemail: email,
-        verificationtoken: token,
-        patientfirstname: firstName,
-        patientlastname: '' // We don't have last name in the parameters
-      };
-      return await sendVerificationEmailSMTP(patientObj);
+      if (this.emailProvider === 'gmail-api' && this.gmailService) {
+        console.log('Using Gmail API for verification email');
+        try {
+          return await this.gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId);
+        } catch (gmailError) {
+          console.log('Gmail API failed, falling back to SMTP...', gmailError.message);
+          // Fallback to SMTP
+          const { sendVerificationEmail: sendVerificationEmailSMTP } = await import('./emailService.js');
+          const patientObj = {
+            _id: patientId,
+            patientemail: email,
+            verificationtoken: token,
+            patientfirstname: firstName,
+            patientlastname: ''
+          };
+          return await sendVerificationEmailSMTP(patientObj);
+        }
+      } else {
+        // Use SMTP
+        console.log('Using SMTP for verification email');
+        const { sendVerificationEmail: sendVerificationEmailSMTP } = await import('./emailService.js');
+        const patientObj = {
+          _id: patientId,
+          patientemail: email,
+          verificationtoken: token,
+          patientfirstname: firstName,
+          patientlastname: ''
+        };
+        return await sendVerificationEmailSMTP(patientObj);
+      }
     } catch (error) {
-      console.error('Error sending verification email via SMTP:', error);
-      throw new Error(`SMTP email service failed: ${error.message}`);
+      console.error('Error sending verification email:', error);
+      throw new Error(`Email service failed: ${error.message}`);
     }
   }
 
