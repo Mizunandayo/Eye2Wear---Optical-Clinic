@@ -4461,6 +4461,10 @@ const staffhandlechange = (e) => {
         throw new Error(data.message || "Registration Failed");
       }
 
+      await axios.post(`/api/accountcreation/owner`, {
+        email: ownerformdata.owneremail, 
+        password: ownerformdata.ownerpassword});
+
       //If response is success, it will send data to the api and to the database   
       setownermessage({text:"Registration Sucessful!",type:"success"});
       

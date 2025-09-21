@@ -48,7 +48,7 @@ class GmailAPIService {
     try {
       await this.initialize();
       const subject = 'Your ' + accountType + ' Account Has Been Created - Eye2Wear';
-      const loginUrl = process.env.FRONTEND_URL + '/login';
+      const loginUrl = process.env.FRONTEND_URL + '/userlogin';
       const htmlContent = '<div><h2>Welcome to Eye2Wear, ' + firstName + '!</h2><p>Your ' + accountType + ' account has been created.</p><p><strong>Email:</strong> ' + email + '</p><p><strong>Password:</strong> ' + password + '</p><p><a href="' + loginUrl + '">Login to Your Account</a></p></div>';
       const textContent = 'Welcome to Eye2Wear, ' + firstName + '! Your ' + accountType + ' account has been created. Email: ' + email + ' Password: ' + password + ' Login at: ' + loginUrl;
       return await this.sendEmail(email, subject, textContent, htmlContent);
