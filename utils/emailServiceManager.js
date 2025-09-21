@@ -66,13 +66,25 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      // Force SMTP for now due to OAuth issues
-      console.log('Using SMTP for account creation email (OAuth temporarily disabled)');
-      const { sendAccountCreationEmail: sendAccountCreationEmailSMTP } = await import('./emailService.js');
-      return await sendAccountCreationEmailSMTP(email, password, accountType);
+      if (this.emailProvider === 'gmail-api' && this.gmailService) {
+        console.log('Using Gmail API for account creation email');
+        try {
+          return await this.gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName);
+        } catch (gmailError) {
+          console.log('Gmail API failed, falling back to SMTP...', gmailError.message);
+          // Fallback to SMTP
+          const { sendAccountCreationEmail: sendAccountCreationEmailSMTP } = await import('./emailService.js');
+          return await sendAccountCreationEmailSMTP(email, password, accountType);
+        }
+      } else {
+        // Use SMTP
+        console.log('Using SMTP for account creation email');
+        const { sendAccountCreationEmail: sendAccountCreationEmailSMTP } = await import('./emailService.js');
+        return await sendAccountCreationEmailSMTP(email, password, accountType);
+      }
     } catch (error) {
-      console.error('Error sending account creation email via SMTP:', error);
-      throw new Error(`SMTP account creation email failed: ${error.message}`);
+      console.error('Error sending account creation email:', error);
+      throw new Error(`Email service failed: ${error.message}`);
     }
   }
 
@@ -98,6 +110,32 @@ class EmailServiceManager {
       }
     } catch (error) {
       console.error('Error sending password reset email:', error);
+      throw new Error(`Email service failed: ${error.message}`);
+    }
+  }
+
+  async sendAccountDeletionEmail(email, accountType = 'Patient') {
+    try {
+      await this.initialize();
+
+      if (this.emailProvider === 'gmail-api' && this.gmailService) {
+        console.log('Using Gmail API for account deletion email');
+        try {
+          return await this.gmailService.sendAccountDeletionEmailGmailAPI(email, accountType);
+        } catch (gmailError) {
+          console.log('Gmail API failed, falling back to SMTP...', gmailError.message);
+          // Fallback to SMTP
+          const { sendAccountDeletionEmail: sendAccountDeletionEmailSMTP } = await import('./emailService.js');
+          return await sendAccountDeletionEmailSMTP(email, accountType);
+        }
+      } else {
+        // Use SMTP
+        console.log('Using SMTP for account deletion email');
+        const { sendAccountDeletionEmail: sendAccountDeletionEmailSMTP } = await import('./emailService.js');
+        return await sendAccountDeletionEmailSMTP(email, accountType);
+      }
+    } catch (error) {
+      console.error('Error sending account deletion email:', error);
       throw new Error(`Email service failed: ${error.message}`);
     }
   }

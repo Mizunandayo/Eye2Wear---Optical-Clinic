@@ -92,7 +92,7 @@ function PatientRegistration() {
             }
 
             setmessage({
-              text: data.message + " Redirecting to anding page...",
+              text: data.message + " Redirecting to Landing page...",
               type: "success"
             });
 

@@ -167,6 +167,54 @@ class GmailAPIService {
       throw error;
     }
   }
+
+  async sendAccountDeletionEmailGmailAPI(email, accountType = 'Patient') {
+    try {
+      console.log('Sending account deletion email via Gmail API to:', email);
+
+      await this.initialize();
+
+      const subject = `Eye2Wear - ${accountType} Account Deleted`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #125c99; margin: 0;">Eye2Wear</h1>
+            <h2 style="color: #333; margin: 10px 0;">Account Deletion Notice</h2>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              We would like to notify you that your ${accountType.toLowerCase()} account has been deleted from our system.
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              If this was not requested by you, please contact our support team immediately.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 12px;">
+              © 2024 Eye2Wear. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `;
+
+      const textContent = `
+        Eye2Wear - Account Deletion Notice
+        
+        We would like to notify you that your ${accountType.toLowerCase()} account has been deleted from our system.
+        
+        If this was not requested by you, please contact our support team immediately.
+        
+        © 2024 Eye2Wear. All rights reserved.
+      `;
+
+      return await this.sendEmail(email, subject, textContent, html);
+    } catch (error) {
+      console.error('Error sending account deletion email via Gmail API:', error);
+      throw error;
+    }
+  }
 }
 
 export { GmailAPIService };
@@ -180,5 +228,7 @@ export default {
     gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName),
   sendPasswordResetEmailGmailAPI: (email, resetLink, firstName) => 
     gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName),
+  sendAccountDeletionEmailGmailAPI: (email, accountType) => 
+    gmailService.sendAccountDeletionEmailGmailAPI(email, accountType),
   gmailService
 };

@@ -3,7 +3,7 @@ import Patientaccount from "../models/patientaccount.js";
 import Adminaccount from "../models/adminaccount.js";
 import Owneraccount from "../models/owneraccount.js";
 import Staffaccount from "../models/staffacount.js";
-import { sendAccountDeletionEmail } from '../utils/emailService.js';
+import { emailServiceManager } from '../utils/emailServiceManager.js';
 
 
 
@@ -19,7 +19,7 @@ export const patientaccountdeletionemail = async(req, res) => {
     const{email} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountDeletionEmail(email, 'Patient');
+    const result = await emailServiceManager.sendAccountDeletionEmail(email, 'Patient');
     
     console.log('Patient account deletion email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -44,7 +44,7 @@ export const staffaccountdeletionemail = async(req, res) => {
     const{email} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountDeletionEmail(email, 'Staff');
+    const result = await emailServiceManager.sendAccountDeletionEmail(email, 'Staff');
     
     console.log('Staff account deletion email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -68,7 +68,7 @@ export const owneraccountdeletionemail = async(req, res) => {
     const{email} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountDeletionEmail(email, 'Owner');
+    const result = await emailServiceManager.sendAccountDeletionEmail(email, 'Owner');
     
     console.log('Owner account deletion email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
@@ -96,7 +96,7 @@ export const owneraccountdeletionemail = async(req, res) => {
     const{email} =req.body;
     
     // Use the enhanced email service with retry logic and production optimizations
-    const result = await sendAccountDeletionEmail(email, 'Admin');
+    const result = await emailServiceManager.sendAccountDeletionEmail(email, 'Admin');
     
     console.log('Admin account deletion email sent successfully:', result.messageId);
     res.status(200).json({Status: "Success", messageId: result.messageId});
