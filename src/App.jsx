@@ -3859,98 +3859,91 @@ jsxtransition-all duration-300 ease-in-out flex-shrink-0"
 export default function App() {
   // Clear localStorage only when browser/tab is actually closed (not on refresh)
   useEffect(() => {
-    let isRefreshing = false;
+    // More reliable approach using sessionStorage persistence across refreshes
     
-    // Track if user is refreshing
-    const handleKeyDown = (e) => {
-      // Detect F5 or Ctrl+R (refresh)
-      if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-        isRefreshing = true;
-        // Reset flag after a short delay
-        setTimeout(() => {
-          isRefreshing = false;
-        }, 1000);
-      }
-    };
-
-    // Track navigation away from page
-    const handleBeforeUnload = () => {
-      // Set a flag in sessionStorage to indicate the page is unloading
-      sessionStorage.setItem('pageUnloading', 'true');
+    // Check if we're coming back from a page unload (refresh/navigation)
+    const checkPreviousUnload = () => {
+      const wasUnloading = sessionStorage.getItem('pageUnloading');
+      const unloadTime = sessionStorage.getItem('unloadTime');
       
-      // If it's not a refresh, we might be closing
-      if (!isRefreshing) {
-        // Don't clear immediately, wait to see if page reloads
-        setTimeout(() => {
-          // If sessionStorage still exists after timeout, it means page didn't reload
-          // This indicates browser/tab was closed
-          if (sessionStorage.getItem('pageUnloading')) {
-            localStorage.clear();
-            console.log('LocalStorage cleared - browser/tab closed');
-          }
-        }, 100);
-      }
-    };
-
-    // Clear the unloading flag when page loads (indicates refresh/navigation, not close)
-    const handlePageShow = () => {
-      sessionStorage.removeItem('pageUnloading');
-    };
-
-    // Check if we're coming back from a potential close
-    const handleLoad = () => {
-      // If the flag exists, it means we navigated/refreshed, not closed
-      if (sessionStorage.getItem('pageUnloading')) {
+      if (wasUnloading && unloadTime) {
+        // Page was reloaded/refreshed - clear the flags
         sessionStorage.removeItem('pageUnloading');
+        sessionStorage.removeItem('unloadTime');
+        console.log('Page refreshed/navigated - localStorage preserved');
       }
     };
 
-    // Alternative approach: Use visibility API to detect when tab becomes hidden
+    // Track when page is unloading
+    const handleBeforeUnload = () => {
+      // Set flags to track unloading
+      sessionStorage.setItem('pageUnloading', 'true');
+      sessionStorage.setItem('unloadTime', Date.now().toString());
+    };
+
+    // Use Page Visibility API for better detection
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Tab became hidden - could be switch or close
+        // Page/tab is hidden
         sessionStorage.setItem('tabHidden', Date.now().toString());
       } else {
-        // Tab became visible again - definitely not closed
-        sessionStorage.removeItem('tabHidden');
+        // Page/tab is visible again - clear unload flags
         sessionStorage.removeItem('pageUnloading');
+        sessionStorage.removeItem('unloadTime');
+        sessionStorage.removeItem('tabHidden');
       }
     };
 
-    // Check for abandoned sessions (more reliable method)
-    const checkAbandonedSession = () => {
-      const tabHiddenTime = sessionStorage.getItem('tabHidden');
-      const pageUnloadingFlag = sessionStorage.getItem('pageUnloading');
-      
-      // If tab was hidden for more than 30 seconds and page was unloading
-      if (tabHiddenTime && pageUnloadingFlag) {
-        const timeDiff = Date.now() - parseInt(tabHiddenTime);
-        if (timeDiff > 30000) { // 30 seconds
-          localStorage.clear();
-          sessionStorage.clear();
-          console.log('LocalStorage cleared - session abandoned');
+    // Check for abandoned sessions periodically
+    const checkForAbandonedSession = () => {
+      // Only run this check if window is not visible and page was unloading
+      if (document.hidden) {
+        const unloadTime = sessionStorage.getItem('unloadTime');
+        const wasUnloading = sessionStorage.getItem('pageUnloading');
+        
+        if (unloadTime && wasUnloading) {
+          const timeSinceUnload = Date.now() - parseInt(unloadTime);
+          // If more than 5 seconds have passed and page is still hidden, likely closed
+          if (timeSinceUnload > 5000) {
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('LocalStorage cleared - browser/tab likely closed');
+          }
         }
       }
     };
 
+    // Initialize session check
+    checkPreviousUnload();
+
     // Add event listeners
-    window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('load', handleLoad);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Check for abandoned sessions periodically
-    const abandonedSessionInterval = setInterval(checkAbandonedSession, 10000); // Check every 10 seconds
+    // Check for abandoned sessions every 3 seconds
+    const abandonedSessionInterval = setInterval(checkForAbandonedSession, 3000);
+
+    // Additional cleanup when component unmounts
+    const cleanup = () => {
+      // If component is unmounting and we're not refreshing, it might be a close
+      const wasUnloading = sessionStorage.getItem('pageUnloading');
+      if (wasUnloading) {
+        // Give it a moment to see if page reloads
+        setTimeout(() => {
+          if (sessionStorage.getItem('pageUnloading')) {
+            localStorage.clear();
+            console.log('LocalStorage cleared - component unmounted');
+          }
+        }, 1000);
+      }
+    };
 
     // Cleanup event listeners on component unmount
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('load', handleLoad);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(abandonedSessionInterval);
+      cleanup();
     };
   }, []);
 
