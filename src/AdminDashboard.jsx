@@ -2831,31 +2831,7 @@ return (
               })}
             </td>
             <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium whitespace-nowrap flex items-center justify-center gap-2">
-              <div onClick={() =>  {
-              setselectededitpatientaccount({
-                 id: patient._id,
-                 email: patient.patientemail,
-                 lastname: patient.patientlastname,
-                 firstname: patient.patientfirstname,
-                 middlename: patient.patientmiddlename,
-                 profilepicture: patient.patientprofilepicture
-                 });
-
-              setformdata({
-                role: 'Patient',
-                patientemail: patient.patientemail,
-                patientpassword: patient.patientpassword,
-                patientlastname: patient.patientlastname,
-                patientfirstname: patient.patientfirstname,
-                patientmiddlename: patient.patientmiddlename,
-                patientprofilepicture: patient.patientprofilepicture
-              });
-
-              setpreviewimage(patient.patientprofilepicture);
-              setshowviewpatientdialog(true);}}
-
-             className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div>
-             
+                    
              <div onClick={() =>  {
               setselectedpatientaccount({
                  id: patient.patientId,
@@ -17302,7 +17278,32 @@ useEffect(() => {
                         </div>
                       </div>
                       <div
-                        onClick={() => {setshowaddpatientdialog(false), setmessage('')}}
+                        onClick={() => {
+                          setshowaddpatientdialog(false);
+                          setmessage('');
+                          // Reset form data
+                          setformdata({
+                            role: 'Patient',
+                            patientemail:'',
+                            patientpassword:'',
+                            patientlastname:'',
+                            patientfirstname:'',
+                            patientmiddlename:'',
+                            patientprofilepicture: ''
+                          });
+                          // Reset image states
+                          setselectedprofile(null);
+                          setpreviewimage(null);
+                          // Reset file input
+                          if(imageinputref.current){
+                            imageinputref.current.value = "";
+                          }
+                          // Reset validation states
+                          setemailerror(false);
+                          setemailexist(false);
+                          setcheckemail(false);
+                          setShowPatientPassword(false);
+                        }}
                         className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
                       >
                         <i className="bx bx-x text-white text-2xl"></i>
@@ -17605,206 +17606,6 @@ useEffect(() => {
 
 
 
-         {showviewpatientdialog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
-              {/* Header */}
-              <div className="bg-sky-800 px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="bg-white/20 p-3 rounded-full mr-4">
-                      <i className="bx bx-user text-white text-2xl"></i>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Account</h1>
-                      <p className="text-sky-100">Update patient account information</p>
-                    </div>
-                  </div>
-                  <div
-                    onClick={() => {setshowviewpatientdialog(false);
-                                     setselectededitpatientaccount(null);
-                                     setformdata({
-                                       role: 'Patient',
-                                       patientemail: '',
-                                       patientlastname: '',
-                                       patientfirstname: '',
-                                       patientmiddlename: '',
-                                       patientprofilepicture: ''
-                                     });
-                                     setpreviewimage(null);}}
-                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-                  >
-                    <i className="bx bx-x text-white text-2xl"></i>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-                <form onSubmit={updatepatientaccount} className="p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Profile Picture Section */}
-                    <div className="lg:col-span-1">
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="relative group">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                          <img 
-                            className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                            src={previewimage || defaultprofilepic}
-                            alt="Profile"
-                          />
-                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                          </div>
-                        </div>
-                        
-                        <input  
-                          className="hidden" 
-                          type="file" 
-                          onChange={handleprofilechange} 
-                          accept="image/jpeg, image/jpg, image/png" 
-                          ref={imageinputref} 
-                        />
-                        
-                        <div className="flex items-center gap-2">
-                          {selectedprofile && (
-                            <button
-                              type="button"
-                              onClick={handleremoveprofile}
-                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                              title="Remove Photo"
-                            >
-                              <i className="bx bx-trash w-4 h-4"></i>
-                            </button>
-                          )}
-                          
-                          <button
-                            type="button"
-                            onClick={handleuploadclick}
-                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                          >
-                            <i className="bx bx-camera mr-2"></i>
-                            Upload Photo
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Form Fields */}
-                    <div className="lg:col-span-2 space-y-6">
-                      {/* Message Display */}
-                      {message.text && (
-                        <div className={`p-4 rounded-lg ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                          {message.text}
-                        </div>
-                      )}
-
-                      {/* Email Field */}
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Email
-                        </label>
-                        <div className="flex flex-col">
-                          <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            placeholder="Enter your email..." 
-                            type="text" 
-                            name="patientemail" 
-                            id="patientemail" 
-                            value={formdata.patientemail} 
-                            onChange={handlechange} 
-                            required
-                          />
-                          {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-                          {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-                          {emailerror && emailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
-                        </div>
-                      </div>
-
-                      {/* Name Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Last Name
-                          </label>
-                          <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            placeholder="Enter your lastname..." 
-                            type="text" 
-                            name="patientlastname" 
-                            id="patientlastname" 
-                            value={formdata.patientlastname} 
-                            onChange={handlechange} 
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            First Name
-                          </label>
-                          <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            placeholder="Enter your firstname..." 
-                            type="text" 
-                            name="patientfirstname" 
-                            id="patientfirstname" 
-                            value={formdata.patientfirstname} 
-                            onChange={handlechange} 
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-                        </label>
-                        <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                          placeholder="Enter your middlename..." 
-                          type="text" 
-                          name="patientmiddlename" 
-                          id="patientmiddlename" 
-                          value={formdata.patientmiddlename} 
-                          onChange={handlechange} 
-                          required
-                        />
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="pt-8 space-y-4">
-                        <button 
-                          type="submit" 
-                          disabled={issubmitting} 
-                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                            issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                          }`}
-                        >
-                          <div className="relative flex items-center">
-                            {issubmitting ? (
-                              <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bx bx-edit mr-3"></i>
-                                Save Changes
-                              </>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
 
    </div> )}
 
