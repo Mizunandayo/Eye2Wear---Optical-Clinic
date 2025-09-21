@@ -3857,6 +3857,22 @@ jsxtransition-all duration-300 ease-in-out flex-shrink-0"
 
 
 export default function App() {
+  // Clear localStorage when browser closes or page unloads
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.clear();
+      console.log('LocalStorage cleared on browser close/page unload');
+    };
+
+    // Add event listener for browser close/page unload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <PatientChatButton/>
