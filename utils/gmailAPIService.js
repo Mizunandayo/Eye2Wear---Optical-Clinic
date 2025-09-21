@@ -16,7 +16,7 @@ class GmailAPIService {
       const auth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        'urn:ietf:wg:oauth:2.0:oob'
+        null // No redirect URI needed for server-side with refresh token
       );
       auth.setCredentials({
         refresh_token: process.env.GMAIL_REFRESH_TOKEN
@@ -58,46 +58,57 @@ class GmailAPIService {
     }
   }
 
-  async sendEmail(to, subject, textContent, htmlContent) {
-    try {
-      const email = [
-        'To: ' + to,
-        'From: ' + process.env.EMAIL_USER,
-        'Subject: ' + subject,
-        'MIME-Version: 1.0',
-        'Content-Type: multipart/alternative; boundary="boundary123"',
-        '',
-        '--boundary123',
-        'Content-Type: text/plain; charset=utf-8',
-        '',
-        textContent,
-        '',
-        '--boundary123',
-        'Content-Type: text/html; charset=utf-8',
-        '',
-        htmlContent,
-        '',
-        '--boundary123--'
-      ].join('\n');
+  async sendEmail(to, subject, textContent, htmlContent, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const email = [
+          'To: ' + to,
+          'From: ' + process.env.EMAIL_USER,
+          'Subject: ' + subject,
+          'MIME-Version: 1.0',
+          'Content-Type: multipart/alternative; boundary="boundary123"',
+          '',
+          '--boundary123',
+          'Content-Type: text/plain; charset=utf-8',
+          '',
+          textContent,
+          '',
+          '--boundary123',
+          'Content-Type: text/html; charset=utf-8',
+          '',
+          htmlContent,
+          '',
+          '--boundary123--'
+        ].join('\n');
 
-      const encodedEmail = Buffer.from(email)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
+        const encodedEmail = Buffer.from(email)
+          .toString('base64')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
 
-      const response = await this.gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedEmail
+        const response = await this.gmail.users.messages.send({
+          userId: 'me',
+          requestBody: {
+            raw: encodedEmail
+          }
+        });
+
+        console.log('Email sent successfully via Gmail API:', response.data.id);
+        return { success: true, messageId: response.data.id };
+      } catch (error) {
+        console.error(`Gmail API attempt ${attempt}/${retries} failed:`, error.message);
+        
+        if (attempt === retries) {
+          console.error('All Gmail API attempts failed:', error);
+          throw error;
         }
-      });
-
-      console.log('Email sent successfully via Gmail API:', response.data.id);
-      return { success: true, messageId: response.data.id };
-    } catch (error) {
-      console.error('Error sending email via Gmail API:', error);
-      throw error;
+        
+        // Wait before retry (exponential backoff)
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
   }
 

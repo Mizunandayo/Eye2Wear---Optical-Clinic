@@ -77,7 +77,7 @@ const createEmailTransporter = () => {
     auth: { user: config.auth.user, pass: '***' } 
   });
 
-  return nodemailer.createTransporter(config);
+  return nodemailer.createTransport(config);
 };
 
 // Retry mechanism for email sending
