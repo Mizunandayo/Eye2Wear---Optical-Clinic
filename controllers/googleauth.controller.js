@@ -2,6 +2,7 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import Patientaccount from '../models/patientaccount.js';
+import { emailServiceManager } from '../utils/emailServiceManager.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -24,6 +25,18 @@ const generateAuthToken = (patient) => {
 const loadDefaultProfilePic = async () => {
   // Return a simple default avatar SVG
   return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0yMCA3NUMyMCA2NS4wNTg5IDI3LjE2MzQgNTcgMzYgNTdINjRDNzIuODM2NiA1NyA4MCA2NS4wNTg5IDgwIDc1VjgwSDIwVjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+};
+
+const generateReadablePassword = () => {
+  // Generate a readable password that users can easily type
+  const adjectives = ['Swift', 'Bright', 'Cool', 'Smart', 'Quick', 'Bold', 'Calm', 'Pure'];
+  const nouns = ['Tiger', 'Eagle', 'River', 'Moon', 'Star', 'Ocean', 'Fire', 'Wind'];
+  const numbers = Math.floor(Math.random() * 100);
+  
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  
+  return `${adjective}${noun}${numbers}`;
 };
 
 // Helper function to parse Google name
@@ -109,11 +122,14 @@ export const googleRegister = async (req, res) => {
       profilePicture = await loadDefaultProfilePic();
     }
 
+    // Generate a readable password for Google users
+    const readablePassword = generateReadablePassword();
+
     // Create new patient account
     const patientData = {
       role: 'Patient',
       patientemail: email,
-      patientpassword: 'google_auth_' + Math.random().toString(36), // Random password for Google users
+      patientpassword: readablePassword, // Use readable password instead of random string
       patientfirstname: firstName,
       patientmiddlename: middleName || '',
       patientlastname: lastName || 'N/A', // Provide default value if lastName is empty
@@ -123,6 +139,21 @@ export const googleRegister = async (req, res) => {
 
     const newPatient = await Patientaccount.create(patientData);
 
+    // Send account creation email with login credentials
+    try {
+      await emailServiceManager.sendAccountCreationEmail(
+        email, 
+        readablePassword, 
+        firstName, 
+        'Patient',
+        'Eye2Wear'
+      );
+      console.log('Account creation email sent successfully for Google user:', email);
+    } catch (emailError) {
+      console.error('Failed to send account creation email for Google user:', emailError);
+      // Don't fail the registration if email fails, just log the error
+    }
+
     // Generate JWT token for auto-login
     const token = generateAuthToken(newPatient);
 
@@ -131,7 +162,7 @@ export const googleRegister = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Account created successfully with Google",
+      message: "Account created successfully with Google. Check your email for login credentials.",
       autoLogin: true,
       jsontoken: token,
       patient: patientResponse

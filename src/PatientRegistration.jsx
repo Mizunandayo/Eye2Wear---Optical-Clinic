@@ -92,7 +92,7 @@ function PatientRegistration() {
             }
 
             setmessage({
-              text: data.message + " Redirecting to Landing page...",
+              text: data.message + " Check your email for login credentials. Redirecting to Landing page...",
               type: "success"
             });
 
@@ -103,7 +103,7 @@ function PatientRegistration() {
           } else {
             // Regular registration flow - redirect to login
             setmessage({
-              text: data.message + " Redirecting to login...",
+              text: data.message + " Check your email for login credentials. Redirecting to login...",
               type: "success"
             });
 
@@ -758,6 +758,11 @@ function PatientRegistration() {
                     {isGoogleRegistering ? 'Registering with Google...' : 'Continue with Google'}
                   </span>
                 </button>
+                
+                {/* Information note about Google registration */}
+                <div className="text-center text-xs text-gray-500 mt-2">
+                  When registering with Google, your login credentials will be sent to your email address.
+                </div>
                 </div>
                 
                 {/* Sign In Link */}
