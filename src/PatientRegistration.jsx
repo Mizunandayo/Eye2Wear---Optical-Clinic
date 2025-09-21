@@ -92,13 +92,13 @@ function PatientRegistration() {
             }
 
             setmessage({
-              text: data.message + " Redirecting to dashboard...",
+              text: data.message + " Redirecting to anding page...",
               type: "success"
             });
 
             // Navigate to patient dashboard
             setTimeout(() => {
-              navigate("/patientdashboard");
+              navigate("/patientlandingpage");
             }, 2000);
           } else {
             // Regular registration flow - redirect to login
