@@ -275,6 +275,17 @@ function PatientLandingpage() {
     };
   }, [mobileMenuOpen]);
 
+  // Function to scroll to second section
+  const scrollToSecondSection = () => {
+    const secondSection = document.getElementById('secondsection');
+    if (secondSection) {
+      secondSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const [clinicLocations, setClinicLocations] = useState([]);
@@ -1572,7 +1583,13 @@ const handleFullscreenChange = () => {
             <div className=" ml-0 lg:ml-17 mr-0 lg:mr-28  pb-5">
               <p className="text-[16px] sm:text-[18px] lg:text-[20px] text-center lg:text-left mt-6 sm:mt-8 font-medium font-albertsans text-black">"Redefining eyewear with style, innovation, and clarity. Experience the future of vision at Eye2Wear—where every eyesight tells a story."</p>
               <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-10 justify-center lg:justify-start">
-                <div className="flex justify-center align-middle p-3 bg-gray-800 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all"><i className="bx bx-expand-alt mt-1 pr-2 font-bold text-white"/><p className="font-semibold text-white">Explore</p></div>
+                <div 
+                  onClick={scrollToSecondSection}
+                  className="flex justify-center align-middle p-3 bg-gray-800 rounded-2xl hover:cursor-pointer hover:scale-105 transition-all"
+                >
+                  <i className="bx bx-expand-alt mt-1 pr-2 font-bold text-white"/>
+                  <p className="font-semibold text-white">Explore</p>
+                </div>
                 {localStorage.getItem("patienttoken") && (
                   <Link to="/patientdashboard"><div className="flex justify-center align-middle p-3 bg-[#027bbf] rounded-2xl hover:cursor-pointer hover:scale-105 transition-all"><i className="bx bx-bookmark mt-1 pr-2 text-white"/><p className="font-semibold text-white">Book Appointment</p></div></Link>
                 )}
@@ -1605,7 +1622,7 @@ const handleFullscreenChange = () => {
 
 
 
-      <section className="bg-white min-h-[160vh] w-[99.5%]">
+      <section id="secondsection" className="bg-white min-h-[160vh] w-[99.5%]">
         <div className="bg-cover bg-center w-full min-h-screen flex flex-col items-center px-4 sm:px-8">
           <img src={lonelogo} className="w-20 sm:w-24 lg:w-30 mt-20 sm:mt-24 lg:mt-30" style={{ animation: 'spin 8s linear infinite' }}/>
           <h1 className="font-albertsans font-bold italic text-black text-[18px] sm:text-[22px] lg:text-[25px] mt-5 text-center">A shared foundation to <span className="text-sky-600 font-matimo">serve the best</span> optical clinic</h1>

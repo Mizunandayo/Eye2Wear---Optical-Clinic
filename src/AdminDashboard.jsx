@@ -2249,6 +2249,51 @@ function AdminDashboard(){
     return ['Ambher Optical']; // Default fallback
   }, [currentuserloggedin, staffclinic, ownerownedclinic]);
 
+  // Helper function to get current clinic information for logged-in user
+  const getCurrentClinicInfo = useCallback(() => {
+    if (currentuserloggedin === "Admin") {
+      return {
+        clinicType: 'Admin Dashboard',
+        logo: landinglogo,
+        displayName: 'Admin Dashboard'
+      };
+    } else if (currentuserloggedin === "Staff") {
+      const userClinic = localStorage.getItem('staffclinic') || staffclinic;
+      if (userClinic === 'Bautista Eye Center') {
+        return {
+          clinicType: 'Bautista Eye Center',
+          logo: bautistalogo,
+          displayName: 'Bautista Eye Center'
+        };
+      } else {
+        return {
+          clinicType: 'Ambher Optical',
+          logo: ambherlogo,
+          displayName: 'Ambher Optical'
+        };
+      }
+    } else if (currentuserloggedin === "Owner") {
+      if (ownerownedclinic === 'Bautista Eye Center') {
+        return {
+          clinicType: 'Bautista Eye Center',
+          logo: bautistalogo,
+          displayName: 'Bautista Eye Center'
+        };
+      } else {
+        return {
+          clinicType: 'Ambher Optical',
+          logo: ambherlogo,
+          displayName: 'Ambher Optical'
+        };
+      }
+    }
+    return {
+      clinicType: 'Unknown',
+      logo: landinglogo,
+      displayName: 'Unknown Clinic'
+    };
+  }, [currentuserloggedin, staffclinic, ownerownedclinic]);
+
 
 
   // Helper function to get user's default clinic type
@@ -17098,13 +17143,46 @@ useEffect(() => {
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
-{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className=" rounded-2xl shadow-lg border-1npm  flex justify-center items-center w-[100%] h-[100%] rounded-2xl" > 
-                
-
-
-
+{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="rounded-2xl shadow-lg border-1 bg-white flex flex-col items-center justify-center w-[100%] h-[100%] p-8" > 
   
-   </div> )}
+  {/* Clinic Information Display */}
+  <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-2xl">
+
+
+    {/* Clinic Logo and Name Display */}
+    <div className="  p-8  w-full">
+      <div className="flex flex-col items-center space-y-6">
+        
+        {/* Clinic Logo */}
+        <div className="relative">
+          <div className=" w-auto h-auto  bg-white  flex items-center justify-center overflow-hidden">
+            <img 
+              src={getCurrentClinicInfo().logo} 
+              alt={`${getCurrentClinicInfo().displayName} Logo`}
+              className="w-90 h-90 object-contain"
+            />
+          </div>
+
+        </div>
+
+        {/* Clinic Name and Type */}
+        <div className="mb-50 text-center space-y-3">
+          <h2 className={`font-albertsans font-bold text-[40px] ${
+            getCurrentClinicInfo().clinicType === 'Ambher Optical' ? 'text-green-600' :
+            getCurrentClinicInfo().clinicType === 'Bautista Eye Center' ? 'text-sky-600' :
+            'text-black/90'
+          }`}>
+            {getCurrentClinicInfo().displayName}
+          </h2>
+          </div>
+          
+</div></div></div>
+
+   
+     
+ 
+  
+</div> )}
 
 
 

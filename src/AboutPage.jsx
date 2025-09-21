@@ -420,7 +420,7 @@ function AboutPage() {
                 <div id="image1" className="p-4 sm:p-5 w-full h-48 sm:h-64 lg:h-100 shadow-md rounded-2xl flex items-end justify-baseline relative overflow-hidden group transform transition duration-300 hover:scale-105 sm:rotate-1 sm:hover:rotate-0">
                     <div> 
                         <h1 className="font-albertsans font-semibold text-white text-sm sm:text-base">Francis Daniel M. Genese</h1>
-                        <p className="text-white text-xs sm:text-sm">Full-Stack Developer - UI/UX</p>
+                        <p className="text-white text-xs sm:text-sm">Full-Stack Developer - UI/UX Designer</p>
                     </div> 
                 </div>
 

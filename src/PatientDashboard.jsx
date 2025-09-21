@@ -2277,26 +2277,40 @@ useEffect(() => {
     <section className="pb-50 motion-preset-slide-up bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-100 bg-cover bg-center min-h-[100vh] w-full flex justify-center align-center px-2 sm:px-4" >
    
    
-   {!isDemographicComplete && (
-    <div className="w-full max-w-lg mx-auto flex items-center justify-center mt-16 sm:mt-24 md:mt-32 p-4 sm:p-6">
-      <div className="flex flex-col items-center justify-center w-full h-full p-8 sm:p-8 ">
+{/* Loading State - Show first priority */}
+{isDemographicLoading ? (
+  <div className="w-full max-w-lg mx-auto flex items-center justify-center mt-16 sm:mt-24 md:mt-32 p-4 sm:p-6">
+    <div className="flex flex-col items-center justify-center w-full h-full p-8 sm:p-8">
+      {/* Loading Spinner */}
+      <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-[#184d85] mb-4"></div>
+      
 
-        <h1 className="font-albertsans font-bold text-[#184d85] text-lg sm:text-xl md:text-2xl mb-3 sm:mb-4 text-center leading-tight">
-          Complete Your Profile
-        </h1>
-        <p className="text-sm sm:text-base text-center text-black/70 mb-6 sm:mb-8 leading-relaxed max-w-md">
-          To access appointment features, please complete your demographic profile.
-        </p>
-        <Link to="/patientinformation" className="w-full sm:w-auto">
-          <div className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-center">
-            <h1 className="font-albertsans font-semibold text-sm sm:text-base">Go to Demographic Profile</h1>
-          </div>
-        </Link>
-      </div>
     </div>
-   )}
-   
-   {isDemographicComplete && (
+  </div>
+) : (
+  <>
+    {/* Complete Profile Message - Only show when not loading and profile is incomplete */}
+    {!isDemographicComplete && (
+      <div className="w-full max-w-lg mx-auto flex items-center justify-center mt-16 sm:mt-24 md:mt-32 p-4 sm:p-6">
+        <div className="flex flex-col items-center justify-center w-full h-full p-8 sm:p-8 ">
+
+          <h1 className="font-albertsans font-bold text-[#184d85] text-lg sm:text-xl md:text-2xl mb-3 sm:mb-4 text-center leading-tight">
+            Complete Your Profile
+          </h1>
+          <p className="text-sm sm:text-base text-center text-black/70 mb-6 sm:mb-8 leading-relaxed max-w-md">
+            To access appointment features, please complete your demographic profile.
+          </p>
+          <Link to="/patientinformation" className="w-full sm:w-auto">
+            <div className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-medium hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-center">
+              <h1 className="font-albertsans font-semibold text-sm sm:text-base">Go to Demographic Profile</h1>
+            </div>
+          </Link>
+        </div>
+      </div>
+    )}
+    
+    {/* Appointment Dashboard - Only show when not loading and profile is complete */}
+    {isDemographicComplete && (
     <div 
       id="appointmentpanel" 
       className="bg-cover bg-center h-full w-full flex items-center justify-center" >
@@ -3912,6 +3926,8 @@ useEffect(() => {
       </div>
       </div>
    )}
+  </>
+)}
 
       
         </section>
