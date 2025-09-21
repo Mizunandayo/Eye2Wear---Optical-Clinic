@@ -409,6 +409,44 @@
                 }
             }
 
+            // Send SMS notification for appointment decline
+            const shouldSendDeclineSMS = (
+                (updateData.patientambherappointmentstatus === 'Declined' && originalAmbherStatus !== 'Declined') ||
+                (updateData.patientbautistaappointmentstatus === 'Declined' && originalBautistaStatus !== 'Declined')
+            );
+
+            if (shouldSendDeclineSMS) {
+                try {
+                    // Determine clinic type based on which status was updated
+                    const clinicType = updateData.patientambherappointmentstatus === 'Declined' ? 'ambher' : 'bautista';
+                    
+                    // Send SMS notification asynchronously (don't wait for it)
+                    sendAppointmentDeclineSMS(updatedAppointment._id, clinicType);
+                } catch (smsError) {
+                    console.error('Error sending appointment decline SMS:', smsError);
+                    // Don't fail the appointment update if SMS fails
+                }
+            }
+
+            // Send SMS notification for appointment cancellation
+            const shouldSendCancellationSMS = (
+                (updateData.patientambherappointmentstatus === 'Cancelled' && originalAmbherStatus !== 'Cancelled') ||
+                (updateData.patientbautistaappointmentstatus === 'Cancelled' && originalBautistaStatus !== 'Cancelled')
+            );
+
+            if (shouldSendCancellationSMS) {
+                try {
+                    // Determine clinic type based on which status was updated
+                    const clinicType = updateData.patientambherappointmentstatus === 'Cancelled' ? 'ambher' : 'bautista';
+                    
+                    // Send SMS notification asynchronously (don't wait for it)
+                    sendAppointmentCancellationSMS(updatedAppointment._id, clinicType);
+                } catch (smsError) {
+                    console.error('Error sending appointment cancellation SMS:', smsError);
+                    // Don't fail the appointment update if SMS fails
+                }
+            }
+
             res.status(200).json(updatedAppointment);
         } catch(error){
             console.error("Error updating appointment: ", error);
@@ -460,6 +498,54 @@
             console.log('Appointment acceptance SMS sent successfully');
         } catch (error) {
             console.error('Failed to send appointment acceptance SMS:', error);
+        }
+    }
+
+    // Helper function to send appointment decline SMS
+    async function sendAppointmentDeclineSMS(appointmentId, clinicType) {
+        try {
+            const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/appointment-decline`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    appointmentId: appointmentId,
+                    clinicType: clinicType
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMS API returned ${response.status}`);
+            }
+
+            console.log('Appointment decline SMS sent successfully');
+        } catch (error) {
+            console.error('Failed to send appointment decline SMS:', error);
+        }
+    }
+
+    // Helper function to send appointment cancellation SMS
+    async function sendAppointmentCancellationSMS(appointmentId, clinicType) {
+        try {
+            const response = await fetch(`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/sms/appointment-cancellation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    appointmentId: appointmentId,
+                    clinicType: clinicType
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMS API returned ${response.status}`);
+            }
+
+            console.log('Appointment cancellation SMS sent successfully');
+        } catch (error) {
+            console.error('Failed to send appointment cancellation SMS:', error);
         }
     }
 

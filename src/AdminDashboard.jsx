@@ -5983,25 +5983,12 @@ const deletepatientprofile = async () => {
         }
       });
 
-
-
       if(!response.ok){
         throw new Error("Failed to delete patient account");
       }
 
-
-
-      const fetchresponse = await fetch('/api/patientdemographics?limit=50&page=1', {
-          headers:{
-            'Authorization':`Bearer ${localStorage.getItem('admintoken')}`
-          }
-      });
-
-      if(!fetchresponse.ok) {
-        throw new Error("Failed to retrieve updated patient profile");
-      }
-      const data = await fetchresponse.json();
-      setpatientdemographics(data);
+      // Force refresh the demographics data to update the UI
+      await fetchDemographicsData(true);
 
       setshowpatientpofile(false)
       setshowdeletepatientprofiledialog(false);
@@ -6797,7 +6784,8 @@ const handleDeclineAppointment = async (appointmentId, clinicType) => {
     setSmsToastMessage(`❌ ${clinicDisplayName} appointment declined successfully! SMS sent to ${patientName} (${patientContactNumber})`);
     setSmsToast(true);
     setSmsToastClosing(false);
-    setSmsIsClicked(false); // Red for decline/cancellation
+    setSmsToastType('warning'); // Use warning type for decline actions
+    setSmsIsClicked(false); // Red/yellow for decline/cancellation
 
   } catch (error) {
     console.error(`Failed to decline ${clinicType} patient appointment:`, error);
@@ -6808,6 +6796,7 @@ const handleDeclineAppointment = async (appointmentId, clinicType) => {
     setSmsToastMessage(`❌ Failed to decline ${clinicDisplayName} appointment for ${patientName}: ${error.message}`);
     setSmsToast(true);
     setSmsToastClosing(false);
+    setSmsToastType('error'); // Use error type for failures
     setSmsIsClicked(false); // Red for error
   } finally {
     // Always set loading state to false when done
@@ -6914,7 +6903,8 @@ const handleCancelAppointment = async (appointmentId, clinicType) => {
     setSmsToastMessage(`❌ ${clinicDisplayName} appointment cancelled successfully! SMS sent to ${patientName} (${patientContactNumber})`);
     setSmsToast(true);
     setSmsToastClosing(false);
-    setSmsIsClicked(false); // Red for decline/cancellation
+    setSmsToastType('warning'); // Use warning type for cancel actions
+    setSmsIsClicked(false); // Red/yellow for decline/cancellation
 
   } catch (error) {
     console.error(`Failed to cancel ${clinicType} patient appointment:`, error);
@@ -6925,6 +6915,7 @@ const handleCancelAppointment = async (appointmentId, clinicType) => {
     setSmsToastMessage(`❌ Failed to cancel ${clinicDisplayName} appointment for ${patientName}: ${error.message}`);
     setSmsToast(true);
     setSmsToastClosing(false);
+    setSmsToastType('error'); // Use error type for failures
     setSmsIsClicked(false); // Red for error
   } finally {
     // Always set loading state to false when done
@@ -7024,9 +7015,52 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
     );
     
     console.log(`${clinicType} appointment completed successfully`);
+
+    // Get patient information for toast message
+    const patientName = `${selectedpatientappointment.patientappointmentfirstname} ${selectedpatientappointment.patientappointmentlastname}`;
+    
+    // Try to get patient contact number from demographic data
+    let patientContactNumber = 'Contact not available';
+    try {
+      // Get the appropriate token for authorization
+      const staffToken = localStorage.getItem('stafftoken');
+      const ownerToken = localStorage.getItem('ownertoken');
+      const adminToken = localStorage.getItem('admintoken');
+      const token = staffToken || ownerToken || adminToken;
+
+      // Fetch patient demographic data to get contact number
+      const demographicResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientappointment.patientappointmentemail}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (demographicResponse.ok) {
+        const demographicData = await demographicResponse.json();
+        if (demographicData && demographicData.patientcontactnumber) {
+          patientContactNumber = demographicData.patientcontactnumber;
+        }
+      }
+    } catch (demoError) {
+      console.warn('Could not fetch patient demographic data:', demoError);
+    }
+
+    // Show success toast message
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`✅ ${clinicDisplayName} appointment completed successfully! SMS sent to ${patientName} (${patientContactNumber})`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(true); // Green for success
   } catch (error) {
     console.error(`Error completing ${clinicType} appointment:`, error);
-    // TODO: Add error handling UI feedback
+    
+    // Show error toast message
+    const patientName = `${selectedpatientappointment?.patientappointmentfirstname || 'Unknown'} ${selectedpatientappointment?.patientappointmentlastname || 'Patient'}`;
+    const clinicDisplayName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+    setSmsToastMessage(`❌ Failed to complete ${clinicDisplayName} appointment for ${patientName}: ${error.message}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for error
   } finally {
     // Always set loading state to false when done
     setIsCompletingAppointment(false);
@@ -20420,10 +20454,11 @@ appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] tex
 
 
 
-<td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
- 
+<td className="py-3 px-6 text-center font-albertsans font-medium whitespace-nowrap">
+<div className="flex justify-center items-center">
 <div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-    className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white ">View</h1></div>
+    className="bg-[#383838] hover:bg-[#595959] mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white text-[15px] font-albertsans font-medium">View</h1></div>
+</div>
 
 
 

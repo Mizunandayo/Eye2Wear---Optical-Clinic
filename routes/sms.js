@@ -12,6 +12,12 @@ smsrouter.post('/appointment-reminder', SmsController.sendAppointmentReminder);
 // POST /api/sms/appointment-acceptance - Send appointment acceptance SMS
 smsrouter.post('/appointment-acceptance', SmsController.sendAppointmentAcceptance);
 
+// POST /api/sms/appointment-decline - Send appointment decline SMS
+smsrouter.post('/appointment-decline', SmsController.sendAppointmentDecline);
+
+// POST /api/sms/appointment-cancellation - Send appointment cancellation SMS
+smsrouter.post('/appointment-cancellation', SmsController.sendAppointmentCancellation);
+
 // POST /api/sms/order-status - Send order status update SMS
 smsrouter.post('/order-status', SmsController.sendOrderStatusUpdate);
 
