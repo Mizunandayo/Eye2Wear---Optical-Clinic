@@ -1387,69 +1387,36 @@ ${clinicName}`;
         });
       }
 
-      // Get clinic-specific details based on clinic type  
-      const isAmbher = clinicType.toLowerCase() === 'ambher';
-      
-      // FIX: Use clinic-specific email field for patient lookup (was using wrong field)
-      const appointmentEmail = isAmbher ? 
-        appointment.patientambherappointmentemail : 
-        appointment.patientbautistaappointmentemail;
-
-      console.log(`🔍 Cancel SMS - Looking for patient with email: ${appointmentEmail}`);
-      console.log(`🔍 Cancel SMS - Clinic type: ${clinicType} (isAmbher: ${isAmbher})`);
-
-      // Get patient demographic information using the clinic-specific appointment email
+      // Get patient demographic information using the appointment email
       const patient = await PatientDemographic.findOne({
-        patientemail: appointmentEmail
+        patientemail: appointment.patientappointmentemail
       });
 
-      console.log(`🔍 Cancel SMS - Patient found: ${patient ? 'YES' : 'NO'}`);
-      if (patient) {
-        console.log(`🔍 Cancel SMS - Patient name: ${patient.patientfirstname} ${patient.patientlastname}`);
-        console.log(`🔍 Cancel SMS - Patient contact: ${patient.patientcontactnumber}`);
-      }
-
       if (!patient || !patient.patientcontactnumber) {
-        console.log(`❌ Cancel SMS - Patient lookup failed for email: ${appointmentEmail}`);
         return res.status(400).json({
-          error: `Patient contact number not found for email: ${appointmentEmail}`
+          error: 'Patient contact number not found'
         });
       }
 
+      // Get clinic-specific details based on clinic type
+      const isAmbher = clinicType.toLowerCase() === 'ambher';
       const clinicName = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
       const appointmentDate = isAmbher ? appointment.patientambherappointmentdate : appointment.patientbautistaappointmentdate;
       const appointmentTime = isAmbher ? appointment.patientambherappointmenttime : appointment.patientbautistaappointmenttime;
       const appointmentLocation = isAmbher ? appointment.patientambherappointmentlocationaddress : appointment.patientbautistaappointmentlocationaddress;
+      const eyeSpecialist = isAmbher ? appointment.patientambherappointmenteyespecialist : appointment.patientbautistaappointmenteyespecialist;
 
-      // Get clinic-specific iProg client for appointment cancellation
+      // Get clinic-specific iProg client for appointment Cancellation
       const clinicSmsClient = getClinicSMSClient(clinicName);
-      console.log(`🏥 Using SMS client for appointment cancellation - clinic: ${clinicName}`);
+      console.log(`🏥 Using SMS client for appointment Cancellation - clinic: ${clinicName}`);
 
-      // Create SMS message
-      const message = `Appointment Cancelled
-
-Dear ${patient.patientfirstname},
-
-We regret to inform you that your confirmed appointment has been CANCELLED due to unforeseen circumstances.
-
-Cancelled Appointment Details:
-Date: ${appointmentDate}
-Time: ${appointmentTime}
-Clinic: ${clinicName}
-Location: ${appointmentLocation}
-
-We sincerely apologize for any inconvenience this may cause. Please feel free to reschedule your appointment at your convenience.
-
-You can book a new appointment through our system or contact us directly for immediate assistance.
-
-Thank you for your understanding.
-
-${clinicName}`;
+      // Create SMS message - Keep it short for iProg compatibility
+      const message = `Hi ${patient.patientfirstname}, your appointment on ${appointmentDate} at ${appointmentTime} has been canclled. Please contact us to reschedule. ${clinicName}`;
 
       // Send SMS via iProg using bulk endpoint for consistency
       const phoneNumber = formatPhoneNumber(patient.patientcontactnumber);
 
-      // Enhanced credits tracking for appointment cancellation SMS
+      // Enhanced credits tracking for appointment Cancellation SMS
       let creditsBeforeSending = null;
       let creditsAfterSending = null;
       let actualCreditsDeducted = 0;
@@ -1457,7 +1424,7 @@ ${clinicName}`;
       // Try multiple times to get accurate credits before sending
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          console.log(`💳 Checking credits before sending appointment cancellation SMS (attempt ${attempt})...`);
+          console.log(`💳 Checking credits before sending appointment Cancellation SMS (attempt ${attempt})...`);
           const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
@@ -1476,7 +1443,7 @@ ${clinicName}`;
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
-        console.log('💳 Starting post-SMS credits verification for appointment cancellation...');
+        console.log('💳 Starting post-SMS credits verification for appointment Cancellation...');
         
         // Try multiple times with increasing delays to get accurate post-SMS credits
         const delays = [3000, 5000, 8000]; // 3, 5, 8 seconds
@@ -1559,12 +1526,12 @@ ${clinicName}`;
         iprogMessageId: smsResult.messageId,
         status: smsResult.success ? 'sent' : 'failed',
         message: smsResult.success 
-          ? 'Appointment cancellation notification sent successfully via iProg'
-          : `Failed to send appointment cancellation notification: ${smsResult.error}`
+          ? 'Appointment Cancellation notification sent successfully via iProg'
+          : `Failed to send appointment Cancellation notification: ${smsResult.error}`
       });
 
     } catch (error) {
-      console.error('Error sending appointment cancellation SMS:', error);
+      console.error('Error sending appointment Cancellation SMS:', error);
       res.status(500).json({
         error: 'Internal server error',
         details: error.message
