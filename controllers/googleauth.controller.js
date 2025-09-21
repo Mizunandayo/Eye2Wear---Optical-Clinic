@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Use the frontend client ID for Google OAuth verification
+const client = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
 
 const generateAuthToken = (patient) => {
   return jwt.sign({
@@ -71,7 +72,7 @@ export const googleRegister = async (req, res) => {
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.VITE_GOOGLE_CLIENT_ID
     });
 
     const payload = ticket.getPayload();
@@ -161,7 +162,7 @@ export const googleLogin = async (req, res) => {
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.VITE_GOOGLE_CLIENT_ID
     });
 
     const payload = ticket.getPayload();
