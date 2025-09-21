@@ -162,7 +162,7 @@ export const googleRegister = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Account created successfully with Google. Check your email for login credentials.",
+      message: "Account created successfully with Google. ",
       autoLogin: true,
       jsontoken: token,
       patient: patientResponse
