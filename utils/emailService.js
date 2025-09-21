@@ -309,6 +309,89 @@ export const sendAccountDeletionEmail = async (email, accountType = 'Patient') =
   }
 };
 
+export const sendPasswordResetEmail = async (email, resetLink, firstName) => {
+  try {
+    const mailOptions = {
+      from: {
+        name: 'Eye2Wear',
+        address: process.env.EMAIL_USER
+      },
+      to: email,
+      subject: "Eye2Wear - Password Reset",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #125c99; margin: 0;">Eye2Wear</h1>
+            <h2 style="color: #333; margin: 10px 0;">Password Reset Request</h2>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              Hello ${firstName || 'User'},
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              You requested a password reset for your Eye2Wear account.
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.5;">
+              Click the button below to reset your password:
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" 
+               style="background-color: #125c99; color: white; padding: 15px 30px; text-decoration: none; 
+                      border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 14px; line-height: 1.5;">
+              If the button above doesn't work, you can copy and paste this link into your browser:
+            </p>
+            <p style="color: #125c99; font-size: 14px; word-break: break-all;">
+              ${resetLink}
+            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+              This link will expire in 1 hour for security reasons.
+            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.5;">
+              If you didn't request this password reset, please ignore this email.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 12px;">
+              © 2024 Eye2Wear. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+        Eye2Wear - Password Reset Request
+        
+        Hello ${firstName || 'User'},
+        
+        You requested a password reset for your Eye2Wear account.
+        
+        Please visit this link to reset your password:
+        ${resetLink}
+        
+        This link will expire in 1 hour for security reasons.
+        
+        If you didn't request this password reset, please ignore this email.
+        
+        © 2024 Eye2Wear. All rights reserved.
+      `
+    };
+
+    return await sendEmailWithRetry(mailOptions);
+  } catch (error) {
+    console.error("Error in sendPasswordResetEmail:", error);
+    throw error;
+  }
+};
+
 // Export the remaining functions that weren't exported individually
 export { sendEmailWithRetry, createEmailTransporter };
 
@@ -316,6 +399,7 @@ export default {
   sendVerificationEmail,
   sendAccountCreationEmail,
   sendAccountDeletionEmail,
+  sendPasswordResetEmail,
   sendEmailWithRetry,
   createEmailTransporter
 };

@@ -80,45 +80,25 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      // Force SMTP for now due to OAuth issues  
-      console.log('Using SMTP for password reset email (OAuth temporarily disabled)');
-      
-      // Create SMTP fallback using nodemailer
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
+      if (this.emailProvider === 'gmail-api' && this.gmailService) {
+        console.log('Using Gmail API for password reset email');
+        try {
+          return await this.gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName);
+        } catch (gmailError) {
+          console.log('Gmail API failed, falling back to SMTP...', gmailError.message);
+          // Fallback to SMTP
+          const { sendPasswordResetEmail: sendPasswordResetEmailSMTP } = await import('./emailService.js');
+          return await sendPasswordResetEmailSMTP(email, resetLink, firstName);
         }
-      });
-      
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Eye2Wear - Password Reset",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Password Reset Request</h2>
-            <p>Hello ${firstName || 'User'},</p>
-            <p>You requested a password reset for your Eye2Wear account.</p>
-            <p>Click the button below to reset your password:</p>
-            <div style="text-align: center; margin: 20px 0;">
-              <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
-            </div>
-            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-            <p><a href="${resetLink}">${resetLink}</a></p>
-            <p>This link will expire in 1 hour for security reasons.</p>
-            <p>If you didn't request this password reset, please ignore this email.</p>
-          </div>
-        `
-      };
-      
-      await transporter.sendMail(mailOptions);
-      return { success: true };
+      } else {
+        // Use SMTP
+        console.log('Using SMTP for password reset email');
+        const { sendPasswordResetEmail: sendPasswordResetEmailSMTP } = await import('./emailService.js');
+        return await sendPasswordResetEmailSMTP(email, resetLink, firstName);
+      }
     } catch (error) {
-      console.error('Error sending password reset email via SMTP:', error);
-      throw new Error(`SMTP password reset email failed: ${error.message}`);
+      console.error('Error sending password reset email:', error);
+      throw new Error(`Email service failed: ${error.message}`);
     }
   }
 }
