@@ -6,8 +6,11 @@ dotenv.config();
 
 class EmailServiceManager {
   constructor() {
-    this.emailProvider = process.env.EMAIL_PROVIDER || 'smtp';
+    // Temporarily force SMTP due to OAuth issues
+    this.emailProvider = process.env.EMAIL_PROVIDER === 'gmail-api' ? 'smtp' : (process.env.EMAIL_PROVIDER || 'smtp');
     this.gmailService = null;
+    
+    console.log(`Email provider set to: ${this.emailProvider} (temporarily using SMTP due to OAuth issues)`);
     
     if (this.emailProvider === 'gmail-api') {
       this.gmailService = new GmailAPIService();
@@ -24,31 +27,20 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      if (this.emailProvider === 'gmail-api' && this.gmailService) {
-        console.log('Using Gmail API for verification email');
-        return await this.gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId);
-      } else {
-        // Force Gmail API usage since SMTP is blocked by Render
-        console.log('Forcing Gmail API usage (SMTP blocked by Render)');
-        if (!this.gmailService) {
-          this.gmailService = new GmailAPIService();
-        }
-        await this.gmailService.initialize();
-        return await this.gmailService.sendVerificationEmailGmailAPI(email, token, firstName, clinicName, patientId);
-      }
+      // Force SMTP for now due to OAuth issues
+      console.log('Using SMTP for verification email (OAuth temporarily disabled)');
+      const { sendVerificationEmail: sendVerificationEmailSMTP } = await import('./emailService.js');
+      const patientObj = {
+        _id: patientId,
+        patientemail: email,
+        verificationtoken: token,
+        patientfirstname: firstName,
+        patientlastname: '' // We don't have last name in the parameters
+      };
+      return await sendVerificationEmailSMTP(patientObj);
     } catch (error) {
-      console.error('Error sending verification email via Gmail API:', error);
-      
-      // Instead of SMTP fallback, provide more detailed error information
-      if (error.message && error.message.includes('invalid_client')) {
-        console.error('OAuth authentication failed. Please check your Google Cloud Console configuration.');
-        console.error('1. Verify GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are correct');
-        console.error('2. Ensure the OAuth consent screen is properly configured');
-        console.error('3. Check if the refresh token is still valid');
-        throw new Error('Gmail API authentication failed. Please check OAuth configuration.');
-      }
-      
-      throw new Error(`Gmail API email service failed: ${error.message}`);
+      console.error('Error sending verification email via SMTP:', error);
+      throw new Error(`SMTP email service failed: ${error.message}`);
     }
   }
 
@@ -56,21 +48,13 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      if (this.emailProvider === 'gmail-api' && this.gmailService) {
-        console.log('Using Gmail API for account creation email');
-        return await this.gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName);
-      } else {
-        // Force Gmail API usage since SMTP is blocked by Render
-        console.log('Forcing Gmail API usage for account creation (SMTP blocked by Render)');
-        if (!this.gmailService) {
-          this.gmailService = new GmailAPIService();
-        }
-        await this.gmailService.initialize();
-        return await this.gmailService.sendAccountCreationEmailGmailAPI(email, password, firstName, accountType, clinicName);
-      }
+      // Force SMTP for now due to OAuth issues
+      console.log('Using SMTP for account creation email (OAuth temporarily disabled)');
+      const { sendAccountCreationEmail: sendAccountCreationEmailSMTP } = await import('./emailService.js');
+      return await sendAccountCreationEmailSMTP(email, password, accountType);
     } catch (error) {
-      console.error('Error sending account creation email via Gmail API:', error);
-      throw new Error(`Gmail API account creation email failed: ${error.message}`);
+      console.error('Error sending account creation email via SMTP:', error);
+      throw new Error(`SMTP account creation email failed: ${error.message}`);
     }
   }
 
@@ -78,21 +62,45 @@ class EmailServiceManager {
     try {
       await this.initialize();
 
-      if (this.emailProvider === 'gmail-api' && this.gmailService) {
-        console.log('Using Gmail API for password reset email');
-        return await this.gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName);
-      } else {
-        // Force Gmail API usage since SMTP is blocked by Render
-        console.log('Forcing Gmail API usage for password reset (SMTP blocked by Render)');
-        if (!this.gmailService) {
-          this.gmailService = new GmailAPIService();
+      // Force SMTP for now due to OAuth issues  
+      console.log('Using SMTP for password reset email (OAuth temporarily disabled)');
+      
+      // Create SMTP fallback using nodemailer
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
         }
-        await this.gmailService.initialize();
-        return await this.gmailService.sendPasswordResetEmailGmailAPI(email, resetLink, firstName);
-      }
+      });
+      
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Eye2Wear - Password Reset",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Password Reset Request</h2>
+            <p>Hello ${firstName || 'User'},</p>
+            <p>You requested a password reset for your Eye2Wear account.</p>
+            <p>Click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+            </div>
+            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p><a href="${resetLink}">${resetLink}</a></p>
+            <p>This link will expire in 1 hour for security reasons.</p>
+            <p>If you didn't request this password reset, please ignore this email.</p>
+          </div>
+        `
+      };
+      
+      await transporter.sendMail(mailOptions);
+      return { success: true };
     } catch (error) {
-      console.error('Error sending password reset email via Gmail API:', error);
-      throw new Error(`Gmail API password reset email failed: ${error.message}`);
+      console.error('Error sending password reset email via SMTP:', error);
+      throw new Error(`SMTP password reset email failed: ${error.message}`);
     }
   }
 }
