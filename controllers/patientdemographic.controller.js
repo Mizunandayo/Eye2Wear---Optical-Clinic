@@ -270,7 +270,7 @@
       const patientdemo = await Patientdemographic.findOne({
         patientemail: patientemail
       })
-      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture createdAt updatedAt')
+      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments createdAt updatedAt')
       .lean(); // Returns plain JavaScript objects for better performance
 
       if(!patientdemo){
@@ -636,6 +636,131 @@
       res.status(200).json({ message: "Patient Profile deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  };
+  
+  // Add Medical Document Controller
+  export const addMedicalDocument = async (req, res) => {
+    try {
+      const { 
+        patientEmail, 
+        documentname, 
+        documentdescription, 
+        originalname,
+        filename,
+        mimetype,
+        size,
+        documenturl, 
+        public_id,
+        addedbyname, 
+        addedbyclinic, 
+        addedbytype, 
+        addedbydate 
+      } = req.body;
+      
+      if (!patientEmail || !documentname || !documenturl) {
+        return res.status(400).json({ message: "Patient email, document name, and document URL are required" });
+      }
+      
+      const patient = await Patientdemographic.findOne({ patientemail: patientEmail });
+      
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+      
+      const newDocument = {
+        documentname,
+        documentdescription: documentdescription || '',
+        originalname: originalname || documentname,
+        filename: filename || documentname,
+        mimetype: mimetype || 'application/octet-stream',
+        size: size || 0,
+        url: documenturl,
+        public_id: public_id || '',
+        addedbyname,
+        addedbyclinic,
+        addedbytype,
+        addedbydate: addedbydate || new Date().toISOString()
+      };
+      
+      // Initialize patientmedicaldocuments array if it doesn't exist
+      if (!patient.patientmedicaldocuments) {
+        patient.patientmedicaldocuments = [];
+      }
+      
+      patient.patientmedicaldocuments.push(newDocument);
+      await patient.save();
+      
+      res.status(200).json({ 
+        message: "Medical document added successfully", 
+        document: newDocument 
+      });
+    } catch (error) {
+      console.error("Error adding medical document:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+  // Delete Medical Document Controller
+  export const deleteMedicalDocument = async (req, res) => {
+    try {
+      console.log('DELETE request received for medical document');
+      console.log('Request params:', req.params);
+      console.log('Request headers:', req.headers.authorization);
+      
+      const { patientEmail, documentId } = req.params;
+      
+      console.log('Patient Email:', patientEmail);
+      console.log('Document ID:', documentId);
+      
+      if (!patientEmail || !documentId) {
+        console.log('Missing patientEmail or documentId');
+        return res.status(400).json({ message: "Patient email and document ID are required" });
+      }
+      
+      const patient = await Patientdemographic.findOne({ patientemail: patientEmail });
+      
+      if (!patient) {
+        console.log('Patient not found for email:', patientEmail);
+        return res.status(404).json({ message: "Patient not found" });
+      }
+      
+      console.log('Patient found, current medical documents count:', patient.patientmedicaldocuments?.length || 0);
+      
+      if (!patient.patientmedicaldocuments || patient.patientmedicaldocuments.length === 0) {
+        console.log('No medical documents found for this patient');
+        return res.status(404).json({ message: "No medical documents found for this patient" });
+      }
+      
+      console.log('Looking for document with ID:', documentId);
+      console.log('Available document IDs:', patient.patientmedicaldocuments.map(doc => doc._id.toString()));
+      
+      const documentIndex = patient.patientmedicaldocuments.findIndex(doc => doc._id.toString() === documentId);
+      
+      if (documentIndex === -1) {
+        console.log('Document not found in patient medical documents');
+        return res.status(404).json({ message: "Medical document not found" });
+      }
+      
+      console.log('Document found at index:', documentIndex);
+      console.log('Document to delete:', patient.patientmedicaldocuments[documentIndex]);
+      
+      patient.patientmedicaldocuments.splice(documentIndex, 1);
+      
+      console.log('Document removed from array, new count:', patient.patientmedicaldocuments.length);
+      
+      const savedPatient = await patient.save();
+      
+      console.log('Patient record saved successfully');
+      console.log('Final medical documents count:', savedPatient.patientmedicaldocuments.length);
+      
+      res.status(200).json({ 
+        message: "Medical document deleted successfully",
+        remainingDocuments: savedPatient.patientmedicaldocuments.length
+      });
+    } catch (error) {
+      console.error("Error deleting medical document:", error);
+      res.status(500).json({ message: "Internal server error", error: error.message });
     }
   };
   

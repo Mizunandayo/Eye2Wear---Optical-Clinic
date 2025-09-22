@@ -14,10 +14,13 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    // Allow both images and documents
+    if (file.mimetype.startsWith('image/') || 
+        file.mimetype.startsWith('application/') ||
+        file.mimetype.startsWith('text/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'), false);
+      cb(new Error('Only image and document files are allowed!'), false);
     }
   }
 });
@@ -574,16 +577,19 @@ export const uploadOtherClinicRecordImages = [
       // Upload record image if provided
       if (req.files && req.files.recordImage) {
         const recordFile = req.files.recordImage[0];
-        const recordUploadResult = await CloudinaryService.uploadImage(
+        
+        // Use the new uploadFile method that handles both images and documents
+        const recordUploadResult = await CloudinaryService.uploadFile(
           recordFile.buffer,
           {
             folder: 'eye2wear/clinic-records/documents',
             public_id: `clinic_record_${recordId}_${Date.now()}`,
-            transformation: [
+            mimetype: recordFile.mimetype,
+            transformation: recordFile.mimetype.startsWith('image/') ? [
               { width: 1200, height: 1200, crop: 'limit' },
               { quality: 'auto' },
               { fetch_format: 'auto' }
-            ]
+            ] : [] // No transformation for non-image files
           }
         );
         uploadResults.recordImage = {
@@ -595,62 +601,26 @@ export const uploadOtherClinicRecordImages = [
       if (Object.keys(uploadResults).length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'No image files provided'
+          message: 'No files provided'
         });
       }
 
-      // Get current record to delete old images if they exist
-      const OtherClinicRecord = (await import('../models/otherclinicrecord.js')).default;
-      const currentRecord = await OtherClinicRecord.findById(recordId);
-      
-      if (!currentRecord) {
-        return res.status(404).json({
-          success: false,
-          message: 'Clinic record not found'
-        });
-      }
-
-      // Delete old images if they exist
-      if (uploadResults.profilePicture && currentRecord.patientotherclinicprofilepicture_public_id) {
-        try {
-          await CloudinaryService.deleteImage(currentRecord.patientotherclinicprofilepicture_public_id);
-        } catch (deleteError) {
-          console.warn('Could not delete old profile picture:', deleteError.message);
-        }
-      }
-
-      if (uploadResults.recordImage && currentRecord.patientotherclinicrecordimage_public_id) {
-        try {
-          await CloudinaryService.deleteImage(currentRecord.patientotherclinicrecordimage_public_id);
-        } catch (deleteError) {
-          console.warn('Could not delete old record image:', deleteError.message);
-        }
-      }
-
-      // Update record with new image URLs and public_ids
-      const updateData = {};
+      // For Medical Documents, we don't need to update OtherClinicRecord
+      // Just return the upload results
+      const responseData = {};
       if (uploadResults.profilePicture) {
-        updateData.patientotherclinicprofilepicture = uploadResults.profilePicture.url;
-        updateData.patientotherclinicprofilepicture_public_id = uploadResults.profilePicture.public_id;
+        responseData.profilePictureUrl = uploadResults.profilePicture.url;
+        responseData.profilePicture_public_id = uploadResults.profilePicture.public_id;
       }
       if (uploadResults.recordImage) {
-        updateData.patientotherclinicrecordimage = uploadResults.recordImage.url;
-        updateData.patientotherclinicrecordimage_public_id = uploadResults.recordImage.public_id;
+        responseData.recordImageUrl = uploadResults.recordImage.url;
+        responseData.recordImage_public_id = uploadResults.recordImage.public_id;
       }
-
-      const updatedRecord = await OtherClinicRecord.findByIdAndUpdate(
-        recordId,
-        updateData,
-        { new: true, runValidators: true }
-      );
 
       res.status(200).json({
         success: true,
-        message: 'Clinic record images uploaded successfully',
-        data: {
-          uploadResults,
-          record: updatedRecord
-        }
+        message: 'Files uploaded successfully',
+        data: responseData
       });
 
     } catch (error) {

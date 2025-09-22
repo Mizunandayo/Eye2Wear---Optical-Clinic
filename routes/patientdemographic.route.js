@@ -12,7 +12,9 @@
         syncProfilePicture,
         syncAllProfilePictures,
         debugProfileSync,
-        testValidation
+        testValidation,
+        addMedicalDocument,
+        deleteMedicalDocument
         } from "../controllers/patientdemographic.controller.js";
 
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
@@ -126,6 +128,10 @@
 
     //Test Validation Route
     patientdemographicrouter.put("/test-validation/:id", verifyStaffOwnerOrPatientAccess, testValidation);
+
+    // Medical Documents Routes
+    patientdemographicrouter.post("/medical-documents", verifyStaffOwnerOrPatientAccess, addMedicalDocument);
+    patientdemographicrouter.delete("/medical-documents/:patientEmail/:documentId", verifyStaffOwnerOrPatientAccess, deleteMedicalDocument);
 
 
 

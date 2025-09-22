@@ -155,7 +155,58 @@ const PatientdemographicSchema = mongoose.Schema(
       default: null
     },
 
-
+    // Medical documents array for storing uploaded documents
+    patientmedicaldocuments: [{
+      documentname: {
+        type: String,
+        required: true
+      },
+      documentdescription: {
+        type: String,
+        default: ''
+      },
+      originalname: {
+        type: String,
+        required: true
+      },
+      filename: {
+        type: String,
+        required: true
+      },
+      mimetype: {
+        type: String,
+        required: true
+      },
+      size: {
+        type: Number,
+        required: true
+      },
+      url: {
+        type: String,
+        required: true
+      },
+      public_id: {
+        type: String,
+        required: true
+      },
+      addedbyname: {
+        type: String,
+        required: true
+      },
+      addedbyclinic: {
+        type: String,
+        required: true
+      },
+      addedbytype: {
+        type: String,
+        required: true,
+        enum: ['Staff', 'Owner']
+      },
+      addedbydate: {
+        type: Date,
+        default: Date.now
+      }
+    }],
 
     isVerified: {type: Boolean, default: false},
     verificationtoken: {type: String},

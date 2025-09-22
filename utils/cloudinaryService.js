@@ -102,6 +102,64 @@ class CloudinaryService {
   }
 
   /**
+   * Upload a file (image or document) from buffer
+   */
+  static async uploadFile(buffer, options = {}) {
+    try {
+      const {
+        folder = 'eye2wear',
+        public_id,
+        mimetype,
+        transformation = []
+      } = options;
+
+      // Determine resource type based on mimetype
+      let resource_type = 'auto'; // This allows any file type
+      let upload_preset = {};
+
+      if (mimetype && mimetype.startsWith('image/')) {
+        resource_type = 'image';
+        upload_preset.transformation = transformation.length > 0 ? transformation : [
+          { width: 1000, height: 1000, crop: 'limit' },
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ];
+      } else {
+        resource_type = 'raw'; // For documents and other non-image files
+      }
+
+      const uploadOptions = {
+        folder: folder,
+        resource_type: resource_type,
+        ...upload_preset
+      };
+
+      if (public_id) {
+        uploadOptions.public_id = public_id;
+      }
+
+      // Create data URL based on mimetype
+      const dataUrl = mimetype 
+        ? `data:${mimetype};base64,${buffer.toString('base64')}`
+        : `data:application/octet-stream;base64,${buffer.toString('base64')}`;
+
+      const result = await cloudinary.uploader.upload(dataUrl, uploadOptions);
+
+      return {
+        url: result.secure_url,
+        public_id: result.public_id,
+        width: result.width || null,
+        height: result.height || null,
+        format: result.format,
+        resource_type: result.resource_type
+      };
+    } catch (error) {
+      console.error('Cloudinary file upload error:', error);
+      throw new Error(`Failed to upload file: ${error.message}`);
+    }
+  }
+
+  /**
    * Upload multiple images from buffers
    */
   static async uploadMultipleImages(buffers, options = {}) {
