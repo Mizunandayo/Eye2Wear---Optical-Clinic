@@ -1570,12 +1570,354 @@ const MedicalRecordImageViewer = ({ record, loadMedicalRecordImage, onImageClick
   );
 };
 
+// Multi-File Viewer Component for Other Clinic Records
+const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
+  const [isLoading, setIsLoading] = useState(false);
 
+  // API URL for secure downloads
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
+  // Function to get file extension from URL or filename
+  const getFileExtension = (url) => {
+    if (!url) return '';
+    
+    // Remove query parameters and get the path
+    const cleanUrl = url.split('?')[0];
+    const extension = cleanUrl.split('.').pop()?.toLowerCase();
+    return extension || '';
+  };
 
+  // Function to determine file type
+  const getFileType = (url) => {
+    const extension = getFileExtension(url);
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return 'image';
+    } else if (extension === 'pdf') {
+      return 'pdf';
+    } else if (url.includes('raw/upload')) {
+      // Cloudinary raw uploads are typically PDFs or documents
+      return 'pdf';
+    } else {
+      return 'document';
+    }
+  };
 
+  // Function to download file with correct extension
+  const downloadFile = async (url, originalName) => {
+    try {
+      setIsLoading(true);
+      
+      // Check if it's a Cloudinary URL and extract public ID
+      if (url.includes('cloudinary.com') && url.includes('otherclinic_record_')) {
+        // Extract public ID from Cloudinary URL
+        // URL format: https://res.cloudinary.com/dbctcv1oi/raw/upload/v1758623406/eye2wear/otherclinic-records/files/otherclinic_record_1758623404963_0.pdf
+        const urlParts = url.split('/');
+        const versionIndex = urlParts.findIndex(part => part.startsWith('v'));
+        
+        if (versionIndex !== -1 && versionIndex < urlParts.length - 1) {
+          // Get the path after the version number (e.g., "eye2wear/otherclinic-records/files/otherclinic_record_1758623404963_0.pdf")
+          const publicIdWithPath = urlParts.slice(versionIndex + 1).join('/');
+          
+          console.log('Extracted public ID with path:', publicIdWithPath);
+          
+          // Use our secure backend endpoint instead of direct Cloudinary URL
+          const secureDownloadUrl = `${apiUrl}/api/otherclinicrecord/download/${encodeURIComponent(publicIdWithPath)}?filename=${encodeURIComponent(originalName || 'medical_document')}`;
+          
+          console.log('Using secure download URL:', secureDownloadUrl);
+        
+          const response = await fetch(secureDownloadUrl);
+          if (!response.ok) throw new Error('Download failed');
+          
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          
+          // Get the content-disposition header to extract the filename
+          const contentDisposition = response.headers.get('content-disposition');
+          let fileName = originalName || 'medical_document';
+          
+          if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+            if (filenameMatch) {
+              fileName = filenameMatch[1];
+            }
+          }
+          
+          // If no extension in filename, try to detect from blob type
+          if (!fileName.includes('.')) {
+            const mimeType = blob.type;
+            const mimeToExtension = {
+              'application/pdf': 'pdf',
+              'image/jpeg': 'jpg',
+              'image/jpg': 'jpg', 
+              'image/png': 'png',
+              'image/gif': 'gif',
+              'image/webp': 'webp',
+              'text/plain': 'txt',
+              'application/msword': 'doc',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+            };
+            
+            const extension = mimeToExtension[mimeType] || 'pdf';
+            fileName = `${fileName}.${extension}`;
+          }
+          
+          console.log('Downloading file as:', fileName);
+          
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up the object URL
+          window.URL.revokeObjectURL(downloadUrl);
+          
+          // Show success message
+          if (showToast) {
+            showToast(`File downloaded successfully as ${fileName}!`, 'success');
+          }
+        }
+        
+      } else {
+        // Fallback to original direct download method for non-Cloudinary URLs
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Download failed');
+        
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
+        // Get the correct file extension based on blob MIME type
+        let extension = '';
+        const mimeType = blob.type;
+        
+        console.log('Blob MIME type:', mimeType, 'for URL:', url);
+        
+        // Map MIME types to extensions
+        const mimeToExtension = {
+          'application/pdf': 'pdf',
+          'image/jpeg': 'jpg',
+          'image/jpg': 'jpg', 
+          'image/png': 'png',
+          'image/gif': 'gif',
+          'image/webp': 'webp',
+          'text/plain': 'txt',
+          'application/msword': 'doc',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+        };
+        
+        extension = mimeToExtension[mimeType] || getFileExtension(url) || 'pdf';
+        
+        // Enhanced handling for Cloudinary raw uploads
+        if (!extension && url.includes('raw/upload')) {
+          extension = 'pdf';
+        }
+        
+        // Try to extract original filename from Cloudinary URL if possible
+        let cleanOriginalName = originalName;
+        if (!originalName && url.includes('otherclinic_record_')) {
+          // Extract filename pattern from URL like "otherclinic_record_1758608415710_1758608415736"
+          const urlParts = url.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          cleanOriginalName = filename.replace(/otherclinic_record_\d+_\d+/, 'medical_record');
+        }
+        
+        const fileName = cleanOriginalName || `medical_record_${Date.now()}`;
+        
+        // Clean up the filename - remove any existing extensions and add the correct one
+        const baseFileName = fileName.replace(/\.[^/.]+$/, '');
+        const finalFileName = `${baseFileName}.${extension}`;
+        
+        console.log('Original name:', originalName, 'Clean name:', cleanOriginalName, 'Final name:', finalFileName, 'MIME type:', mimeType);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = finalFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the object URL
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        // Use the showToast function passed as prop or fallback to existing toast system
+        if (showToast) {
+          showToast(`File downloaded successfully as ${finalFileName}!`, 'success');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      if (showToast) {
+        showToast('Failed to download file. Please try again.', 'error');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Get files from the record
+  const files = record?.patientotherclinicrecordfiles || [];
+  const fileNames = record?.patientotherclinicrecordfiles_names || [];
+  const singleImage = record?.patientotherclinicrecordimage;
 
+  // If we have multiple files, show them
+  if (files.length > 0) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {files.map((fileUrl, index) => {
+            const fileType = getFileType(fileUrl);
+            const extension = getFileExtension(fileUrl);
+            const originalName = fileNames[index] || `medical_record_${index + 1}`;
+            
+            return (
+              <div key={index} className="relative group">
+                <div className="w-full h-32 rounded-2xl overflow-hidden border-2 border-gray-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                  {fileType === 'image' ? (
+                    <img 
+                      onClick={() => onFileClick && onFileClick(fileUrl)}
+                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200" 
+                      src={fileUrl}
+                      alt={`Medical record ${index + 1}`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 cursor-pointer hover:bg-red-100 transition-colors duration-200">
+                      <i className="bx bxs-file-pdf text-red-500 text-3xl mb-1"/>
+                      <p className="text-xs text-gray-800 text-center px-2 font-medium break-words leading-tight" 
+                         title={originalName}
+                         style={{ 
+                           wordBreak: 'break-word',
+                           maxHeight: '2.5rem',
+                           overflow: 'hidden',
+                           display: '-webkit-box',
+                           WebkitLineClamp: 2,
+                           WebkitBoxOrient: 'vertical'
+                         }}>
+                        {originalName || `${extension?.toUpperCase()} File`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Download and View buttons */}
+                <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {fileType === 'image' ? (
+                    <button
+                      onClick={() => onFileClick && onFileClick(fileUrl)}
+                      className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                      title="View Image"
+                    >
+                      <i className="bx bx-show text-sm"/>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => window.open(fileUrl, '_blank')}
+                      className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                      title="View Document"
+                    >
+                      <i className="bx bx-show text-sm"/>
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => downloadFile(fileUrl, originalName)}
+                    disabled={isLoading}
+                    className="w-8 h-8 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                    title="Download File"
+                  >
+                    {isLoading ? (
+                      <i className="bx bx-loader-alt animate-spin text-sm"/>
+                    ) : (
+                      <i className="bx bx-download text-sm"/>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="text-center text-sm text-gray-500">
+          {files.length} file{files.length !== 1 ? 's' : ''} available
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to single image if available
+  if (singleImage) {
+    const fileType = getFileType(singleImage);
+    
+    return (
+      <div className="flex justify-center">
+        <div className="relative group">
+          <div className="w-80 h-80 rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white">
+            {fileType === 'image' ? (
+              <img 
+                onClick={() => onFileClick && onFileClick(singleImage)}
+                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200" 
+                src={singleImage}
+                alt="Medical record"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-red-50">
+                <i className="bx bxs-file-pdf text-red-500 text-6xl mb-2"/>
+                <p className="text-gray-600 text-center">Medical Record Document</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Download and View buttons */}
+          <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            {fileType === 'image' ? (
+              <button
+                onClick={() => onFileClick && onFileClick(singleImage)}
+                className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                title="View Image"
+              >
+                <i className="bx bx-show"/>
+              </button>
+            ) : (
+              <button
+                onClick={() => window.open(singleImage, '_blank')}
+                className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                title="View Document"
+              >
+                <i className="bx bx-show"/>
+              </button>
+            )}
+            
+            <button
+              onClick={() => downloadFile(singleImage, 'medical_record')}
+              disabled={isLoading}
+              className="w-10 h-10 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+              title="Download File"
+            >
+              {isLoading ? (
+                <i className="bx bx-loader-alt animate-spin"/>
+              ) : (
+                <i className="bx bx-download"/>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No files available
+  return (
+    <div className="flex flex-col justify-center items-center py-8">
+      <div className="w-32 h-32 bg-gray-100 rounded-2xl flex items-center justify-center">
+        <div className="text-gray-400 text-center">
+          <i className="bx bx-file text-4xl mb-2"></i>
+          <p className="text-sm">No files available</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -7085,6 +7427,7 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
 // Medical Records State Variables
 const [otherclinicrecords, setotherclinicrecords] = useState([]);
 const [activemedicalrecordstable, setactivemedicalrecordstable] = useState('allmedicalrecordstable');
+
 const showmedicalrecordstable = (medicalrecordstableid) => {
     setactivemedicalrecordstable(medicalrecordstableid);
 };
@@ -7096,6 +7439,23 @@ const showpatientmedicalrecordstable = (patientmedicalrecordstableid) => {
 };
 
 const [selectedpatientmedicalrecord,setselectedpatientmedicalrecord] = useState(null);
+
+// Filtered other clinic records with memoization to prevent infinite loops
+const filteredOtherClinicRecords = React.useMemo(() => {
+  if (!selectedpatientmedicalrecord?.patientemail || !Array.isArray(otherclinicrecords)) {
+    return [];
+  }
+
+  const filtered = otherclinicrecords
+    .filter(record => {
+      const recordEmail = record.patientotherclinicemail?.toLowerCase()?.trim();
+      const selectedEmail = selectedpatientmedicalrecord.patientemail?.toLowerCase()?.trim();
+      return recordEmail === selectedEmail;
+    })
+    .sort((a, b) => new Date(b.patientotherclinicconsultationdate) - new Date(a.patientotherclinicconsultationdate));
+
+  return filtered;
+}, [otherclinicrecords, selectedpatientmedicalrecord?.patientemail]);
 const [showpatientmedicalrecord, setshowpatientmedicalrecord] = useState(false);
 const [showpatientmedicalrecordconsultation, setshowpatientmedicalrecordconsultation] = useState(false);
 const [showpatientaddothermedicalrecord, setshowpatientaddothermedicalrecord] = useState(false);
@@ -7265,55 +7625,125 @@ const getPaginatedData = (data, section) => {
 
 const [otherclinicselectedimage, setotherclinicselectedimage] = useState(null);
 const [otherclinicpreviewimage, setotherclinicpreviewimage] = useState (null);
+const [otherclinicfiles, setotherclinicfiles] = useState([]);
+const [uploadingotherclinicfiles, setuploadingotherclinicfiles] = useState(false);
 const otherclinicimageinputref = useRef(null);
 
 
-//PROFILE IMAGE TYPE HANDLING
+//PROFILE IMAGE TYPE HANDLING - Multi-file support
 const otherclinichandleprofilechange = async (e) => {
-  const file = e.target.files[0];
-
-  if (!file) return;
-
-  const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
-  if(!imagefiletype.includes(file.type)) {
-    alert("Please select an image file (JPG or PNG)");
+  const files = Array.from(e.target.files);
+  console.log('Files selected:', files);
+  console.log('Files length:', files.length);
+  console.log('File names:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
+  
+  if (!files.length) {
+    console.log('No files selected, returning early');
     return;
   }
 
-  const maximagefile = 10; // Increased to 10MB for Cloudinary
-  if(file.size > maximagefile * 1024 * 1024){
-    alert("Image is too large. Please select image under 10MB");
+  // Check maximum of 5 files
+  if (otherclinicfiles.length + files.length > 5) {
+    setSmsToastMessage('Maximum 5 files allowed');
+    setSmsToastType('error');
+    setSmsToast(true);
     return;
   }
 
-  // Reset states
-  setotherclinicselectedimage(null);
-  setotherclinicpreviewimage(null);
-
-  if(otherclinicimageinputref.current){
-    otherclinicimageinputref.current.value = "";
-  }
-
-  try {
-    // For other clinic records, we'll upload as 'other' type with the patient email
-    const patientEmail = selectedpatientappointment?.patientemail || 'unknown';
-    const result = await uploadProfilePicture(file, patientEmail, 'other');
-    
-    if (result.success) {
-      console.log('Other clinic record upload successful:', result);
-      setotherclinicpreviewimage(result.data.imageUrl);
-      setotherclinicselectedimage(file);
-      
-      // The Cloudinary URL will be used when submitting the form
-      // Store it in a way that can be accessed during submission
-      window.cloudinaryOtherClinicImage = result.data.imageUrl;
-    } else {
-      console.error('Other clinic record upload failed:', result.message);
-      alert(`Upload failed: ${result.message || 'Unknown error'}`);
+  // Validate file types and sizes
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+  for (const file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      setSmsToastMessage('Please select image files (JPG, PNG) or PDF documents');
+      setSmsToastType('error');
+      setSmsToast(true);
+      return;
     }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setSmsToastMessage(`File "${file.name}" is too large. Please select files under 10MB`);
+      setSmsToastType('error');
+      setSmsToast(true);
+      return;
+    }
+  }
+
+  setuploadingotherclinicfiles(true);
+  
+  try {
+    // Use the new multi-file upload endpoint
+    const formData = new FormData();
+    
+    console.log('Appending files to FormData:', files);
+    
+    // Append all files with the correct field name
+    files.forEach((file, index) => {
+      console.log(`Appending file ${index}:`, file.name, file.type, file.size);
+      formData.append('otherclinicfiles', file);
+    });
+    
+    console.log('FormData entries:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
+    
+    const uploadResponse = await fetch('/api/cloudinary/upload/otherclinic-files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: formData
+    });
+    
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      throw new Error(errorData.message || 'Failed to upload files');
+    }
+    
+    const uploadResult = await uploadResponse.json();
+    console.log('Other clinic multi-file upload successful:', uploadResult);
+    
+    // Process successful uploads
+    const newFiles = uploadResult.uploadedFiles.map((upload, index) => {
+      // Try to get the original filename from multiple possible sources
+      const originalName = upload.originalName || upload.name || files[index]?.name || `file_${index + 1}`;
+      
+      return {
+        name: originalName,
+        type: upload.mimetype.includes('pdf') ? 'pdf' : 'image',
+        size: files[index]?.size || 0,
+        originalFile: files[index],
+        cloudinaryUrl: upload.url,
+        cloudinaryPublicId: upload.public_id,
+        preview: upload.mimetype.includes('pdf') ? null : URL.createObjectURL(files[index])
+      };
+    });
+
+    console.log('Processed new files with names:', newFiles.map(f => ({ name: f.name, type: f.type })));
+
+    // Add new files to the existing list
+    setotherclinicfiles(prev => [...prev, ...newFiles]);
+    
+    let message = `${newFiles.length} file(s) uploaded successfully`;
+    if (uploadResult.failedFiles && uploadResult.failedFiles.length > 0) {
+      message += `, ${uploadResult.failedFiles.length} failed`;
+    }
+    
+    setSmsToastMessage(message);
+    setSmsToastType('success');
+    setSmsToast(true);
+    
   } catch (error) {
-    console.error("Other clinic record upload error:", error);
-    alert("Upload failed. Please try again.");
+    console.error('Error uploading files:', error);
+    setSmsToastMessage(`Upload failed: ${error.message}`);
+    setSmsToastType('error');
+    setSmsToast(true);
+  } finally {
+    setuploadingotherclinicfiles(false);
+    // Clear the input
+    if (otherclinicimageinputref.current) {
+      otherclinicimageinputref.current.value = "";
+    }
   }
 };
 
@@ -7322,9 +7752,26 @@ const otherclinichandleuploadclick = () => {
   otherclinicimageinputref.current.click();
 };
 
+const removeOtherClinicFile = (index) => {
+  setotherclinicfiles(prev => {
+    const newFiles = [...prev];
+    const removedFile = newFiles[index];
+    
+    // Revoke object URL to prevent memory leaks
+    if (removedFile.preview) {
+      URL.revokeObjectURL(removedFile.preview);
+    }
+    
+    newFiles.splice(index, 1);
+    return newFiles;
+  });
+};
+
 const otherclinichandleremoveprofile = () => {
   setotherclinicselectedimage(null);
   setotherclinicpreviewimage(null);
+  setotherclinicfiles([]);
+  setuploadingotherclinicfiles(false);
   if(otherclinicimageinputref.current){
     otherclinicimageinputref.current.value = "";
   }
@@ -7532,16 +7979,21 @@ e.preventDefault();
 setotherclinicrecordissubmitting(true);
 
 try{
-
+  // Prepare file URLs from uploaded files
+  const fileUrls = otherclinicfiles.map(file => file.cloudinaryUrl).filter(Boolean);
+  const filePublicIds = otherclinicfiles.map(file => file.cloudinaryPublicId).filter(Boolean);
+  const fileNames = otherclinicfiles.map(file => file.name).filter(Boolean);
+  
+  console.log('File URLs:', fileUrls);
+  console.log('File Public IDs:', filePublicIds);
+  console.log('File Names:', fileNames);
 
   const otherclinicrecorddata = {
-
       patientotherclinicprofilepicture: selectedpatientmedicalrecord.patientprofilepicture,
       patientothercliniclastname: selectedpatientmedicalrecord.patientlastname,
       patientotherclinicfirstname: selectedpatientmedicalrecord.patientfirstname,
       patientotherclinicmiddlename: selectedpatientmedicalrecord.patientmiddlename,
       patientotherclinicemail: selectedpatientmedicalrecord.patientemail,
-
 
       patientotherclinicname: otherclinicname,
       patientothercliniceyespecialist: othercliniceyespecialist,
@@ -7552,10 +8004,14 @@ try{
       patientotherclinicsubmittedbylastname: adminlastname,
       patientotherclinicsubmittedbytype: currentuserloggedin,
 
-      patientotherclinicrecordimage: otherclinicpreviewimage,
+      // Use first file URL for backward compatibility, add all files array
+      patientotherclinicrecordimage: fileUrls[0] || null,
+      patientotherclinicrecordfiles: fileUrls, // Array of all uploaded file URLs
+      patientotherclinicrecordfiles_public_ids: filePublicIds, // Array of all public IDs
+      patientotherclinicrecordfiles_names: fileNames, // Array of original file names
       
       }
-  console.log("Submittin ReCORDD", otherclinicrecorddata);
+  console.log("Submitting Other Clinic Record", otherclinicrecorddata);
 
   const response = await fetch(`/api/otherclinicrecord`,{
           method: "POST",
@@ -7566,27 +8022,33 @@ try{
           body: JSON.stringify(otherclinicrecorddata)
   });
 
-  console.log("Submittin ReCORDD", otherclinicrecorddata);
-
   if(!response.ok){
     throw new Error(`HTTP error! Error: ${response.status}`);
   }
 
-
   const result = await response.json();
-  console.log('Other Clinic Record Successfull Submitted for Review', result);
+  console.log('Other Clinic Record Successfully Submitted', result);
+  
+  setSmsToastMessage('Other clinic record submitted successfully!');
+  setSmsToastType('success');
+  setSmsToast(true);
+  
   await fetchotherclinicrecords();
+  
+  // Reset form
   setotherclinicselectedimage(false);
   setotherclinicpreviewimage(null);
+  setotherclinicfiles([]);
   setotherclinicname("");
   setothercliniceyespecialist("");
   setotherclinicconsultationdate("");
   setotherclinidescription("");
 
-
-
 }catch(error) {
   console.error('Error Submitting Other Clinic Record: ', error);
+  setSmsToastMessage('Failed to submit other clinic record. Please try again.');
+  setSmsToastType('error');
+  setSmsToast(true);
 }finally{
   setotherclinicrecordissubmitting(false);
 }
@@ -17992,7 +18454,7 @@ useEffect(() => {
                 }} 
                 className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
               >
-                View
+               <i className="bx bx-show mr-2"></i>
               </div>
             </div>
          </div>
@@ -18052,29 +18514,11 @@ return (
 );
 }
 
-console.log('Filtering records for patient:', selectedpatientmedicalrecord?.patientemail);
-console.log('Total otherclinicrecords:', otherclinicrecords?.length || 0);
-console.log('Sample record emails:', (Array.isArray(otherclinicrecords) ? otherclinicrecords : []).slice(0, 3).map(r => r.patientotherclinicemail));
-
-const filteredRecords = (Array.isArray(otherclinicrecords) ? otherclinicrecords : [])
-.filter(record => {
-const recordEmail = record.patientotherclinicemail?.toLowerCase()?.trim();
-const selectedEmail = selectedpatientmedicalrecord.patientemail?.toLowerCase()?.trim();
-const matches = recordEmail === selectedEmail;
-if (matches) {
-console.log('Found matching record:', record);
-}
-return matches;
-})
-.sort((a, b) => new Date(b.patientotherclinicconsultationdate) - new Date(a.patientotherclinicconsultationdate));
-
-console.log('Filtered records count:', filteredRecords.length);
-
-if (filteredRecords.length === 0) {
+if (filteredOtherClinicRecords.length === 0) {
 return <div className="text-center text-gray-500 py-8">No other clinic records found</div>;
 }
 
-return filteredRecords.map((record) => (
+return filteredOtherClinicRecords.map((record) => (
 <div key={record._id || record.otherclinicid} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
 <div className="flex-1 px-3">
 <h3 className="font-medium text-gray-800 text-base truncate w-70">{record.patientotherclinicname}</h3>
@@ -18541,6 +18985,7 @@ return filteredDocuments
             type="date" 
             name="patientambherappointmentdate" 
             id="patientambherappointmentdate" 
+            max={new Date().toISOString().split('T')[0]}
             required
         />
     </div>
@@ -18563,74 +19008,111 @@ return filteredDocuments
     <div className="space-y-4">
         <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">
-                Medical Record Image <span className="text-red-500">*</span>
+                Upload Documents <span className="text-red-500">*</span>
             </label>
-            <p className="text-sm text-gray-500">Upload an image of the medical record or prescription</p>
+            <p className="text-sm text-gray-500">Upload multiple images or documents (JPEG, JPG, PNG, PDF) - Maximum 5 files</p>
         </div>
 
-        <div className="flex justify-center">
-            {!otherclinicselectedimage && (
-                <div 
-                    onClick={otherclinichandleuploadclick}  
-                    className="w-80 h-80 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all duration-200 bg-gray-50"
-                >
-                    <img src={addimage} className="w-20 h-20 object-cover mb-4 opacity-60"/>
-                    <p className="text-gray-500 font-medium">Click to upload image</p>
-                    <p className="text-gray-400 text-sm">JPEG, JPG, PNG formats</p>
-                </div>
-            )}      
+        <div className="space-y-4">
+            {/* File Upload Area */}
+            <div 
+                onClick={otherclinichandleuploadclick}  
+                className="w-full h-32 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all duration-200 bg-gray-50"
+            >
+                <i className="bx bx-cloud-upload text-3xl text-gray-400 mb-2"/>
+                <p className="text-gray-500 font-medium">Click to upload documents</p>
+                <p className="text-gray-400 text-sm">JPEG, JPG, PNG, PDF formats</p>
+                {otherclinicfiles.length > 0 && (
+                    <p className="text-green-600 text-xs mt-1">{otherclinicfiles.length}/5 files uploaded</p>
+                )}
+            </div>
 
-            {otherclinicselectedimage && (
-                <div className="relative">
-                    <div className="w-80 h-80 rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                        <img 
-                            onClick={() => setshowotherclinicrecordimage(true)} 
-                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200" 
-                            src={otherclinicpreviewimage || defaultimageplaceholder}
-                            alt="Medical record preview"
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={otherclinichandleremoveprofile} 
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
-                    >
-                        <i className="bx bx-x text-lg"/>
-                    </button>
+            {/* Loading State */}
+            {uploadingotherclinicfiles && (
+                <div className="flex items-center justify-center py-4">
+                    <i className="bx bx-loader-alt animate-spin text-2xl text-blue-500 mr-2"></i>
+                    <span className="text-blue-600 font-medium">Uploading files...</span>
                 </div>
-            )}      
+            )}
+
+            {/* File Preview Grid */}
+            {otherclinicfiles.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-4 bg-gray-50 rounded-2xl">
+                    {otherclinicfiles.map((file, index) => (
+                        <div key={index} className="relative group">
+                            <div className="w-full h-32 rounded-2xl overflow-hidden border-2 border-gray-200 shadow-sm bg-white">
+                                {file.type === 'pdf' ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 p-2">
+                                        <i className="bx bxs-file-pdf text-red-500 text-3xl mb-2"/>
+                                        <p className="text-xs text-gray-800 text-center font-medium break-words leading-tight" 
+                                           title={file.name}
+                                           style={{ 
+                                             wordBreak: 'break-word',
+                                             maxHeight: '2.5rem',
+                                             overflow: 'hidden',
+                                             display: '-webkit-box',
+                                             WebkitLineClamp: 2,
+                                             WebkitBoxOrient: 'vertical'
+                                           }}>
+                                          {file.name || 'Unknown PDF'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <img 
+                                        onClick={() => {
+                                            setselectedmedicaldocument(file);
+                                            setshowmedicaldocumentimage(true);
+                                        }} 
+                                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200" 
+                                        src={file.preview}
+                                        alt="Medical document preview"
+                                    />
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => removeOtherClinicFile(index)} 
+                                className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg opacity-0 group-hover:opacity-100"
+                            >
+                                <i className="bx bx-x text-lg"/>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
                             
         <input  
             className="hidden" 
             type="file" 
             onChange={otherclinichandleprofilechange} 
-            accept="image/jpeg, image/jpg, image/png" 
+            accept="image/jpeg, image/jpg, image/png, application/pdf" 
             ref={otherclinicimageinputref} 
+            multiple
         />
 
-        {otherclinicselectedimage && otherclinicname !== "" && othercliniceyespecialist !== "" && otherclinicconsultationdate !== "" && (
+        {otherclinicfiles.length > 0 && otherclinicname !== "" && othercliniceyespecialist !== "" && otherclinicconsultationdate !== "" && (
             <div className="flex justify-center pt-4">
                 <button 
                     type="submit" 
-                    disabled={otherclinicrecordissubmitting} 
+                    disabled={otherclinicrecordissubmitting || uploadingotherclinicfiles} 
                     style={{ 
-                        backgroundColor: otherclinicrecordissubmitting ? "#9CA3AF" : "#059669", 
+                        backgroundColor: (otherclinicrecordissubmitting || uploadingotherclinicfiles) ? "#9CA3AF" : "#059669", 
                         fontSize: "16px", 
                         padding: "12px 32px", 
                         color: "white", 
                         borderRadius: "12px",
                         fontWeight: "600",
                         border: "none",
-                        cursor: otherclinicrecordissubmitting ? "not-allowed" : "pointer",
+                        cursor: (otherclinicrecordissubmitting || uploadingotherclinicfiles) ? "not-allowed" : "pointer",
                         transition: "all 0.2s ease",
                         boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)"
                     }}
                 >
-                    {otherclinicrecordissubmitting ? (
+                    {(otherclinicrecordissubmitting || uploadingotherclinicfiles) ? (
                         <>
                             <i className="bx bx-loader-alt animate-spin mr-2"></i>
-                            Submitting...
+                            {uploadingotherclinicfiles ? 'Uploading...' : 'Submitting...'}
                         </>
                     ) : (
                         <>
@@ -18736,23 +19218,22 @@ return filteredDocuments
 
     <div className="bg-gray-50 rounded-2xl p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <i className="bx bx-image mr-2"></i>
-            Medical Record Image
+            <i className="bx bx-file mr-2"></i>
+            Medical Record Documents
         </h3>
-        <MedicalRecordImageViewer 
+        <OtherClinicMultiFileViewer 
           record={selectedpatientappointment}
-          loadMedicalRecordImage={loadMedicalRecordImage}
-          onImageClick={() => setshowotherclinicrecordimage(true)}
+          onFileClick={(fileUrl) => {
+            setselectedmedicaldocument({ preview: fileUrl });
+            setshowmedicaldocumentimage(true);
+          }}
+          showToast={(message, type) => {
+            setSmsToastMessage(message);
+            setSmsToastType(type);
+            setSmsToast(true);
+          }}
         />
     </div>
-                            
-    <input  
-        className="hidden" 
-        type="file" 
-        onChange={otherclinichandleprofilechange} 
-        accept="image/jpeg, image/jpg, image/png" 
-        ref={otherclinicimageinputref} 
-    />
 </div>
 </form>
 </div>

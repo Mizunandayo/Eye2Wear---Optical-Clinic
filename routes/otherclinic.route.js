@@ -6,7 +6,8 @@
             getmedicalrecordbyid,
             createotherclinicrecord,
             updateotherclinicrecord,
-            deleteotherclinicrecord, } from "../controllers/otherclinic.controller.js";
+            deleteotherclinicrecord,
+            downloadFile } from "../controllers/otherclinic.controller.js";
 
 
 
@@ -22,6 +23,7 @@
       otherclinicrouter.get("/patient/:patientotherclinicemail", getpatientmedicalrecords); // New optimized endpoint
       otherclinicrouter.get("/email/:patientotherclinicemail", getotherclinicrecordbyemail);
       otherclinicrouter.get("/:id", getmedicalrecordbyid); // Get single record by ID
+      otherclinicrouter.get("/download/:publicId", downloadFile); // Secure file download endpoint
       otherclinicrouter.post("/", createotherclinicrecord);
       otherclinicrouter.put("/:id", updateotherclinicrecord);
       otherclinicrouter.delete("/:id", deleteotherclinicrecord);

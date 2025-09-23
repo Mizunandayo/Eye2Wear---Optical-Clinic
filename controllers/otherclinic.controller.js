@@ -1,6 +1,6 @@
 import OtherClinicRecord from "../models/otherclinicrecord.js";
 import dotenv from "dotenv";
-
+import { Buffer } from 'buffer';
 
 dotenv.config();
 
@@ -251,38 +251,49 @@ export const getmedicalrecordbyid = async (req, res) => {
 };
 
 
+
+
 //Create (Other Clinic Record) Controller
 export const createotherclinicrecord = async (req, res) => {
   try {
-    const otherclinicrec = await OtherClinicRecord.create(req.body);
-    res.status(200).json(otherclinicrec);
+    console.log('Creating other clinic record with data:', req.body);
+    
+    const newRecord = new OtherClinicRecord(req.body);
+    const savedRecord = await newRecord.save();
+    
+    console.log('Successfully created other clinic record:', savedRecord.patientotherclinicrecordid);
+    res.status(201).json(savedRecord);
   } catch (error) {
+    console.error('Error creating other clinic record:', error);
     res.status(500).json({ message: error.message });
   }
 };
-
-
-
-
 
 //Update (Other Clinic Record) Controller
 export const updateotherclinicrecord = async (req, res) => {
   try {
     const { id } = req.params;
-    const otherclinicrec = await OtherClinicRecord.findByIdAndUpdate(id, req.body);
-
-    if (!otherclinicrec) {
-      return res.status(404).json({ message: "otherclinic not found" });
+    const numericId = parseInt(id);
+    
+    console.log('Updating other clinic record ID:', numericId, 'with data:', req.body);
+    
+    const updatedRecord = await OtherClinicRecord.findOneAndUpdate(
+      { patientotherclinicrecordid: numericId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedRecord) {
+      return res.status(404).json({ message: "Other clinic record does not exist" });
     }
-
-    const updatedotherclinicrec = await OtherClinicRecord.findById(id);
-    res.status(200).json(updatedotherclinicrec);
+    
+    console.log('Successfully updated other clinic record:', numericId);
+    res.status(200).json(updatedRecord);
   } catch (error) {
+    console.error('Error updating other clinic record:', error);
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 
 //Delete (Other Clinic Record) Controller
@@ -304,3 +315,70 @@ export const deleteotherclinicrecord = async (req, res) => {
     res.status(500).json({message: "Server error", error: error.message});
   }
 }
+
+// Secure File Download Controller
+export const downloadFile = async (req, res) => {
+  try {
+    const { publicId } = req.params;
+    const { filename } = req.query;
+    
+    console.log('Download request for public ID:', publicId);
+    console.log('Requested filename:', filename);
+    
+    // Validate the public ID format to ensure it's legitimate
+    if (!publicId || !publicId.includes('otherclinic_record_')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file identifier'
+      });
+    }
+    
+    // Decode the public ID if it's URL encoded
+    const decodedPublicId = decodeURIComponent(publicId);
+    
+    // Construct the Cloudinary URL
+    const cloudinaryUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${decodedPublicId}`;
+    
+    console.log('Fetching from Cloudinary URL:', cloudinaryUrl);
+    
+    // Fetch the file from Cloudinary with proper headers
+    const response = await fetch(cloudinaryUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Eye2Wear-Medical-System/1.0'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('Cloudinary fetch failed:', response.status, response.statusText);
+      return res.status(404).json({
+        success: false,
+        message: 'File not found or access denied'
+      });
+    }
+    
+    // Get the content type from Cloudinary response
+    const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    
+    // Set appropriate headers for file download
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename || 'medical_document'}"`);
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    // Stream the file data to the client
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    console.log('Successfully serving file:', filename, 'Size:', buffer.length, 'bytes');
+    
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('File download error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download file',
+      error: error.message
+    });
+  }
+};

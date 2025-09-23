@@ -698,6 +698,118 @@ export const getOptimizedImageUrl = async (req, res) => {
 };
 
 /**
+ * Upload Multiple Files for Other Clinic Records
+ */
+export const uploadOtherClinicFiles = [
+  upload.array('otherclinicfiles', 5), // Allow up to 5 files
+  async (req, res) => {
+    try {
+      console.log('=== UPLOAD OTHER CLINIC FILES DEBUG ===');
+      console.log('Request method:', req.method);
+      console.log('Request URL:', req.url);
+      console.log('Request headers:', req.headers);
+      console.log('Request files:', req.files);
+      console.log('Request body:', req.body);
+      console.log('Files array length:', req.files ? req.files.length : 'no files');
+      console.log('==========================================');
+      
+      if (!req.files || req.files.length === 0) {
+        console.log('❌ No files provided in request');
+        return res.status(400).json({
+          success: false,
+          message: 'No files provided'
+        });
+      }
+
+      const files = req.files;
+
+    console.log(`Processing ${files.length} files for upload...`);
+
+    // Validate file count (max 5 files)
+    if (files.length > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 5 files allowed'
+      });
+    }
+
+    const uploadPromises = files.map(async (file, index) => {
+      console.log(`Uploading file ${index + 1}: ${file.originalname}, type: ${file.mimetype}`);
+      
+      try {
+        // Extract file extension from original filename
+        const fileExtension = file.originalname.split('.').pop().toLowerCase();
+        
+        const uploadResult = await CloudinaryService.uploadFile(
+          file.buffer,
+          {
+            folder: 'eye2wear/otherclinic-records/files',
+            public_id: `otherclinic_record_${Date.now()}_${index}`,
+            mimetype: file.mimetype,
+            originalFilename: file.originalname,
+            fileExtension: fileExtension,
+            transformation: file.mimetype.startsWith('image/') ? [
+              { width: 1200, height: 1200, crop: 'limit' },
+              { quality: 'auto' },
+              { fetch_format: 'auto' }
+            ] : [] // No transformation for non-image files
+          }
+        );
+
+        return {
+          url: uploadResult.url,
+          public_id: uploadResult.public_id,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          format: uploadResult.format,
+          success: true
+        };
+      } catch (error) {
+        console.error(`Error uploading file ${index + 1}:`, error);
+        return {
+          originalName: file.originalname,
+          error: error.message,
+          success: false
+        };
+      }
+    });
+
+    const uploadResults = await Promise.all(uploadPromises);
+    
+    // Separate successful and failed uploads
+    const successfulUploads = uploadResults.filter(result => result.success);
+    const failedUploads = uploadResults.filter(result => !result.success);
+
+    console.log(`Upload complete: ${successfulUploads.length} successful, ${failedUploads.length} failed`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully uploaded ${successfulUploads.length} of ${files.length} files`,
+      uploadedFiles: successfulUploads.map(upload => ({
+        url: upload.url,
+        public_id: upload.public_id,
+        originalName: upload.originalName,
+        mimetype: upload.mimetype
+      })),
+      failedFiles: failedUploads.map(failed => ({
+        originalName: failed.originalName,
+        error: failed.error
+      })),
+      urls: successfulUploads.map(upload => upload.url),
+      public_ids: successfulUploads.map(upload => upload.public_id)
+    });
+
+  } catch (error) {
+    console.error('Multiple file upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload files',
+      error: error.message
+    });
+  }
+}];
+
+/**
  * Test Cloudinary Connection
  */
 export const testCloudinaryConnection = async (req, res) => {

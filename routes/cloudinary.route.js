@@ -4,6 +4,7 @@ import {
   uploadProductImages,
   uploadPaymentReceipt,
   uploadOtherClinicRecordImages,
+  uploadOtherClinicFiles,
   deleteImage,
   getOptimizedImageUrl,
   testCloudinaryConnection
@@ -22,6 +23,9 @@ router.post("/upload/payment-receipt", uploadPaymentReceipt);
 
 // Upload other clinic record images (profile picture and record image)
 router.post("/upload/clinic-record-images", uploadOtherClinicRecordImages);
+
+// Upload multiple files for other clinic records (up to 5 files)
+router.post("/upload/otherclinic-files", uploadOtherClinicFiles);
 
 // Delete image by public_id
 router.delete("/delete/:public_id", deleteImage);

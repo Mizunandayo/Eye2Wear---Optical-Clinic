@@ -110,12 +110,15 @@ class CloudinaryService {
         folder = 'eye2wear',
         public_id,
         mimetype,
+        originalFilename,
+        fileExtension,
         transformation = []
       } = options;
 
-      // Determine resource type based on mimetype
-      let resource_type = 'auto'; // This allows any file type
+      // Determine resource type and format based on mimetype
+      let resource_type = 'auto';
       let upload_preset = {};
+      let format = null;
 
       if (mimetype && mimetype.startsWith('image/')) {
         resource_type = 'image';
@@ -125,7 +128,21 @@ class CloudinaryService {
           { fetch_format: 'auto' }
         ];
       } else {
-        resource_type = 'raw'; // For documents and other non-image files
+        // For documents, keep original format
+        resource_type = 'raw';
+        
+        // Extract format from mimetype or file extension
+        if (mimetype === 'application/pdf' || fileExtension === 'pdf') {
+          format = 'pdf';
+        } else if (mimetype.includes('word') || ['doc', 'docx'].includes(fileExtension)) {
+          format = fileExtension || 'doc';
+        } else if (mimetype === 'text/plain' || fileExtension === 'txt') {
+          format = 'txt';
+        } else if (mimetype.includes('excel') || mimetype.includes('spreadsheet') || ['xls', 'xlsx'].includes(fileExtension)) {
+          format = fileExtension || 'xlsx';
+        } else if (fileExtension) {
+          format = fileExtension;
+        }
       }
 
       const uploadOptions = {
@@ -134,8 +151,18 @@ class CloudinaryService {
         ...upload_preset
       };
 
+      // Include file extension in public_id for raw uploads to preserve format
       if (public_id) {
-        uploadOptions.public_id = public_id;
+        if (resource_type === 'raw' && format && !public_id.includes('.')) {
+          uploadOptions.public_id = `${public_id}.${format}`;
+        } else {
+          uploadOptions.public_id = public_id;
+        }
+      }
+
+      // Add format to preserve file extension for raw uploads
+      if (format && resource_type === 'raw') {
+        uploadOptions.format = format;
       }
 
       // Create data URL based on mimetype

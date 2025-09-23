@@ -31,12 +31,13 @@ patientotherclinicemail: {type: String, required: true},
 patientotherclinicname: String,
 patientothercliniceyespecialist: String,
 patientotherclinicconsultationdate: String,
+patientotherclinidescription: String,
 patientotherclinicsubmittedbyfirstname: String,
 patientotherclinicsubmittedbymiddlename: String,
 patientotherclinicsubmittedbylastname: String,
 patientotherclinicsubmittedbytype: String,
 
-// Other clinic record image - Cloudinary URL
+// Other clinic record image - Cloudinary URL (backwards compatibility)
 patientotherclinicrecordimage: {
         type: String,
         required: false, // Make optional to handle cases where image fails to load
@@ -45,6 +46,25 @@ patientotherclinicrecordimage: {
       },
 // Cloudinary public_id for other clinic record image
 patientotherclinicrecordimage_public_id: {type: String, default: null},
+
+// Multiple files support - Array of Cloudinary URLs
+patientotherclinicrecordfiles: {
+        type: [String],
+        default: [],
+        required: false
+      },
+// Array of Cloudinary public_ids for multiple files
+patientotherclinicrecordfiles_public_ids: {
+        type: [String], 
+        default: [],
+        required: false
+      },
+// Array of original file names for multiple files
+patientotherclinicrecordfiles_names: {
+        type: [String], 
+        default: [],
+        required: false
+      },
 
 
 
