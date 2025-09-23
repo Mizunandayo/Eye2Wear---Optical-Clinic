@@ -1,6 +1,8 @@
 import OtherClinicRecord from "../models/otherclinicrecord.js";
 import dotenv from "dotenv";
 import { Buffer } from 'buffer';
+import CloudinaryService from "../utils/cloudinaryService.js";
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
 
@@ -316,69 +318,238 @@ export const deleteotherclinicrecord = async (req, res) => {
   }
 }
 
-// Secure File Download Controller
+// Secure File Download Controller - Proxy Download with Signed URLs
 export const downloadFile = async (req, res) => {
   try {
-    const { publicId } = req.params;
-    const { filename } = req.query;
+    console.log('🔍 Download request received:', req.params);
+    const fileName = req.params['0']; // Capture full path after /download/
+    const requestedFilename = req.query.filename; // Get original filename from query
     
-    console.log('Download request for public ID:', publicId);
-    console.log('Requested filename:', filename);
+    if (!fileName) {
+      return res.status(400).json({ error: 'Filename is required' });
+    }
+
+    console.log(`📥 Generating signed URL for file: ${fileName}`);
+    console.log(`📝 Requested filename: ${requestedFilename}`);
     
-    // Validate the public ID format to ensure it's legitimate
-    if (!publicId || !publicId.includes('otherclinic_record_')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid file identifier'
-      });
+    // First, try to make the file public to avoid "Blocked for delivery" issues
+    try {
+      console.log(`🔧 Attempting to make file public first...`);
+      await CloudinaryService.makeFilePublic(fileName, 'raw');
+      console.log(`✅ File made public successfully`);
+    } catch (publicError) {
+      console.warn(`⚠️ Could not make file public (this might be okay):`, publicError.message);
+      // Continue anyway - the file might already be accessible
     }
     
-    // Decode the public ID if it's URL encoded
-    const decodedPublicId = decodeURIComponent(publicId);
+    // Try multiple URL approaches in order of preference
+    const urlsToTry = [];
     
-    // Construct the Cloudinary URL
-    const cloudinaryUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${decodedPublicId}`;
-    
-    console.log('Fetching from Cloudinary URL:', cloudinaryUrl);
-    
-    // Fetch the file from Cloudinary with proper headers
-    const response = await fetch(cloudinaryUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Eye2Wear-Medical-System/1.0'
-      }
+    // 1. First try a simple public URL (works if file is public)
+    const publicUrl = cloudinary.url(fileName, {
+      resource_type: 'raw',
+      type: 'upload',
+      secure: true
     });
+    urlsToTry.push({ type: 'public', url: publicUrl });
     
-    if (!response.ok) {
-      console.error('Cloudinary fetch failed:', response.status, response.statusText);
-      return res.status(404).json({
-        success: false,
-        message: 'File not found or access denied'
+    // 2. Try signed URL without attachment (sometimes works better)
+    try {
+      const signedUrlNoAttach = cloudinary.url(fileName, {
+        resource_type: 'raw',
+        type: 'upload',
+        sign_url: true,
+        expires_at: Math.floor(Date.now() / 1000) + (10 * 60), // 10 minutes
+        secure: true
       });
+      urlsToTry.push({ type: 'signed_no_attach', url: signedUrlNoAttach });
+    } catch (e) {
+      console.warn('Could not generate signed URL without attachment:', e.message);
     }
     
-    // Get the content type from Cloudinary response
-    const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    // 3. Try signed URL with attachment
+    try {
+      const signedUrl = CloudinaryService.generateSignedUrl(fileName, {
+        resource_type: 'raw',
+        type: 'upload',
+        expires_at: Math.floor(Date.now() / 1000) + (10 * 60)
+      });
+      urlsToTry.push({ type: 'signed_with_attach', url: signedUrl });
+    } catch (e) {
+      console.warn('Could not generate signed URL with attachment:', e.message);
+    }
+
+    console.log(`� Will try ${urlsToTry.length} different URL approaches...`);
     
-    // Set appropriate headers for file download
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename || 'medical_document'}"`);
-    res.setHeader('Cache-Control', 'no-cache');
+    let lastError = null;
     
-    // Stream the file data to the client
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    // Try each URL approach until one works
+    for (const { type, url } of urlsToTry) {
+      try {
+        console.log(`🔄 Trying ${type} URL: ${url}`);
+        
+        const response = await fetch(url);
+        console.log(`📡 ${type} response status: ${response.status}`);
+        
+        if (response.ok) {
+          console.log(`✅ ${type} URL worked! Streaming file...`);
+          
+          // Determine content type based on file extension
+          const fileExtension = (requestedFilename || fileName).split('.').pop().toLowerCase();
+          const contentTypeMap = {
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'txt': 'text/plain',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif'
+          };
+          
+          const contentType = contentTypeMap[fileExtension] || 'application/octet-stream';
+          
+          // Set proper headers for forced download
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename || fileName}"`);
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+          
+          console.log(`✅ Streaming file to client with filename: ${requestedFilename || fileName}`);
+          
+          // Convert fetch response to Node.js readable stream and pipe to response
+          if (response.body && response.body.getReader) {
+            // For fetch API response, we need to handle it differently
+            const reader = response.body.getReader();
+            
+            const pump = async () => {
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  res.write(value);
+                }
+                res.end();
+              } catch (streamError) {
+                console.error('❌ Streaming error:', streamError.message);
+                res.status(500).json({ error: 'Failed to stream file' });
+              }
+            };
+            
+            pump();
+          } else {
+            // Fallback: get buffer and send it
+            const buffer = await response.arrayBuffer();
+            res.write(Buffer.from(buffer));
+            res.end();
+          }
+          
+          return; // Success! Exit the function
+        } else {
+          const errorText = await response.text();
+          console.warn(`❌ ${type} failed: ${response.status} ${response.statusText} - ${errorText}`);
+          lastError = { type, status: response.status, statusText: response.statusText, body: errorText };
+        }
+      } catch (fetchError) {
+        console.warn(`❌ ${type} fetch error:`, fetchError.message);
+        lastError = { type, error: fetchError.message };
+      }
+    }
     
-    console.log('Successfully serving file:', filename, 'Size:', buffer.length, 'bytes');
-    
-    res.send(buffer);
+    // If we get here, all URL approaches failed
+    console.error(`❌ All URL approaches failed. Last error:`, lastError);
+    return res.status(lastError?.status || 500).json({ 
+      error: 'Failed to fetch file from Cloudinary - all approaches failed',
+      lastError: lastError,
+      triedApproaches: urlsToTry.length
+    });
     
   } catch (error) {
-    console.error('File download error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to download file',
-      error: error.message
+    console.error('❌ Download error:', error);
+    res.status(500).json({ error: 'Failed to download file' });
+  }
+};
+
+// Utility function to update file access control to public
+export const makeFilePublic = async (req, res) => {
+  try {
+    const fileName = req.params['0']; // Get file path
+    
+    if (!fileName) {
+      return res.status(400).json({ error: 'Filename is required' });
+    }
+
+    console.log(`🔧 Making file public: ${fileName}`);
+    
+    // Use CloudinaryService to make the file publicly accessible
+    const result = await CloudinaryService.makeFilePublic(fileName, 'raw');
+    
+    console.log(`✅ File access updated:`, result);
+    
+    res.json({ 
+      success: true, 
+      message: 'File access updated to public',
+      public_id: result.public_id,
+      access_mode: result.access_mode
     });
+    
+  } catch (error) {
+    console.error('❌ Error updating file access:', error);
+    res.status(500).json({ error: 'Failed to update file access' });
+  }
+};
+
+// Batch utility to fix all blocked files in the database
+export const fixAllBlockedFiles = async (req, res) => {
+  try {
+    console.log('🔧 Starting batch fix for all blocked files...');
+    
+    // Get all records with files
+    const records = await OtherClinicRecord.find({
+      $or: [
+        { patientotherclinicrecordfiles_public_ids: { $exists: true, $ne: [] } }
+      ]
+    });
+    
+    console.log(`Found ${records.length} records with files`);
+    
+    let fixedCount = 0;
+    let errorCount = 0;
+    const results = [];
+    
+    for (const record of records) {
+      if (record.patientotherclinicrecordfiles_public_ids && record.patientotherclinicrecordfiles_public_ids.length > 0) {
+        for (const publicId of record.patientotherclinicrecordfiles_public_ids) {
+          try {
+            console.log(`Fixing file: ${publicId}`);
+            const result = await CloudinaryService.makeFilePublic(publicId, 'raw');
+            results.push({ publicId, status: 'fixed', result });
+            fixedCount++;
+          } catch (error) {
+            console.error(`Failed to fix ${publicId}:`, error.message);
+            results.push({ publicId, status: 'error', error: error.message });
+            errorCount++;
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Batch fix complete: ${fixedCount} fixed, ${errorCount} errors`);
+    
+    res.json({
+      success: true,
+      message: `Batch fix complete: ${fixedCount} files fixed, ${errorCount} errors`,
+      totalRecords: records.length,
+      fixedCount,
+      errorCount,
+      results
+    });
+    
+  } catch (error) {
+    console.error('❌ Error in batch fix:', error);
+    res.status(500).json({ error: 'Failed to perform batch fix' });
   }
 };

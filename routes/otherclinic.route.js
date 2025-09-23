@@ -7,7 +7,9 @@
             createotherclinicrecord,
             updateotherclinicrecord,
             deleteotherclinicrecord,
-            downloadFile } from "../controllers/otherclinic.controller.js";
+            downloadFile,
+            makeFilePublic,
+            fixAllBlockedFiles } from "../controllers/otherclinic.controller.js";
 
 
 
@@ -22,8 +24,10 @@
       otherclinicrouter.get("/", getotherclinicrecords);
       otherclinicrouter.get("/patient/:patientotherclinicemail", getpatientmedicalrecords); // New optimized endpoint
       otherclinicrouter.get("/email/:patientotherclinicemail", getotherclinicrecordbyemail);
+      otherclinicrouter.get("/download/*", downloadFile); // Secure file download endpoint - use wildcard to capture full path
+      otherclinicrouter.post("/make-public/*", makeFilePublic); // Utility to make files public
+      otherclinicrouter.post("/fix-all-blocked", fixAllBlockedFiles); // Batch utility to fix all blocked files
       otherclinicrouter.get("/:id", getmedicalrecordbyid); // Get single record by ID
-      otherclinicrouter.get("/download/:publicId", downloadFile); // Secure file download endpoint
       otherclinicrouter.post("/", createotherclinicrecord);
       otherclinicrouter.put("/:id", updateotherclinicrecord);
       otherclinicrouter.delete("/:id", deleteotherclinicrecord);

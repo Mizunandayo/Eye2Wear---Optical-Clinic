@@ -1625,58 +1625,10 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
           
           console.log('Using secure download URL:', secureDownloadUrl);
         
-          const response = await fetch(secureDownloadUrl);
-          if (!response.ok) throw new Error('Download failed');
+          // Navigate to the download URL which will redirect to signed Cloudinary URL
+          window.open(secureDownloadUrl, '_blank');
           
-          const blob = await response.blob();
-          const downloadUrl = window.URL.createObjectURL(blob);
-          
-          // Get the content-disposition header to extract the filename
-          const contentDisposition = response.headers.get('content-disposition');
-          let fileName = originalName || 'medical_document';
-          
-          if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-            if (filenameMatch) {
-              fileName = filenameMatch[1];
-            }
-          }
-          
-          // If no extension in filename, try to detect from blob type
-          if (!fileName.includes('.')) {
-            const mimeType = blob.type;
-            const mimeToExtension = {
-              'application/pdf': 'pdf',
-              'image/jpeg': 'jpg',
-              'image/jpg': 'jpg', 
-              'image/png': 'png',
-              'image/gif': 'gif',
-              'image/webp': 'webp',
-              'text/plain': 'txt',
-              'application/msword': 'doc',
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
-            };
-            
-            const extension = mimeToExtension[mimeType] || 'pdf';
-            fileName = `${fileName}.${extension}`;
-          }
-          
-          console.log('Downloading file as:', fileName);
-          
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          // Clean up the object URL
-          window.URL.revokeObjectURL(downloadUrl);
-          
-          // Show success message
-          if (showToast) {
-            showToast(`File downloaded successfully as ${fileName}!`, 'success');
-          }
+          console.log('Download initiated successfully!');
         }
         
       } else {
@@ -1730,12 +1682,12 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
         
         console.log('Original name:', originalName, 'Clean name:', cleanOriginalName, 'Final name:', finalFileName, 'MIME type:', mimeType);
         
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = finalFileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = downloadUrl;
+        downloadLink.download = finalFileName;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
         
         // Clean up the object URL
         window.URL.revokeObjectURL(downloadUrl);

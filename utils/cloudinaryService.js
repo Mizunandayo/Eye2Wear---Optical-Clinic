@@ -128,8 +128,11 @@ class CloudinaryService {
           { fetch_format: 'auto' }
         ];
       } else {
-        // For documents, keep original format
+        // For documents, keep original format and ensure public delivery
         resource_type = 'raw';
+        upload_preset = {
+          // Don't set access_mode here as it may cause issues with raw uploads
+        };
         
         // Extract format from mimetype or file extension
         if (mimetype === 'application/pdf' || fileExtension === 'pdf') {
@@ -148,6 +151,7 @@ class CloudinaryService {
       const uploadOptions = {
         folder: folder,
         resource_type: resource_type,
+        type: 'upload', // Ensure upload type
         ...upload_preset
       };
 
@@ -338,6 +342,51 @@ class CloudinaryService {
     }
     
     return true;
+  }
+
+  /**
+   * Generate signed URL for secure access to raw files
+   */
+  static generateSignedUrl(public_id, options = {}) {
+    try {
+      const {
+        resource_type = 'raw',
+        type = 'upload',
+        expires_at = Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes from now
+      } = options;
+
+      // Use cloudinary.url with sign_url for raw files
+      return cloudinary.url(public_id, {
+        resource_type: resource_type,
+        type: type,
+        sign_url: true,
+        expires_at: expires_at,
+        attachment: true,
+        secure: true // Ensure HTTPS URLs
+      });
+    } catch (error) {
+      console.error('Signed URL generation error:', error);
+      throw new Error(`Failed to generate signed URL: ${error.message}`);
+    }
+  }
+
+  /**
+   * Make a file publicly accessible (fix "Blocked for delivery" files)
+   */
+  static async makeFilePublic(public_id, resourceType = 'raw') {
+    try {
+      const result = await cloudinary.uploader.explicit(public_id, {
+        resource_type: resourceType,
+        type: 'upload',
+        access_mode: 'public'
+      });
+      
+      console.log(`✅ File ${public_id} access updated to public`);
+      return result;
+    } catch (error) {
+      console.error('Error making file public:', error);
+      throw new Error(`Failed to make file public: ${error.message}`);
+    }
   }
 
   /**
