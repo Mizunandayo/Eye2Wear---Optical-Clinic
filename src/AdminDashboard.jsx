@@ -7391,23 +7391,6 @@ const showpatientmedicalrecordstable = (patientmedicalrecordstableid) => {
 };
 
 const [selectedpatientmedicalrecord,setselectedpatientmedicalrecord] = useState(null);
-
-// Filtered other clinic records with memoization to prevent infinite loops
-const filteredOtherClinicRecords = React.useMemo(() => {
-  if (!selectedpatientmedicalrecord?.patientemail || !Array.isArray(otherclinicrecords)) {
-    return [];
-  }
-
-  const filtered = otherclinicrecords
-    .filter(record => {
-      const recordEmail = record.patientotherclinicemail?.toLowerCase()?.trim();
-      const selectedEmail = selectedpatientmedicalrecord.patientemail?.toLowerCase()?.trim();
-      return recordEmail === selectedEmail;
-    })
-    .sort((a, b) => new Date(b.patientotherclinicconsultationdate) - new Date(a.patientotherclinicconsultationdate));
-
-  return filtered;
-}, [otherclinicrecords, selectedpatientmedicalrecord?.patientemail]);
 const [showpatientmedicalrecord, setshowpatientmedicalrecord] = useState(false);
 const [showpatientmedicalrecordconsultation, setshowpatientmedicalrecordconsultation] = useState(false);
 const [showpatientaddothermedicalrecord, setshowpatientaddothermedicalrecord] = useState(false);
@@ -7432,6 +7415,53 @@ const medicaldocumentinputref = useRef(null);
 const [searchmedicalrecords, setsearchmedicalrecords] = useState('');
 const [filteredmedicalrecords, setfilteredmedicalrecords] = useState([]);
 const [medicaldocumentclinicfilter, setmedicaldocumentclinicfilter] = useState('all'); // 'all', 'ambher', 'bautista'
+
+// Filtered other clinic records with memoization to prevent infinite loops
+const filteredOtherClinicRecords = React.useMemo(() => {
+  if (!selectedpatientmedicalrecord?.patientemail || !Array.isArray(otherclinicrecords)) {
+    return [];
+  }
+
+  let filtered = otherclinicrecords
+    .filter(record => {
+      const recordEmail = record.patientotherclinicemail?.toLowerCase()?.trim();
+      const selectedEmail = selectedpatientmedicalrecord.patientemail?.toLowerCase()?.trim();
+      return recordEmail === selectedEmail;
+    });
+
+  // Apply search filter if search term exists
+  if (searchmedicalrecords.trim()) {
+    const searchTerm = searchmedicalrecords.toLowerCase().trim();
+    filtered = filtered.filter(record => {
+      const clinicNameMatch = record.patientotherclinicname?.toLowerCase().includes(searchTerm);
+      const eyeSpecialistMatch = record.patientothercliniceyespecialist?.toLowerCase().includes(searchTerm);
+      const submittedByMatch = (
+        record.patientotherclinicsubmittedbyfirstname?.toLowerCase().includes(searchTerm) ||
+        record.patientotherclinicsubmittedbymiddlename?.toLowerCase().includes(searchTerm) ||
+        record.patientotherclinicsubmittedbylastname?.toLowerCase().includes(searchTerm) ||
+        `${record.patientotherclinicsubmittedbyfirstname} ${record.patientotherclinicsubmittedbymiddlename} ${record.patientotherclinicsubmittedbylastname}`.toLowerCase().includes(searchTerm) ||
+        `${record.patientotherclinicsubmittedbyfirstname} ${record.patientotherclinicsubmittedbylastname}`.toLowerCase().includes(searchTerm)
+      );
+      
+      return clinicNameMatch || eyeSpecialistMatch || submittedByMatch;
+    });
+  }
+
+  // Apply clinic filter
+  if (medicaldocumentclinicfilter !== 'all') {
+    filtered = filtered.filter(record => {
+      if (medicaldocumentclinicfilter === 'ambher') {
+        return record.patientotherclinicname?.toLowerCase().includes('ambher');
+      } else if (medicaldocumentclinicfilter === 'bautista') {
+        return record.patientotherclinicname?.toLowerCase().includes('bautista');
+      }
+      return true;
+    });
+  }
+
+  // Sort by consultation date (newest first)
+  return filtered.sort((a, b) => new Date(b.patientotherclinicconsultationdate) - new Date(a.patientotherclinicconsultationdate));
+}, [otherclinicrecords, selectedpatientmedicalrecord?.patientemail, searchmedicalrecords, medicaldocumentclinicfilter]);
 
 // Pagination State Variables
 const [currentPage, setCurrentPage] = useState({
@@ -18432,8 +18462,28 @@ useEffect(() => {
        onClick={() => setshowpatientaddothermedicalrecord(true)}  
        className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
      >
-    
        <span>Add Record</span>
+     </div>
+
+     {/* Search and Filter Section */}
+     <div id="searchpastvisitstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5 mb-4">              
+       <div className="ml-2 w-full flex items-center">
+         <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+         <div className="relative w-full flex items-center justify-center gap-3">
+           <div className="relative flex-1">
+             <i className="bx bx-search absolute left-3 top-1/2 transform -translate-y-1/2 text-2xl text-gray-500"></i>
+             <input 
+               type="text" 
+               placeholder="Search by clinic name, specialist, submitted by..." 
+               value={searchmedicalrecords}
+               onChange={(e) => setsearchmedicalrecords(e.target.value)}
+               className="transition-all duration-300 ease-in-out py-2 pl-10 pr-4 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+             />
+           </div>
+           
+
+         </div>
+       </div>
      </div>
      
   <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
@@ -19386,12 +19436,26 @@ Are you sure you want to delete this clinic record?
         <div className="space-y-4">
             {/* File Upload Area */}
             <div 
-                onClick={medicaldocumenthandleuploadclick}  
-                className="w-full h-32 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 bg-gray-50"
+                onClick={!uploaddingmedicaldocument ? medicaldocumenthandleuploadclick : undefined}  
+                className={`w-full h-32 flex flex-col justify-center items-center border-2 border-dashed rounded-2xl transition-all duration-200 ${
+                    uploaddingmedicaldocument 
+                        ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
+                        : 'border-gray-300 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
+                }`}
             >
-                <i className="bx bx-cloud-upload text-3xl text-gray-400 mb-2"/>
-                <p className="text-gray-500 font-medium">Click to upload documents</p>
-                <p className="text-gray-400 text-sm">JPEG, JPG, PNG, PDF formats</p>
+                {uploaddingmedicaldocument ? (
+                    <>
+                        <i className="bx bx-loader-alt animate-spin text-3xl text-blue-500 mb-2"/>
+                        <p className="text-blue-600 font-medium">Uploading files...</p>
+                        <p className="text-gray-400 text-sm">Please wait</p>
+                    </>
+                ) : (
+                    <>
+                        <i className="bx bx-cloud-upload text-3xl text-gray-400 mb-2"/>
+                        <p className="text-gray-500 font-medium">Click to upload documents</p>
+                        <p className="text-gray-400 text-sm">JPEG, JPG, PNG, PDF formats</p>
+                    </>
+                )}
             </div>
 
             {/* File Preview Grid */}
