@@ -5632,6 +5632,7 @@ const [addpatientprofilemessage, setaddpatientprofilemessage] = useState ({text:
 const [addpatientprofileissubmitting, setaddpatientprofileissubmitting] = useState(false);
 const [addpatientprofilepreviewimage, setaddpatientprofilepreviewimage] = useState(null);
 const [addpatientprofileselectedfile, setaddpatientprofileselectedfile] = useState(null);
+const [addpatientprofileisuploadingimage, setaddpatientprofileisuploadingimage] = useState(false);
 const addpatientprofileimageinputref= useRef(null);
 
 // Search functionality for Profile Information
@@ -5973,6 +5974,7 @@ return (
     <div className="flex items-center gap-4 mb-4">
       <div className="relative">
         <img 
+          id="patientprofileinformationpicture"
           src={patient.patientprofilepicture || defaultprofilepic} 
           alt="Profile" 
           className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all duration-300"
@@ -6297,6 +6299,9 @@ if(file.size > maximagefile * 1024 * 1024){
   return;
 }
 
+// Set loading state
+setaddpatientprofileisuploadingimage(true);
+
 // Reset states
 setselectedpatientprofile(null);
 setaddpatientprofilepreviewimage(null);
@@ -6327,7 +6332,9 @@ try {
   console.error("Image upload failed: ", error.message);
   alert("Image upload failed. Try again");
   return;
-
+} finally {
+  // Always clear loading state
+  setaddpatientprofileisuploadingimage(false);
 }
   
 
@@ -7837,6 +7844,10 @@ const filterMedicalRecords = useCallback((term) => {
   if (term.trim()) {
     const searchTerm = term.toLowerCase().trim();
     filtered = filtered.filter(patient => {
+      // Extract age number for more flexible age searching
+      const agePattern = searchTerm.match(/(\d+)\s*(?:years?\s*old|yr|y\.o\.?)?/);
+      const ageFromSearch = agePattern ? parseInt(agePattern[1]) : null;
+      
       // Search in patient basic info
       const patientMatch = (
         patient.patientfirstname?.toLowerCase().includes(searchTerm) ||
@@ -7844,25 +7855,84 @@ const filterMedicalRecords = useCallback((term) => {
         patient.patientlastname?.toLowerCase().includes(searchTerm) ||
         patient.patientemail?.toLowerCase().includes(searchTerm) ||
         patient.patientdemographicId?.toString().includes(searchTerm) ||
+        patient.patientage?.toString().includes(searchTerm) ||
+        patient.patientgender?.toLowerCase().includes(searchTerm) ||
+        patient.patientphonenumber?.includes(searchTerm) ||
+        patient.patientaddress?.toLowerCase().includes(searchTerm) ||
         `${patient.patientfirstname} ${patient.patientmiddlename} ${patient.patientlastname}`.toLowerCase().includes(searchTerm) ||
-        `${patient.patientfirstname} ${patient.patientlastname}`.toLowerCase().includes(searchTerm)
+        `${patient.patientfirstname} ${patient.patientlastname}`.toLowerCase().includes(searchTerm) ||
+        // Enhanced age searching - match "22 years old", "22 yr", "22 y.o.", etc.
+        (ageFromSearch !== null && patient.patientage === ageFromSearch) ||
+        `${patient.patientage} years old`.toLowerCase().includes(searchTerm) ||
+        `${patient.patientage} year old`.toLowerCase().includes(searchTerm) ||
+        // Gender variations
+        (searchTerm.includes('male') && patient.patientgender?.toLowerCase().includes('male')) ||
+        (searchTerm.includes('female') && patient.patientgender?.toLowerCase().includes('female'))
       );
 
       // Search in medical documents
       const documentsMatch = patient.patientmedicaldocuments?.some(doc => 
         doc.addedbyname?.toLowerCase().includes(searchTerm) ||
         doc.documentname?.toLowerCase().includes(searchTerm) ||
-        doc.documentdescription?.toLowerCase().includes(searchTerm)
+        doc.documentdescription?.toLowerCase().includes(searchTerm) ||
+        doc.addedbyclinic?.toLowerCase().includes(searchTerm)
       );
 
-      return patientMatch || documentsMatch;
+      // Search in appointment details
+      const appointmentMatch = patientappointments?.some(appointment => {
+        if (appointment.patientappointmentemail !== patient.patientemail) return false;
+        
+        // Search in raw appointment data
+        const rawAppointmentMatch = (
+          // Ambher appointment details
+          appointment.patientambherappointmentdate?.includes(searchTerm) ||
+          appointment.patientambherappointmenttime?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentstatus?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentlocation?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmenttype?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentreason?.toLowerCase().includes(searchTerm) ||
+          
+          // Bautista appointment details
+          appointment.patientbautistaappointmentdate?.includes(searchTerm) ||
+          appointment.patientbautistaappointmenttime?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentstatus?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentlocation?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmenttype?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentreason?.toLowerCase().includes(searchTerm) ||
+          
+          // General appointment details
+          appointment.patientappointmentid?.toString().includes(searchTerm) ||
+          appointment.consultationremarkssubject?.toLowerCase().includes(searchTerm) ||
+          appointment.consultationremarks?.toLowerCase().includes(searchTerm) ||
+          appointment.prescriptionnotes?.toLowerCase().includes(searchTerm)
+        );
+
+        // Search in formatted appointment data (what's actually displayed in the table)
+        const formattedAppointmentMatch = (
+          // Formatted Ambher appointment date and time
+          (appointment.patientambherappointmentdate && 
+           formatappointmatedates(appointment.patientambherappointmentdate)?.toLowerCase().includes(searchTerm)) ||
+          (appointment.patientambherappointmenttime && 
+           formatappointmenttime(appointment.patientambherappointmenttime)?.toLowerCase().includes(searchTerm)) ||
+           
+          // Formatted Bautista appointment date and time
+          (appointment.patientbautistaappointmentdate && 
+           formatappointmatedates(appointment.patientbautistaappointmentdate)?.toLowerCase().includes(searchTerm)) ||
+          (appointment.patientbautistaappointmenttime && 
+           formatappointmenttime(appointment.patientbautistaappointmenttime)?.toLowerCase().includes(searchTerm))
+        );
+
+        return rawAppointmentMatch || formattedAppointmentMatch;
+      });
+
+      return patientMatch || documentsMatch || appointmentMatch;
     });
   }
 
   setfilteredmedicalrecords(filtered);
   // Reset to first page when searching or filtering
   setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
-}, [patientdemographics]);
+}, [patientdemographics, patientappointments]);
 
 // Filter individual medical documents based on search term and clinic filter
 const filterPatientDocuments = useCallback((documents) => {
@@ -10277,30 +10347,36 @@ const [clinicoutofstockProducts, setclinicoutofstockProducts] = useState([]);
 useEffect(() => {
 if (activeinventorytable === 'ambherinventorytable') {
   const criticalStock = ambherinventoryproducts.filter(
-    product => product.ambherinventoryproductquantity > 0 && 
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity > 0 && 
               product.ambherinventoryproductquantity <= 3
   );
   const lowStock = ambherinventoryproducts.filter(
-    product => product.ambherinventoryproductquantity >= 4 && 
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity >= 4 && 
               product.ambherinventoryproductquantity <= 6
   );
   const outOfStock = ambherinventoryproducts.filter(
-    product => product.ambherinventoryproductquantity === 0
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity === 0
   );
   setcliniccriticalstockProducts(criticalStock);
   setcliniclowstockProducts(lowStock);
   setclinicoutofstockProducts(outOfStock);
 } else if (activeinventorytable === 'bautistainventorytable') {
   const criticalStock = bautistainventoryproducts.filter(
-    product => product.bautistainventoryproductquantity > 0 && 
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity > 0 && 
               product.bautistainventoryproductquantity <= 3
   );
   const lowStock = bautistainventoryproducts.filter(
-    product => product.bautistainventoryproductquantity >= 4 && 
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity >= 4 && 
               product.bautistainventoryproductquantity <= 6
   );
   const outOfStock = bautistainventoryproducts.filter(
-    product => product.bautistainventoryproductquantity === 0
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity === 0
   );
   setcliniccriticalstockProducts(criticalStock);
   setcliniclowstockProducts(lowStock);
@@ -17952,6 +18028,27 @@ useEffect(() => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -18338,75 +18435,100 @@ useEffect(() => {
 
 
 {showdeletepatientdialog && (
-  <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-    <div className="flex flex-col items bg-white rounded-2xl w-[600px] h-fit animate-fadeInUp">
-      <form className="flex flex-col w-full h-fit" onSubmit={handlesubmit}>
-        
-        {/* Header */}
-        <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
-          <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1]" />
-          <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">
-            Delete Patient Account
-          </h1>
-        </div>
-        
-        {/* Body */}
-        <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
-          <div className="px-5 flex flex-col justify-center h-[130px] w-full">
-            <p className="font-albertsans font-medium text-[20px]">
-              Are you sure you want to delete this patient account?
-            </p>
-            {selectedpatientaccount && (
-              <>
-                <p className="text-[16px] mt-3">
-                  Patient Id: {selectedpatientaccount.id}
-                </p>
-                <p className="text-[16px]">
-                  Patient Name: {selectedpatientaccount.name}
-                </p>
-              </>
-            )}
-          </div>
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Patient Account</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeletepatientdialog(false);
+  setselectedpatientaccount(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
 
-          {/* Footer / Buttons */}
-          <div className="pr-5 flex justify-end items-center h-[80px] w-full">
-            {/* Cancel */}
-            <div
-              className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out"
-              onClick={() => {
-                setshowdeletepatientdialog(false);
-                setselectedpatientaccount(null);
-              }}
-            >
-              <p className="text-[#ffffff]">Cancel</p>
-            </div>
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this patient account?
+</p>
 
-            {/* Delete */}
-            <div
-              className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
-                isdeletingpatient
-                  ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50'
-                  : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
-              }`}
-              onClick={isdeletingpatient ? undefined : deletepatientaccount}
-            >
-              <p className="text-[#ffffff] flex items-center">
-                {isdeletingpatient ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete'
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
+{selectedpatientaccount && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Patient ID: {selectedpatientaccount.id}</p>
+<p className="text-sm text-gray-500">Patient Name: {selectedpatientaccount.name}</p>
+</div>
+)}
 
-      </form>
-    </div>
-  </div>
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeletepatientdialog(false);
+    setselectedpatientaccount(null);
+  }}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={isdeletingpatient ? undefined : deletepatientaccount}
+  disabled={isdeletingpatient}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: isdeletingpatient ? "#9ca3af" : "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: isdeletingpatient ? "not-allowed" : "pointer",
+    opacity: isdeletingpatient ? 0.6 : 1,
+  }}
+  onMouseOver={(e) => {
+    if (!isdeletingpatient) {
+      e.currentTarget.style.backgroundColor = "#dc2626";
+    }
+  }}
+  onMouseOut={(e) => {
+    if (!isdeletingpatient) {
+      e.currentTarget.style.backgroundColor = "#ef4444";
+    }
+  }}
+>
+  {isdeletingpatient ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+      Deleting...
+    </>
+  ) : (
+    'Delete Account'
+  )}
+</button>
+</div>
+</div>
+</div>
+</div>
 )}
 
 
@@ -18705,40 +18827,98 @@ useEffect(() => {
 
 
 {showdeletestaffdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-
-<div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-<form className="flex flex-col  w-full h-fit " onSubmit={staffhandlesubmit}>
-
-<div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#cfcfcf]">Delete Staff Account</h1></div>
-<div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this staff account?</p>
-  {selectedstaffaccount && ( <>
-            <p className="text-[16px] mt-3">Staff Id: {selectedstaffaccount.id}</p>
-            <p className="text-[16px]">Staff Name: {selectedstaffaccount.name}</p> </>)}  
-  </div>        
-  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeletestaffdialog(false); setselectedstaffaccount(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-    <div className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
-      isdeletingstaff 
-        ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50' 
-        : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
-    }`} onClick={isdeletingstaff ? undefined : deletestaffaccount}>
-      <p className="text-[#ffffff] flex items-center">
-        {isdeletingstaff ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Deleting...
-          </>
-        ) : (
-          'Delete'
-        )}
-      </p>
-    </div>
-  </div>
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Staff Account</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeletestaffdialog(false);
+  setselectedstaffaccount(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
 </div>
 
-</form>
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this staff account?
+</p>
+
+{selectedstaffaccount && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Staff ID: {selectedstaffaccount.id}</p>
+<p className="text-sm text-gray-500">Staff Name: {selectedstaffaccount.name}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeletestaffdialog(false);
+    setselectedstaffaccount(null);
+  }}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={isdeletingstaff ? undefined : deletestaffaccount}
+  disabled={isdeletingstaff}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: isdeletingstaff ? "#9ca3af" : "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: isdeletingstaff ? "not-allowed" : "pointer",
+    opacity: isdeletingstaff ? 0.6 : 1,
+  }}
+  onMouseOver={(e) => {
+    if (!isdeletingstaff) {
+      e.currentTarget.style.backgroundColor = "#dc2626";
+    }
+  }}
+  onMouseOut={(e) => {
+    if (!isdeletingstaff) {
+      e.currentTarget.style.backgroundColor = "#ef4444";
+    }
+  }}
+>
+  {isdeletingstaff ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+      Deleting...
+    </>
+  ) : (
+    'Delete Account'
+  )}
+</button>
+</div>
+</div>
 </div>
 </div>
 )}
@@ -19479,40 +19659,98 @@ useEffect(() => {
 
 
 {showdeleteownerdialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-
-<div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-<form className="flex flex-col  w-full h-fit " onSubmit={ownerhandlesubmit}>
-
-<div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#cfcfcf]">Delete owner Account</h1></div>
-<div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this owner account?</p>
-  {selectedowneraccount && ( <>
-            <p className="text-[16px] mt-3">Owner Id: {selectedowneraccount.id}</p>
-            <p className="text-[16px]">Owner Name: {selectedowneraccount.name}</p> </>)}  
-  </div>        
-  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeleteownerdialog(false); setselectedowneraccount(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-    <div className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
-      isdeletingowner 
-        ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50' 
-        : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
-    }`} onClick={isdeletingowner ? undefined : deleteowneraccount}>
-      <p className="text-[#ffffff] flex items-center">
-        {isdeletingowner ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Deleting...
-          </>
-        ) : (
-          'Delete'
-        )}
-      </p>
-    </div>
-  </div>
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Owner Account</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeleteownerdialog(false);
+  setselectedowneraccount(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
 </div>
 
-</form>
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this owner account?
+</p>
+
+{selectedowneraccount && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Owner ID: {selectedowneraccount.id}</p>
+<p className="text-sm text-gray-500">Owner Name: {selectedowneraccount.name}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeleteownerdialog(false);
+    setselectedowneraccount(null);
+  }}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={isdeletingowner ? undefined : deleteowneraccount}
+  disabled={isdeletingowner}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: isdeletingowner ? "#9ca3af" : "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: isdeletingowner ? "not-allowed" : "pointer",
+    opacity: isdeletingowner ? 0.6 : 1,
+  }}
+  onMouseOver={(e) => {
+    if (!isdeletingowner) {
+      e.currentTarget.style.backgroundColor = "#dc2626";
+    }
+  }}
+  onMouseOut={(e) => {
+    if (!isdeletingowner) {
+      e.currentTarget.style.backgroundColor = "#ef4444";
+    }
+  }}
+>
+  {isdeletingowner ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+      Deleting...
+    </>
+  ) : (
+    'Delete Account'
+  )}
+</button>
+</div>
+</div>
 </div>
 </div>
 )}
@@ -19805,40 +20043,98 @@ useEffect(() => {
 
 
 {showdeleteadmindialog && (
-<div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-
-<div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
-<form className="flex flex-col  w-full h-fit " onSubmit={adminhandlesubmit}>
-
-<div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#cfcfcf]">Delete Admin Account</h1></div>
-<div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this admin account?</p>
-  {selectedadminaccount && ( <>
-            <p className="text-[16px] mt-3">Admin Id: {selectedadminaccount.id}</p>
-            <p className="text-[16px]">Admin Name: {selectedadminaccount.name}</p> </>)}  
-  </div>        
-  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => {setshowdeleteadmindialog(false); setselectedadminaccount(null);}}><p className=" text-[#ffffff]">Cancel</p></div>
-    <div className={`ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-300 ease-in-out ${
-      isdeletingadmin 
-        ? 'bg-[#4e0f0f] cursor-not-allowed opacity-50' 
-        : 'hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] hover:scale-105'
-    }`} onClick={isdeletingadmin ? undefined : deleteadminaccount}>
-      <p className="text-[#ffffff] flex items-center">
-        {isdeletingadmin ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Deleting...
-          </>
-        ) : (
-          'Delete'
-        )}
-      </p>
-    </div>
-  </div>
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Admin Account</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeleteadmindialog(false);
+  setselectedadminaccount(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
 </div>
 
-</form>
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this admin account?
+</p>
+
+{selectedadminaccount && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Admin ID: {selectedadminaccount.id}</p>
+<p className="text-sm text-gray-500">Admin Name: {selectedadminaccount.name}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeleteadmindialog(false);
+    setselectedadminaccount(null);
+  }}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={isdeletingadmin ? undefined : deleteadminaccount}
+  disabled={isdeletingadmin}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: isdeletingadmin ? "#9ca3af" : "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: isdeletingadmin ? "not-allowed" : "pointer",
+    opacity: isdeletingadmin ? 0.6 : 1,
+  }}
+  onMouseOver={(e) => {
+    if (!isdeletingadmin) {
+      e.currentTarget.style.backgroundColor = "#dc2626";
+    }
+  }}
+  onMouseOut={(e) => {
+    if (!isdeletingadmin) {
+      e.currentTarget.style.backgroundColor = "#ef4444";
+    }
+  }}
+>
+  {isdeletingadmin ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+      Deleting...
+    </>
+  ) : (
+    'Delete Account'
+  )}
+</button>
+</div>
+</div>
 </div>
 </div>
 )}
@@ -20142,7 +20438,15 @@ useEffect(() => {
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative group">
                           <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                          {addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
+                          {addpatientprofileisuploadingimage ? (
+                            /* Loading state */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mb-2 mx-auto"></div>
+                                <p className="text-sky-600 text-sm font-medium">Uploading...</p>
+                              </div>
+                            </div>
+                          ) : addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? (
                             <img 
                               className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
                               src={addpatientprofilepreviewimage || demoformdata.patientprofilepicture || defaultprofilepic}
@@ -20152,22 +20456,20 @@ useEffect(() => {
                                 e.target.nextSibling.style.display = 'flex';
                               }}
                             />
-                          ) : null}
-                          {/* Fallback placeholder when no image */}
-                          <div 
-                            className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                              addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'hidden' : 'flex'
-                            }`}
-                            style={{ display: addpatientprofilepreviewimage || (demoformdata.patientprofilepicture && demoformdata.patientprofilepicture !== '') ? 'none' : 'flex' }}
-                          >
-                            <div className="text-center">
-                              <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
-                              <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                          ) : (
+                            /* Fallback placeholder when no image */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                                <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                          </div>
+                          )}
+                          {!addpatientprofileisuploadingimage && (
+                            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                            </div>
+                          )}
                         </div>
                         
                         <input  
@@ -20176,10 +20478,11 @@ useEffect(() => {
                           onChange={addpatientprofilehandlechange} 
                           accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
                           ref={addpatientprofileimageinputref} 
+                          disabled={addpatientprofileisuploadingimage}
                         />
                         
                         <div className="flex items-center gap-2">
-                          {(addpatientprofileselectedfile || addpatientprofilepreviewimage) && (
+                          {(addpatientprofileselectedfile || addpatientprofilepreviewimage) && !addpatientprofileisuploadingimage && (
                             <button
                               type="button"
                               onClick={addpatientprofilehandleremoveprofile}
@@ -20193,10 +20496,24 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={addpatientprofilehandleuploadclick}
-                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            disabled={addpatientprofileisuploadingimage}
+                            className={`cursor-pointer flex items-center px-6 py-3 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+                              addpatientprofileisuploadingimage 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700'
+                            }`}
                           >
-                            <i className="bx bx-camera mr-2"></i>
-                            Upload Photo
+                            {addpatientprofileisuploadingimage ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-camera mr-2"></i>
+                                Upload Photo
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -20434,39 +20751,83 @@ value={demoformdata.patientbirthdate}
         )}
 
         {showdeletepatientprofiledialog && (
-          <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#000000af] bg-opacity-50">
-            <div className="flex flex-col items-center bg-white rounded-2xl w-[600px] h-fit animate-fadeInUp">
-              <div className="w-full flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
-                <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1]" />
-                <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Patient Profile</h1>
-              </div>
-              <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
-                <div className="px-5 flex flex-col justify-center h-[130px] w-full">
-                  <p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this patient profile?</p>
-                  {selectedpatientprofile && ( 
-                    <>
-                      <p className="text-[16px]">Patient Name: {selectedpatientprofile.name}</p>
-                      <p className="text-[16px] mt-3">Patient Email: {selectedpatientprofile.email}</p>
-                    </>
-                  )}  
-                </div>        
-                <div className="pr-5 flex justify-end items-center h-[80px] w-full">
-                  <div 
-                    className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" 
-                    onClick={() => {setshowdeletepatientprofiledialog(false); setselectedpatientprofile(null);}}
-                  >
-                    <p className="text-[#ffffff]">Cancel</p>
-                  </div>
-                  <div 
-                    className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" 
-                    onClick={deletepatientprofile}
-                  >
-                    <p className="text-[#ffffff]">Delete</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Patient Profile</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeletepatientprofiledialog(false);
+  setselectedpatientprofile(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
+
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this patient profile?
+</p>
+
+{selectedpatientprofile && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Patient Name: {selectedpatientprofile.name}</p>
+<p className="text-sm text-gray-500">Patient Email: {selectedpatientprofile.email}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeletepatientprofiledialog(false);
+    setselectedpatientprofile(null);
+  }}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={deletepatientprofile}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Profile
+</button>
+</div>
+</div>
+</div>
+</div>
         )}
 
         {showaddpatientpofile && (
@@ -20501,7 +20862,15 @@ value={demoformdata.patientbirthdate}
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative group">
                           <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                          {addpatientprofilepreviewimage ? (
+                          {addpatientprofileisuploadingimage ? (
+                            /* Loading state */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mb-2 mx-auto"></div>
+                                <p className="text-sky-600 text-sm font-medium">Uploading...</p>
+                              </div>
+                            </div>
+                          ) : addpatientprofilepreviewimage ? (
                             <img 
                               className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
                               src={addpatientprofilepreviewimage || defaultprofilepic}
@@ -20511,22 +20880,20 @@ value={demoformdata.patientbirthdate}
                                 e.target.nextSibling.style.display = 'flex';
                               }}
                             />
-                          ) : null}
-                          {/* Fallback placeholder when no image */}
-                          <div 
-                            className={`relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center ${
-                              addpatientprofilepreviewimage ? 'hidden' : 'flex'
-                            }`}
-                            style={{ display: addpatientprofilepreviewimage ? 'none' : 'flex' }}
-                          >
-                            <div className="text-center">
-                              <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
-                              <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                          ) : (
+                            /* Fallback placeholder when no image */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                                <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                            <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                          </div>
+                          )}
+                          {!addpatientprofileisuploadingimage && (
+                            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                            </div>
+                          )}
                         </div>
                         
                         <input  
@@ -20535,10 +20902,11 @@ value={demoformdata.patientbirthdate}
                           onChange={addpatientprofilehandlechange} 
                           accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
                           ref={addpatientprofileimageinputref} 
+                          disabled={addpatientprofileisuploadingimage}
                         />
                         
                         <div className="flex items-center gap-2">
-                          {(selectedpatientprofile || addpatientprofilepreviewimage) && (
+                          {(selectedpatientprofile || addpatientprofilepreviewimage) && !addpatientprofileisuploadingimage && (
                             <button
                               type="button"
                               onClick={addpatientprofilehandleremoveprofile}
@@ -20552,10 +20920,24 @@ value={demoformdata.patientbirthdate}
                           <button
                             type="button"
                             onClick={addpatientprofilehandleuploadclick}
-                            className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            disabled={addpatientprofileisuploadingimage}
+                            className={`cursor-pointer flex items-center px-6 py-3 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+                              addpatientprofileisuploadingimage 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700'
+                            }`}
                           >
-                            <i className="bx bx-camera mr-2"></i>
-                            Upload Photo
+                            {addpatientprofileisuploadingimage ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-camera mr-2"></i>
+                                Upload Photo
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -23090,7 +23472,7 @@ itemName="appointments"
           <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
           <input 
             type="text" 
-            placeholder="Enter medical record details..." 
+            placeholder="Search patients, appointments, medical documents, etc..." 
             value={searchmedicalrecords}
             onChange={(e) => setsearchmedicalrecords(e.target.value)}
             className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
@@ -23175,11 +23557,11 @@ itemName="appointments"
                   <td className="py-3 px-6 text-[#171717] text-center font-albertsans font-medium">
                     <div className="flex items-center">
                       <img 
-                        src={patients.patientprofilepicture} 
+                        src={patients.patientprofilepicture || defaultprofilepic} 
                         alt="Profile" 
                         className="rounded-full h-12 mr-3 w-12 object-cover"
                         onError={(e) => {
-                          e.target.src = 'default-profile-url';
+                          e.target.src = defaultprofilepic;
                         }}
                       />
                       <h1 className="font-albertsans text-[#171717] text-center text-[15px] font-medium ml-3">
@@ -23484,8 +23866,8 @@ itemName="appointments"
                 <h3 className="font-medium text-gray-800 text-base truncate">
                   {appointment.consultationremarkssubject || `${appointment.clinicType === 'ambher' ? 'Ambher' : 'Bautista'} Appointment`}
                 </h3>
-                <p className="text-xs text-gray-500">
-                  {appointment.consultationremarkssubject ? 'Consultation completed' : 'Basic appointment record'}
+                <p id="clinicname" className="text-xs text-gray-500">
+                  {appointment.clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center'}
                 </p>
             </div>
 
@@ -24737,9 +25119,6 @@ Are you sure you want to delete this medical document?
 
 
 
-
-
-
 {/* Medical Document Upload Toast Notification */}
 {medicalDocumentToast && (
   <div className={`${medicalDocumentToast ? 'bottom-4' : 'bottom-4'} right-8 z-101 transform fixed`}>
@@ -24758,8 +25137,6 @@ Are you sure you want to delete this medical document?
 
 
 
-
-
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
@@ -24777,15 +25154,14 @@ Are you sure you want to delete this medical document?
 
 
 
+{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
+{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
+{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
+{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
+{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 
 
 
-
-{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
-{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
-{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
-{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
-{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 
 { (activedashboard === 'inventorymanagement' && !isAdminRole) && ( <div id="inventorymanagement" className="pl-5 pr-5 pb-26 pt-4 transition-all duration-300 ease-in-out border-1 bg-white border-gray-200 shadow-lg w-[100%] h-auto rounded-2xl flex flex-col" >   
 
@@ -25179,18 +25555,20 @@ Lowest to Highest
     </div>
   )}
   
-  {product.ambherinventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
-   product.ambherinventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
-   product.ambherinventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+  {product.ambherinventoryproductquantity === 0 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.ambherinventoryproductquantity <= 3 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.ambherinventoryproductquantity <= 6 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.ambherinventoryproductcategory}</h1></div>
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.ambherinventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.ambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
-  <div className="w-full h-auto ml-2 mt-5 mb-1 "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-red-600' : product.ambherinventoryproductquantity <= 3 ? 'text-orange-600' : product.ambherinventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.ambherinventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.ambherinventoryproductquantity}${product.ambherinventoryproductquantity <= 3 ? ' (Critical)': product.ambherinventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>   
+  {!product.isArchived && (
+    <div className="w-full h-auto ml-2 mt-5 mb-1 "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.ambherinventoryproductquantity === 0 ? 'text-red-600' : product.ambherinventoryproductquantity <= 3 ? 'text-orange-600' : product.ambherinventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.ambherinventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.ambherinventoryproductquantity}${product.ambherinventoryproductquantity <= 3 ? ' (Critical)': product.ambherinventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>
+  )}
   
-  {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
-  {product.ambherinventoryproductquantity === 0 && (wishlistCounts[product.ambherinventoryproductid] ?? 0) > 0 && (
+  {/* Urgent Restock Alert - Show when out of stock but has wishlist items and not archived */}
+  {product.ambherinventoryproductquantity === 0 && !product.isArchived && (wishlistCounts[product.ambherinventoryproductid] ?? 0) > 0 && (
     <div className="w-auto h-auto ml-2 mb-2">
       <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-r-md">
         <div className="flex items-center">
@@ -25516,25 +25894,76 @@ Lowest to Highest
 )}
 
 {showdeleteambherinventorycategorydialog && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Inventory Category</h2>
+</div>
+</div>
+<div 
+onClick={() => setshowdeleteambherinventorycategorydialog(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
 
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this category?
+</p>
 
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Inventory Category</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this category?</p>
-                  {selectedambherinventorycategory && ( <>
-                            <p className="text-[18px] mt-3">Category Name: {selectedambherinventorycategory.ambherinventorycategoryname}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setshowdeleteambherinventorycategorydialog(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                    <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => deleteambherinventorycategory()}><p className=" text-[#ffffff]">Delete</p></div>
-                  </div>
-              </div>
+{selectedambherinventorycategory && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Category Name: {selectedambherinventorycategory.ambherinventorycategoryname}</p>
+</div>
+)}
 
-           </div>
-         </div>
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeleteambherinventorycategorydialog(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={() => deleteambherinventorycategory()}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Category
+</button>
+</div>
+</div>
+</div>
+</div>
 )}
 
 {/*Ambher Inventory Product Modal*/}
@@ -26040,34 +26469,78 @@ Lowest to Highest
 
 
 {showdeleteambherproduct && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Ambher Optical Product</h2>
+</div>
+</div>
+<div 
+onClick={() => setshowdeleteambherproduct(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
 
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this product?
+</p>
 
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Ambher Optical Product</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this product?</p>
-                  {selecteddeleteambherproduct && ( <>
-                            <p className="text-[18px] mt-3">Product Name: {selecteddeleteambherproduct.ambherinventoryproductname}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setshowdeleteambherproduct(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                        {selectedambherproduct && (
-                   <button type="button" onClick={deleteambherproduct}  className="submit-btn w-full" style={{ backgroundColor: "#4e0f0f", fontSize: "20px", color: "white", borderRadius: "20px", width: "120px"}}>
-                      Delete
-                   </button>)} 
+{selecteddeleteambherproduct && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Product Name: {selecteddeleteambherproduct.ambherinventoryproductname}</p>
+</div>
+)}
 
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeleteambherproduct(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
 
-
-
-
-
-                  </div>
-              </div>
-
-           </div>
-         </div>
+{selectedambherproduct && (
+<button
+  onClick={deleteambherproduct}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Product
+</button>
+)}
+</div>
+</div>
+</div>
+</div>
 )}
 
 
@@ -26406,18 +26879,20 @@ Lowest to Highest
     </div>
   )}
   
-  {product.bautistainventoryproductquantity === 0 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
-   product.bautistainventoryproductquantity <= 3 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
-   product.bautistainventoryproductquantity <= 6 ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
+  {product.bautistainventoryproductquantity === 0 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-red-200 z-20"><h1 className="text-red-900">Out of Stock</h1></div>): 
+   product.bautistainventoryproductquantity <= 3 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-orange-200 z-20"><h1 className="text-orange-900">Critical Stock</h1></div>):
+   product.bautistainventoryproductquantity <= 6 && !product.isArchived ? (<div className="top-2 right-2 absolute px-2 py-1 rounded-md text-xs font-semibold bg-yellow-200 z-20"><h1 className="text-yellow-900">Low Stock</h1></div>): null}
 
 
   <div className="mx-1  w-fit rounded-md py-1 px-2  rounded-1xl h-fit  bg-[#F0F6FF] mt-2 break-words min-w-0 "><h1 className={`font-medium   text-[13px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`} >{product.bautistainventoryproductcategory}</h1></div>
   <div className="w-full h-auto ml-2 mt-2 "><h1 className={`font-semibold  text-[15px] min-w-0 break-words text-[#0d0d0d] ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>{product.bautistainventoryproductname}</h1></div>
   <div className="w-fit h-auto ml-2 mt-1 "><h1 className={`font-albertsans font-bold text-[18px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-gray-400': ''}`}>₱{Number(product.bautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1></div>
-  <div className="w-full h-auto ml-2 mt-2  "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-red-600' : product.bautistainventoryproductquantity <= 3 ? 'text-orange-600' : product.bautistainventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.bautistainventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.bautistainventoryproductquantity}${product.bautistainventoryproductquantity <= 3 ? ' (Critical)': product.bautistainventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>   
+  {!product.isArchived && (
+    <div className="w-full h-auto ml-2 mt-2  "><h1 className={`font-albertsans font-medium  text-[15px] min-w-0 break-words ${product.bautistainventoryproductquantity === 0 ? 'text-red-600' : product.bautistainventoryproductquantity <= 3 ? 'text-orange-600' : product.bautistainventoryproductquantity <= 6 ? 'text-yellow-600' : 'text-[#4e4f4f]'}`}>{product.bautistainventoryproductquantity === 0 ? ('Out Of Stock'):(`In Stock: ${product.bautistainventoryproductquantity}${product.bautistainventoryproductquantity <= 3 ? ' (Critical)': product.bautistainventoryproductquantity <= 6 ? ' (Low)': ''}`)}</h1></div>
+  )}
   
-  {/* Urgent Restock Alert - Show when out of stock but has wishlist items */}
-  {product.bautistainventoryproductquantity === 0 && (wishlistCounts[product.bautistainventoryproductid] ?? 0) > 0 && (
+  {/* Urgent Restock Alert - Show when out of stock but has wishlist items and not archived */}
+  {product.bautistainventoryproductquantity === 0 && !product.isArchived && (wishlistCounts[product.bautistainventoryproductid] ?? 0) > 0 && (
     <div className="w-auto h-auto ml-2 mb-2">
       <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-r-md">
         <div className="flex items-center">
@@ -26738,25 +27213,76 @@ Lowest to Highest
 )}
 
 {showdeletebautistainventorycategorydialog && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Inventory Category</h2>
+</div>
+</div>
+<div 
+onClick={() => setshowdeletebautistainventorycategorydialog(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
 
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this category?
+</p>
 
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Inventory Category</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this category?</p>
-                  {selectedbautistainventorycategory && ( <>
-                            <p className="text-[18px] mt-3">Category Name: {selectedbautistainventorycategory.bautistainventorycategoryname}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setshowdeletebautistainventorycategorydialog(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                    <div className="hover:cursor-pointer bg-[#4e0f0f] hover:bg-[#7f1a1a] ml-2 rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => deletebautistainventorycategory()}><p className=" text-[#ffffff]">Delete</p></div>
-                  </div>
-              </div>
+{selectedbautistainventorycategory && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Category Name: {selectedbautistainventorycategory.bautistainventorycategoryname}</p>
+</div>
+)}
 
-           </div>
-         </div>
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeletebautistainventorycategorydialog(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={() => deletebautistainventorycategory()}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Category
+</button>
+</div>
+</div>
+</div>
+</div>
 )}
 
 {/*Bautista Inventory Product Modal*/}
@@ -27265,34 +27791,78 @@ Lowest to Highest
 
 
 {showdeletebautistaproduct && (
-         <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50">
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Bautista Eye Center Product</h2>
+</div>
+</div>
+<div 
+onClick={() => setshowdeletebautistaproduct(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
 
-           <div className="flex flex-col items  bg-white rounded-2xl w-[600px] h-fit  animate-fadeInUp ">
- 
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this product?
+</p>
 
-              <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]"><i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/><h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Bautista Eye Center Product</h1></div>
-              <div className="flex flex-col  items-center  h-fit rounded-br-2xl rounded-bl-2xl">
-                  <div className="px-5 flex flex-col justify-center  h-[130px] w-full"><p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this product?</p>
-                  {selecteddeletebautistaproduct && ( <>
-                            <p className="text-[18px] mt-3">Product Name: {selecteddeletebautistaproduct.bautistainventoryproductname}</p> </>)}  
-                  </div>        
-                  <div className="pr-5 flex justify-end  items-center  h-[80px] w-full">
-                    <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141]   rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-300 ease-in-out" onClick={() => setshowdeletebautistaproduct(false)}><p className=" text-[#ffffff]">Cancel</p></div>
-                        {selectedbautistaproduct && (
-                   <button type="button" onClick={deletebautistaproduct}  className="submit-btn w-full" style={{ backgroundColor: "#4e0f0f", fontSize: "20px", color: "white", borderRadius: "20px", width: "120px"}}>
-                      Delete
-                   </button>)} 
+{selecteddeletebautistaproduct && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Product Name: {selecteddeletebautistaproduct.bautistainventoryproductname}</p>
+</div>
+)}
 
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeletebautistaproduct(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
 
-
-
-
-
-                  </div>
-              </div>
-
-           </div>
-         </div>
+{selectedbautistaproduct && (
+<button
+  onClick={deletebautistaproduct}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Product
+</button>
+)}
+</div>
+</div>
+</div>
+</div>
 )}
 
 
@@ -31712,6 +32282,7 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
 
 
 
