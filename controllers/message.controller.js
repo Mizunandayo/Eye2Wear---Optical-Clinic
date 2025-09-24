@@ -4,7 +4,7 @@ import Conversation from "../models/conversation.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import CloudinaryService from "../utils/cloudinaryService.js";
 
 
 // Get all conversations for a user or clinic
@@ -170,17 +170,8 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const isImage = file.mimetype.startsWith('image/');
-    cb(null, isImage ? 'uploads/message-images/' : 'uploads/message-documents/');
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  }
-});
+// Configure multer for memory storage (for Cloudinary upload)
+const storage = multer.memoryStorage();
 
 // File filter for both images and documents
 const fileFilter = (req, file, cb) => {
@@ -344,15 +335,54 @@ export const createMessage = async (req, res) => {
     const { userId, role, clinic, name } = req.user;
 
     let imageUrl = null;
+    let imageUrl_public_id = null;
     let documentUrl = null;
+    let documentUrl_public_id = null;
 
+    // Handle file upload to Cloudinary
     if (req.file) {
-      const fileType = req.file.mimetype.startsWith('image/') ? 'message-images' : 'message-documents';
-      const fileUrl = `/uploads/${fileType}/${req.file.filename}`;
-      if (req.file.mimetype.startsWith('image/')) {
-        imageUrl = fileUrl;
-      } else {
-        documentUrl = fileUrl;
+      try {
+        const isImage = req.file.mimetype.startsWith('image/');
+        const folderPath = isImage ? 'eye2wear/messages/images' : 'eye2wear/messages/documents';
+        
+        // Generate unique public_id
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(7);
+        const fileExtension = path.extname(req.file.originalname);
+        const public_id = `message_${userId}_${timestamp}_${random}`;
+
+        console.log('📤 Uploading file to Cloudinary:', {
+          isImage,
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+          size: req.file.size,
+          public_id
+        });
+
+        // Upload to Cloudinary
+        const uploadResult = await CloudinaryService.uploadFile(req.file.buffer, {
+          folder: folderPath,
+          public_id: public_id,
+          mimetype: req.file.mimetype,
+          originalFilename: req.file.originalname,
+          fileExtension: fileExtension
+        });
+
+        console.log('✅ File uploaded to Cloudinary:', uploadResult);
+
+        if (isImage) {
+          imageUrl = uploadResult.url;
+          imageUrl_public_id = uploadResult.public_id;
+        } else {
+          documentUrl = uploadResult.url;
+          documentUrl_public_id = uploadResult.public_id;
+        }
+      } catch (uploadError) {
+        console.error('❌ Cloudinary upload failed:', uploadError);
+        return res.status(500).json({ 
+          message: 'File upload failed', 
+          error: uploadError.message 
+        });
       }
     }
 
@@ -464,7 +494,9 @@ export const createMessage = async (req, res) => {
       sentToClinic: isPatientMessagingClinic ? req.body.clinic : (isClinicMessagingClinic ? targetClinic : null),
       text,
       imageUrl,
+      imageUrl_public_id,
       documentUrl,
+      documentUrl_public_id,
       documentName: req.file?.originalname,
       temporaryId
     });
@@ -664,5 +696,92 @@ export const markMessagesAsRead = async (req, res) => {
   } catch (error) {
     console.error('Error marking messages as read:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Download message file with secure Cloudinary access
+export const downloadMessageFile = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { userId, role, clinic } = req.user;
+
+    console.log('📥 Download request:', { messageId, userId, role, clinic });
+
+    // Get the message and verify access
+    const message = await Message.findById(messageId).lean();
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Get the conversation and verify access
+    const conversation = await Conversation.findById(message.conversationId).lean();
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Verify user has access to this conversation
+    let hasAccess = false;
+    if (role === 'patient') {
+      hasAccess = conversation.participants.some(p => 
+        p.userId === userId.toString() && p.role === 'patient'
+      );
+    } else if (role === 'staff' || role === 'owner') {
+      hasAccess = conversation.participants.some(p => 
+        (p.clinic === clinic && (p.role === 'staff' || p.role === 'owner' || p.role === 'clinic')) ||
+        (p.role === 'clinic' && p.clinic === clinic)
+      );
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: 'Access denied to this message' });
+    }
+
+    // Determine which file to download
+    let filePublicId = null;
+    let fileName = null;
+    let isDocument = false;
+
+    if (message.documentUrl && message.documentUrl_public_id) {
+      filePublicId = message.documentUrl_public_id;
+      fileName = message.documentName || 'document';
+      isDocument = true;
+    } else if (message.imageUrl && message.imageUrl_public_id) {
+      filePublicId = message.imageUrl_public_id;
+      fileName = 'image.jpg';
+      isDocument = false;
+    } else {
+      return res.status(404).json({ message: 'No file found in this message' });
+    }
+
+    console.log('📂 Downloading file:', { filePublicId, fileName, isDocument });
+
+    // For documents, generate signed URL and redirect
+    if (isDocument) {
+      try {
+        const signedUrl = CloudinaryService.generateSignedUrl(filePublicId, {
+          resource_type: 'raw',
+          type: 'upload',
+          attachment: true,
+          expires_at: Math.floor(Date.now() / 1000) + 300 // 5 minutes
+        });
+
+        console.log('✅ Generated signed URL for document download');
+        return res.redirect(signedUrl);
+      } catch (error) {
+        console.error('❌ Error generating signed URL:', error);
+        // Fallback to direct URL
+        return res.redirect(message.documentUrl);
+      }
+    } else {
+      // For images, redirect directly (they're usually publicly accessible)
+      return res.redirect(message.imageUrl);
+    }
+
+  } catch (error) {
+    console.error('❌ Error downloading message file:', error);
+    res.status(500).json({ 
+      message: 'Download failed', 
+      error: error.message 
+    });
   }
 };

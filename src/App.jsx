@@ -18,6 +18,47 @@ import landinglogo from "./assets/images/landinglogo.png";
 import ambherlogo from "./assets/images/ambherlogo.png";
 import bautistalogo from "./assets/images/bautistalogo.png";
 import sendchatambher from "./assets/images/sendchatambher.png";
+import landinglogodark from "./assets/images/landinglogodark.png";
+import messagesound from "./assets/sounds/messagesound.mp3";
+
+
+// Add CSS for animations
+const styles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .mobile-chat-container {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+    }
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = styles;
+  document.head.appendChild(styleElement);
+}
 import sendchatbautista from "./assets/images/sendchatbautista.png";
 import { io } from "socket.io-client";
 import closeimage from "./assets/images/cancelimage.png";
@@ -248,6 +289,19 @@ useEffect(() => {
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // Sound notification function
+  const playMessageSound = useCallback(() => {
+    try {
+      const audio = new Audio(messagesound);
+      audio.volume = 0.5; // Set volume to 50%
+      audio.play().catch(err => {
+        console.log('🔇 Could not play message sound:', err.message);
+      });
+    } catch (error) {
+      console.log('🔇 Error creating audio for message sound:', error.message);
+    }
   }, []);
 
   // 2. CORE CHECKING FUNCTIONS (with dependencies)
@@ -1368,23 +1422,38 @@ const renderMessageContent = (msg, isCurrentUser) => {
       {(isDocument || isMixed) && msg.documentUrl && (
         <div className="mt-2 p-2 bg-gray-100 rounded-lg flex items-center w-full">
           <img src={filesent} className="w-6 h-6 mr-2 flex-shrink-0" alt="Document icon" />
-          <a 
-            href={documentUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline break-all flex-1"
-            download={msg.documentName || msg.documentUrl?.split('/').pop()}
-            onClick={(e) => {
-              // Log for debugging
-              console.log('Downloading document:', {
-                originalUrl: msg.documentUrl,
-                fullUrl: documentUrl,
-                documentName: msg.documentName
-              });
-            }}
-          >
-            {msg.documentName || msg.documentUrl?.split('/').pop() || 'Download File'}
-          </a>
+          {msg.documentUrl.startsWith('http') ? (
+            <button
+              onClick={() => handleDocumentDownload(msg.documentUrl, msg.documentName || msg.documentUrl?.split('/').pop(), msg._id)}
+              style={{
+                color: '#2563eb',
+                backgroundColor: 'transparent',
+                border: 'none',
+                padding: '0',
+                font: 'inherit',
+                cursor: 'pointer',
+                textAlign: 'left',
+                flex: '1',
+                wordBreak: 'break-all',
+                textDecoration: 'none',
+                transition: 'text-decoration 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >
+              {msg.documentName || msg.documentUrl?.split('/').pop() || 'Download File'}
+            </button>
+          ) : (
+            <a 
+              href={documentUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline break-all flex-1"
+              download={msg.documentName || msg.documentUrl?.split('/').pop()}
+            >
+              {msg.documentName || msg.documentUrl?.split('/').pop() || 'Download File'}
+            </a>
+          )}
         </div>
       )}
       
@@ -1456,6 +1525,42 @@ const renderMessageContent = (msg, isCurrentUser) => {
       fileInputRef.current.value = '';
     }
     forceUpdate();
+  };
+
+  const handleDocumentDownload = async (documentUrl, filename, messageId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to download files');
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/api/messages/download/${messageId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document');
+    }
   };
 
   const showambhermessageslist = (ambhermessageslistid) => {
@@ -1902,6 +2007,10 @@ useEffect(() => {
           if (shouldMarkUnread) {
             setHasGlobalUnreadMessages(true);
             console.log('🔴 Set global unread to true for', currentRole, currentClinic);
+            
+            // Play message sound notification for unread message
+            playMessageSound();
+            console.log('🔊 Playing message notification sound for unread message');
           } else {
             setTimeout(() => {
               const hasOtherUnread = Object.values(unreadMessagesByConversation).some(isUnread => isUnread);
@@ -1915,7 +2024,7 @@ useEffect(() => {
       });
     });
   }
-}, [apiUrl, fetchConversations, conversations]); // Add conversations as dependency
+}, [apiUrl, fetchConversations, conversations, playMessageSound, showpatientambherConversation, showpatientbautistaConversation, showpatientchatdashboard, unreadMessagesByConversation]); // Add conversations as dependency
 
 
 
@@ -2366,6 +2475,46 @@ useEffect(() => {
             backface-visibility: hidden;
             transform: translateZ(0);
           }
+
+          /* Pulse animation for notifications */
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.1);
+              opacity: 0.8;
+            }
+          }
+
+          /* Custom clean scrollbar styling */
+          ::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.6);
+          }
+          
+          /* For Firefox */
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+          }
+
+          /* Boxicons import for modern icons */
+          @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
         `}
       </style>
       <div className="preload-images">
@@ -2381,251 +2530,434 @@ useEffect(() => {
               className=" max-w-full max-h-[90vh] object-contain select-none"
             />
           </div>
-       <div onClick={() => setModalOpen(false)} className="absolute top-3 right-3   flex justify-center items-center align-middle p-1 bg-[#333333] rounded-full hover:cursor-pointer transition-all" ><i className="bx bx-x font-bold text-[30px] text-white"/></div>
+       <div onClick={() => setModalOpen(false)} style={{
+         position: 'absolute',
+         top: '12px',
+         right: '12px',
+         display: 'flex',
+         justifyContent: 'center',
+         alignItems: 'center',
+         padding: '4px',
+         backgroundColor: '#333333',
+         borderRadius: '50%',
+         cursor: 'pointer',
+         transition: 'all 0.3s ease'
+       }}
+       onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
+       onMouseLeave={(e) => e.target.style.backgroundColor = '#333333'}
+       ><i className="select-none bx bx-x font-bold text-[30px] text-white"/></div>
 
 
         </div>
       )}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
       {localStorage.getItem("role") === "patient" && (
-        <div className="fixed bottom-5 right-5 z-[99] flex flex-col items-start gap-2">
+        <div id="patientchatdashboard" style={{
+          position: 'fixed',
+          bottom: window.innerWidth < 768 ? '10px' : '20px',
+          right: window.innerWidth < 768 ? '10px' : '20px',
+          zIndex: 99,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'start',
+          gap: '8px'
+        }}>
           {showpatientchatdashboard && (
-            <div className="mb-6 motion-preset-slide-down w-90 h-140 shadow-2xl z-[9999] flex flex-col items-center justify-center rounded-2xl bg-white">
-              <div className={`min-h-12 max-h-12 w-full h-14 rounded-t-2xl flex justify-center items-center ${
-                showpatientambherConversation ? "bg-[#39715f]" : 
-                showpatientbautistaConversation ? "bg-[#0a4277]" : 
-                "bg-[#085f84]"
+            <div style={{
+              marginBottom: '24px',
+              width: window.innerWidth < 768 ? `${window.innerWidth - 20}px` : '384px',
+              maxWidth: '384px',
+              height: window.innerWidth < 768 ? `${window.innerHeight - 100}px` : '600px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              zIndex: 9999,
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: window.innerWidth < 768 ? '16px' : '24px',
+              backgroundColor: 'white',
+              overflow: 'hidden',
+              transform: 'scale(1)',
+              transition: 'all 0.3s ease'
+            }}>
+              {/* Modern Header */}
+              <div className={`flex items-center justify-between p-6 border-b-2 border-[#E2E8F0] ${
+                showpatientambherConversation ? "bg-[#ffffff]" : 
+                showpatientbautistaConversation ? "bg-[#ffffff]" : 
+                "bg-[#ffffff]"
               }`}>
                 {showpatientambherConversation ? (
-                  <div className="flex px-2 w-full items-center">
-                    <img src={leftarrow} alt="Back" className="cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out w-5 h-5 mr-2" onClick={() => {setMessages([]); setSelectedImage(null); setSelectedFile(null); setshowpatientambherConversation(false);}}/>
-                    <img src={ambherlogo} alt="Ambher Optical Logo" className="w-15 px-2 py-1"/>
-                    <p className="font-albertsans font-semibold text-[17px] text-[#ffffff]">Ambher Optical</p>
+                  <div className="flex items-center space-x-3">
+                    <button 
+                      onClick={() => {setMessages([]); setSelectedImage(null); setSelectedFile(null); setshowpatientambherConversation(false);}}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    >
+                      <i className="select-none bx bx-arrow-back text-black text-xl"></i>
+                    </button>
+                    <div className="w-15 h-15 bg-white/20 rounded-xl flex items-center justify-center">
+                      <img src={ambherlogo} alt="Ambher Optical Logo" className="w-12 h-12 object-contain"/>
+                    </div>
+                    <div>
+                      <h3 className="text-black font-semibold text-lg">Ambher Optical</h3>
+            
+                    </div>
                   </div>
                 ) : showpatientbautistaConversation ? (
-                  <div className="flex px-2 w-full items-center">
-                    <img src={leftarrow} alt="Back" className="cursor-pointer hover:scale-105 transition-all duration-300 ease-in-out w-5 h-5 mr-2" onClick={() => {setMessages([]); setSelectedImage(null); setSelectedFile(null); setshowpatientbautistaConversation(false);}}/>
-                    <img src={bautistalogo} alt="Bautista Eye Center Logo" className="w-15 px-2 py-1"/>
-                    <p className="font-albertsans font-semibold text-[17px] text-[#ffffff]">Bautista Eye Center</p>
+                  <div className="flex items-center space-x-3  ">
+                    <button 
+                      onClick={() => {setMessages([]); setSelectedImage(null); setSelectedFile(null); setshowpatientbautistaConversation(false);}}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    >
+                      <i className="select-none bx bx-arrow-back text-black text-xl"></i>
+                    </button>
+                    <div className="w-15 h-15 bg-white/20 rounded-xl flex items-center justify-center">
+                      <img src={bautistalogo} alt="Bautista Eye Center Logo" className="w-12 h-12 object-contain"/>
+                    </div>
+                    <div>
+                      <h3 className="text-black font-semibold text-lg">Bautista Eye Center</h3>
+               
+                    </div>
                   </div>
                 ) : (
-                  <img src={landinglogo} alt="Eye2Wear Logo" className="w-40 px-2 py-1"/>
+                  <div className="flex items-center space-x-4">
+                    
+                     <img src={landinglogodark} alt="Eye2Wear" className="w-40 object-contain"/>
+
+                  </div>
                 )}
+                <button 
+                  onClick={() => {
+                    setshowpatientbautistaConversation(false);
+                    setshowpatientambherConversation(false);
+                    setshowpatientchatdashboard(false);
+                    setSelectedClinic(null);
+                    setSelectedPatient(null);
+                    setMessage("");
+                    setSelectedFile(null);
+                  }}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                >
+                  <i className="select-none bx bx-x text-white text-xl"></i>
+                </button>
               </div>
 
               {!(showpatientambherConversation || showpatientbautistaConversation) && (
-<div className="gap-3 flex flex-col justify-center items-center w-full h-full p-4">
-  {loadingConversations ? (
-    <div className="w-full flex justify-center items-center h-full text-gray-500">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#085f84]"></div>
-    </div>
-  ) : (
-    <>
-      <p className="text-[20px] font-albertsans font-semibold text-gray-800">Chat with us</p>
-      <div className="flex gap-3">
+                <div className="flex-1 flex flex-col justify-center items-center p-8">
+                  {loadingConversations ? (
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                      <p className="text-gray-600 font-medium">Loading conversations...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-center mb-8">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Start a Conversation</h3>
+                        <p className="text-gray-500">Choose a clinic to begin messaging</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
+                        {/* Ambher Optical Card */}
+                        <div
+                          onClick={async () => {
+                            console.log('Switching to Ambher Optical conversation');
+                            setshowpatientambherConversation(true);
+                            setshowpatientbautistaConversation(false);
+                            setMessages([]);
+                            setConversationId(null);
+                            conversationIdRef.current = null;
 
+                            try {
+                              const ambherConv = conversations.find(conv =>
+                                conv.participants.some(p => p.role === 'clinic' && p.clinic === "Ambher Optical") ||
+                                conv.clinic === "Ambher Optical"
+                              );
 
+                              if (ambherConv) {
+                                setConversationId(ambherConv._id);
+                                conversationIdRef.current = ambherConv._id;
 
-<div
-  onClick={async () => {
-    console.log('Switching to Ambher Optical conversation');
-    // Reset states for clinic switch
-    setshowpatientambherConversation(true);
-    setshowpatientbautistaConversation(false);
-    setMessages([]);
-    setConversationId(null);
-    conversationIdRef.current = null;
+                                setUnreadMessagesByConversation(prev => ({
+                                  ...prev,
+                                  [ambherConv._id]: false
+                                }));
 
-    try {
-      // Find Ambher conversation
-      const ambherConv = conversations.find(conv =>
-        conv.participants.some(p => p.role === 'clinic' && p.clinic === "Ambher Optical") ||
-        conv.clinic === "Ambher Optical"
-      );
+                                setTimeout(() => {
+                                  const hasOtherUnread = Object.entries(unreadMessagesByConversation).some(([convId, isUnread]) => 
+                                    convId !== ambherConv._id && isUnread
+                                  );
+                                  setHasGlobalUnreadMessages(hasOtherUnread);
+                                }, 100);
 
-      if (ambherConv) {
-        // Set conversation ID
-        setConversationId(ambherConv._id);
-        conversationIdRef.current = ambherConv._id;
+                                if (socket.current && socket.current.connected) {
+                                  console.log('Joining Ambher conversation:', ambherConv._id);
+                                  socket.current.emit('joinConversation', ambherConv._id);
+                                  const patientId = localStorage.getItem('patientid');
+                                  if (patientId) {
+                                    socket.current.emit('joinConversations', patientId, 'patient', null);
+                                  }
+                                }
 
-        // IMMEDIATELY mark as read to clear notification
-        setUnreadMessagesByConversation(prev => ({
-          ...prev,
-          [ambherConv._id]: false
-        }));
+                                if (messagesByConversation[ambherConv._id]) {
+                                  console.log('Loading Ambher messages from cache:', messagesByConversation[ambherConv._id].length);
+                                  setMessages(messagesByConversation[ambherConv._id]);
+                                } else {
+                                  console.log('Fetching Ambher messages from server');
+                                  await loadMessages(ambherConv._id, false, true);
+                                }
+                              } else {
+                                console.log('No Ambher conversation found, starting new one');
+                                await startConversation("Ambher Optical");
+                              }
+                            } catch (error) {
+                              console.error('Error switching to Ambher Optical:', error);
+                            }
+                          }}
+                          style={{
+                            position: 'relative',
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: window.innerWidth < 768 ? '16px' : '24px',
+                            border: '1px solid #e5e7eb',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            transform: 'scale(1)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%)';
+                            e.target.style.borderColor = '#a7f3d0';
+                            e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+                        
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'white';
+                            e.target.style.borderColor = '#e5e7eb';
+                            e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                     
+                          }}
+                        >
+                          {(() => {
+                            const ambherConv = conversations.find(conv =>
+                              conv.participants.some(p => p.role === 'clinic' && p.clinic === "Ambher Optical") ||
+                              conv.clinic === "Ambher Optical"
+                            );
+                            return ambherConv && hasUnreadMessages(ambherConv._id) ? (
+                              <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            ) : null;
+                          })()}
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                              <OptimizedImage 
+                                src={ambherlogo} 
+                                alt="Ambher Optical Logo" 
+                                className="w-8 h-8 object-contain"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200">
+                                Ambher Optical
+                              </h4>
+                              <p className="text-sm text-gray-500">Click to start messaging</p>
+                            </div>
+                            <i className="select-none bx bx-chevron-right text-gray-400 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all duration-200"></i>
+                          </div>
+                        </div>
 
-        // Check if there are still other unread conversations
-        setTimeout(() => {
-          const hasOtherUnread = Object.entries(unreadMessagesByConversation).some(([convId, isUnread]) => 
-            convId !== ambherConv._id && isUnread
-          );
-          setHasGlobalUnreadMessages(hasOtherUnread);
-        }, 100);
+                        {/* Bautista Eye Center Card */}
+                        <div
+                          onClick={async () => {
+                            console.log('Switching to Bautista Eye Center conversation');
+                            setshowpatientbautistaConversation(true);
+                            setshowpatientambherConversation(false);
+                            setMessages([]);
+                            setConversationId(null);
+                            conversationIdRef.current = null;
 
-        // Join conversation via socket
-        if (socket.current && socket.current.connected) {
-          console.log('Joining Ambher conversation:', ambherConv._id);
-          socket.current.emit('joinConversation', ambherConv._id);
-          const patientId = localStorage.getItem('patientid');
-          if (patientId) {
-            socket.current.emit('joinConversations', patientId, 'patient', null);
-          }
-        }
+                            try {
+                              const bautistaConv = conversations.find(conv =>
+                                conv.participants.some(p => p.role === 'clinic' && p.clinic === "Bautista Eye Center") ||
+                                conv.clinic === "Bautista Eye Center"
+                              );
 
-        // Load messages
-        if (messagesByConversation[ambherConv._id]) {
-          console.log('Loading Ambher messages from cache:', messagesByConversation[ambherConv._id].length);
-          setMessages(messagesByConversation[ambherConv._id]);
-        } else {
-          console.log('Fetching Ambher messages from server');
-          await loadMessages(ambherConv._id, false, true); // Mark as read when user clicks Ambher
-        }
-      } else {
-        console.log('No Ambher conversation found, starting new one');
-        await startConversation("Ambher Optical");
-      }
-    } catch (error) {
-      console.error('Error switching to Ambher Optical:', error);
-    }
-  }}
-  className="hover:shadow-md hover:bg-[#d8f1fd] hover:scale-105 transition-all duration-300 ease-in-out gap-2 cursor-pointer flex flex-col justify-center items-center w-40 h-40 rounded-md border-1 relative"
->
-  {/* Red notification dot for Ambher Optical */}
-  {(() => {
-    const ambherConv = conversations.find(conv =>
-      conv.participants.some(p => p.role === 'clinic' && p.clinic === "Ambher Optical") ||
-      conv.clinic === "Ambher Optical"
-    );
-    return ambherConv && hasUnreadMessages(ambherConv._id) ? (
-      <div className="absolute top-2 right-2 flex justify-center items-center bg-[#e93f3f] rounded-full w-4 h-4"></div>
-    ) : null;
-  })()}
-  
-  {/* Ambher Optical Logo */}
-  <OptimizedImage 
-    src={ambherlogo} 
-    alt="Ambher Optical Logo" 
-    className="w-20 h-20 object-contain mb-2"
-  />
-  
-  {/* Ambher Optical Name */}
-  <p className="font-albertsans font-semibold text-[16px] text-[#39715f] text-center">
-    Ambher Optical
-  </p>
-</div>
+                              if (bautistaConv) {
+                                setConversationId(bautistaConv._id);
+                                conversationIdRef.current = bautistaConv._id;
 
+                                setUnreadMessagesByConversation(prev => ({
+                                  ...prev,
+                                  [bautistaConv._id]: false
+                                }));
 
+                                setTimeout(() => {
+                                  const hasOtherUnread = Object.entries(unreadMessagesByConversation).some(([convId, isUnread]) => 
+                                    convId !== bautistaConv._id && isUnread
+                                  );
+                                  setHasGlobalUnreadMessages(hasOtherUnread);
+                                }, 100);
 
-<div
-  onClick={async () => {
-    console.log('Switching to Bautista Eye Center conversation');
-    // Reset states for clinic switch
-    setshowpatientbautistaConversation(true);
-    setshowpatientambherConversation(false);
-    setMessages([]);
-    setConversationId(null);
-    conversationIdRef.current = null;
+                                if (socket.current && socket.current.connected) {
+                                  console.log('Joining Bautista conversation:', bautistaConv._id);
+                                  socket.current.emit('joinConversation', bautistaConv._id);
+                                  const patientId = localStorage.getItem('patientid');
+                                  if (patientId) {
+                                    socket.current.emit('joinConversations', patientId, 'patient', null);
+                                  }
+                                }
 
-    try {
-      // Find Bautista conversation
-      const bautistaConv = conversations.find(conv =>
-        conv.participants.some(p => p.role === 'clinic' && p.clinic === "Bautista Eye Center") ||
-        conv.clinic === "Bautista Eye Center"
-      );
-
-      if (bautistaConv) {
-        // Set conversation ID
-        setConversationId(bautistaConv._id);
-        conversationIdRef.current = bautistaConv._id;
-
-        // IMMEDIATELY mark as read to clear notification
-        setUnreadMessagesByConversation(prev => ({
-          ...prev,
-          [bautistaConv._id]: false
-        }));
-
-        // Check if there are still other unread conversations
-        setTimeout(() => {
-          const hasOtherUnread = Object.entries(unreadMessagesByConversation).some(([convId, isUnread]) => 
-            convId !== bautistaConv._id && isUnread
-          );
-          setHasGlobalUnreadMessages(hasOtherUnread);
-        }, 100);
-
-        // Join conversation via socket
-        if (socket.current && socket.current.connected) {
-          console.log('Joining Bautista conversation:', bautistaConv._id);
-          socket.current.emit('joinConversation', bautistaConv._id);
-          const patientId = localStorage.getItem('patientid');
-          if (patientId) {
-            socket.current.emit('joinConversations', patientId, 'patient', null);
-          }
-        }
-
-        // Load messages
-        if (messagesByConversation[bautistaConv._id]) {
-          console.log('Loading Bautista messages from cache:', messagesByConversation[bautistaConv._id].length);
-          setMessages(messagesByConversation[bautistaConv._id]);
-        } else {
-          console.log('Fetching Bautista messages from server');
-          await loadMessages(bautistaConv._id, false, true); // Mark as read when user clicks Bautista
-        }
-      } else {
-        console.log('No Bautista conversation found, starting new one');
-        await startConversation("Bautista Eye Center");
-      }
-    } catch (error) {
-      console.error('Error switching to Bautista Eye Center:', error);
-    }
-  }}
-  className="hover:shadow-md hover:bg-[#d8f1fd] hover:scale-105 transition-all duration-300 ease-in-out gap-2 cursor-pointer flex flex-col justify-center items-center w-40 h-40 rounded-md border-1 relative"
->
-  {/* Red notification dot for Bautista Eye Center */}
-  {(() => {
-    const bautistaConv = conversations.find(conv =>
-      conv.participants.some(p => p.role === 'clinic' && p.clinic === "Bautista Eye Center") ||
-      conv.clinic === "Bautista Eye Center"
-    );
-    return bautistaConv && hasUnreadMessages(bautistaConv._id) ? (
-      <div className="absolute top-2 right-2 flex justify-center items-center bg-[#e93f3f] rounded-full w-4 h-4"></div>
-    ) : null;
-  })()}
-  
-  {/* Bautista Eye Center Logo */}
-  <OptimizedImage 
-    src={bautistalogo} 
-    alt="Bautista Eye Center Logo" 
-    className="w-20 h-20 object-contain mb-2"
-  />
-  
-  {/* Bautista Eye Center Name */}
-  <p className="font-albertsans font-semibold text-[16px] text-[#0a4277] text-center">
-    Bautista Eye Center
-  </p>
-</div>
-
-
-
-
-      </div>
-    </>
-  )}
-</div>
+                                if (messagesByConversation[bautistaConv._id]) {
+                                  console.log('Loading Bautista messages from cache:', messagesByConversation[bautistaConv._id].length);
+                                  setMessages(messagesByConversation[bautistaConv._id]);
+                                } else {
+                                  console.log('Fetching Bautista messages from server');
+                                  await loadMessages(bautistaConv._id, false, true);
+                                }
+                              } else {
+                                console.log('No Bautista conversation found, starting new one');
+                                await startConversation("Bautista Eye Center");
+                              }
+                            } catch (error) {
+                              console.error('Error switching to Bautista Eye Center:', error);
+                            }
+                          }}
+                          style={{
+                            position: 'relative',
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: window.innerWidth < 768 ? '16px' : '24px',
+                            border: '1px solid #e5e7eb',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            transform: 'scale(1)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'linear-gradient(135deg, #f0f9ff 0%, #f0fdfa 100%)';
+                            e.target.style.borderColor = '#7dd3fc';
+                            e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+                     
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'white';
+                            e.target.style.borderColor = '#e5e7eb';
+                            e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                        
+                          }}
+                        >
+                          {(() => {
+                            const bautistaConv = conversations.find(conv =>
+                              conv.participants.some(p => p.role === 'clinic' && p.clinic === "Bautista Eye Center") ||
+                              conv.clinic === "Bautista Eye Center"
+                            );
+                            return bautistaConv && hasUnreadMessages(bautistaConv._id) ? (
+                              <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            ) : null;
+                          })()}
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                              <OptimizedImage 
+                                src={bautistalogo} 
+                                alt="Bautista Eye Center Logo" 
+                                className="w-8 h-8 object-contain"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 group-hover:text-sky-700 transition-colors duration-200">
+                                Bautista Eye Center
+                              </h4>
+                              <p className="text-sm text-gray-500">Click to start messaging</p>
+                            </div>
+                            <i className="select-none bx bx-chevron-right text-gray-400 group-hover:text-sky-500 group-hover:translate-x-1 transition-all duration-200"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
 
               {(showpatientambherConversation || showpatientbautistaConversation) && (
-                <div className="flex flex-col items-end w-full h-[530px] rounded-b-2xl">
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: window.innerWidth < 768 ? `${window.innerHeight - 200}px` : '520px',
+                  minHeight: '400px'
+                }}>
+                  {/* Messages Area */}
                   <div 
                     id="conversationmessages" 
-                    className="px-3 pb-3 pt-10 overflow-y-auto w-full flex-grow relative" 
-                    style={{ maxHeight: '430px' }}
+                    style={{
+                      flex: '1',
+                      overflowY: 'auto',
+                      paddingLeft: '24px',
+                      paddingRight: '24px',
+                      paddingTop: '16px',
+                      paddingBottom: '16px',
+                      height: '100%',
+                      minHeight: '0' /* This is crucial for proper flexbox scrolling */
+                    }}
                   >
-                    {loading || loadingMessages[conversationId] ? (
-                      <div className="absolute inset-0 flex flex-col justify-center items-center bg-white bg-opacity-90 z-10">
-                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#1583b3] border-t-transparent mb-2"></div>
-                        <p className="text-[#1583b3] font-medium">Loading messages...</p>
-                      </div>
-                    ) : messages.length > 0 ? (
+                   <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'fit-content' }}>
+                      {loading || loadingMessages[conversationId] ? (
+                        <div className="flex flex-col items-center justify-center h-full space-y-4">
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                          <p className="text-gray-600 font-medium">Loading messages...</p>
+                        </div>
+                      ) : messages.length > 0 ? (
 messages.map((msg, index) => {
   const isCurrentUser = (() => {
     const role = localStorage.getItem('role');
@@ -2679,6 +3011,9 @@ messages.map((msg, index) => {
       className={`w-full flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
         isDifferentSenderFromPrevious ? 'mt-4' : ''
       }`}
+      style={{
+        marginBottom: isSameSenderAsNext ? '1px' : '12px'
+      }}
     >
       <div className={`flex-shrink-0 ${isCurrentUser ? 'order-1 ml-2' : 'order-0 mr-2'} ${isLastInSequence ? 'visible' : 'invisible'}`}>
         {!isCurrentUser && (
@@ -2727,66 +3062,126 @@ messages.map((msg, index) => {
   );
 })
                     ) : (
-                      <div className="w-full text-center text-gray-500 h-full flex items-center justify-center">
-                        {selectedPatient ? `Start a conversation with ${selectedPatient.patientfirstname} ${selectedPatient.patientlastname}!` : ' No messages'}
+                      <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                          <i className="bx bx-message-dots text-gray-400 text-3xl"></i>
+                        </div>
+                        <div>
+                          <h4 className="text-gray-700 font-medium">No messages yet</h4>
+                          <p className="text-gray-500 text-sm">Start the conversation!</p>
+                        </div>
                       </div>
                     )}
                     <div ref={messagesEndRef} />
+                    </div>
                   </div>
 
-                  <div className="px-2 pb-2 flex flex-col w-full rounded-2xl mt-auto">
-                    <div className="bg-gray-200 rounded-2xl p-3 pb-3 flex items-center w-full h-16">
+                  {/* Modern Message Input */}
+                  <div style={{
+                    borderTop: '1px solid #f3f4f6',
+                    padding: '16px',
+                    flexShrink: 0,
+                    minHeight: '80px',
+                    maxHeight: '120px'
+                  }}>
+                    <div className="bg-gray-50 rounded-2xl p-3 flex items-end space-x-3 min-h-[60px] transition-all duration-200 focus-within:bg-gray-100 focus-within:shadow-sm">
+                      {/* Attachment Button */}
                       {!selectedFile && (
-                        <label className="cursor-pointer p-2 mr-2">
+                        <label style={{
+                          cursor: 'pointer',
+                          padding: '8px',
+                          borderRadius: '12px',
+                          backgroundColor: 'transparent',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}>
                           <input 
                             type="file" 
                             ref={fileInputRef}
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                            className="hidden"
+                            style={{ display: 'none' }}
                             onChange={handleFileChange}
                           />
-                          <OptimizedImage src={documenticon} alt="Attach document" className="w-7 h-7"/>
+                          <i className="bx bx-paperclip text-gray-500 text-xl"></i>
                         </label>
                       )}
 
+                      {/* File Previews */}
                       {selectedFile?.isImage && (
-                        <div className="flex-shrink-0 relative mr-2">
+                        <div className="relative mb-1">
                           <img 
                             src={selectedFile.preview} 
                             alt="Preview" 
-                            className="w-8 h-8 object-cover rounded cursor-pointer"
+                            className="w-12 h-12 object-cover rounded-xl cursor-pointer shadow-sm"
                             onClick={() => {
                               setSelectedImageForModal(selectedFile.preview);
                               setModalOpen(true);
                             }}
                           />
-                          <OptimizedImage 
+                          <button 
                             onClick={cancelFile}
-                            src={closeimage} 
-                            alt="Cancel file" 
-                            className="absolute -top-2 -right-2 h-5 w-5 cursor-pointer hover:cursor-pointer hover:scale-110 transition-all duration-300 ease-in-out bg-white rounded-full p-0.5 shadow-sm"
-                          />
+                            style={{
+                              position: 'absolute',
+                              top: '-8px',
+                              right: '-8px',
+                              width: '24px',
+                              height: '24px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              borderRadius: '50%',
+                              border: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#dc2626'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#ef4444'}
+                          >
+                            <i className="bx bx-x"></i>
+                          </button>
                         </div>
                       )}
 
                       {selectedFile && !selectedFile.isImage && (
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded mr-2 max-w-[100px]">
-                          <img src={filesent} className="w-5 h-5 mr-2 flex-shrink-0" />
-                          <span className="text-sm truncate">
+                        <div className="flex items-center bg-white border border-gray-200 rounded-xl px-3 py-2 mb-1 space-x-2 shadow-sm">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i className="bx bx-file text-blue-600 text-sm"></i>
+                          </div>
+                          <span className="text-sm font-medium text-gray-700 truncate max-w-[100px]">
                             {selectedFile.name}
                           </span>
-                          <img 
+                          <button 
                             onClick={cancelFile} 
-                            src={closeimage} 
-                            alt="cancel" 
-                            className="ml-2 h-4 w-4 cursor-pointer hover:scale-110 transition-all duration-300 ease-in-out flex-shrink-0"
-                          />
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              backgroundColor: '#f3f4f6',
+                              color: '#4b5563',
+                              borderRadius: '50%',
+                              border: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                          >
+                            <i className="bx bx-x"></i>
+                          </button>
                         </div>
                       )}
 
-                      <div className="flex-grow flex items-center">
+                      {/* Message Input */}
+                      <div className="flex-1">
                         <textarea 
-                          className="w-full h-full p-2 outline-none resize-none bg-transparent" 
+                          className="w-full bg-transparent resize-none outline-none placeholder-gray-500 text-gray-800 text-sm leading-relaxed py-2" 
                           placeholder="Type your message..."
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
@@ -2796,18 +3191,78 @@ messages.map((msg, index) => {
                               handleSendMessage();
                             }
                           }}
+                          rows="1"
+                          style={{
+                            minHeight: '24px',
+                            maxHeight: '120px'
+                          }}
                         />
                       </div>
 
+                      {/* Send Button */}
                       {isSending ? (
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white flex-shrink-0"></div>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '12px',
+                          backgroundColor: '#e5e7eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <div style={{
+                            width: '20px',
+                            height: '20px',
+                            border: '2px solid #9ca3af',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}></div>
+                        </div>
                       ) : (
-                        <OptimizedImage 
-                          src={showpatientambherConversation ? sendchatambher : sendchatbautista} 
-                          alt="Send message" 
-                          className="hover:scale-105 transition-all duration-300 ease-in-out h-10 w-10 p-2 cursor-pointer flex-shrink-0" 
+                        <button 
                           onClick={handleSendMessage}
-                        />
+                          disabled={!message.trim() && !selectedFile}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '12px',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: message.trim() || selectedFile ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s ease',
+                            transform: 'scale(1)',
+                            background: message.trim() || selectedFile 
+                              ? (showpatientambherConversation 
+                                ? 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)' 
+                                : 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)')
+                              : '#e5e7eb',
+                            color: message.trim() || selectedFile ? 'white' : '#9ca3af',
+                            boxShadow: message.trim() || selectedFile ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (message.trim() || selectedFile) {
+                              e.target.style.background = showpatientambherConversation 
+                                ? 'linear-gradient(135deg, #059669 0%, #0d9488 100%)'
+                                : 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)';
+                              e.target.style.transform = 'scale(1.05)';
+                              e.target.style.boxShadow = '0 15px 35px rgba(0,0,0,0.15)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (message.trim() || selectedFile) {
+                              e.target.style.background = showpatientambherConversation 
+                                ? 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)'
+                                : 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)';
+                              e.target.style.transform = 'scale(1)';
+                              e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+                            }
+                          }}
+                        >
+                          <i className="bx bx-send text-lg"></i>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -2818,53 +3273,116 @@ messages.map((msg, index) => {
 
           <div className="w-full justify-end flex items-end">
             {showpatientchatdashboard ? (
-              <div 
+              <button 
                 onClick={() => {
-                  // Just hide the UI elements without clearing data
                   setshowpatientbautistaConversation(false);
                   setshowpatientambherConversation(false);
                   setshowpatientchatdashboard(false);
                   setSelectedClinic(null);
                   setSelectedPatient(null);
-                  // Only clear the active message box
                   setMessage("");
                   setSelectedFile(null);
-                  // Don't clear conversations or refetch
                 }} 
-                className="motion-preset-slide-down hover:scale-105 ease-in-out duration-300 transition-all cursor-pointer flex justify-center items-center w-[60px] h-[60px] rounded-full bg-[#1583b3]"
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)',
+                  borderRadius: '16px',
+                  border: 'none',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #dc2626 0%, #db2777 100%)';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 15px 35px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+                }}
               >
-                <OptimizedImage src={close} alt="Close chat" className="select-none motion-preset-shake w-10 h-10 p-2" />
-              </div>
+                <i className="bx bx-x text-white text-2xl" style={{ transition: 'transform 0.3s ease' }}></i>
+              </button>
             ) : (
-<div 
-  onClick={() => {
-    console.log('Opening chat dashboard');
-    setshowpatientchatdashboard(true);
-    
-    // Always fetch conversations when opening dashboard to ensure we have the latest data
-    fetchConversations(true);
-    
-    if (socket.current && !socket.current.connected) {
-      console.log('Reconnecting socket when chat dashboard opens');
-      socket.current.connect();
-      setTimeout(() => {
-        fetchConversations(true);
-      }, 500);
-    }
-  }} 
-  className="motion-preset-slide-down hover:scale-105 ease-in-out duration-300 transition-all cursor-pointer flex justify-center items-center w-[60px] h-[60px] rounded-full bg-[#1583b3]">
-  {hasGlobalUnreadMessages && (
-    <div className="flex justify-center items-center absolute top-0 right-0 bg-[#e93f3f] rounded-full w-4.5 h-4.5"></div>
-  )}
-  <OptimizedImage src={chat} alt="Open chat" className="select-none motion-preset-seesaw w-10 h-10 p-2" priority={true} />
-</div>
+              <button 
+                onClick={() => {
+                  console.log('Opening chat dashboard');
+                  setshowpatientchatdashboard(true);
+                  fetchConversations(true);
+                  
+                  if (socket.current && !socket.current.connected) {
+                    console.log('Reconnecting socket when chat dashboard opens');
+                    socket.current.connect();
+                    setTimeout(() => {
+                      fetchConversations(true);
+                    }, 500);
+                  }
+                }} 
+                style={{
+                  position: 'relative',
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
+                  borderRadius: '16px',
+                  border: 'none',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 15px 35px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+                }}
+              >
+                {hasGlobalUnreadMessages && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    backgroundColor: '#ef4444',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    animation: 'pulse 2s infinite'
+                  }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      backgroundColor: 'white',
+                      borderRadius: '50%'
+                    }}></div>
+                  </div>
+                )}
+                <i className="bx bx-message-dots text-white text-2xl" style={{ transition: 'transform 0.3s ease' }}></i>
+              </button>
             )}
           </div>
         </div>
       )}
 
+
       {(localStorage.getItem("role") === "staff" || localStorage.getItem("role") === "owner") && (localStorage.getItem("staffclinic") === "Ambher Optical" || localStorage.getItem("ownerclinic") === "Ambher Optical") && (
-        <div className="fixed bottom-5 right-5 z-[99] flex flex-col items-start gap-2">
+        <div  id="ambherchatdashboard" className="fixed bottom-5 right-5 z-[99] flex flex-col items-start gap-2">
           {showpatientchatdashboard && (
             <div className="mb-6 motion-preset-slide-down w-250 h-150 shadow-2xl z-[9999] flex flex-col rounded-2xl bg-white">
               <div className="min-h-12 max-h-12 w-full h-14 rounded-t-2xl flex justify-center items-center bg-[#39715f]">
@@ -3345,7 +3863,7 @@ messages.map((msg, index) => {
       )}
 
       {(localStorage.getItem("role") === "staff" || localStorage.getItem("role") === "owner") && (localStorage.getItem("staffclinic") === "Bautista Eye Center" || localStorage.getItem("ownerclinic") === "Bautista Eye Center") && (
-        <div className="fixed bottom-5 right-5 z-[99] flex flex-col items-start gap-2">
+        <div id="bautistachatdashboard" className="fixed bottom-5 right-5 z-[99] flex flex-col items-start gap-2">
           {showpatientchatdashboard && (
             <div className="mb-6 motion-preset-slide-down w-250 h-150 shadow-2xl z-[9999] flex flex-col rounded-2xl bg-white">
               <div className="min-h-12 max-h-12 w-full h-14 rounded-t-2xl flex justify-center items-center bg-[#0a4277]">
@@ -3831,7 +4349,6 @@ jsxtransition-all duration-300 ease-in-out flex-shrink-0"
           </div>
         </div>
       )}
-
 </>
   );
 }

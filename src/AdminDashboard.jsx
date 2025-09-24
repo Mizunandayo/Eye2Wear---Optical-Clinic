@@ -17952,17 +17952,6 @@ useEffect(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -23057,18 +23046,6 @@ itemName="appointments"
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -23569,7 +23546,7 @@ itemName="appointments"
      </div>
 
      {/* Search and Filter Section */}
-     <div id="searchpastvisitstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5 ">              
+     <div id="searchpastvisitstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5 mb-4">              
        <div className="ml-2 w-full flex items-center">
          <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
          <div className="relative w-full flex items-center justify-center gap-3">
@@ -24758,11 +24735,10 @@ Are you sure you want to delete this medical document?
 </div>
 )}
 
-{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
-{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
-{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
-{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
-{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+
+
+
+
 
 {/* Medical Document Upload Toast Notification */}
 {medicalDocumentToast && (
@@ -24784,13 +24760,11 @@ Are you sure you want to delete this medical document?
 
 
 
-
-
-
-
-
-
-
+{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 
 
 
@@ -31738,6 +31712,11 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
+
 
 
 

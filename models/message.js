@@ -45,6 +45,11 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  // Cloudinary public_id for message document
+  documentUrl_public_id: {
+    type: String,
+    default: null
+  },
   documentName: { 
     type: String,
     required: false

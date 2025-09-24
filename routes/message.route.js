@@ -7,7 +7,8 @@ import {
   upload,
   checkOrphanedImages,
   cleanupOrphanedImageReferences,
-  markMessagesAsRead 
+  markMessagesAsRead,
+  downloadMessageFile
 } from "../controllers/message.controller.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -18,6 +19,9 @@ messagerouter.post("/conversations", protect, createConversation);
 messagerouter.get("/:conversationId", protect, getMessages);
 messagerouter.post("/:conversationId/mark-read", protect, markMessagesAsRead);
 messagerouter.post("/", protect, upload.single('file'), createMessage);
+
+// Message file download route
+messagerouter.get("/download/:messageId", protect, downloadMessageFile);
 
 // Image cleanup routes (for debugging/maintenance)
 messagerouter.get("/admin/check-orphaned-images", protect, checkOrphanedImages);

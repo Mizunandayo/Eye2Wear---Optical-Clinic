@@ -761,7 +761,7 @@ function PatientRegistration() {
                 
                 {/* Information note about Google registration */}
                 <div className="text-center text-xs text-gray-500 mt-2">
-                  When registering with Google, your login credentials will be sent to your email address.
+                  When registering with Google, your default login credentials will be sent to your email address.
                 </div>
                 </div>
                 
