@@ -8155,6 +8155,8 @@ const medicaldocumenthandleupload = async (e) => {
     }
   }
 
+  setuploaddingmedicaldocument(true);
+
   const newFiles = [];
   
   for (const file of files) {
@@ -8205,6 +8207,8 @@ const medicaldocumenthandleupload = async (e) => {
   if (medicaldocumentinputref.current) {
     medicaldocumentinputref.current.value = "";
   }
+
+  setuploaddingmedicaldocument(false);
 };
 
 const removeMedicalDocumentFile = (index) => {
@@ -18562,7 +18566,7 @@ useEffect(() => {
      </div>
 
      {/* Search and Filter Section */}
-     <div id="searchpastvisitstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5 mb-4">              
+     <div id="searchpastvisitstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5 ">              
        <div className="ml-2 w-full flex items-center">
          <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
          <div className="relative w-full flex items-center justify-center gap-3">
@@ -19103,7 +19107,7 @@ return filteredDocuments
         />
     </div>
 
-    <div className="space-y-4">
+    <div id="otherclinicrecorddocuments" className="space-y-4">
         <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">
                 Upload Documents <span className="text-red-500">*</span>
@@ -19521,7 +19525,7 @@ Are you sure you want to delete this clinic record?
         />
     </div>
 
-    <div className="space-y-4">
+    <div id="uploadmedicaldocuments" className="space-y-4">
         <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">
                 Upload Documents <span className="text-red-500">*</span>
@@ -19539,20 +19543,18 @@ Are you sure you want to delete this clinic record?
                         : 'border-gray-300 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
                 }`}
             >
-                {uploaddingmedicaldocument ? (
-                    <>
-                        <i className="bx bx-loader-alt animate-spin text-3xl text-blue-500 mb-2"/>
-                        <p className="text-blue-600 font-medium">Uploading files...</p>
-                        <p className="text-gray-400 text-sm">Please wait</p>
-                    </>
-                ) : (
-                    <>
-                        <i className="bx bx-cloud-upload text-3xl text-gray-400 mb-2"/>
-                        <p className="text-gray-500 font-medium">Click to upload documents</p>
-                        <p className="text-gray-400 text-sm">JPEG, JPG, PNG, PDF formats</p>
-                    </>
-                )}
+                <i className="bx bx-cloud-upload text-3xl text-gray-400 mb-2"/>
+                <p className="text-gray-500 font-medium">Click to upload documents</p>
+                <p className="text-gray-400 text-sm">JPEG, JPG, PNG, PDF formats</p>
             </div>
+
+            {/* Loading State */}
+            {uploaddingmedicaldocument && (
+                <div className="flex items-center justify-center py-4">
+                    <i className="bx bx-loader-alt animate-spin text-2xl text-blue-500 mr-2"></i>
+                    <span className="text-blue-600 font-medium">Uploading files...</span>
+                </div>
+            )}
 
             {/* File Preview Grid */}
             {medicaldocumentfiles.length > 0 && (
