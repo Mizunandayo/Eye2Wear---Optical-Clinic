@@ -332,10 +332,31 @@ export const downloadFile = async (req, res) => {
     console.log(`📥 Generating signed URL for file: ${fileName}`);
     console.log(`📝 Requested filename: ${requestedFilename}`);
     
+    // Determine resource type based on file extension or filename
+    const getResourceType = (filename, requestedName) => {
+      // Check the requested filename first for extension
+      const name = requestedName || filename || '';
+      const extension = name.toLowerCase().split('.').pop();
+      
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff'];
+      const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+      
+      if (imageExtensions.includes(extension)) {
+        return 'image';
+      } else if (videoExtensions.includes(extension)) {
+        return 'video';
+      } else {
+        return 'raw';
+      }
+    };
+    
+    const resourceType = getResourceType(fileName, requestedFilename);
+    console.log(`📁 Detected resource type: ${resourceType} for file: ${fileName}`);
+    
     // First, try to make the file public to avoid "Blocked for delivery" issues
     try {
       console.log(`🔧 Attempting to make file public first...`);
-      await CloudinaryService.makeFilePublic(fileName, 'raw');
+      await CloudinaryService.makeFilePublic(fileName, resourceType);
       console.log(`✅ File made public successfully`);
     } catch (publicError) {
       console.warn(`⚠️ Could not make file public (this might be okay):`, publicError.message);
@@ -347,7 +368,7 @@ export const downloadFile = async (req, res) => {
     
     // 1. First try a simple public URL (works if file is public)
     const publicUrl = cloudinary.url(fileName, {
-      resource_type: 'raw',
+      resource_type: resourceType,
       type: 'upload',
       secure: true
     });
@@ -356,7 +377,7 @@ export const downloadFile = async (req, res) => {
     // 2. Try signed URL without attachment (sometimes works better)
     try {
       const signedUrlNoAttach = cloudinary.url(fileName, {
-        resource_type: 'raw',
+        resource_type: resourceType,
         type: 'upload',
         sign_url: true,
         expires_at: Math.floor(Date.now() / 1000) + (10 * 60), // 10 minutes
@@ -370,7 +391,7 @@ export const downloadFile = async (req, res) => {
     // 3. Try signed URL with attachment
     try {
       const signedUrl = CloudinaryService.generateSignedUrl(fileName, {
-        resource_type: 'raw',
+        resource_type: resourceType,
         type: 'upload',
         expires_at: Math.floor(Date.now() / 1000) + (10 * 60)
       });

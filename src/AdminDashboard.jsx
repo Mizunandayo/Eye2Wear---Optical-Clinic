@@ -1603,22 +1603,45 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
   };
 
   // Function to download file with correct extension
-  const downloadFile = async (url, originalName) => {
+  const downloadFile = async (url, originalName, fileIndex = null) => {
     try {
       setIsLoading(true);
       
       // Check if it's a Cloudinary URL and extract public ID
       if (url.includes('cloudinary.com') && url.includes('otherclinic_record_')) {
-        // Extract public ID from Cloudinary URL
-        // URL format: https://res.cloudinary.com/dbctcv1oi/raw/upload/v1758623406/eye2wear/otherclinic-records/files/otherclinic_record_1758623404963_0.pdf
-        const urlParts = url.split('/');
-        const versionIndex = urlParts.findIndex(part => part.startsWith('v'));
+        // Use the stored public ID from the database instead of parsing from URL
+        const publicIds = record?.patientotherclinicrecordfiles_public_ids || [];
+        const singleImagePublicId = record?.patientotherclinicrecordimage_public_id;
+        let publicIdWithPath = null;
         
-        if (versionIndex !== -1 && versionIndex < urlParts.length - 1) {
-          // Get the path after the version number (e.g., "eye2wear/otherclinic-records/files/otherclinic_record_1758623404963_0.pdf")
-          const publicIdWithPath = urlParts.slice(versionIndex + 1).join('/');
+        if (fileIndex !== null && publicIds[fileIndex]) {
+          // Use the stored public ID for the specific file index
+          publicIdWithPath = publicIds[fileIndex];
+        } else if (url === singleImage && singleImagePublicId) {
+          // Handle single image case
+          publicIdWithPath = singleImagePublicId;
+        } else {
+          // Fallback: try to find matching public ID by checking the URL
+          const urlFileName = url.split('/').pop().split('.')[0]; // Get filename without extension
+          publicIdWithPath = publicIds.find(id => id.includes(urlFileName));
+        }
+        
+        // Final fallback: parse from URL (but remove file extension for images)
+        if (!publicIdWithPath) {
+          const urlParts = url.split('/');
+          const versionIndex = urlParts.findIndex(part => part.startsWith('v'));
           
-          console.log('Extracted public ID with path:', publicIdWithPath);
+          if (versionIndex !== -1 && versionIndex < urlParts.length - 1) {
+            publicIdWithPath = urlParts.slice(versionIndex + 1).join('/');
+            // Remove file extension for images (but keep for documents/PDFs)
+            if (url.includes('/image/upload/')) {
+              publicIdWithPath = publicIdWithPath.replace(/\.[^/.]+$/, '');
+            }
+          }
+        }
+        
+        if (publicIdWithPath) {
+          console.log('Using public ID with path:', publicIdWithPath);
           
           // Use our secure backend endpoint instead of direct Cloudinary URL
           const secureDownloadUrl = `${apiUrl}/api/otherclinicrecord/download/${encodeURIComponent(publicIdWithPath)}?filename=${encodeURIComponent(originalName || 'medical_document')}`;
@@ -1756,6 +1779,7 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
                 <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   {fileType === 'image' ? (
                     <button
+                      type="button"
                       onClick={() => onFileClick && onFileClick(fileUrl)}
                       className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                       title="View Image"
@@ -1764,6 +1788,7 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => window.open(fileUrl, '_blank')}
                       className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                       title="View Document"
@@ -1773,7 +1798,8 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
                   )}
                   
                   <button
-                    onClick={() => downloadFile(fileUrl, originalName)}
+                    type="button"
+                    onClick={() => downloadFile(fileUrl, originalName, index)}
                     disabled={isLoading}
                     className="w-8 h-8 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                     title="Download File"
@@ -1824,6 +1850,7 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
           <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {fileType === 'image' ? (
               <button
+                type="button"
                 onClick={() => onFileClick && onFileClick(singleImage)}
                 className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                 title="View Image"
@@ -1832,6 +1859,7 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => window.open(singleImage, '_blank')}
                 className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                 title="View Document"
@@ -1841,6 +1869,7 @@ const OtherClinicMultiFileViewer = ({ record, onFileClick, showToast }) => {
             )}
             
             <button
+              type="button"
               onClick={() => downloadFile(singleImage, 'medical_record')}
               disabled={isLoading}
               className="w-10 h-10 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
