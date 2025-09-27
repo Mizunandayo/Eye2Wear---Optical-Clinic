@@ -8551,11 +8551,32 @@ const submitBautistaMedicalRecord = async (e) => {
     e.target.reset();
     setshowaddbautistaclinicmedicalrecord(false);
     
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record with new medical record:', updatedPatientRecord);
+          console.log('New medical records count:', updatedPatientRecord.patientmedicalrecordbautista?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
     // Show success message
     alert('Medical record saved successfully!');
 
-    // Refresh patient demographics if needed
-    fetchpatientdemographics();
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
 
   } catch (error) {
     console.error('Error submitting Bautista medical record:', error);
@@ -18965,7 +18986,7 @@ return filteredOtherClinicRecords.map((record) => (
       </div>
     </div>
      
-  <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
+  <div id="medicaldocumentslist" className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
 
          {(() => {
 // Show loading skeleton while fetching records
@@ -19170,10 +19191,134 @@ return filteredDocuments
         </div>
       </div>
     </div>
-     
-  <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
 
+  <div id="patientmedicalrecordstable" className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200">
+    {(() => {
+      // Show loading skeleton while fetching records
+      if (loadingpatientdemographics) {
+        return (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm animate-pulse">
+                <div className="flex justify-between items-center h-full">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                  <div className="w-20 h-8 bg-gray-300 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
 
+      // Show error message if failed to load
+      if (patientdemoerror) {
+        return (
+          <div className="text-center text-red-500 p-6 bg-red-50 rounded-xl border border-red-200">
+            <i className="bx bx-error text-2xl mb-2"></i>
+            <p className="mb-3">{patientdemoerror}</p>
+            <button 
+              onClick={() => fetchDemographicsData(true)} 
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        );
+      }
+
+      const patientMedicalRecords = selectedpatientmedicalrecord?.patientmedicalrecordbautista || [];
+
+      if (patientMedicalRecords.length === 0) {
+        return <div className="text-center text-gray-500 py-8">No medical records found</div>;
+      }
+
+      return patientMedicalRecords
+        .sort((a, b) => new Date(b.recordDate) - new Date(a.recordDate))
+        .map((record, index) => (
+          <div key={record._id || index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
+            <div className="flex-1 px-3">
+              <h3 className="font-medium text-gray-800 text-base truncate w-70">
+                Case #{record.caseNo} - {record.patientfirstname} {record.patientlastname}
+              </h3>
+              <p className="text-xs text-gray-500">Added by {record.addedbyname}</p>
+            </div>
+
+            <div className="flex-1 px-3 text-center">
+              <p className="font-medium text-gray-800 text-sm">{new Date(record.recordDate).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-500">Record Date</p>
+            </div>
+
+            <div className="flex-1 px-3 text-center">
+              <p className="font-medium text-gray-800 text-sm">{record.addedbyclinic}</p>
+              <p className="text-xs text-gray-500">Clinic</p>
+            </div>
+
+            {record.diagnosis?.description && (
+              <div className="flex-1 px-3 text-center">
+                <p className="font-medium text-gray-800 text-sm truncate" title={record.diagnosis.description}>
+                  {record.diagnosis.description.length > 20 
+                    ? `${record.diagnosis.description.substring(0, 20)}...` 
+                    : record.diagnosis.description
+                  }
+                </p>
+                <p className="text-xs text-gray-500">Diagnosis</p>
+              </div>
+            )}
+
+            <div className="px-3 flex gap-2">
+              <button 
+                onClick={() => {
+                  // Add functionality to view full record details
+                  console.log('View full record:', record._id);
+                }}
+                style={{
+                  backgroundColor: "#1f2937",
+                  color: "white",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
+              >
+                <i className="bx bx-show text-lg"></i>
+              </button>
+
+              <button 
+                onClick={() => {
+                  // Add functionality to delete record
+                  console.log('Delete record:', record._id);
+                }}
+                style={{
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#b91c1c"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#dc2626"}
+              >
+                <i className="bx bxs-trash text-sm"/>
+              </button>
+            </div>
+          </div>
+        ));
+    })()}
   </div>
    </div>
 
@@ -19302,7 +19447,7 @@ return filteredDocuments
                 Clinic Name <span className="text-red-500">*</span>
             </label>
             <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
                 value={otherclinicname} 
                 onChange={(e) => setotherclinicname(e.target.value)} 
                 id="otherclinicname" 
@@ -19317,7 +19462,7 @@ return filteredDocuments
                 Eye Specialist <span className="text-red-500">*</span>
             </label>
             <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
                 value={othercliniceyespecialist} 
                 onChange={(e) => setothercliniceyespecialist(e.target.value)} 
                 id="othercliniceyespecialist" 
@@ -19333,7 +19478,7 @@ return filteredDocuments
             Consulted Date <span className="text-red-500">*</span>
         </label>
         <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%]" 
             value={otherclinicconsultationdate} 
             onChange={(e) => setotherclinicconsultationdate(e.target.value)} 
             type="date" 
@@ -19349,7 +19494,7 @@ return filteredDocuments
             Description
         </label>
         <textarea 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
             value={otherclinidescription} 
             onChange={(e) => setotherclinidescription(e.target.value)} 
             id="otherclinidescription" 
@@ -20043,14 +20188,15 @@ Are you sure you want to delete this medical document?
 <div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[1200px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
 <div className="flex justify-between items-center w-full h-[60px] mb-6">
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
-            <i className="bx bx-plus-medical text-white text-xl"></i>
+          <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center">
+            
+            <img src={bautistalogo} alt="Medical Icon" className="w-9 h-9" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Bautista Medical Record Form
+              Bautista Eye Center
             </h2>
-            <p className="text-sm text-gray-500">Bautista Eye Center - Patient Medical Record</p>
+            <p className="text-sm text-gray-500">Patient Medical Record</p>
           </div>
         </div>
   <div 
@@ -20249,7 +20395,7 @@ Are you sure you want to delete this medical document?
       </label>
       <textarea 
         name="chiefComplaint"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
         rows="3"
         maxLength="500"
         placeholder="Enter chief complaint..."
@@ -20263,7 +20409,7 @@ Are you sure you want to delete this medical document?
       </label>
       <textarea 
         name="historyOfPresentIllness"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
         rows="4"
         maxLength="1000"
         placeholder="Enter history of present illness..."
@@ -20299,7 +20445,7 @@ Are you sure you want to delete this medical document?
         </label>
         <textarea 
           name="othersHistory"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="5"
           maxLength="200"
           placeholder="Other medical history..."
@@ -20314,7 +20460,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="height"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="10"
           placeholder="e.g., 5'6 inches"
         />
@@ -20324,7 +20470,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="weight"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="10"
           placeholder="e.g., 70kg"
         />
@@ -20353,25 +20499,25 @@ Are you sure you want to delete this medical document?
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_od_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_od_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_od_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
             </tr>
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_os_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_os_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="visualExam_os_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
             </tr>
           </tbody>
@@ -20396,25 +20542,25 @@ Are you sure you want to delete this medical document?
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_od_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_od_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_od_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
             </tr>
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_os_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_os_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+                <input type="text" name="refraction_os_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
               </td>
             </tr>
           </tbody>
@@ -20450,7 +20596,7 @@ Are you sure you want to delete this medical document?
           <label className="block text-sm font-semibold text-gray-700 mb-2">Details</label>
           <textarea 
             name="externalExam_details"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
             rows="3"
             maxLength="300"
             placeholder="External exam details..."
@@ -20464,7 +20610,7 @@ Are you sure you want to delete this medical document?
       <h4 className="text-md font-semibold text-gray-700 mb-3">Biomicroscopy</h4>
       <textarea 
         name="biomicroscopy_details"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
         rows="4"
         maxLength="500"
         placeholder="Biomicroscopy findings..."
@@ -20529,7 +20675,7 @@ Are you sure you want to delete this medical document?
           <input 
             type="text" 
             name="eoms_details"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
             maxLength="100"
             placeholder="EOMS details..."
           />
@@ -20584,7 +20730,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
         <textarea 
           name="diagnosis_description"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="4"
           maxLength="1000"
           placeholder="Diagnosis description..."
@@ -20596,7 +20742,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="diagnosis_icd10Code"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="100"
           placeholder="Enter ICD-10 code..."
         />
@@ -20613,7 +20759,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Diagnostics</label>
         <textarea 
           name="plans_diagnostics"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="6"
           maxLength="1000"
           placeholder="Diagnostic plans..."
@@ -20624,7 +20770,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Therapeutics</label>
         <textarea 
           name="plans_therapeutics"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="6"
           maxLength="1000"
           placeholder="Therapeutic plans..."
@@ -20642,7 +20788,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Follow-up</label>
         <textarea 
           name="followUp"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="3"
           maxLength="500"
           placeholder="Follow-up instructions..."
@@ -20654,7 +20800,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="mdSignature"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="100"
           placeholder="Doctor's signature..."
         />

@@ -210,7 +210,7 @@
       const demographic = await Patientdemographic.findOne({
         patientemail: req.patient.email
       })
-      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture createdAt updatedAt')
+      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista createdAt updatedAt')
       .lean(); // Returns plain JavaScript objects for better performance
 
       if(!demographic) return res.status(404).json({message: "No patient demographic data found"});
@@ -270,7 +270,7 @@
       const patientdemo = await Patientdemographic.findOne({
         patientemail: patientemail
       })
-      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments createdAt updatedAt')
+      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista createdAt updatedAt')
       .lean(); // Returns plain JavaScript objects for better performance
 
       if(!patientdemo){
