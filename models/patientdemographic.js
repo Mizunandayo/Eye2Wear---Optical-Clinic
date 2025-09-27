@@ -208,6 +208,235 @@ const PatientdemographicSchema = mongoose.Schema(
       }
     }],
 
+
+    //PUT THE VARIABLES INSIDE HERE FOR THE PATIENT MEDICAL RECORD
+
+patientmedicalrecordbautista:[{
+    // Record Metadata
+    recordDate: {
+        type: Date,
+        default: Date.now,
+        required: true
+    },
+    caseNo: {
+        type: String,
+        trim: true,
+        maxlength: 50,
+        required: true
+    },
+    
+    // Patient Information (auto-filled from demographic data)
+    patientlastname: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientfirstname: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientmiddlename: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientage: {
+        type: String,
+        trim: true,
+        maxlength: 10
+    },
+    patientstatus: {
+        type: String,
+        trim: true,
+        enum: ['New', 'Follow-up', 'Emergency', 'Consultation'],
+        maxlength: 20
+    },
+    patientgender: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patienthomeaddress: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    patientbirthdate: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patientcontactnumber: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patientphilhealthcategory: {
+        type: String,
+        trim: true,
+        enum: ['Employed/Formal Economy', 'Indigent/Informal Economy', 'Sponsored', 'Senior Citizen', 'PWD', 'Lifetime Member', 'OFW', 'Not Applicable'],
+        maxlength: 50
+    },
+    hmo: {
+        type: String,
+        trim: true,
+        maxlength: 100
+    },
+    
+    // SUBJECTIVE
+    chiefComplaint: {
+        type: String,
+        trim: true,
+        maxlength: 500
+    },
+    historyOfPresentIllness: {
+        type: String,
+        trim: true,
+        maxlength: 1000
+    },
+    // Past Medical History / History of Present Illness related
+    hpn: { type: Boolean, default: false }, // Hypertension
+    dm: { type: Boolean, default: false },  // Diabetes Mellitus
+    asthma: { type: Boolean, default: false },
+    ptb: { type: Boolean, default: false },  // Pulmonary Tuberculosis
+    othersHistory: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    
+    // OBJECTIVE - VITAL SIGNS/ANTHROPOMETRICS
+    height: { type: String, trim: true, maxlength: 10 },
+    weight: { type: String, trim: true, maxlength: 10 },
+    
+    // OBJECTIVE - VISUAL EXAM
+    visualExam: {
+        od: { // Oculus Dextrus (Right Eye)
+            sc: { type: String, trim: true, maxlength: 10 }, // Without Correction (SC)
+            cc: { type: String, trim: true, maxlength: 10 }, // With Correction (CC)
+            ph: { type: String, trim: true, maxlength: 10 }  // Pinhole (PH)
+        },
+        os: { // Oculus Sinister (Left Eye)
+            sc: { type: String, trim: true, maxlength: 10 },
+            cc: { type: String, trim: true, maxlength: 10 },
+            ph: { type: String, trim: true, maxlength: 10 }
+        }
+    },
+    
+    // OBJECTIVE - REFRACTION / PRESCRIPTION
+    refraction: {
+        od: { // Right Eye
+            sphere: { type: String, trim: true, maxlength: 10 },
+            cylinder: { type: String, trim: true, maxlength: 10 },
+            axis: { type: String, trim: true, maxlength: 10 }
+        },
+        os: { // Left Eye
+            sphere: { type: String, trim: true, maxlength: 10 },
+            cylinder: { type: String, trim: true, maxlength: 10 },
+            axis: { type: String, trim: true, maxlength: 10 }
+        },
+        adds: {
+            right: { type: String, trim: true, maxlength: 10 },
+            left: { type: String, trim: true, maxlength: 10 }
+        },
+        pd: { type: String, trim: true, maxlength: 10 } // Pupillary Distance (PD)
+    },
+    
+    // OBJECTIVE - EXTERNAL EXAM
+    externalExam: {
+        isEssentiallyNormal: { type: Boolean, default: false },
+        details: { type: String, trim: true, maxlength: 300 } 
+    },
+    
+    // OBJECTIVE - BIOMICROSCOPY & FUNDUSCOPY
+    biomicroscopy: {
+        details: { type: String, trim: true, maxlength: 500 } // General area for notes
+    },
+    funduscopy: {
+        od: { // Right Eye
+            cdRatio: { type: String, trim: true, maxlength: 10 }, // Cup-to-Disc (CD) Ratio
+            details: { type: String, trim: true, maxlength: 300 } // For notes/diagram details
+        },
+        os: { // Left Eye
+            cdRatio: { type: String, trim: true, maxlength: 10 },
+            details: { type: String, trim: true, maxlength: 300 }
+        }
+    },
+
+    // OBJECTIVE - EOMS, TONOMETRY
+    eoms: { // Extraocular Motility
+        isFullAndEqual: { type: Boolean, default: false },
+        details: { type: String, trim: true, maxlength: 100 }
+    },
+    tonometry: { // Intraocular Pressure
+        time: { type: String, trim: true, maxlength: 20 },
+        od: { type: String, trim: true, maxlength: 10 }, // IOP Right Eye
+        os: { type: String, trim: true, maxlength: 10 }  // IOP Left Eye
+    },
+    
+    // DIAGNOSIS
+    diagnosis: {
+        description: {
+            type: String,
+            trim: true,
+            maxlength: 1000
+        },
+        // The ICD-10 CODE field is retained here as it's directly under the DIAGNOSIS section
+        icd10Code: {
+            type: String,
+            trim: true,
+            maxlength: 20
+        } 
+    },
+    
+    // PLANS
+    plans: {
+        diagnostics: {
+            type: String,
+            trim: true,
+            maxlength: 1000
+        },
+        therapeutics: {
+            type: String,
+            trim: true,
+            maxlength: 1000
+        }
+    },
+    
+    // FOLLOW-UP & SIGNATURE
+    followUp: {
+        type: String,
+        trim: true,
+        maxlength: 500
+    },
+    mdSignature: {
+        type: String, 
+        trim: true,
+        maxlength: 100
+    },
+
+
+    addedbyname: {
+        type: String,
+        required: true
+      },
+      addedbyclinic: {
+        type: String,
+        required: true
+      },
+      addedbytype: {
+        type: String,
+        required: true,
+        enum: ['Staff', 'Owner']
+      },
+      addedbydate: {
+        type: Date,
+        default: Date.now
+      }
+}],
+
+
     isVerified: {type: Boolean, default: false},
     verificationtoken: {type: String},
     verificationtokenexpires: {type: Date},

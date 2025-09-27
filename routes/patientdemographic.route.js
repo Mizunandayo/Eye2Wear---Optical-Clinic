@@ -14,7 +14,10 @@
         debugProfileSync,
         testValidation,
         addMedicalDocument,
-        deleteMedicalDocument
+        deleteMedicalDocument,
+        addBautistaMedicalRecord,
+        getBautistaMedicalRecords,
+        deleteBautistaMedicalRecord
         } from "../controllers/patientdemographic.controller.js";
 
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
@@ -133,6 +136,10 @@
     patientdemographicrouter.post("/medical-documents", verifyStaffOwnerOrPatientAccess, addMedicalDocument);
     patientdemographicrouter.delete("/medical-documents/:patientEmail/:documentId", verifyStaffOwnerOrPatientAccess, deleteMedicalDocument);
 
+    // Bautista Medical Records Routes
+    patientdemographicrouter.post("/bautista-medical-records", verifyStaffOwnerOrPatientAccess, addBautistaMedicalRecord);
+    patientdemographicrouter.get("/bautista-medical-records/:patientEmail", verifyStaffOwnerOrPatientAccess, getBautistaMedicalRecords);
+    patientdemographicrouter.delete("/bautista-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, deleteBautistaMedicalRecord);
 
 
 

@@ -7440,6 +7440,9 @@ const [medicaldocumentfiles, setmedicaldocumentfiles] = useState([]);
 const [uploaddingmedicaldocument, setuploaddingmedicaldocument] = useState(false);
 const [showdeletemedicaldocumentdialog, setshowdeletemedicaldocumentdialog] = useState(false);
 
+//Clinic Documents State
+const [showaddbautistaclinicmedicalrecord, setshowaddbautistaclinicmedicalrecord] = useState(false);
+
 // Medical Document Form State
 const [medicaldocumentname, setmedicaldocumentname] = useState('');
 const [medicaldocumentdescription, setmedicaldocumentdescription] = useState('');
@@ -8398,6 +8401,165 @@ const submitMedicalDocuments = async (e) => {
     }, 4000);
   } finally {
     setuploaddingmedicaldocument(false);
+  }
+};
+
+// Submit Bautista Medical Record Function
+const submitBautistaMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedpatientmedicalrecord) {
+      alert("Please select a patient first");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Extract form data
+    const medicalRecordData = {
+      caseNo: formData.get('caseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Subjective
+      chiefComplaint: formData.get('chiefComplaint'),
+      historyOfPresentIllness: formData.get('historyOfPresentIllness'),
+      hpn: formData.get('hpn') === 'on',
+      dm: formData.get('dm') === 'on',
+      asthma: formData.get('asthma') === 'on',
+      ptb: formData.get('ptb') === 'on',
+      othersHistory: formData.get('othersHistory'),
+      height: formData.get('height'),
+      weight: formData.get('weight'),
+      
+      // Objective - Visual Exam
+      visualExam: {
+        od: {
+          sc: formData.get('visualExam_od_sc'),
+          cc: formData.get('visualExam_od_cc'),
+          ph: formData.get('visualExam_od_ph')
+        },
+        os: {
+          sc: formData.get('visualExam_os_sc'),
+          cc: formData.get('visualExam_os_cc'),
+          ph: formData.get('visualExam_os_ph')
+        }
+      },
+      
+      // Objective - Refraction
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        adds: {
+          right: formData.get('refraction_adds_right'),
+          left: formData.get('refraction_adds_left')
+        },
+        pd: formData.get('refraction_pd')
+      },
+      
+      // Objective - External Exam
+      externalExam: {
+        isEssentiallyNormal: formData.get('externalExam_isEssentiallyNormal') === 'on',
+        details: formData.get('externalExam_details')
+      },
+      
+      // Objective - Biomicroscopy
+      biomicroscopy: {
+        details: formData.get('biomicroscopy_details')
+      },
+      
+      // Objective - Funduscopy
+      funduscopy: {
+        od: {
+          cdRatio: formData.get('funduscopy_od_cdRatio'),
+          details: formData.get('funduscopy_od_details')
+        },
+        os: {
+          cdRatio: formData.get('funduscopy_os_cdRatio'),
+          details: formData.get('funduscopy_os_details')
+        }
+      },
+      
+      // Objective - EOMS
+      eoms: {
+        isFullAndEqual: formData.get('eoms_isFullAndEqual') === 'on',
+        details: formData.get('eoms_details')
+      },
+      
+      // Objective - Tonometry
+      tonometry: {
+        time: formData.get('tonometry_time'),
+        od: formData.get('tonometry_od'),
+        os: formData.get('tonometry_os')
+      },
+      
+      // Diagnosis
+      diagnosis: {
+        description: formData.get('diagnosis_description'),
+        icd10Code: formData.get('diagnosis_icd10Code')
+      },
+      
+      // Plans
+      plans: {
+        diagnostics: formData.get('plans_diagnostics'),
+        therapeutics: formData.get('plans_therapeutics')
+      },
+      
+      // Follow-up & Signature
+      followUp: formData.get('followUp'),
+      mdSignature: formData.get('mdSignature'),
+      
+      // Added by information
+      addedbyname: `${adminfirstname} ${adminmiddlename} ${adminlastname}`,
+      addedbyclinic: localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'Bautista Eye Center',
+      addedbytype: currentuserloggedin
+    };
+
+    console.log("Submitting Bautista medical record:", medicalRecordData);
+
+    const response = await fetch('/api/patientdemographics/bautista-medical-records', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        patientEmail: selectedpatientmedicalrecord.patientemail,
+        medicalRecord: medicalRecordData
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to save medical record');
+    }
+
+    const result = await response.json();
+    console.log('Bautista medical record saved successfully:', result);
+
+    // Reset form and close modal
+    e.target.reset();
+    setshowaddbautistaclinicmedicalrecord(false);
+    
+    // Show success message
+    alert('Medical record saved successfully!');
+
+    // Refresh patient demographics if needed
+    fetchpatientdemographics();
+
+  } catch (error) {
+    console.error('Error submitting Bautista medical record:', error);
+    alert('Error saving medical record: ' + error.message);
   }
 };
 
@@ -18380,8 +18542,8 @@ useEffect(() => {
     </div>
   </div>
 ) : (
-<div className="flex gap-6 h-[670px] w-full">
-  <div className="flex flex-col items-center w-[35%] bg-gray-50 rounded-2xl p-6">
+<div className="flex gap-6 min-h-[650px] h-auto w-full ">
+  <div className="flex flex-col items-center w-[28%] bg-gray-50 rounded-2xl p-6">
       <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md mb-6">
         <img src={selectedpatientmedicalrecord?.patientprofilepicture} className="w-full h-full object-cover" alt="Patient Profile"/>
       </div>
@@ -18424,7 +18586,7 @@ useEffect(() => {
        </div>
   </div>
   
-  <div className="flex flex-col w-[65%]">
+  <div id="patientmedicalrecordtabs" className="flex flex-col w-[72%]">
       <div className="flex gap-3 mb-4">
         <div 
           onClick={() => showpatientmedicalrecordstable('medicalrecordsconsultationtable')}  
@@ -18447,6 +18609,18 @@ useEffect(() => {
         >
           Medical Documents
         </div>
+
+
+         <div
+          onClick={() => showpatientmedicalrecordstable('patientmedicalrecord')}  
+          className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+            activepatientmedicalrecordstable === 'patientmedicalrecord' 
+              ? 'bg-sky-800 text-white shadow-md' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Patient Record
+        </div>
         
         <div
           onClick={() => showpatientmedicalrecordstable('medicalrecordspastvisitstable')}  
@@ -18458,6 +18632,8 @@ useEffect(() => {
         >
           Other Clinic Records
         </div>
+        
+
       </div>
 
  { activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' && (
@@ -18575,14 +18751,6 @@ useEffect(() => {
 
 </div>
 )}
-
-
-
-
-
-
-
-
 
 
  { activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' && (
@@ -18754,6 +18922,7 @@ return filteredOtherClinicRecords.map((record) => (
  )}
 
  { activepatientmedicalrecordstable === 'medicaldocumentstable' && (
+
   <div id='medicaldocumentstable' className="w-full flex-1 flex flex-col">  
      <div 
        onClick={() => setshowpatientaddmedicaldocument(true)}  
@@ -18954,6 +19123,60 @@ return filteredDocuments
           
   </div>
    </div>
+
+ )}
+
+
+ { activepatientmedicalrecordstable === 'patientmedicalrecord' && (
+
+  <div id='patientmedicalrecord' className="w-full flex-1 flex flex-col">  
+     <div 
+       onClick={() => setshowaddbautistaclinicmedicalrecord(true)}  
+       className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+     >
+       <i className="bx bx-file-plus text-lg"/>
+       <span>Add Bautista Eye Center Patient Record</span>
+     </div>
+
+
+         <div id="searchdocumentstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
+      <div className="ml-2 w-full flex items-center">
+        <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-3">Search: </h2>
+        <div className="relative w-full flex items-center justify-center gap-3">
+          <div className="relative flex-1">
+            <i className="bx bx-search absolute left-3 top-1/2 transform -translate-y-1/2 text-2xl text-gray-500"></i>
+            <input 
+              type="text" 
+              placeholder="Search by name, document title, description..." 
+              value={searchmedicaldocuments}
+              onChange={(e) => setsearchmedicaldocuments(e.target.value)}
+              className="transition-all duration-300 ease-in-out py-2 pl-10 pr-4 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+            />
+          </div>
+          
+          {/* Clinic Filter Dropdown */}
+          <div className="relative">
+            <select
+              value={medicaldocumentclinicfilter}
+              onChange={(e) => setmedicaldocumentclinicfilter(e.target.value)}
+              className="appearance-none bg-white border border-gray-300 rounded-2xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer min-w-[160px]"
+            >
+              <option value="all">All Clinics</option>
+              <option value="ambher">Ambher Optical</option>
+              <option value="bautista">Bautista Eye Center</option>
+            </select>
+            <i className="bx bx-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+  <div className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200"> 
+
+
+  </div>
+   </div>
+
  )}
 
 
@@ -19275,7 +19498,7 @@ return filteredDocuments
             <h2 className="text-2xl font-bold text-gray-900">
               View Clinic Record
             </h2>
-            <p className="text-sm text-gray-500">Other Clinic Medical Record</p>
+            <p className="text-sm text-gray-500">Other Patient Record</p>
           </div>
         </div>
   <div 
@@ -19669,6 +19892,11 @@ Are you sure you want to delete this clinic record?
 </div>
 </div>)}
 
+
+
+
+
+
 {/* Medical Document Image Preview Modal */}
 {showmedicaldocumentimage && (
 <div className="p-5 overflow-hidden fixed inset-0 flex justify-center items-center z-[999] bg-[#000000af] bg-opacity-50">
@@ -19799,6 +20027,666 @@ Are you sure you want to delete this medical document?
     </div>
   </div>  
 )}
+
+
+
+
+
+
+
+
+
+
+{/* Bautista Medical Record Form Modal */}
+{showaddbautistaclinicmedicalrecord && (
+<div id="bautistapatientrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[1200px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-plus-medical text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Bautista Medical Record Form
+            </h2>
+            <p className="text-sm text-gray-500">Bautista Eye Center - Patient Medical Record</p>
+          </div>
+        </div>
+  <div 
+    onClick={() => {
+      setshowaddbautistaclinicmedicalrecord(false);
+    }} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"/>
+  </div>
+</div>
+
+<form onSubmit={submitBautistaMedicalRecord} className="space-y-8">
+  
+  {/* PATIENT INFORMATION SECTION */}
+  <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-300">PATIENT INFORMATION</h3>
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Case No. */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Case No. <span className="text-red-500">*</span></label>
+        <input 
+          type="text" 
+          name="caseNo"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+          placeholder="Enter case number..."
+          required
+        />
+      </div>
+      
+      {/* Record Date */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Record Date</label>
+        <input 
+          type="date" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-not-allowed" 
+          value={new Date().toISOString().split('T')[0]}
+          readOnly
+        />
+      </div>
+      
+      {/* Patient Status */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Status</label>
+        <select name="patientstatus" className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <option value="">Select status...</option>
+          <option value="New">New</option>
+          <option value="Follow-up">Follow-up</option>
+          <option value="Emergency">Emergency</option>
+          <option value="Consultation">Consultation</option>
+        </select>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      {/* Patient Last Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientlastname || ''}
+          readOnly
+          placeholder="Patient last name"
+        />
+      </div>
+      
+      {/* Patient First Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientfirstname || ''}
+          readOnly
+          placeholder="Patient first name"
+        />
+      </div>
+      
+      {/* Patient Middle Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Middle Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientmiddlename || ''}
+          readOnly
+          placeholder="Patient middle name"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+      {/* Patient Age - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Age</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientage || ''}
+          readOnly
+          placeholder="Age"
+        />
+      </div>
+      
+      {/* Patient Gender - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientgender || ''}
+          readOnly
+          placeholder="Gender"
+        />
+      </div>
+      
+      {/* Patient Birthdate - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Birthdate</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientbirthdate || ''}
+          readOnly
+          placeholder="Birthdate"
+        />
+      </div>
+      
+      {/* Patient Contact Number - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Number</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientcontactnumber || ''}
+          readOnly
+          placeholder="Contact number"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 gap-4 mt-4">
+      {/* Patient Home Address - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Home Address</label>
+        <textarea 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed resize-none" 
+          rows="2"
+          value={selectedpatientmedicalrecord?.patienthomeaddress || ''}
+          readOnly
+          placeholder="Patient home address"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      {/* PhilHealth Category - Editable */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">PhilHealth Category</label>
+        <select name="patientphilhealthcategory" className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <option value="">Select PhilHealth category...</option>
+          <option value="Employed/Formal Economy">Employed/Formal Economy</option>
+          <option value="Indigent/Informal Economy">Indigent/Informal Economy</option>
+          <option value="Sponsored">Sponsored</option>
+          <option value="Senior Citizen">Senior Citizen</option>
+          <option value="PWD">PWD (Person with Disability)</option>
+          <option value="Lifetime Member">Lifetime Member</option>
+          <option value="OFW">OFW (Overseas Filipino Worker)</option>
+          <option value="Not Applicable">Not Applicable</option>
+        </select>
+      </div>
+      
+      {/* HMO - Editable */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">HMO</label>
+        <input 
+          type="text" 
+          name="hmo"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+          placeholder="Enter HMO provider (if applicable)..."
+        />
+      </div>
+    </div>
+  </div>
+  
+  {/* SUBJECTIVE SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">SUBJECTIVE</h3>
+    
+    {/* Chief Complaint */}
+    <div className="mb-4">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Chief Complaint
+      </label>
+      <textarea 
+        name="chiefComplaint"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        rows="3"
+        maxLength="500"
+        placeholder="Enter chief complaint..."
+      />
+    </div>
+
+    {/* History of Present Illness */}
+    <div className="mb-6">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        History of Present Illness
+      </label>
+      <textarea 
+        name="historyOfPresentIllness"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        rows="4"
+        maxLength="1000"
+        placeholder="Enter history of present illness..."
+      />
+    </div>
+
+    {/* Past Medical History */}
+    <div className="grid grid-cols-2 gap-6">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Past Medical History</label>
+        <div className="space-y-2">
+          <label className="flex items-center">
+            <input type="checkbox" name="hpn" className="mr-2 text-green-500 focus:ring-green-500" />
+            <span className="text-sm">HPN (Hypertension)</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" name="dm" className="mr-2 text-green-500 focus:ring-green-500" />
+            <span className="text-sm">DM (Diabetes Mellitus)</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" name="asthma" className="mr-2 text-green-500 focus:ring-green-500" />
+            <span className="text-sm">ASTHMA</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" name="ptb" className="mr-2 text-green-500 focus:ring-green-500" />
+            <span className="text-sm">PTB (Pulmonary Tuberculosis)</span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Others
+        </label>
+        <textarea 
+          name="othersHistory"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="5"
+          maxLength="200"
+          placeholder="Other medical history..."
+        />
+      </div>
+    </div>
+
+    {/* Vital Signs */}
+    <div className="grid grid-cols-2 gap-4 mt-6">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Height</label>
+        <input 
+          type="text" 
+          name="height"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          maxLength="10"
+          placeholder="e.g., 5'6 inches"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Weight</label>
+        <input 
+          type="text" 
+          name="weight"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          maxLength="10"
+          placeholder="e.g., 70kg"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* OBJECTIVE SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">OBJECTIVE</h3>
+    
+    {/* Visual Exam */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">Visual Exam</h4>
+      <div className="overflow-x-auto">
+        <table className="w-full border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"></th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">SC</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">CC</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">PH</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_od_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_od_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_od_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_os_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_os_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="visualExam_os_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Refraction */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">Refraction</h4>
+      <div className="overflow-x-auto">
+        <table className="w-full border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"></th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">Sphere</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">Cylinder</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">Axis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_od_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_od_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_od_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_os_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_os_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input type="text" name="refraction_os_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" maxLength="10" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      {/* ADDS and PD */}
+      <div className="grid grid-cols-3 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">ADDS Right</label>
+          <input type="text" name="refraction_adds_right" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">ADDS Left</label>
+          <input type="text" name="refraction_adds_left" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">PD</label>
+          <input type="text" name="refraction_pd" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+        </div>
+      </div>
+    </div>
+
+    {/* External Exam */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">External Exam</h4>
+      <div className="space-y-3">
+        <label className="flex items-center">
+          <input type="checkbox" name="externalExam_isEssentiallyNormal" className="mr-2 text-green-500 focus:ring-green-500" />
+          <span className="text-sm font-medium">Essentially Normal</span>
+        </label>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Details</label>
+          <textarea 
+            name="externalExam_details"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+            rows="3"
+            maxLength="300"
+            placeholder="External exam details..."
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* Biomicroscopy */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">Biomicroscopy</h4>
+      <textarea 
+        name="biomicroscopy_details"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+        rows="4"
+        maxLength="500"
+        placeholder="Biomicroscopy findings..."
+      />
+    </div>
+
+    {/* Funduscopy */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">Funduscopy</h4>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">OD</label>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">CD Ratio</label>
+              <input type="text" name="funduscopy_od_cdRatio" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Details</label>
+              <textarea 
+                name="funduscopy_od_details"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" 
+                rows="3"
+                maxLength="300"
+                placeholder="OD funduscopy details..."
+              />
+            </div>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">OS</label>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">CD Ratio</label>
+              <input type="text" name="funduscopy_os_cdRatio" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Details</label>
+              <textarea 
+                name="funduscopy_os_details"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" 
+                rows="3"
+                maxLength="300"
+                placeholder="OS funduscopy details..."
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* EOMS */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">EOMS (Extraocular Motility)</h4>
+      <div className="space-y-3">
+        <label className="flex items-center">
+          <input type="checkbox" name="eoms_isFullAndEqual" className="mr-2 text-green-500 focus:ring-green-500" />
+          <span className="text-sm font-medium">Full & Equal</span>
+        </label>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Details</label>
+          <input 
+            type="text" 
+            name="eoms_details"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+            maxLength="100"
+            placeholder="EOMS details..."
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* Tonometry */}
+    <div className="mb-6">
+      <h4 className="text-md font-semibold text-gray-700 mb-3">Tonometry</h4>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Time</label>
+          <input 
+            type="text" 
+            name="tonometry_time"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="100"
+            placeholder="e.g., 10:00 AM"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">OD (mmHg)</label>
+          <input 
+            type="text" 
+            name="tonometry_od"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="100"
+            placeholder="IOP OD"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">OS (mmHg)</label>
+          <input 
+            type="text" 
+            name="tonometry_os"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="100"
+            placeholder="IOP OS"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* DIAGNOSIS SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">DIAGNOSIS</h3>
+    
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+        <textarea 
+          name="diagnosis_description"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="4"
+          maxLength="1000"
+          placeholder="Diagnosis description..."
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">ICD-10 Code</label>
+        <input 
+          type="text" 
+          name="diagnosis_icd10Code"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          maxLength="100"
+          placeholder="Enter ICD-10 code..."
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* PLANS SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">PLANS</h3>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Diagnostics</label>
+        <textarea 
+          name="plans_diagnostics"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="6"
+          maxLength="1000"
+          placeholder="Diagnostic plans..."
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Therapeutics</label>
+        <textarea 
+          name="plans_therapeutics"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="6"
+          maxLength="1000"
+          placeholder="Therapeutic plans..."
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* FOLLOW-UP & SIGNATURE SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">FOLLOW-UP & SIGNATURE</h3>
+    
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Follow-up</label>
+        <textarea 
+          name="followUp"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="3"
+          maxLength="500"
+          placeholder="Follow-up instructions..."
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">MD Signature</label>
+        <input 
+          type="text" 
+          name="mdSignature"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" 
+          maxLength="100"
+          placeholder="Doctor's signature..."
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Submit Button */}
+  <div className="flex justify-end space-x-4 pt-6">
+    <button
+      type="button"
+      onClick={() => setshowaddbautistaclinicmedicalrecord(false)}
+      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors duration-200"
+    >
+      Cancel
+    </button>
+    <button
+      type="submit"
+      className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
+    >
+      Save Medical Record
+    </button>
+  </div>
+
+</form>
+
+</div>
+</div>)}
+
+
+
+
 
 
 

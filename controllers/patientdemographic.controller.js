@@ -761,6 +761,146 @@
     } catch (error) {
       console.error("Error deleting medical document:", error);
       res.status(500).json({ message: "Internal server error", error: error.message });
+    }}
+  // Add Bautista Medical Record Controller
+  export const addBautistaMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, medicalRecord } = req.body;
+  
+      if (!patientEmail || !medicalRecord) {
+        return res.status(400).json({ 
+          message: "Patient email and medical record data are required" 
+        });
+      }
+  
+      // Find the patient demographic record
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      // Auto-populate patient information from demographic data
+      const medicalRecordWithPatientInfo = {
+        ...medicalRecord,
+        patientlastname: patientDemo.patientlastname,
+        patientfirstname: patientDemo.patientfirstname,
+        patientmiddlename: patientDemo.patientmiddlename,
+        patientage: patientDemo.patientage,
+        patientgender: patientDemo.patientgender,
+        patienthomeaddress: patientDemo.patienthomeaddress,
+        patientbirthdate: patientDemo.patientbirthdate,
+        patientcontactnumber: patientDemo.patientcontactnumber,
+        recordDate: new Date()
+      };
+  
+      // Add the medical record to the patient's medical records array
+      patientDemo.patientmedicalrecordbautista.push(medicalRecordWithPatientInfo);
+  
+      // Save the updated patient demographic record
+      const savedPatientDemo = await patientDemo.save();
+  
+      res.status(201).json({
+        message: "Bautista medical record added successfully",
+        patientDemographic: savedPatientDemo,
+        newMedicalRecord: medicalRecordWithPatientInfo
+      });
+  
+    } catch (error) {
+      console.error("Error adding Bautista medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Get Bautista Medical Records Controller
+  export const getBautistaMedicalRecords = async (req, res) => {
+    try {
+      const { patientEmail } = req.params;
+  
+      if (!patientEmail) {
+        return res.status(400).json({ 
+          message: "Patient email is required" 
+        });
+      }
+  
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      }).select('patientmedicalrecordbautista patientlastname patientfirstname');
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      res.status(200).json({
+        message: "Bautista medical records retrieved successfully",
+        patientName: `${patientDemo.patientfirstname} ${patientDemo.patientlastname}`,
+        medicalRecords: patientDemo.patientmedicalrecordbautista || []
+      });
+  
+    } catch (error) {
+      console.error("Error retrieving Bautista medical records:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Delete Bautista Medical Record Controller
+  export const deleteBautistaMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, recordId } = req.params;
+  
+      if (!patientEmail || !recordId) {
+        return res.status(400).json({ 
+          message: "Patient email and record ID are required" 
+        });
+      }
+  
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      // Find and remove the medical record
+      const recordIndex = patientDemo.patientmedicalrecordbautista.findIndex(
+        record => record._id.toString() === recordId
+      );
+  
+      if (recordIndex === -1) {
+        return res.status(404).json({ 
+          message: "Medical record not found" 
+        });
+      }
+  
+      patientDemo.patientmedicalrecordbautista.splice(recordIndex, 1);
+      const savedPatientDemo = await patientDemo.save();
+  
+      res.status(200).json({
+        message: "Bautista medical record deleted successfully",
+        patientDemographic: savedPatientDemo
+      });
+  
+    } catch (error) {
+      console.error("Error deleting Bautista medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
     }
   };
   
