@@ -903,6 +903,111 @@
       });
     }
   };
+
+  // Update Bautista Medical Record Controller
+  export const updateBautistaMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, recordId } = req.params;
+      const updateData = req.body;
+
+      if (!patientEmail || !recordId) {
+        return res.status(400).json({ 
+          message: "Patient email and record ID are required" 
+        });
+      }
+
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+
+      // Find the medical record to update
+      const recordIndex = patientDemo.patientmedicalrecordbautista.findIndex(
+        record => record._id.toString() === recordId
+      );
+
+      if (recordIndex === -1) {
+        return res.status(404).json({ 
+          message: "Medical record not found" 
+        });
+      }
+
+      // Update the medical record
+      const currentRecord = patientDemo.patientmedicalrecordbautista[recordIndex];
+      
+      // Merge the update data with the current record, preserving original metadata
+      Object.keys(updateData).forEach(key => {
+        if (key !== '_id' && key !== 'recordDate' && key !== 'addedbyname' && key !== 'addedbyclinic' && key !== 'addedbytype' && key !== 'addedbydate') {
+          currentRecord[key] = updateData[key];
+        }
+      });
+
+      // Update the record date to reflect when it was last modified
+      currentRecord.recordDate = new Date();
+
+      const savedPatientDemo = await patientDemo.save();
+
+      res.status(200).json({
+        message: "Bautista medical record updated successfully",
+        updatedRecord: savedPatientDemo.patientmedicalrecordbautista[recordIndex],
+        patientDemographic: savedPatientDemo
+      });
+
+    } catch (error) {
+      console.error("Error updating Bautista medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Generate next available case number
+  export const getNextCaseNumber = async (req, res) => {
+    try {
+      // Get all patient demographics and extract existing case numbers
+      const allPatients = await Patientdemographic.find({}, 'patientmedicalrecordbautista').lean();
+      
+      const existingCaseNumbers = new Set();
+      
+      // Extract all case numbers from all patients' medical records
+      allPatients.forEach(patient => {
+        if (patient.patientmedicalrecordbautista) {
+          patient.patientmedicalrecordbautista.forEach(record => {
+            if (record.caseNo) {
+              // Convert case number to integer if it's numeric
+              const caseNum = parseInt(record.caseNo);
+              if (!isNaN(caseNum)) {
+                existingCaseNumbers.add(caseNum);
+              }
+            }
+          });
+        }
+      });
+      
+      // Find the next available case number starting from 1
+      let nextCaseNumber = 1;
+      while (existingCaseNumbers.has(nextCaseNumber)) {
+        nextCaseNumber++;
+      }
+      
+      res.status(200).json({
+        nextCaseNumber: nextCaseNumber.toString()
+      });
+      
+    } catch (error) {
+      console.error("Error generating next case number:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
   
   
 

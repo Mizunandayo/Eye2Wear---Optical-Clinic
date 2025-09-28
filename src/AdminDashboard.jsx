@@ -7443,6 +7443,11 @@ const [showdeletemedicaldocumentdialog, setshowdeletemedicaldocumentdialog] = us
 //Clinic Documents State
 const [showaddbautistaclinicmedicalrecord, setshowaddbautistaclinicmedicalrecord] = useState(false);
 
+// Bautista Medical Record Edit/View State
+const [selectedbautistarecord, setselectedbautistarecord] = useState(null);
+const [iseditingbautistarecord, setiseditingbautistarecord] = useState(false);
+const [generatedCaseNumber, setgeneratedCaseNumber] = useState('');
+
 // Medical Document Form State
 const [medicaldocumentname, setmedicaldocumentname] = useState('');
 const [medicaldocumentdescription, setmedicaldocumentdescription] = useState('');
@@ -8550,6 +8555,8 @@ const submitBautistaMedicalRecord = async (e) => {
     // Reset form and close modal
     e.target.reset();
     setshowaddbautistaclinicmedicalrecord(false);
+    setselectedbautistarecord(null);
+    setgeneratedCaseNumber('');
     
     // Update the selected patient record with the refreshed data
     if (selectedpatientmedicalrecord?.patientemail) {
@@ -8574,6 +8581,9 @@ const submitBautistaMedicalRecord = async (e) => {
     
     // Show success message
     alert('Medical record saved successfully!');
+
+    // Clear the generated case number after successful submission
+    setgeneratedCaseNumber('');
 
     // Refresh patient demographics in the background
     fetchDemographicsData(true);
@@ -8686,6 +8696,225 @@ const deleteMedicalDocument = async () => {
         setMedicalDocumentProgressWidth('0%');
       }, 3000);
     }, 4000);
+  }
+};
+
+// Function to handle viewing/editing existing Bautista medical record
+const viewBautistaRecord = (record) => {
+  console.log('Viewing Bautista medical record:', record);
+  setselectedbautistarecord(record);
+  setshowaddbautistaclinicmedicalrecord(true);
+};
+
+// Function to generate next available case number
+const generateNextCaseNumber = async () => {
+  try {
+    const response = await fetch('/api/patientdemographics/next-case-number', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate case number');
+    }
+
+    const result = await response.json();
+    return result.nextCaseNumber;
+  } catch (error) {
+    console.error('Error generating case number:', error);
+    // Fallback to timestamp-based case number
+    return Date.now().toString();
+  }
+};
+
+// Function to handle opening new medical record form
+const openNewMedicalRecordForm = async () => {
+  const nextCaseNumber = await generateNextCaseNumber();
+  setgeneratedCaseNumber(nextCaseNumber);
+  setselectedbautistarecord(null);
+  setshowaddbautistaclinicmedicalrecord(true);
+};
+
+// Function to handle editing existing Bautista medical record
+const editBautistaRecord = (record) => {
+  console.log('Editing Bautista medical record:', record);
+  setselectedbautistarecord(record);
+  setiseditingbautistarecord(true);
+  setshowaddbautistaclinicmedicalrecord(true);
+};
+
+// Function to update existing Bautista medical record
+const updateBautistaMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedbautistarecord || !selectedpatientmedicalrecord) {
+      alert("Invalid record selection");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Extract form data (same structure as submitBautistaMedicalRecord)
+    const medicalRecordData = {
+      caseNo: formData.get('caseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Subjective
+      chiefComplaint: formData.get('chiefComplaint'),
+      historyOfPresentIllness: formData.get('historyOfPresentIllness'),
+      hpn: formData.get('hpn') === 'on',
+      dm: formData.get('dm') === 'on',
+      asthma: formData.get('asthma') === 'on',
+      ptb: formData.get('ptb') === 'on',
+      othersHistory: formData.get('othersHistory'),
+      height: formData.get('height'),
+      weight: formData.get('weight'),
+      
+      // Objective - Visual Exam
+      visualExam: {
+        od: {
+          sc: formData.get('visualExam_od_sc'),
+          cc: formData.get('visualExam_od_cc'),
+          ph: formData.get('visualExam_od_ph')
+        },
+        os: {
+          sc: formData.get('visualExam_os_sc'),
+          cc: formData.get('visualExam_os_cc'),
+          ph: formData.get('visualExam_os_ph')
+        }
+      },
+      
+      // Objective - Refraction
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        adds: {
+          right: formData.get('refraction_adds_right'),
+          left: formData.get('refraction_adds_left')
+        },
+        pd: formData.get('refraction_pd')
+      },
+      
+      // Objective - External Exam
+      externalExam: {
+        isEssentiallyNormal: formData.get('externalExam_isEssentiallyNormal') === 'on',
+        details: formData.get('externalExam_details')
+      },
+      
+      // Objective - Biomicroscopy
+      biomicroscopy: {
+        details: formData.get('biomicroscopy_details')
+      },
+      
+      // Objective - Funduscopy
+      funduscopy: {
+        od: {
+          cdRatio: formData.get('funduscopy_od_cdRatio'),
+          details: formData.get('funduscopy_od_details')
+        },
+        os: {
+          cdRatio: formData.get('funduscopy_os_cdRatio'),
+          details: formData.get('funduscopy_os_details')
+        }
+      },
+      
+      // Objective - EOMS
+      eoms: {
+        isFullAndEqual: formData.get('eoms_isFullAndEqual') === 'on',
+        details: formData.get('eoms_details')
+      },
+      
+      // Objective - Tonometry
+      tonometry: {
+        time: formData.get('tonometry_time'),
+        od: formData.get('tonometry_od'),
+        os: formData.get('tonometry_os')
+      },
+      
+      // Diagnosis
+      diagnosis: {
+        description: formData.get('diagnosis_description'),
+        icd10Code: formData.get('diagnosis_icd10Code')
+      },
+      
+      // Plans
+      plans: {
+        diagnostics: formData.get('plans_diagnostics'),
+        therapeutics: formData.get('plans_therapeutics')
+      },
+      
+      // Follow-up & Signature
+      followUp: formData.get('followUp'),
+      mdSignature: formData.get('mdSignature')
+    };
+
+    console.log("Updating Bautista medical record:", medicalRecordData);
+    console.log("Record ID:", selectedbautistarecord._id);
+
+    const response = await fetch(`/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecord._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(medicalRecordData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update medical record');
+    }
+
+    const result = await response.json();
+    console.log('Bautista medical record updated successfully:', result);
+
+    // Reset states and close modal
+    setselectedbautistarecord(null);
+    setshowaddbautistaclinicmedicalrecord(false);
+    setgeneratedCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after editing medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success message
+    alert('Medical record updated successfully!');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error updating Bautista medical record:', error);
+    alert('Error updating medical record: ' + error.message);
   }
 };
 
@@ -19152,7 +19381,7 @@ return filteredDocuments
 
   <div id='patientmedicalrecord' className="w-full flex-1 flex flex-col">  
      <div 
-       onClick={() => setshowaddbautistaclinicmedicalrecord(true)}  
+       onClick={openNewMedicalRecordForm}  
        className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
      >
        <i className="bx bx-file-plus text-lg"/>
@@ -19247,7 +19476,8 @@ return filteredDocuments
             </div>
 
             <div className="flex-1 px-3 text-center">
-              <p className="font-medium text-gray-800 text-sm">{new Date(record.recordDate).toLocaleDateString()}</p>
+              
+              <p className="font-medium text-gray-800 text-sm">{formatappointmatedates(record.recordDate)}</p>
               <p className="text-xs text-gray-500">Record Date</p>
             </div>
 
@@ -19256,23 +19486,13 @@ return filteredDocuments
               <p className="text-xs text-gray-500">Clinic</p>
             </div>
 
-            {record.diagnosis?.description && (
-              <div className="flex-1 px-3 text-center">
-                <p className="font-medium text-gray-800 text-sm truncate" title={record.diagnosis.description}>
-                  {record.diagnosis.description.length > 20 
-                    ? `${record.diagnosis.description.substring(0, 20)}...` 
-                    : record.diagnosis.description
-                  }
-                </p>
-                <p className="text-xs text-gray-500">Diagnosis</p>
-              </div>
-            )}
+   
 
             <div className="px-3 flex gap-2">
               <button 
+                id="viewfullpatientbautistarecord"
                 onClick={() => {
-                  // Add functionality to view full record details
-                  console.log('View full record:', record._id);
+                  viewBautistaRecord(record);
                 }}
                 style={{
                   backgroundColor: "#1f2937",
@@ -20182,6 +20402,16 @@ Are you sure you want to delete this medical document?
 
 
 
+
+
+
+
+
+
+
+
+
+{/* Bautista Medical Record Form Modal */}
 {/* Bautista Medical Record Form Modal */}
 {showaddbautistaclinicmedicalrecord && (
 <div id="bautistapatientrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
@@ -20189,27 +20419,30 @@ Are you sure you want to delete this medical document?
 <div className="flex justify-between items-center w-full h-[60px] mb-6">
         <div className="flex items-center space-x-4">
           <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center">
-            
             <img src={bautistalogo} alt="Medical Icon" className="w-9 h-9" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
               Bautista Eye Center
             </h2>
-            <p className="text-sm text-gray-500">Patient Medical Record</p>
+            <p className="text-sm text-gray-500">
+              {selectedbautistarecord ? 'Medical Record Details' : 'New Medical Record'}
+            </p>
           </div>
         </div>
   <div 
     onClick={() => {
       setshowaddbautistaclinicmedicalrecord(false);
+      setselectedbautistarecord(null);
+      setgeneratedCaseNumber('');
     }} 
     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
   >
-    <i className="bx bx-x text-gray-600 text-xl"/>
+    <i className="bx bx-x text-gray-600 text-xl"></i>
   </div>
 </div>
 
-<form onSubmit={submitBautistaMedicalRecord} className="space-y-8">
+<form onSubmit={selectedbautistarecord ? updateBautistaMedicalRecord : submitBautistaMedicalRecord} className="space-y-8">
   
   {/* PATIENT INFORMATION SECTION */}
   <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
@@ -20222,8 +20455,10 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="caseNo"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-          placeholder="Enter case number..."
+          defaultValue={selectedbautistarecord?.caseNo || generatedCaseNumber}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${selectedbautistarecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+          placeholder="Auto-generated case number..."
+          readOnly={selectedbautistarecord ? true : false}
           required
         />
       </div>
@@ -20234,7 +20469,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="date" 
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-not-allowed" 
-          value={new Date().toISOString().split('T')[0]}
+          value={selectedbautistarecord ? new Date(selectedbautistarecord.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
           readOnly
         />
       </div>
@@ -20242,7 +20477,12 @@ Are you sure you want to delete this medical document?
       {/* Patient Status */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Status</label>
-        <select name="patientstatus" className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+        <select 
+          name="patientstatus" 
+          defaultValue={selectedbautistarecord?.patientstatus || ''}
+          disabled={selectedbautistarecord ? true : false}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${selectedbautistarecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+        >
           <option value="">Select status...</option>
           <option value="New">New</option>
           <option value="Follow-up">Follow-up</option>
@@ -20321,7 +20561,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
-          value={selectedpatientmedicalrecord?.patientbirthdate || ''}
+          value={selectedpatientmedicalrecord?.patientbirthdate ? formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate) : ''}
           readOnly
           placeholder="Birthdate"
         />
@@ -20358,7 +20598,11 @@ Are you sure you want to delete this medical document?
       {/* PhilHealth Category - Editable */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">PhilHealth Category</label>
-        <select name="patientphilhealthcategory" className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+        <select 
+          name="patientphilhealthcategory" 
+          defaultValue={selectedbautistarecord?.patientphilhealthcategory || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        >
           <option value="">Select PhilHealth category...</option>
           <option value="Employed/Formal Economy">Employed/Formal Economy</option>
           <option value="Indigent/Informal Economy">Indigent/Informal Economy</option>
@@ -20377,7 +20621,8 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="hmo"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+          defaultValue={selectedbautistarecord?.hmo || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           placeholder="Enter HMO provider (if applicable)..."
         />
       </div>
@@ -20395,7 +20640,8 @@ Are you sure you want to delete this medical document?
       </label>
       <textarea 
         name="chiefComplaint"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+        defaultValue={selectedbautistarecord?.chiefComplaint || ''}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
         rows="3"
         maxLength="500"
         placeholder="Enter chief complaint..."
@@ -20409,7 +20655,8 @@ Are you sure you want to delete this medical document?
       </label>
       <textarea 
         name="historyOfPresentIllness"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+        defaultValue={selectedbautistarecord?.historyOfPresentIllness || ''}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
         rows="4"
         maxLength="1000"
         placeholder="Enter history of present illness..."
@@ -20422,19 +20669,39 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-3">Past Medical History</label>
         <div className="space-y-2">
           <label className="flex items-center">
-            <input type="checkbox" name="hpn" className="mr-2 text-green-500 focus:ring-green-500" />
+            <input 
+              type="checkbox" 
+              name="hpn" 
+              defaultChecked={selectedbautistarecord?.hpn || false}
+              className="mr-2 text-green-500 focus:ring-green-500" 
+            />
             <span className="text-sm">HPN (Hypertension)</span>
           </label>
           <label className="flex items-center">
-            <input type="checkbox" name="dm" className="mr-2 text-green-500 focus:ring-green-500" />
+            <input 
+              type="checkbox" 
+              name="dm" 
+              defaultChecked={selectedbautistarecord?.dm || false}
+              className="mr-2 text-green-500 focus:ring-green-500" 
+            />
             <span className="text-sm">DM (Diabetes Mellitus)</span>
           </label>
           <label className="flex items-center">
-            <input type="checkbox" name="asthma" className="mr-2 text-green-500 focus:ring-green-500" />
+            <input 
+              type="checkbox" 
+              name="asthma" 
+              defaultChecked={selectedbautistarecord?.asthma || false}
+              className="mr-2 text-green-500 focus:ring-green-500" 
+            />
             <span className="text-sm">ASTHMA</span>
           </label>
           <label className="flex items-center">
-            <input type="checkbox" name="ptb" className="mr-2 text-green-500 focus:ring-green-500" />
+            <input 
+              type="checkbox" 
+              name="ptb" 
+              defaultChecked={selectedbautistarecord?.ptb || false}
+              className="mr-2 text-green-500 focus:ring-green-500" 
+            />
             <span className="text-sm">PTB (Pulmonary Tuberculosis)</span>
           </label>
         </div>
@@ -20445,7 +20712,8 @@ Are you sure you want to delete this medical document?
         </label>
         <textarea 
           name="othersHistory"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+          defaultValue={selectedbautistarecord?.othersHistory || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
           rows="5"
           maxLength="200"
           placeholder="Other medical history..."
@@ -20460,7 +20728,8 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="height"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
+          defaultValue={selectedbautistarecord?.height || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors"
           maxLength="10"
           placeholder="e.g., 5'6 inches"
         />
@@ -20470,7 +20739,8 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="weight"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
+          defaultValue={selectedbautistarecord?.weight || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors"
           maxLength="10"
           placeholder="e.g., 70kg"
         />
@@ -20499,25 +20769,61 @@ Are you sure you want to delete this medical document?
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_od_sc" 
+                  defaultValue={selectedbautistarecord?.visualExam?.od?.sc || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_od_cc" 
+                  defaultValue={selectedbautistarecord?.visualExam?.od?.cc || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_od_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_od_ph" 
+                  defaultValue={selectedbautistarecord?.visualExam?.od?.ph || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
             </tr>
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_sc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_os_sc" 
+                  defaultValue={selectedbautistarecord?.visualExam?.os?.sc || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_cc" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_os_cc" 
+                  defaultValue={selectedbautistarecord?.visualExam?.os?.cc || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="visualExam_os_ph" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="visualExam_os_ph" 
+                  defaultValue={selectedbautistarecord?.visualExam?.os?.ph || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
             </tr>
           </tbody>
@@ -20542,25 +20848,61 @@ Are you sure you want to delete this medical document?
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_od_sphere" 
+                  defaultValue={selectedbautistarecord?.refraction?.od?.sphere || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_od_cylinder" 
+                  defaultValue={selectedbautistarecord?.refraction?.od?.cylinder || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_od_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_od_axis" 
+                  defaultValue={selectedbautistarecord?.refraction?.od?.axis || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
             </tr>
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS</td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_sphere" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_os_sphere" 
+                  defaultValue={selectedbautistarecord?.refraction?.os?.sphere || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_cylinder" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_os_cylinder" 
+                  defaultValue={selectedbautistarecord?.refraction?.os?.cylinder || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
               <td className="border border-gray-300 px-3 py-2">
-                <input type="text" name="refraction_os_axis" className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" maxLength="10" />
+                <input 
+                  type="text" 
+                  name="refraction_os_axis" 
+                  defaultValue={selectedbautistarecord?.refraction?.os?.axis || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  maxLength="10" 
+                />
               </td>
             </tr>
           </tbody>
@@ -20571,15 +20913,33 @@ Are you sure you want to delete this medical document?
       <div className="grid grid-cols-3 gap-4 mt-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">ADDS Right</label>
-          <input type="text" name="refraction_adds_right" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+          <input 
+            type="text" 
+            name="refraction_adds_right" 
+            defaultValue={selectedbautistarecord?.refraction?.adds?.right || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            maxLength="10" 
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">ADDS Left</label>
-          <input type="text" name="refraction_adds_left" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+          <input 
+            type="text" 
+            name="refraction_adds_left" 
+            defaultValue={selectedbautistarecord?.refraction?.adds?.left || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            maxLength="10" 
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">PD</label>
-          <input type="text" name="refraction_pd" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+          <input 
+            type="text" 
+            name="refraction_pd" 
+            defaultValue={selectedbautistarecord?.refraction?.pd || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            maxLength="10" 
+          />
         </div>
       </div>
     </div>
@@ -20589,13 +20949,19 @@ Are you sure you want to delete this medical document?
       <h4 className="text-md font-semibold text-gray-700 mb-3">External Exam</h4>
       <div className="space-y-3">
         <label className="flex items-center">
-          <input type="checkbox" name="externalExam_isEssentiallyNormal" className="mr-2 text-green-500 focus:ring-green-500" />
+          <input 
+            type="checkbox" 
+            name="externalExam_isEssentiallyNormal" 
+            defaultChecked={selectedbautistarecord?.externalExam?.isEssentiallyNormal || false}
+            className="mr-2 text-green-500 focus:ring-green-500" 
+          />
           <span className="text-sm font-medium">Essentially Normal</span>
         </label>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Details</label>
           <textarea 
             name="externalExam_details"
+            defaultValue={selectedbautistarecord?.externalExam?.details || ''}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
             rows="3"
             maxLength="300"
@@ -20610,6 +20976,7 @@ Are you sure you want to delete this medical document?
       <h4 className="text-md font-semibold text-gray-700 mb-3">Biomicroscopy</h4>
       <textarea 
         name="biomicroscopy_details"
+        defaultValue={selectedbautistarecord?.biomicroscopy?.details || ''}
         className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
         rows="4"
         maxLength="500"
@@ -20626,13 +20993,20 @@ Are you sure you want to delete this medical document?
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">CD Ratio</label>
-              <input type="text" name="funduscopy_od_cdRatio" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+              <input 
+                type="text" 
+                name="funduscopy_od_cdRatio" 
+                defaultValue={selectedbautistarecord?.funduscopy?.od?.cdRatio || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                maxLength="10" 
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Details</label>
               <textarea 
                 name="funduscopy_od_details"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" 
+                defaultValue={selectedbautistarecord?.funduscopy?.od?.details || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" 
                 rows="3"
                 maxLength="300"
                 placeholder="OD funduscopy details..."
@@ -20645,13 +21019,20 @@ Are you sure you want to delete this medical document?
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">CD Ratio</label>
-              <input type="text" name="funduscopy_os_cdRatio" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" maxLength="10" />
+              <input 
+                type="text" 
+                name="funduscopy_os_cdRatio" 
+                defaultValue={selectedbautistarecord?.funduscopy?.os?.cdRatio || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                maxLength="10" 
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Details</label>
               <textarea 
                 name="funduscopy_os_details"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" 
+                defaultValue={selectedbautistarecord?.funduscopy?.os?.details || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" 
                 rows="3"
                 maxLength="300"
                 placeholder="OS funduscopy details..."
@@ -20667,7 +21048,12 @@ Are you sure you want to delete this medical document?
       <h4 className="text-md font-semibold text-gray-700 mb-3">EOMS (Extraocular Motility)</h4>
       <div className="space-y-3">
         <label className="flex items-center">
-          <input type="checkbox" name="eoms_isFullAndEqual" className="mr-2 text-green-500 focus:ring-green-500" />
+          <input 
+            type="checkbox" 
+            name="eoms_isFullAndEqual" 
+            defaultChecked={selectedbautistarecord?.eoms?.isFullAndEqual || false}
+            className="mr-2 text-green-500 focus:ring-green-500" 
+          />
           <span className="text-sm font-medium">Full & Equal</span>
         </label>
         <div>
@@ -20675,6 +21061,7 @@ Are you sure you want to delete this medical document?
           <input 
             type="text" 
             name="eoms_details"
+            defaultValue={selectedbautistarecord?.eoms?.details || ''}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
             maxLength="100"
             placeholder="EOMS details..."
@@ -20692,7 +21079,8 @@ Are you sure you want to delete this medical document?
           <input 
             type="text" 
             name="tonometry_time"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            defaultValue={selectedbautistarecord?.tonometry?.time || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
             maxLength="100"
             placeholder="e.g., 10:00 AM"
           />
@@ -20702,7 +21090,8 @@ Are you sure you want to delete this medical document?
           <input 
             type="text" 
             name="tonometry_od"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            defaultValue={selectedbautistarecord?.tonometry?.od || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
             maxLength="100"
             placeholder="IOP OD"
           />
@@ -20712,7 +21101,8 @@ Are you sure you want to delete this medical document?
           <input 
             type="text" 
             name="tonometry_os"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            defaultValue={selectedbautistarecord?.tonometry?.os || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
             maxLength="100"
             placeholder="IOP OS"
           />
@@ -20730,6 +21120,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
         <textarea 
           name="diagnosis_description"
+          defaultValue={selectedbautistarecord?.diagnosis?.description || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="4"
           maxLength="1000"
@@ -20742,6 +21133,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="diagnosis_icd10Code"
+          defaultValue={selectedbautistarecord?.diagnosis?.icd10Code || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="100"
           placeholder="Enter ICD-10 code..."
@@ -20759,6 +21151,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Diagnostics</label>
         <textarea 
           name="plans_diagnostics"
+          defaultValue={selectedbautistarecord?.plans?.diagnostics || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="6"
           maxLength="1000"
@@ -20770,6 +21163,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Therapeutics</label>
         <textarea 
           name="plans_therapeutics"
+          defaultValue={selectedbautistarecord?.plans?.therapeutics || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="6"
           maxLength="1000"
@@ -20788,6 +21182,7 @@ Are you sure you want to delete this medical document?
         <label className="block text-sm font-semibold text-gray-700 mb-2">Follow-up</label>
         <textarea 
           name="followUp"
+          defaultValue={selectedbautistarecord?.followUp || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
           rows="3"
           maxLength="500"
@@ -20800,6 +21195,7 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="mdSignature"
+          defaultValue={selectedbautistarecord?.mdSignature || ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
           maxLength="100"
           placeholder="Doctor's signature..."
@@ -20812,16 +21208,21 @@ Are you sure you want to delete this medical document?
   <div className="flex justify-end space-x-4 pt-6">
     <button
       type="button"
-      onClick={() => setshowaddbautistaclinicmedicalrecord(false)}
+      onClick={() => {
+        setshowaddbautistaclinicmedicalrecord(false);
+        setselectedbautistarecord(null);
+        setgeneratedCaseNumber('');
+      }}
       className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors duration-200"
     >
       Cancel
     </button>
+    
     <button
       type="submit"
       className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
     >
-      Save Medical Record
+      {selectedbautistarecord ? 'Update Medical Record' : 'Save Medical Record'}
     </button>
   </div>
 
@@ -20829,7 +21230,6 @@ Are you sure you want to delete this medical document?
 
 </div>
 </div>)}
-
 
 
 

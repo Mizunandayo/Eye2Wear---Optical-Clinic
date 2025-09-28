@@ -17,7 +17,9 @@
         deleteMedicalDocument,
         addBautistaMedicalRecord,
         getBautistaMedicalRecords,
-        deleteBautistaMedicalRecord
+        deleteBautistaMedicalRecord,
+        updateBautistaMedicalRecord,
+        getNextCaseNumber
         } from "../controllers/patientdemographic.controller.js";
 
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
@@ -139,7 +141,11 @@
     // Bautista Medical Records Routes
     patientdemographicrouter.post("/bautista-medical-records", verifyStaffOwnerOrPatientAccess, addBautistaMedicalRecord);
     patientdemographicrouter.get("/bautista-medical-records/:patientEmail", verifyStaffOwnerOrPatientAccess, getBautistaMedicalRecords);
+    patientdemographicrouter.put("/bautista-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, updateBautistaMedicalRecord);
     patientdemographicrouter.delete("/bautista-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, deleteBautistaMedicalRecord);
+    
+    // Case Number Generation Route
+    patientdemographicrouter.get("/next-case-number", verifyStaffOwnerOrPatientAccess, getNextCaseNumber);
 
 
 
