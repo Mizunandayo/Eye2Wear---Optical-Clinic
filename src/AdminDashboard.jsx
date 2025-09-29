@@ -7440,13 +7440,57 @@ const [medicaldocumentfiles, setmedicaldocumentfiles] = useState([]);
 const [uploaddingmedicaldocument, setuploaddingmedicaldocument] = useState(false);
 const [showdeletemedicaldocumentdialog, setshowdeletemedicaldocumentdialog] = useState(false);
 
+// Delete Medical Record Modal States
+const [showdeletebautistamedicalrecorddialog, setshowdeletebautistamedicalrecorddialog] = useState(false);
+const [showdeleteambhermedicalrecorddialog, setshowdeleteambhermedicalrecorddialog] = useState(false);
+
 //Clinic Documents State
 const [showaddbautistaclinicmedicalrecord, setshowaddbautistaclinicmedicalrecord] = useState(false);
+const [showaddambherclinicmedicalrecord, setshowaddambherclinicmedicalrecord] = useState(false);
+
+// Read-only form state (for cross-clinic viewing)
+const [isbautistaformreadonly, setisbautistaformreadonly] = useState(false);
+const [isambherformreadonly, setisambherformreadonly] = useState(false);
 
 // Bautista Medical Record Edit/View State
 const [selectedbautistarecord, setselectedbautistarecord] = useState(null);
 const [iseditingbautistarecord, setiseditingbautistarecord] = useState(false);
 const [generatedCaseNumber, setgeneratedCaseNumber] = useState('');
+
+// Ambher Medical Record Edit/View State
+const [selectedambherrecord, setselectedambherrecord] = useState(null);
+const [iseditingambherrecord, setiseditingambherrecord] = useState(false);
+const [generatedAmbherCaseNumber, setgeneratedAmbherCaseNumber] = useState('');
+
+// Bautista Medical Record Delete State
+const [showdeletebautistamedicaldialog, setshowdeletebautistamedicaldialog] = useState(false);
+const [selectedbautistarecordtodelete, setselectedbautistarecordtodelete] = useState(null);
+
+// Ambher Medical Record Delete State
+const [showdeleteambhermedicaldialog, setshowdeleteambhermedicaldialog] = useState(false);
+const [selectedambherrecordtodelete, setselectedambherrecordtodelete] = useState(null);
+
+// Bautista Medical Record Toast State
+const [bautistaRecordToast, setBautistaRecordToast] = useState(false);
+const [bautistaRecordToastMessage, setBautistaRecordToastMessage] = useState('');
+const [bautistaRecordToastType, setBautistaRecordToastType] = useState('success');
+const [bautistaRecordToastClosing, setBautistaRecordToastClosing] = useState(false);
+const [bautistaRecordProgressWidth, setBautistaRecordProgressWidth] = useState('0%');
+
+// Ambher Medical Record Toast State
+const [ambherRecordToast, setAmbherRecordToast] = useState(false);
+const [ambherRecordToastMessage, setAmbherRecordToastMessage] = useState('');
+const [ambherRecordToastType, setAmbherRecordToastType] = useState('success');
+const [ambherRecordToastClosing, setAmbherRecordToastClosing] = useState(false);
+const [ambherRecordProgressWidth, setAmbherRecordProgressWidth] = useState('0%');
+
+// Case Number Validation State
+const [caseNoValidation, setCaseNoValidation] = useState({ isChecking: false, isValid: true, message: '' });
+const [caseNoValue, setCaseNoValue] = useState('');
+
+// Ambher Case Number Validation State
+const [ambherCaseNoValidation, setAmbherCaseNoValidation] = useState({ isChecking: false, isValid: true, message: '' });
+const [ambherCaseNoValue, setAmbherCaseNoValue] = useState('');
 
 // Medical Document Form State
 const [medicaldocumentname, setmedicaldocumentname] = useState('');
@@ -8409,17 +8453,129 @@ const submitMedicalDocuments = async (e) => {
   }
 };
 
+// Simple debounce function
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+// Helper function to show Bautista record error toast
+const showBautistaErrorToast = (message) => {
+  setBautistaRecordToastMessage(message);
+  setBautistaRecordToastType('error');
+  setBautistaRecordToast(true);
+  
+  setTimeout(() => {
+    setBautistaRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setBautistaRecordToastClosing(true);
+    setTimeout(() => {
+      setBautistaRecordToast(false);
+      setBautistaRecordToastClosing(false);
+      setBautistaRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+// Case number validation function
+const validateCaseNumber = async (caseNo) => {
+  if (!caseNo || caseNo.trim() === '') {
+    setCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // If editing existing record and case number hasn't changed, skip validation
+  if (selectedbautistarecord && selectedbautistarecord.caseNo === caseNo) {
+    setCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  setCaseNoValidation({ isChecking: true, isValid: true, message: 'Checking...' });
+
+  try {
+    const response = await fetch(`/api/patientdemographics/check-case-number/${encodeURIComponent(caseNo)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to check case number');
+    }
+
+    const result = await response.json();
+    
+    if (result.exists) {
+      setCaseNoValidation({ 
+        isChecking: false, 
+        isValid: false, 
+        message: 'Case number already exists' 
+      });
+    } else {
+      setCaseNoValidation({ 
+        isChecking: false, 
+        isValid: true, 
+        message: 'Case number available' 
+      });
+    }
+  } catch (error) {
+    console.error('Error checking case number:', error);
+    setCaseNoValidation({ 
+      isChecking: false, 
+      isValid: true, 
+      message: 'Unable to verify case number' 
+    });
+  }
+};
+
+// Debounced case number validation
+const debouncedValidateCaseNumber = debounce((caseNo) => validateCaseNumber(caseNo), 500);
+
+// Handle case number input change
+const handleCaseNoChange = (e) => {
+  const value = e.target.value;
+  setCaseNoValue(value);
+  
+  if (!selectedbautistarecord) { // Only validate for new records
+    debouncedValidateCaseNumber(value);
+  }
+};
+
 // Submit Bautista Medical Record Function
 const submitBautistaMedicalRecord = async (e) => {
   e.preventDefault();
   
   try {
     if (!selectedpatientmedicalrecord) {
-      alert("Please select a patient first");
+      showBautistaErrorToast('Please select a patient first');
       return;
     }
 
     const formData = new FormData(e.target);
+    
+    // Validate required fields
+    const caseNo = formData.get('caseNo');
+    const patientstatus = formData.get('patientstatus');
+    
+    // Check for required fields
+    if (!caseNo || caseNo.trim() === '') {
+      showBautistaErrorToast('Case Number is required');
+      return;
+    }
+    
+    if (!patientstatus || patientstatus.trim() === '') {
+      showBautistaErrorToast('Patient Status is required');
+      return;
+    }
     
     // Extract form data
     const medicalRecordData = {
@@ -8546,7 +8702,18 @@ const submitBautistaMedicalRecord = async (e) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to save medical record');
+      
+      // Check for specific validation errors
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        // If there are validation errors, show the first one
+        throw new Error(errorData.errors[0].message || errorData.errors[0]);
+      } else if (errorData.message) {
+        throw new Error(errorData.message);
+      } else if (response.status === 400) {
+        throw new Error('Please check all required fields are filled correctly');
+      } else {
+        throw new Error('Failed to save medical record');
+      }
     }
 
     const result = await response.json();
@@ -8579,8 +8746,25 @@ const submitBautistaMedicalRecord = async (e) => {
       }
     }
     
-    // Show success message
-    alert('Medical record saved successfully!');
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record saved successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
 
     // Clear the generated case number after successful submission
     setgeneratedCaseNumber('');
@@ -8590,7 +8774,43 @@ const submitBautistaMedicalRecord = async (e) => {
 
   } catch (error) {
     console.error('Error submitting Bautista medical record:', error);
-    alert('Error saving medical record: ' + error.message);
+    
+    // Parse error message for better user feedback
+    let errorMessage = 'Error saving medical record';
+    
+    if (error.message) {
+      if (error.message.includes('400')) {
+        errorMessage = 'Please check all required fields are filled correctly';
+      } else if (error.message.includes('validation')) {
+        errorMessage = 'Form validation failed - please check all required fields';
+      } else if (error.message.includes('required')) {
+        errorMessage = 'Please fill in all required fields';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid data provided - please check your inputs';
+      } else {
+        errorMessage = 'Error saving medical record: ' + error.message;
+      }
+    }
+    
+    // Show error toast
+    setBautistaRecordToastMessage(errorMessage);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
   }
 };
 
@@ -8699,11 +8919,242 @@ const deleteMedicalDocument = async () => {
   }
 };
 
+// Delete Bautista Medical Record Function
+const deleteBautistaMedicalRecord = async () => {
+  try {
+    if (!selectedbautistarecord || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Bautista medical record:', selectedbautistarecord);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+    console.log('Record ID:', selectedbautistarecord._id);
+
+    const deleteUrl = `/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecord._id}`;
+    console.log('Delete URL:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error('Delete error response:', result);
+      throw new Error(result.message || "Failed to delete medical record");
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Bautista medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    setselectedbautistarecord(null);
+    setshowdeletebautistamedicalrecorddialog(false);
+    setshowaddbautistaclinicmedicalrecord(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage('Bautista medical record deleted successfully');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error("Failed to delete Bautista medical record:", error.message);
+    
+    // Show error toast
+    setMedicalDocumentToastMessage('Failed to delete medical record. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  }
+};
+
+// Delete Ambher Medical Record Function
+const deleteAmbherMedicalRecord = async () => {
+  try {
+    if (!selectedambherrecord || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Ambher medical record:', selectedambherrecord);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+    console.log('Record ID:', selectedambherrecord._id);
+
+    const deleteUrl = `/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecord._id}`;
+    console.log('Delete URL:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error('Delete error response:', result);
+      throw new Error(result.message || "Failed to delete medical record");
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Ambher medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    setselectedambherrecord(null);
+    setshowdeleteambhermedicalrecorddialog(false);
+    setshowaddambherclinicmedicalrecord(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage('Ambher medical record deleted successfully');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error("Failed to delete Ambher medical record:", error.message);
+    
+    // Show error toast
+    setMedicalDocumentToastMessage('Failed to delete medical record. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  }
+};
+
 // Function to handle viewing/editing existing Bautista medical record
 const viewBautistaRecord = (record) => {
-  console.log('Viewing Bautista medical record:', record);
-  setselectedbautistarecord(record);
-  setshowaddbautistaclinicmedicalrecord(true);
+  console.log('=== viewBautistaRecord START ===');
+  console.log('Input record:', record);
+  console.log('Record type:', record.recordType);
+  
+  // Get current user's clinic
+  const currentUserClinic = staffclinic || ownerownedclinic || localStorage.getItem('staffclinic') || localStorage.getItem('ownerownedclinic');
+  console.log('Current user clinic:', currentUserClinic);
+  console.log('Record added by clinic:', record.addedbyclinic);
+  
+  // Check if current user's clinic can edit this record
+  const isReadOnly = record.addedbyclinic !== currentUserClinic;
+  console.log('Is Bautista form read-only:', isReadOnly);
+  
+  // Clear any Ambher modal state first
+  console.log('Clearing Ambher modal state...');
+  setshowaddambherclinicmedicalrecord(false);
+  setselectedambherrecord(null);
+  setisambherformreadonly(false);
+  
+  // Use setTimeout to ensure state updates are processed
+  setTimeout(() => {
+    console.log('Setting Bautista record and modal...');
+    setselectedbautistarecord(record);
+    setisbautistaformreadonly(isReadOnly);
+    setshowaddbautistaclinicmedicalrecord(true);
+    
+    console.log('=== viewBautistaRecord END ===');
+  }, 10); // Small delay to ensure state updates
 };
 
 // Function to generate next available case number
@@ -8734,6 +9185,13 @@ const openNewMedicalRecordForm = async () => {
   const nextCaseNumber = await generateNextCaseNumber();
   setgeneratedCaseNumber(nextCaseNumber);
   setselectedbautistarecord(null);
+  // Initialize case number validation state
+  setCaseNoValue(nextCaseNumber);
+  setCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
   setshowaddbautistaclinicmedicalrecord(true);
 };
 
@@ -8742,6 +9200,13 @@ const editBautistaRecord = (record) => {
   console.log('Editing Bautista medical record:', record);
   setselectedbautistarecord(record);
   setiseditingbautistarecord(true);
+  // Initialize case number validation state with existing record's case number
+  setCaseNoValue(record.patientmedicalrecordbautista?.caseNo || '');
+  setCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
   setshowaddbautistaclinicmedicalrecord(true);
 };
 
@@ -8906,15 +9371,674 @@ const updateBautistaMedicalRecord = async (e) => {
       }
     }
     
-    // Show success message
-    alert('Medical record updated successfully!');
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record updated successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
 
     // Refresh patient demographics in the background
     fetchDemographicsData(true);
 
   } catch (error) {
     console.error('Error updating Bautista medical record:', error);
-    alert('Error updating medical record: ' + error.message);
+    
+    // Show error toast
+    setBautistaRecordToastMessage('Error updating medical record: ' + error.message);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+  }
+};
+
+// Function to delete Bautista medical record
+const deletepatientBautistaMedicalRecord = async () => {
+  try {
+    if (!selectedbautistarecordtodelete || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Bautista medical record:', selectedbautistarecordtodelete._id);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+
+    const deleteUrl = `/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecordtodelete._id}`;
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to delete medical record');
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Reset states and close dialog
+    setselectedbautistarecordtodelete(null);
+    setshowdeletebautistamedicaldialog(false);
+
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record deleted successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+  } catch (error) {
+    console.error('Error deleting Bautista medical record:', error);
+    
+    // Show error toast
+    setBautistaRecordToastMessage('Error deleting medical record: ' + error.message);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+  }
+};
+
+//AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS
+//AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS
+
+// Show Ambher toast functions
+const showAmbherSuccessToast = (message) => {
+  setAmbherRecordToastMessage(message);
+  setAmbherRecordToastType('success');
+  setAmbherRecordToast(true);
+  setTimeout(() => {
+    setAmbherRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setAmbherRecordToastClosing(true);
+    setTimeout(() => {
+      setAmbherRecordToast(false);
+      setAmbherRecordToastClosing(false);
+      setAmbherRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+const showAmbherErrorToast = (message) => {
+  setAmbherRecordToastMessage(message);
+  setAmbherRecordToastType('error');
+  setAmbherRecordToast(true);
+  setTimeout(() => {
+    setAmbherRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setAmbherRecordToastClosing(true);
+    setTimeout(() => {
+      setAmbherRecordToast(false);
+      setAmbherRecordToastClosing(false);
+      setAmbherRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+// Validate Ambher case number
+const validateAmbherCaseNumber = async (caseNo) => {
+  if (!caseNo || caseNo.trim() === '') {
+    setAmbherCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // Check if it's the currently selected record's case number
+  if (selectedambherrecord && selectedambherrecord.ambheropticalcaseno === caseNo) {
+    setAmbherCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // Start validation
+  setAmbherCaseNoValidation({ isChecking: true, isValid: true, message: 'Checking...' });
+
+  try {
+    const response = await fetch(`/api/patientdemographics/validate-ambher-case-number/${encodeURIComponent(caseNo)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Validation request failed');
+    }
+
+    const result = await response.json();
+    
+    if (result.exists) {
+      setAmbherCaseNoValidation({ 
+        isChecking: false, 
+        isValid: false, 
+        message: 'Case number already exists' 
+      });
+    } else {
+      setAmbherCaseNoValidation({ 
+        isChecking: false, 
+        isValid: true, 
+        message: 'Case number is available' 
+      });
+    }
+  } catch (error) {
+    console.error('Error validating case number:', error);
+    setAmbherCaseNoValidation({ 
+      isChecking: false, 
+      isValid: true, 
+      message: 'Unable to verify case number' 
+    });
+  }
+};
+
+// Debounced Ambher case number validation
+const debouncedValidateAmbherCaseNumber = debounce((caseNo) => validateAmbherCaseNumber(caseNo), 500);
+
+// Handle Ambher case number input change
+const handleAmbherCaseNoChange = (e) => {
+  const value = e.target.value;
+  setAmbherCaseNoValue(value);
+  
+  if (!selectedambherrecord) { // Only validate for new records
+    debouncedValidateAmbherCaseNumber(value);
+  }
+};
+
+// Submit Ambher Medical Record Function
+const submitAmbherMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedpatientmedicalrecord) {
+      showAmbherErrorToast('Please select a patient first');
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Validate required fields
+    const caseNo = formData.get('ambherCaseNo');
+    const patientstatus = formData.get('patientstatus');
+    
+    // Check for required fields
+    if (!caseNo || caseNo.trim() === '') {
+      showAmbherErrorToast('Case Number is required');
+      return;
+    }
+    
+    if (!patientstatus || patientstatus.trim() === '') {
+      showAmbherErrorToast('Patient Status is required');
+      return;
+    }
+    
+    // Extract form data based on the provided prescription format
+    const medicalRecordData = {
+      ambheropticalcaseno: formData.get('ambherCaseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Prescription data based on the image format
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        pd: formData.get('refraction_pd'),
+        bc: formData.get('refraction_bc'),
+        dia: formData.get('refraction_dia'),
+        tint: formData.get('refraction_tint'),
+        type: formData.get('refraction_type')
+      },
+      
+      // Additional notes/remarks
+      remarks: formData.get('remarks'),
+      lensRecommendation: formData.get('lensRecommendation'),
+      
+      // Added by information
+      addedbyname: `${adminfirstname} ${adminmiddlename} ${adminlastname}`,
+      addedbyclinic: localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'Ambher Optical',
+      addedbytype: currentuserloggedin
+    };
+
+    console.log("Submitting Ambher medical record:", medicalRecordData);
+
+    const response = await fetch('/api/patientdemographics/ambher-medical-records', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        patientEmail: selectedpatientmedicalrecord.patientemail,
+        medicalRecord: medicalRecordData
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      
+      // Check for specific validation errors
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        // If there are validation errors, show the first one
+        throw new Error(errorData.errors[0].message || errorData.errors[0]);
+      } else if (errorData.message) {
+        throw new Error(errorData.message);
+      } else if (response.status === 400) {
+        throw new Error('Please check all required fields are filled correctly');
+      } else {
+        throw new Error('Failed to save medical record');
+      }
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record saved successfully:', result);
+
+    // Reset form and close modal
+    e.target.reset();
+    setshowaddambherclinicmedicalrecord(false);
+    setselectedambherrecord(null);
+    setgeneratedAmbherCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record with new Ambher medical record:', updatedPatientRecord);
+          console.log('New Ambher medical records count:', updatedPatientRecord.patientmedicalrecordambher?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record saved successfully!');
+
+    // Clear the generated case number after successful submission
+    setgeneratedAmbherCaseNumber('');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error submitting Ambher medical record:', error);
+    
+    // Parse error message for better user feedback
+    let errorMessage = 'Error saving medical record';
+    
+    if (error.message) {
+      if (error.message.includes('400')) {
+        errorMessage = 'Please check all required fields are filled correctly';
+      } else if (error.message.includes('validation')) {
+        errorMessage = 'Form validation failed - please check all required fields';
+      } else if (error.message.includes('required')) {
+        errorMessage = 'Please fill in all required fields';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid data provided - please check your inputs';
+      } else {
+        errorMessage = 'Error saving medical record: ' + error.message;
+      }
+    }
+    
+    // Show error toast
+    showAmbherErrorToast(errorMessage);
+  }
+};
+
+// Function to handle viewing/editing existing Ambher medical record
+const viewAmbherRecord = (record) => {
+  console.log('=== viewAmbherRecord START ===');
+  console.log('Input record:', record);
+  console.log('Record type:', record.recordType);
+  
+  // Get current user's clinic
+  const currentUserClinic = staffclinic || ownerownedclinic || localStorage.getItem('staffclinic') || localStorage.getItem('ownerownedclinic');
+  console.log('Current user clinic:', currentUserClinic);
+  console.log('Record added by clinic:', record.addedbyclinic);
+  
+  // Check if current user's clinic can edit this record
+  const isReadOnly = record.addedbyclinic !== currentUserClinic;
+  console.log('Is Ambher form read-only:', isReadOnly);
+  
+  // Clear any Bautista modal state first
+  console.log('Clearing Bautista modal state...');
+  setshowaddbautistaclinicmedicalrecord(false);
+  setselectedbautistarecord(null);
+  setisbautistaformreadonly(false);
+  
+  // Use setTimeout to ensure state updates are processed
+  setTimeout(() => {
+    // Ensure the record has the correct structure for Ambher form
+    const ambherRecord = {
+      ...record,
+      ambheropticalcaseno: record.ambheropticalcaseno || record.caseNo // Ensure case number is properly mapped
+    };
+    
+    console.log('Processed Ambher record:', ambherRecord);
+    console.log('Ambher case number:', ambherRecord.ambheropticalcaseno);
+    
+    setselectedambherrecord(ambherRecord);
+    setisambherformreadonly(isReadOnly);
+    
+    // Set Ambher case number validation state for editing
+    setAmbherCaseNoValue(ambherRecord.ambheropticalcaseno || ambherRecord.caseNo || '');
+    setAmbherCaseNoValidation({
+      isChecking: false,
+      isValid: true,
+      message: ''
+    });
+    
+    console.log('Setting Ambher modal to true...');
+    setshowaddambherclinicmedicalrecord(true);
+    
+    console.log('=== viewAmbherRecord END ===');
+  }, 10); // Small delay to ensure state updates
+};
+
+// Function to generate next available Ambher case number
+const generateNextAmbherCaseNumber = async () => {
+  try {
+    const response = await fetch('/api/patientdemographics/next-ambher-case-number', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate case number');
+    }
+
+    const result = await response.json();
+    return result.nextCaseNumber;
+  } catch (error) {
+    console.error('Error generating Ambher case number:', error);
+    // Fallback to timestamp-based case number (simple numeric format)
+    return Date.now().toString().slice(-6); // Use last 6 digits of timestamp
+  }
+};
+
+// Function to handle opening new Ambher medical record form
+const openNewAmbherMedicalRecordForm = async () => {
+  const nextCaseNumber = await generateNextAmbherCaseNumber();
+  setgeneratedAmbherCaseNumber(nextCaseNumber);
+  setselectedambherrecord(null);
+  // Initialize case number validation state
+  setAmbherCaseNoValue(nextCaseNumber);
+  setAmbherCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddambherclinicmedicalrecord(true);
+};
+
+// Function to edit existing Ambher medical record
+const editAmbherRecord = (record) => {
+  console.log('Editing Ambher medical record:', record);
+  setselectedambherrecord(record);
+  // Set case number value for editing
+  setAmbherCaseNoValue(record.patientmedicalrecordambher?.ambheropticalcaseno || '');
+  setAmbherCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddambherclinicmedicalrecord(true);
+};
+
+// Update Ambher Medical Record Function
+const updateAmbherMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedambherrecord || !selectedpatientmedicalrecord) {
+      showAmbherErrorToast('Missing record information');
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Extract form data (same structure as submitAmbherMedicalRecord)
+    const medicalRecordData = {
+      ambheropticalcaseno: formData.get('ambherCaseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Prescription data
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        pd: formData.get('refraction_pd'),
+        bc: formData.get('refraction_bc'),
+        dia: formData.get('refraction_dia'),
+        tint: formData.get('refraction_tint'),
+        type: formData.get('refraction_type')
+      },
+      
+      // Additional notes/remarks
+      remarks: formData.get('remarks'),
+      lensRecommendation: formData.get('lensRecommendation')
+    };
+
+    console.log("Updating Ambher medical record:", medicalRecordData);
+    console.log("Record ID:", selectedambherrecord._id);
+
+    const response = await fetch(`/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecord._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(medicalRecordData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update medical record');
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record updated successfully:', result);
+
+    // Reset states and close modal
+    setselectedambherrecord(null);
+    setshowaddambherclinicmedicalrecord(false);
+    setgeneratedAmbherCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after editing Ambher medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record updated successfully!');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error updating Ambher medical record:', error);
+    
+    // Show error toast
+    showAmbherErrorToast('Error updating medical record: ' + error.message);
+  }
+};
+
+// Function to delete Ambher medical record
+const deletepatientAmbherMedicalRecord = async () => {
+  try {
+    if (!selectedambherrecordtodelete || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Ambher medical record:', selectedambherrecordtodelete._id);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+
+    const deleteUrl = `/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecordtodelete._id}`;
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to delete medical record');
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record deleted successfully:', result);
+
+    // Close delete dialog
+    setshowdeleteambhermedicaldialog(false);
+    setselectedambherrecordtodelete(null);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Ambher medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record deleted successfully!');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error deleting Ambher medical record:', error);
+    
+    // Show error toast
+    showAmbherErrorToast('Error deleting medical record: ' + error.message);
   }
 };
 
@@ -18838,6 +19962,19 @@ useEffect(() => {
   
   <div id="patientmedicalrecordtabs" className="flex flex-col w-[72%]">
       <div className="flex gap-3 mb-4">
+
+
+       <div
+          onClick={() => showpatientmedicalrecordstable('patientmedicalrecord')}  
+          className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+            activepatientmedicalrecordstable === 'patientmedicalrecord' 
+              ? 'bg-sky-800 text-white shadow-md' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Patient Record
+        </div>
+
         <div 
           onClick={() => showpatientmedicalrecordstable('medicalrecordsconsultationtable')}  
           className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
@@ -18861,16 +19998,7 @@ useEffect(() => {
         </div>
 
 
-         <div
-          onClick={() => showpatientmedicalrecordstable('patientmedicalrecord')}  
-          className={`cursor-pointer flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-            activepatientmedicalrecordstable === 'patientmedicalrecord' 
-              ? 'bg-sky-800 text-white shadow-md' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Patient Record
-        </div>
+
         
         <div
           onClick={() => showpatientmedicalrecordstable('medicalrecordspastvisitstable')}  
@@ -19380,13 +20508,29 @@ return filteredDocuments
  { activepatientmedicalrecordstable === 'patientmedicalrecord' && (
 
   <div id='patientmedicalrecord' className="w-full flex-1 flex flex-col">  
-     <div 
-       onClick={openNewMedicalRecordForm}  
-       className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-     >
-       <i className="bx bx-file-plus text-lg"/>
-       <span>Add Bautista Eye Center Patient Record</span>
-     </div>
+
+     {/* Conditional buttons based on user's clinic - Admin excluded */}
+     {((currentuserloggedin === "Staff" && (localStorage.getItem('staffclinic') === "Bautista Eye Center" || staffclinic === "Bautista Eye Center")) ||
+       (currentuserloggedin === "Owner" && ownerownedclinic === "Bautista Eye Center")) && (
+       <div 
+         onClick={openNewMedicalRecordForm}  
+         className="cursor-pointer mb-4 py-3 px-4 bg-[#4A90E2] hover:bg-[#357ABD] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+       >
+         <i className="bx bx-file-plus text-lg"/>
+         <span>Add Bautista Eye Center Patient Record</span>
+       </div>
+     )}
+     
+     {((currentuserloggedin === "Staff" && (localStorage.getItem('staffclinic') === "Ambher Optical" || staffclinic === "Ambher Optical")) ||
+       (currentuserloggedin === "Owner" && ownerownedclinic === "Ambher Optical")) && (
+       <div 
+         onClick={openNewAmbherMedicalRecordForm}
+         className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+       >
+         <i className="bx bx-file-plus text-lg"/>
+         <span>Add Ambher Optical Patient Record</span>
+       </div>
+     )}
 
 
          <div id="searchdocumentstable" className="w-full h-[60px] flex justify-between rounded-3xl pl-5 pr-5">              
@@ -19458,19 +20602,52 @@ return filteredDocuments
         );
       }
 
-      const patientMedicalRecords = selectedpatientmedicalrecord?.patientmedicalrecordbautista || [];
+      const patientBautistaRecords = selectedpatientmedicalrecord?.patientmedicalrecordbautista || [];
+      const patientAmbherRecords = selectedpatientmedicalrecord?.patientmedicalrecordambher || [];
+      
+      // Debug logging to see what records are being received
+      console.log('=== MEDICAL RECORDS DEBUG ===');
+      console.log('selectedpatientmedicalrecord:', selectedpatientmedicalrecord);
+      console.log('patientBautistaRecords:', patientBautistaRecords);
+      console.log('patientAmbherRecords:', patientAmbherRecords);
+      console.log('Bautista count:', patientBautistaRecords.length);
+      console.log('Ambher count:', patientAmbherRecords.length);
+      
+      // Combine both types of records with a type identifier
+      const combinedMedicalRecords = [
+        ...patientBautistaRecords.map(record => ({ 
+          ...record, 
+          recordType: 'Bautista Eye Center',
+          caseNo: record.caseNo // Keep original case number field
+        })),
+        ...patientAmbherRecords.map(record => ({ 
+          ...record, 
+          recordType: 'Ambher Optical', 
+          caseNo: record.ambheropticalcaseno // Map Ambher case number to common field
+        }))
+      ];
+      
+      console.log('combinedMedicalRecords:', combinedMedicalRecords);
+      console.log('Combined total count:', combinedMedicalRecords.length);
 
-      if (patientMedicalRecords.length === 0) {
+      if (combinedMedicalRecords.length === 0) {
         return <div className="text-center text-gray-500 py-8">No medical records found</div>;
       }
 
-      return patientMedicalRecords
+      return combinedMedicalRecords
         .sort((a, b) => new Date(b.recordDate) - new Date(a.recordDate))
         .map((record, index) => (
           <div key={record._id || index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
             <div className="flex-1 px-3">
               <h3 className="font-medium text-gray-800 text-base truncate w-70">
-                Case #{record.caseNo} - {record.patientfirstname} {record.patientlastname}
+                <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                  record.recordType === 'Bautista Eye Center' 
+                    ? 'bg-blue-100 text-blue-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {record.recordType === 'Bautista Eye Center' ? 'BEC' : 'AO'}
+                </span>
+               Case No. {record.caseNo} - {record.patientfirstname} {record.patientlastname}
               </h3>
               <p className="text-xs text-gray-500">Added by {record.addedbyname}</p>
             </div>
@@ -19488,53 +20665,38 @@ return filteredDocuments
 
    
 
-            <div className="px-3 flex gap-2">
-              <button 
-                id="viewfullpatientbautistarecord"
-                onClick={() => {
-                  viewBautistaRecord(record);
-                }}
-                style={{
-                  backgroundColor: "#1f2937",
-                  color: "white",
-                  padding: "8px 16px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
-              >
-                <i className="bx bx-show text-lg"></i>
-              </button>
-
-              <button 
-                onClick={() => {
-                  // Add functionality to delete record
-                  console.log('Delete record:', record._id);
-                }}
-                style={{
-                  backgroundColor: "#dc2626",
-                  color: "white",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px"
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#b91c1c"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#dc2626"}
-              >
-                <i className="bx bxs-trash text-sm"/>
-              </button>
+             <div className="px-3 flex gap-2">
+               <button 
+                 id={record.recordType === 'Bautista Eye Center' ? "viewfullpatientbautistarecord" : "viewfullpatientambherrecord"}
+                 onClick={() => {
+                   console.log('Clicked view button for record:', record);
+                   console.log('Record type:', record.recordType);
+                   
+                   if (record.recordType === 'Bautista Eye Center') {
+                     console.log('Calling viewBautistaRecord');
+                     viewBautistaRecord(record);
+                   } else {
+                     console.log('Calling viewAmbherRecord');
+                     viewAmbherRecord(record);
+                   }
+                 }}
+                 style={{
+                   backgroundColor: "#1f2937",
+                   color: "white",
+                   padding: "8px 16px",
+                   borderRadius: "8px",
+                   fontSize: "14px",
+                   fontWeight: "500",
+                   border: "none",
+                   cursor: "pointer",
+                   transition: "all 0.2s ease",
+                 }}
+                 onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
+                 onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
+               >
+                 <i className="bx bx-show text-lg"></i>
+               </button>              {/* Only show delete button if current user's clinic matches the record's clinic */}
+              
             </div>
           </div>
         ));
@@ -20081,6 +21243,94 @@ Are you sure you want to delete this clinic record?
 </div>
 )}
 
+{/* Delete Bautista Medical Record Modal */}
+{showdeletebautistamedicaldialog && (
+<div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Medical Record</h2>
+</div>
+</div>
+<div 
+onClick={() => {
+  setshowdeletebautistamedicaldialog(false); 
+  setselectedbautistarecordtodelete(null);
+}} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
+
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this medical record?
+</p>
+
+{selectedbautistarecordtodelete && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Case No: {selectedbautistarecordtodelete.caseNo}</p>
+<p className="text-sm text-gray-500 mt-1">Patient Status: {selectedbautistarecordtodelete.patientstatus}</p>
+<p className="text-sm text-gray-500">Record Date: {selectedbautistarecordtodelete.recordDate ? new Date(selectedbautistarecordtodelete.recordDate).toLocaleDateString() : 'N/A'}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => {
+    setshowdeletebautistamedicaldialog(false);
+    setselectedbautistarecordtodelete(null);
+  }}
+  style={{
+    flex: 1,
+    paddingTop: "12px",
+    paddingBottom: "12px",
+    paddingLeft: "24px",
+    paddingRight: "24px",
+    backgroundColor: "#f3f4f6", // gray-100
+    color: "#374151", // gray-700
+    borderRadius: "0.75rem", // rounded-xl
+    fontWeight: 500,
+    transition: "background-color 0.2s",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")} // hover:bg-gray-200
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={deleteBautistaMedicalRecord}
+  style={{
+    flex: 1,
+    paddingTop: "12px",
+    paddingBottom: "12px",
+    paddingLeft: "24px",
+    paddingRight: "24px",
+    backgroundColor: "#ef4444", // red-500
+    color: "white",
+    borderRadius: "0.75rem", // rounded-xl
+    fontWeight: 500,
+    transition: "background-color 0.2s",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")} // hover:bg-red-600
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Record
+</button>
+
+</div>
+</div>
+</div>
+</div>
+)}
 
 
 {/* Medical Documents Upload Modal */}
@@ -20375,6 +21625,161 @@ Are you sure you want to delete this medical document?
 </div>
 )}
 
+{/* Delete Bautista Medical Record Modal */}
+{showdeletebautistamedicalrecorddialog && (
+<div className="flex justify-center items-center z-99 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Patient Record</h2>
+
+</div>
+</div>
+<div 
+onClick={() => setshowdeletebautistamedicalrecorddialog(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
+
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this medical record?
+</p>
+
+{selectedbautistarecord && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Case No: {selectedbautistarecord.caseNo}</p>
+<p className="text-sm text-gray-500">Record Date: {formatappointmatedates(selectedbautistarecord.recordDate)}</p>
+<p className="text-sm text-gray-500">Added by: {selectedbautistarecord.addedbyname}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeletebautistamedicalrecorddialog(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px", // py-3 px-6
+    backgroundColor: "#f3f4f6", // gray-100
+    color: "#374151", // gray-700
+    borderRadius: "12px", // rounded-xl
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")} // hover:bg-gray-200
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  id="deletebautistapatientclinicmedicalrecord"
+  onClick={deleteBautistaMedicalRecord}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444", // red-500
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")} // hover:bg-red-600
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Record
+</button>
+</div>
+</div>
+</div>
+</div>
+)}
+
+{/* Delete Ambher Medical Record Modal */}
+{showdeleteambhermedicalrecorddialog && (
+<div className="flex justify-center items-center z-99 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+<div className="flex justify-between items-center w-full mb-6">
+<div className="flex items-center space-x-4">
+<div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+<i className="bx bxs-trash text-white text-xl"></i>
+</div>
+<div>
+<h2 className="text-2xl font-bold text-gray-900">Delete Patient Record</h2>
+
+</div>
+</div>
+<div 
+onClick={() => setshowdeleteambhermedicalrecorddialog(false)} 
+className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+>
+<i className="bx bx-x text-gray-600 text-xl"/>
+</div>
+</div>
+
+<div className="text-center">
+<p className="text-gray-700 mb-6">
+Are you sure you want to delete this medical record?
+</p>
+
+{selectedambherrecord && (
+<div className="bg-gray-50 p-4 rounded-xl mb-6">
+<p className="font-medium text-gray-800">Case No: {selectedambherrecord.ambheropticalcaseno}</p>
+<p className="text-sm text-gray-500">Record Date: {formatappointmatedates(selectedambherrecord.recordDate)}</p>
+<p className="text-sm text-gray-500">Added by: {selectedambherrecord.addedbyname}</p>
+</div>
+)}
+
+<div className="flex gap-3">
+<button
+  onClick={() => setshowdeleteambhermedicalrecorddialog(false)}
+  style={{
+    flex: 1,
+    padding: "12px 24px", // py-3 px-6
+    backgroundColor: "#f3f4f6", // gray-100
+    color: "#374151", // gray-700
+    borderRadius: "12px", // rounded-xl
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")} // hover:bg-gray-200
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+>
+  Cancel
+</button>
+
+<button
+  onClick={deleteAmbherMedicalRecord}
+  style={{
+    flex: 1,
+    padding: "12px 24px",
+    backgroundColor: "#ef4444", // red-500
+    color: "#ffffff",
+    borderRadius: "12px",
+    fontWeight: 500,
+    transition: "background-color 0.2s ease-in-out",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")} // hover:bg-red-600
+  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+>
+  Delete Record
+</button>
+</div>
+</div>
+</div>
+</div>
+)}
+
 
 
 {/* Medical Document Upload Toast Notification */}
@@ -20389,6 +21794,38 @@ Are you sure you want to delete this medical document?
       {medicalDocumentToastMessage}
 
       <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${medicalDocumentIsClicked ? 'bg-green-500' : 'bg-red-500'}`} style={{width: medicalDocumentProgressWidth, transition: 'width 4s linear'}}/>
+    </div>
+  </div>  
+)}
+
+{/* Bautista Medical Record Toast Notification */}
+{bautistaRecordToast && (
+  <div className={`${medicalDocumentToast || bautistaRecordToast ? 'bottom-4' : 'bottom-4'} right-8 z-101 transform fixed`}>
+    <div key={bautistaRecordToastType} className={`${bautistaRecordToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+      {bautistaRecordToastType === 'success' ? (          
+        <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+      ) : (
+        <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+      )}
+      {bautistaRecordToastMessage}
+
+      <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${bautistaRecordToastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`} style={{width: bautistaRecordProgressWidth, transition: 'width 4s linear'}}/>
+    </div>
+  </div>  
+)}
+
+{/* Ambher Medical Record Toast Notification */}
+{ambherRecordToast && (
+  <div className={`${medicalDocumentToast || bautistaRecordToast || ambherRecordToast ? 'bottom-4' : 'bottom-4'} right-8 z-101 transform fixed`}>
+    <div key={ambherRecordToastType} className={`${ambherRecordToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s] motion-ease-spring-smooth' : 'motion-preset-slide-left'} flex items-center bg-white rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`}>
+      {ambherRecordToastType === 'success' ? (          
+        <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle"></i></span>
+      ) : (
+        <span className="text-red-800 font-semibold text-[20px]"><i className="mr-2 bx bx-x-circle"></i></span>
+      )}
+      {ambherRecordToastMessage}
+
+      <div className={`rounded-b-2xl absolute bottom-0 left-0 h-1 ${ambherRecordToastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`} style={{width: ambherRecordProgressWidth, transition: 'width 4s linear'}}/>
     </div>
   </div>  
 )}
@@ -20435,6 +21872,13 @@ Are you sure you want to delete this medical document?
       setshowaddbautistaclinicmedicalrecord(false);
       setselectedbautistarecord(null);
       setgeneratedCaseNumber('');
+      // Reset case number validation state
+      setCaseNoValue('');
+      setCaseNoValidation({
+        isChecking: false,
+        isValid: true,
+        message: ''
+      });
     }} 
     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
   >
@@ -20442,7 +21886,7 @@ Are you sure you want to delete this medical document?
   </div>
 </div>
 
-<form onSubmit={selectedbautistarecord ? updateBautistaMedicalRecord : submitBautistaMedicalRecord} className="space-y-8">
+<form id="bautista-medical-record-form" onSubmit={selectedbautistarecord ? updateBautistaMedicalRecord : submitBautistaMedicalRecord} className="space-y-8">
   
   {/* PATIENT INFORMATION SECTION */}
   <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
@@ -20455,12 +21899,43 @@ Are you sure you want to delete this medical document?
         <input 
           type="text" 
           name="caseNo"
-          defaultValue={selectedbautistarecord?.caseNo || generatedCaseNumber}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${selectedbautistarecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+          value={selectedbautistarecord?.caseNo || caseNoValue || generatedCaseNumber}
+          onChange={handleCaseNoChange}
+          className={`w-full px-4 py-3 border rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 transition-colors ${
+            selectedbautistarecord 
+              ? 'border-gray-300 bg-gray-100 cursor-not-allowed focus:ring-blue-500 focus:border-blue-500' 
+              : caseNoValidation.isValid 
+                ? 'border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500' 
+                : 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
+          }`}
           placeholder="Auto-generated case number..."
-          readOnly={selectedbautistarecord ? true : false}
+          readOnly={selectedbautistarecord || isbautistaformreadonly ? true : false}
           required
         />
+        
+        {/* Validation message */}
+        {!selectedbautistarecord && caseNoValue && (
+          <div className={`mt-1 text-xs ${
+            caseNoValidation.isChecking 
+              ? 'text-blue-500' 
+              : caseNoValidation.isValid 
+                ? 'text-green-600' 
+                : 'text-red-600'
+          }`}>
+            {caseNoValidation.isChecking && (
+              <span className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Checking...
+              </span>
+            )}
+            {!caseNoValidation.isChecking && caseNoValidation.message && (
+              <span>{caseNoValidation.message}</span>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Record Date */}
@@ -20480,7 +21955,7 @@ Are you sure you want to delete this medical document?
         <select 
           name="patientstatus" 
           defaultValue={selectedbautistarecord?.patientstatus || ''}
-          disabled={selectedbautistarecord ? true : false}
+          disabled={selectedbautistarecord || isbautistaformreadonly ? true : false}
           className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${selectedbautistarecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
         >
           <option value="">Select status...</option>
@@ -21205,25 +22680,577 @@ Are you sure you want to delete this medical document?
   </div>
 
   {/* Submit Button */}
-  <div className="flex justify-end space-x-4 pt-6">
-    <button
-      type="button"
-      onClick={() => {
-        setshowaddbautistaclinicmedicalrecord(false);
-        setselectedbautistarecord(null);
-        setgeneratedCaseNumber('');
-      }}
-      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors duration-200"
-    >
-      Cancel
-    </button>
+  <div id="bautistapatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
+<button
+  type="button"
+  onClick={() => {
+    setshowaddbautistaclinicmedicalrecord(false);
+    setselectedbautistarecord(null);
+    setisbautistaformreadonly(false);
+    setgeneratedCaseNumber('');
+    // Reset case number validation state
+    setCaseNoValue('');
+    setCaseNoValidation({
+      isChecking: false,
+      isValid: true,
+      message: ''
+    });
+  }}
+  style={{
+    padding: "12px 24px",
+    backgroundColor: "#d1d5db", // gray-300
+    color: "#374151", // gray-700
+    borderRadius: "0.5rem", // rounded-lg
+    fontWeight: 600,
+    border: "none",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease-in-out"
+  }}
+  onMouseEnter={(e) => (e.target.style.backgroundColor = "#9ca3af")} 
+  onMouseLeave={(e) => (e.target.style.backgroundColor = "#d1d5db")} 
+  onMouseDown={(e) => (e.target.style.backgroundColor = "#6b7280")} 
+  onMouseUp={(e) => (e.target.style.backgroundColor = "#9ca3af")}
+>
+  Cancel
+</button>
+
+    {/* Delete Button - Only show for existing records and if user can edit */}
+    {selectedbautistarecord && !isbautistaformreadonly && (
+      <button
+        type="button"
+        onClick={() => setshowdeletebautistamedicalrecorddialog(true)}
+        style={{
+          padding: "12px 24px",
+          backgroundColor: "#ef4444", // red-500
+          color: "#ffffff",
+          borderRadius: "0.5rem",
+          fontWeight: 600,
+          border: "none",
+          cursor: "pointer",
+          transition: "background-color 0.2s ease-in-out"
+        }}
+        onMouseEnter={(e) => (e.target.style.backgroundColor = "#dc2626")} // red-600
+        onMouseLeave={(e) => (e.target.style.backgroundColor = "#ef4444")}
+        onMouseDown={(e) => (e.target.style.backgroundColor = "#b91c1c")} // red-700
+        onMouseUp={(e) => (e.target.style.backgroundColor = "#dc2626")}
+      >
+        Delete Record
+      </button>
+    )}
     
-    <button
-      type="submit"
-      className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
-    >
-      {selectedbautistarecord ? 'Update Medical Record' : 'Save Medical Record'}
-    </button>
+    {!isbautistaformreadonly && (
+      <button
+        type="submit"
+        className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
+      >
+        {selectedbautistarecord ? 'Update Medical Record' : 'Save Medical Record'}
+      </button>
+    )}
+  </div>
+
+</form>
+
+</div>
+</div>)}
+
+{/* Ambher Optical Medical Record Form Modal */}
+{showaddambherclinicmedicalrecord && (
+<div id="ambherpatientrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[1200px] h-auto max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+<div className="flex justify-between items-center w-full h-[60px] mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center">
+            <img src={ambherlogo} alt="Ambher Optical Logo" className="w-9 h-9" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Ambher Optical
+            </h2>
+            <p className="text-sm text-gray-500">
+              {selectedambherrecord ? 'Medical Record Details' : 'New Medical Record'}
+            </p>
+          </div>
+        </div>
+  <div 
+    onClick={() => {
+      setshowaddambherclinicmedicalrecord(false);
+      setselectedambherrecord(null);
+      setgeneratedAmbherCaseNumber('');
+      // Reset case number validation state
+      setAmbherCaseNoValue('');
+      setAmbherCaseNoValidation({
+        isChecking: false,
+        isValid: true,
+        message: ''
+      });
+    }} 
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+  >
+    <i className="bx bx-x text-gray-600 text-xl"></i>
+  </div>
+</div>
+
+<form id="ambher-medical-record-form" onSubmit={selectedambherrecord ? updateAmbherMedicalRecord : submitAmbherMedicalRecord} className="space-y-8">
+  
+  {/* PATIENT INFORMATION SECTION */}
+  <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-green-300">PATIENT INFORMATION</h3>
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Case No. */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Case No. <span className="text-red-500">*</span></label>
+        <input 
+          type="text" 
+          name="ambherCaseNo"
+          value={selectedambherrecord?.ambheropticalcaseno || ambherCaseNoValue || generatedAmbherCaseNumber}
+          onChange={handleAmbherCaseNoChange}
+          className={`w-full px-4 py-3 border rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 transition-colors ${
+            selectedambherrecord 
+              ? 'border-gray-300 bg-gray-100 cursor-not-allowed focus:ring-green-500 focus:border-green-500' 
+              : ambherCaseNoValidation.isValid 
+                ? 'border-gray-300 bg-white focus:ring-green-500 focus:border-green-500' 
+                : 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
+          }`}
+          placeholder="Auto-generated case number..."
+          readOnly={selectedambherrecord || isambherformreadonly ? true : false}
+          required
+        />
+        
+        {/* Validation message */}
+        {!selectedambherrecord && ambherCaseNoValue && (
+          <div className={`mt-1 text-xs ${
+            ambherCaseNoValidation.isChecking 
+              ? 'text-blue-500' 
+              : ambherCaseNoValidation.isValid 
+                ? 'text-green-600' 
+                : 'text-red-600'
+          }`}>
+            {ambherCaseNoValidation.isChecking && (
+              <span className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Checking...
+              </span>
+            )}
+            {!ambherCaseNoValidation.isChecking && ambherCaseNoValidation.message && (
+              <span>{ambherCaseNoValidation.message}</span>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Record Date */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Record Date</label>
+        <input 
+          type="date" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-not-allowed" 
+          value={selectedambherrecord ? new Date(selectedambherrecord.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+          readOnly
+        />
+      </div>
+      
+      {/* Patient Status */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Status</label>
+        <select 
+          name="patientstatus" 
+          defaultValue={selectedambherrecord?.patientstatus || ''}
+          disabled={selectedambherrecord || isambherformreadonly ? true : false}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${selectedambherrecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+        >
+          <option value="">Select status...</option>
+          <option value="New">New</option>
+          <option value="Follow-up">Follow-up</option>
+          <option value="Emergency">Emergency</option>
+          <option value="Consultation">Consultation</option>
+        </select>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      {/* Patient Last Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientlastname || ''}
+          readOnly
+          placeholder="Patient last name"
+        />
+      </div>
+      
+      {/* Patient First Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientfirstname || ''}
+          readOnly
+          placeholder="Patient first name"
+        />
+      </div>
+      
+      {/* Patient Middle Name - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Middle Name</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientmiddlename || ''}
+          readOnly
+          placeholder="Patient middle name"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+      {/* Patient Age - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Age</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientage || ''}
+          readOnly
+          placeholder="Age"
+        />
+      </div>
+      
+      {/* Patient Gender - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientgender || ''}
+          readOnly
+          placeholder="Gender"
+        />
+      </div>
+      
+      {/* Patient Birthdate - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Birthdate</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientbirthdate ? formatappointmatedates(selectedpatientmedicalrecord.patientbirthdate) : ''}
+          readOnly
+          placeholder="Birthdate"
+        />
+      </div>
+      
+      {/* Patient Contact Number - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Number</label>
+        <input 
+          type="text" 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed" 
+          value={selectedpatientmedicalrecord?.patientcontactnumber || ''}
+          readOnly
+          placeholder="Contact number"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 gap-4 mt-4">
+      {/* Patient Home Address - Readonly */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Home Address</label>
+        <textarea 
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed resize-none" 
+          rows="2"
+          value={selectedpatientmedicalrecord?.patienthomeaddress || ''}
+          readOnly
+          placeholder="Patient home address"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      {/* PhilHealth Category - Editable */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">PhilHealth Category</label>
+        <select 
+          name="patientphilhealthcategory" 
+          defaultValue={selectedambherrecord?.patientphilhealthcategory || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+        >
+          <option value="">Select PhilHealth category...</option>
+          <option value="Employed/Formal Economy">Employed/Formal Economy</option>
+          <option value="Indigent/Informal Economy">Indigent/Informal Economy</option>
+          <option value="Sponsored">Sponsored</option>
+          <option value="Senior Citizen">Senior Citizen</option>
+          <option value="PWD">PWD (Person with Disability)</option>
+          <option value="Lifetime Member">Lifetime Member</option>
+          <option value="OFW">OFW (Overseas Filipino Worker)</option>
+          <option value="Not Applicable">Not Applicable</option>
+        </select>
+      </div>
+      
+      {/* HMO - Editable */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">HMO</label>
+        <input 
+          type="text" 
+          name="hmo"
+          defaultValue={selectedambherrecord?.hmo || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+          placeholder="Enter HMO provider (if applicable)..."
+        />
+      </div>
+    </div>
+  </div>
+  
+  {/* REFRACTION SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">REFRACTION</h3>
+    
+    {/* Refraction Table */}
+    <div className="mb-6">
+      <div className="overflow-x-auto">
+        <table className="w-full border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"></th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">SPH</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">CYL</th>
+              <th className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">AXIS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OD (Right)</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_od_sphere" 
+                  defaultValue={selectedambherrecord?.refraction?.od?.sphere || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_od_cylinder" 
+                  defaultValue={selectedambherrecord?.refraction?.od?.cylinder || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_od_axis" 
+                  defaultValue={selectedambherrecord?.refraction?.od?.axis || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">OS (Left)</td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_os_sphere" 
+                  defaultValue={selectedambherrecord?.refraction?.os?.sphere || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_os_cylinder" 
+                  defaultValue={selectedambherrecord?.refraction?.os?.cylinder || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+              <td className="border border-gray-300 px-3 py-2">
+                <input 
+                  type="text" 
+                  name="refraction_os_axis" 
+                  defaultValue={selectedambherrecord?.refraction?.os?.axis || ''}
+                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  maxLength="10" 
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Additional Refraction Fields */}
+      <div className="grid grid-cols-4 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">PD</label>
+          <input 
+            type="text" 
+            name="refraction_pd" 
+            defaultValue={selectedambherrecord?.refraction?.pd || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="10" 
+            placeholder="e.g., 64"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">BC</label>
+          <input 
+            type="text" 
+            name="refraction_bc" 
+            defaultValue={selectedambherrecord?.refraction?.bc || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="10" 
+            placeholder="Base curve"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">DIA</label>
+          <input 
+            type="text" 
+            name="refraction_dia" 
+            defaultValue={selectedambherrecord?.refraction?.dia || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="10" 
+            placeholder="Diameter"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">TINT</label>
+          <input 
+            type="text" 
+            name="refraction_tint" 
+            defaultValue={selectedambherrecord?.refraction?.tint || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="20" 
+            placeholder="Tint specification"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">TYPE</label>
+          <input 
+            type="text" 
+            name="refraction_type" 
+            defaultValue={selectedambherrecord?.refraction?.type || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            maxLength="50" 
+            placeholder="Lens type (e.g., Single Vision, Progressive, etc.)"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* REMARKS & LENS RECOMMENDATION SECTION */}
+  <div className="bg-gray-50 p-6 rounded-xl">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">REMARKS & LENS RECOMMENDATION</h3>
+    
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Remarks</label>
+        <textarea 
+          name="remarks"
+          defaultValue={selectedambherrecord?.remarks || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="3"
+          maxLength="500"
+          placeholder="Additional remarks or notes..."
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Lens Recommendation</label>
+        <textarea 
+          name="lensRecommendation"
+          defaultValue={selectedambherrecord?.lensRecommendation || ''}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          rows="3"
+          maxLength="500"
+          placeholder="Recommended lens specifications (e.g., SV / Anti-rad)"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Submit Button */}
+  <div id="ambherpatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
+<button
+  type="button"
+  onClick={() => {
+    setshowaddambherclinicmedicalrecord(false);
+    setselectedambherrecord(null);
+    setisambherformreadonly(false);
+    setgeneratedAmbherCaseNumber('');
+    // Reset case number validation state
+    setAmbherCaseNoValue('');
+    setAmbherCaseNoValidation({
+      isChecking: false,
+      isValid: true,
+      message: ''
+    });
+  }}
+  style={{
+    padding: "12px 24px",
+    backgroundColor: "#d1d5db", // gray-300
+    color: "#374151", // gray-700
+    borderRadius: "0.5rem", // rounded-lg
+    fontWeight: 600,
+    border: "none",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease-in-out"
+  }}
+  onMouseEnter={(e) => (e.target.style.backgroundColor = "#9ca3af")} 
+  onMouseLeave={(e) => (e.target.style.backgroundColor = "#d1d5db")} 
+  onMouseDown={(e) => (e.target.style.backgroundColor = "#6b7280")} 
+  onMouseUp={(e) => (e.target.style.backgroundColor = "#9ca3af")} 
+>
+  Cancel
+</button>
+
+    {/* Delete Button - Only show for existing records and if user can edit */}
+    {selectedambherrecord && !isambherformreadonly && (
+      <button
+        type="button"
+        onClick={() => setshowdeleteambhermedicalrecorddialog(true)}
+        style={{
+          padding: "12px 24px",
+          backgroundColor: "#ef4444", // red-500
+          color: "#ffffff",
+          borderRadius: "0.5rem",
+          fontWeight: 600,
+          border: "none",
+          cursor: "pointer",
+          transition: "background-color 0.2s ease-in-out"
+        }}
+        onMouseEnter={(e) => (e.target.style.backgroundColor = "#dc2626")} // red-600
+        onMouseLeave={(e) => (e.target.style.backgroundColor = "#ef4444")}
+        onMouseDown={(e) => (e.target.style.backgroundColor = "#b91c1c")} // red-700
+        onMouseUp={(e) => (e.target.style.backgroundColor = "#dc2626")}
+      >
+        Delete Record
+      </button>
+    )}
+    
+    {!isambherformreadonly && (
+      <button
+        type="submit"
+        className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
+      >
+        {selectedambherrecord ? 'Update Medical Record' : 'Save Medical Record'}
+      </button>
+    )}
   </div>
 
 </form>

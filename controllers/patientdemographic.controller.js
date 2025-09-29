@@ -210,7 +210,7 @@
       const demographic = await Patientdemographic.findOne({
         patientemail: req.patient.email
       })
-      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista createdAt updatedAt')
+      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista patientmedicalrecordambher createdAt updatedAt')
       .lean(); // Returns plain JavaScript objects for better performance
 
       if(!demographic) return res.status(404).json({message: "No patient demographic data found"});
@@ -270,7 +270,7 @@
       const patientdemo = await Patientdemographic.findOne({
         patientemail: patientemail
       })
-      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista createdAt updatedAt')
+      .select('patientdemographicId patientemail patientfirstname patientmiddlename patientlastname patientage patientbirthdate patientgender patientcontactnumber patienthomeaddress patientemergencycontactname patientemergencycontactnumber patientprofilepicture patientmedicaldocuments patientmedicalrecordbautista patientmedicalrecordambher createdAt updatedAt')
       .lean(); // Returns plain JavaScript objects for better performance
 
       if(!patientdemo){
@@ -1002,6 +1002,321 @@
       
     } catch (error) {
       console.error("Error generating next case number:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Check if case number exists
+  export const checkCaseNumberExists = async (req, res) => {
+    try {
+      const { caseNumber } = req.params;
+      
+      // Search for any patient with a medical record containing this case number
+      const existingRecord = await Patientdemographic.findOne({
+        "patientmedicalrecordbautista.caseNo": caseNumber
+      }).lean();
+      
+      res.status(200).json({
+        exists: !!existingRecord,
+        caseNumber: caseNumber
+      });
+      
+    } catch (error) {
+      console.error("Error checking case number:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // AMBHER OPTICAL MEDICAL RECORD CONTROLLERS
+  // AMBHER OPTICAL MEDICAL RECORD CONTROLLERS
+  // AMBHER OPTICAL MEDICAL RECORD CONTROLLERS
+  
+  // Add Ambher Medical Record Controller
+  export const addAmbherMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, medicalRecord } = req.body;
+  
+      if (!patientEmail || !medicalRecord) {
+        return res.status(400).json({ 
+          message: "Patient email and medical record data are required" 
+        });
+      }
+  
+      // Find the patient demographic record
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      // Auto-populate patient information from demographic data
+      const medicalRecordWithPatientInfo = {
+        ...medicalRecord,
+        patientlastname: patientDemo.patientlastname,
+        patientfirstname: patientDemo.patientfirstname,
+        patientmiddlename: patientDemo.patientmiddlename,
+        patientage: patientDemo.patientage,
+        patientgender: patientDemo.patientgender,
+        patienthomeaddress: patientDemo.patienthomeaddress,
+        patientbirthdate: patientDemo.patientbirthdate,
+        patientcontactnumber: patientDemo.patientcontactnumber,
+        recordDate: new Date()
+      };
+  
+      // Add the medical record to the patient's Ambher medical records array
+      patientDemo.patientmedicalrecordambher.push(medicalRecordWithPatientInfo);
+  
+      // Save the updated patient demographic record
+      const savedPatientDemo = await patientDemo.save();
+  
+      res.status(201).json({
+        message: "Ambher medical record added successfully",
+        patientDemographic: savedPatientDemo,
+        newMedicalRecord: medicalRecordWithPatientInfo
+      });
+  
+    } catch (error) {
+      console.error("Error adding Ambher medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Get Ambher Medical Records Controller
+  export const getAmbherMedicalRecords = async (req, res) => {
+    try {
+      const { patientEmail } = req.params;
+  
+      if (!patientEmail) {
+        return res.status(400).json({ 
+          message: "Patient email is required" 
+        });
+      }
+  
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      }).select('patientmedicalrecordambher patientlastname patientfirstname');
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      res.status(200).json({
+        message: "Ambher medical records retrieved successfully",
+        patientName: `${patientDemo.patientfirstname} ${patientDemo.patientlastname}`,
+        medicalRecords: patientDemo.patientmedicalrecordambher || []
+      });
+  
+    } catch (error) {
+      console.error("Error retrieving Ambher medical records:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Delete Ambher Medical Record Controller
+  export const deleteAmbherMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, recordId } = req.params;
+  
+      if (!patientEmail || !recordId) {
+        return res.status(400).json({ 
+          message: "Patient email and record ID are required" 
+        });
+      }
+  
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      // Find and remove the medical record
+      const recordIndex = patientDemo.patientmedicalrecordambher.findIndex(
+        record => record._id.toString() === recordId
+      );
+  
+      if (recordIndex === -1) {
+        return res.status(404).json({ 
+          message: "Medical record not found" 
+        });
+      }
+  
+      patientDemo.patientmedicalrecordambher.splice(recordIndex, 1);
+      
+      const savedPatientDemo = await patientDemo.save();
+  
+      res.status(200).json({
+        message: "Ambher medical record deleted successfully",
+        patientDemographic: savedPatientDemo
+      });
+  
+    } catch (error) {
+      console.error("Error deleting Ambher medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Update Ambher Medical Record Controller
+  export const updateAmbherMedicalRecord = async (req, res) => {
+    try {
+      const { patientEmail, recordId } = req.params;
+      const updatedData = req.body;
+  
+      if (!patientEmail || !recordId) {
+        return res.status(400).json({ 
+          message: "Patient email and record ID are required" 
+        });
+      }
+  
+      const patientDemo = await Patientdemographic.findOne({ 
+        patientemail: patientEmail 
+      });
+  
+      if (!patientDemo) {
+        return res.status(404).json({ 
+          message: "Patient demographic record not found" 
+        });
+      }
+  
+      // Find the medical record to update
+      const recordIndex = patientDemo.patientmedicalrecordambher.findIndex(
+        record => record._id.toString() === recordId
+      );
+  
+      if (recordIndex === -1) {
+        return res.status(404).json({ 
+          message: "Medical record not found" 
+        });
+      }
+  
+      // Update the medical record while preserving patient info and metadata
+      const existingRecord = patientDemo.patientmedicalrecordambher[recordIndex];
+      patientDemo.patientmedicalrecordambher[recordIndex] = {
+        ...existingRecord.toObject(),
+        ...updatedData,
+        // Preserve original metadata
+        _id: existingRecord._id,
+        recordDate: existingRecord.recordDate,
+        patientlastname: existingRecord.patientlastname,
+        patientfirstname: existingRecord.patientfirstname,
+        patientmiddlename: existingRecord.patientmiddlename,
+        patientage: existingRecord.patientage,
+        patientgender: existingRecord.patientgender,
+        patienthomeaddress: existingRecord.patienthomeaddress,
+        patientbirthdate: existingRecord.patientbirthdate,
+        patientcontactnumber: existingRecord.patientcontactnumber,
+        addedbyname: existingRecord.addedbyname,
+        addedbyclinic: existingRecord.addedbyclinic,
+        addedbytype: existingRecord.addedbytype,
+        addedbydate: existingRecord.addedbydate
+      };
+  
+      const savedPatientDemo = await patientDemo.save();
+  
+      res.status(200).json({
+        message: "Ambher medical record updated successfully",
+        patientDemographic: savedPatientDemo,
+        updatedMedicalRecord: patientDemo.patientmedicalrecordambher[recordIndex]
+      });
+  
+    } catch (error) {
+      console.error("Error updating Ambher medical record:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Generate next available Ambher case number
+  export const getNextAmbherCaseNumber = async (req, res) => {
+    try {
+      // Get all existing case numbers from all patients
+      const allRecords = await Patientdemographic.find({
+        "patientmedicalrecordambher.ambheropticalcaseno": { $exists: true }
+      }, {
+        "patientmedicalrecordambher.ambheropticalcaseno": 1
+      });
+      
+      // Collect all case numbers in a Set for efficient checking
+      const existingCaseNumbers = new Set();
+      allRecords.forEach(record => {
+        if (record.patientmedicalrecordambher) {
+          record.patientmedicalrecordambher.forEach(medRecord => {
+            if (medRecord.ambheropticalcaseno) {
+              // Convert case number to integer (e.g., "1", "2", "AMB-001" -> 1)
+              const caseNum = medRecord.ambheropticalcaseno.toString().replace(/[^0-9]/g, '');
+              if (caseNum) {
+                existingCaseNumbers.add(parseInt(caseNum));
+              }
+            }
+          });
+        }
+      });
+      
+      // Find the next available case number starting from 1
+      let nextCaseNumber = 1;
+      while (existingCaseNumbers.has(nextCaseNumber)) {
+        nextCaseNumber++;
+      }
+      
+      const nextCaseNumberString = nextCaseNumber.toString();
+      
+      res.status(200).json({
+        message: "Next Ambher case number generated successfully",
+        nextCaseNumber: nextCaseNumberString
+      });
+      
+    } catch (error) {
+      console.error("Error generating next Ambher case number:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error.message 
+      });
+    }
+  };
+  
+  // Check if Ambher case number exists
+  export const checkAmbherCaseNumberExists = async (req, res) => {
+    try {
+      const { caseNumber } = req.params;
+      
+      // Search for any patient with an Ambher medical record containing this case number
+      const existingRecord = await Patientdemographic.findOne({
+        "patientmedicalrecordambher.ambheropticalcaseno": caseNumber
+      }).lean();
+      
+      res.status(200).json({
+        exists: !!existingRecord,
+        caseNumber: caseNumber
+      });
+      
+    } catch (error) {
+      console.error("Error checking Ambher case number:", error);
       res.status(500).json({ 
         message: "Internal server error", 
         error: error.message 

@@ -19,7 +19,14 @@
         getBautistaMedicalRecords,
         deleteBautistaMedicalRecord,
         updateBautistaMedicalRecord,
-        getNextCaseNumber
+        getNextCaseNumber,
+        checkCaseNumberExists,
+        addAmbherMedicalRecord,
+        getAmbherMedicalRecords,
+        deleteAmbherMedicalRecord,
+        updateAmbherMedicalRecord,
+        getNextAmbherCaseNumber,
+        checkAmbherCaseNumberExists
         } from "../controllers/patientdemographic.controller.js";
 
     import {verifyloggedinpatientacc} from "../controllers/patientaccount.controller.js";
@@ -144,8 +151,19 @@
     patientdemographicrouter.put("/bautista-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, updateBautistaMedicalRecord);
     patientdemographicrouter.delete("/bautista-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, deleteBautistaMedicalRecord);
     
-    // Case Number Generation Route
+    // Ambher Optical Medical Records Routes
+    patientdemographicrouter.post("/ambher-medical-records", verifyStaffOwnerOrPatientAccess, addAmbherMedicalRecord);
+    patientdemographicrouter.get("/ambher-medical-records/:patientEmail", verifyStaffOwnerOrPatientAccess, getAmbherMedicalRecords);
+    patientdemographicrouter.put("/ambher-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, updateAmbherMedicalRecord);
+    patientdemographicrouter.delete("/ambher-medical-records/:patientEmail/:recordId", verifyStaffOwnerOrPatientAccess, deleteAmbherMedicalRecord);
+    
+    // Case Number Generation Routes
     patientdemographicrouter.get("/next-case-number", verifyStaffOwnerOrPatientAccess, getNextCaseNumber);
+    patientdemographicrouter.get("/next-ambher-case-number", verifyStaffOwnerOrPatientAccess, getNextAmbherCaseNumber);
+    
+    // Case Number Check Routes
+    patientdemographicrouter.get("/check-case-number/:caseNumber", verifyStaffOwnerOrPatientAccess, checkCaseNumberExists);
+    patientdemographicrouter.get("/validate-ambher-case-number/:caseNumber", verifyStaffOwnerOrPatientAccess, checkAmbherCaseNumberExists);
 
 
 
