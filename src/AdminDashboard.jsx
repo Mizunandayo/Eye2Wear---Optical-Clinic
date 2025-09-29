@@ -8017,6 +8017,11 @@ const filterMedicalRecords = useCallback((term) => {
   setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
 }, [patientdemographics, patientappointments]);
 
+// Reset medical records pagination when search or filter changes
+useEffect(() => {
+  setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
+}, [searchmedicaldocuments, medicaldocumentclinicfilter]);
+
 // Filter individual medical documents based on search term and clinic filter
 const filterPatientDocuments = useCallback((documents) => {
   if (!documents || documents.length === 0) return [];
@@ -20015,7 +20020,7 @@ useEffect(() => {
       </div>
 
  { activepatientmedicalrecordstable === 'medicalrecordsconsultationtable' && (
-  <div id='medicalrecordsconsultationtable' className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200">  
+  <div id='medicalrecordsconsultationtable' className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200" style={{ maxHeight: '600px' }}>  
 
    {(() => {
            const completedAppointments = patientappointments
@@ -20132,7 +20137,7 @@ useEffect(() => {
 
 
  { activepatientmedicalrecordstable === 'medicalrecordspastvisitstable' && (
-  <div id='medicalrecordspastvisitstable' className="w-full flex-1 flex flex-col">  
+  <div id='medicalrecordspastvisitstable' className="overflow-y-auto w-full flex-1 flex flex-col" style={{ maxHeight: '570px' }}>  
      <div 
        onClick={() => setshowpatientaddothermedicalrecord(true)}  
        className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
@@ -20301,7 +20306,7 @@ return filteredOtherClinicRecords.map((record) => (
 
  { activepatientmedicalrecordstable === 'medicaldocumentstable' && (
 
-  <div id='medicaldocumentstable' className="w-full flex-1 flex flex-col">  
+  <div id='medicaldocumentstable' className="overflow-y-auto w-full flex-1 flex flex-col" style={{ maxHeight: '570px' }}>  
      <div 
        onClick={() => setshowpatientaddmedicaldocument(true)}  
        className="cursor-pointer mb-4 py-3 px-4 bg-[#6AA84F] hover:bg-[#5f9747] text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
@@ -20565,13 +20570,13 @@ return filteredDocuments
       </div>
     </div>
 
-  <div id="patientmedicalrecordstable" className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200">
+  <div id="patientmedicalrecordstable" className="overflow-y-auto p-4 w-full flex-1 bg-gray-50 rounded-xl border border-gray-200" style={{ maxHeight: '450px' }}>
     {(() => {
       // Show loading skeleton while fetching records
       if (loadingpatientdemographics) {
         return (
           <div className="space-y-3">
-            {[...Array(3)].map((_, index) => (
+            {[...Array(medicalRecordsPerPage)].map((_, index) => (
               <div key={index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm animate-pulse">
                 <div className="flex justify-between items-center h-full">
                   <div className="flex-1 space-y-2">
@@ -20630,76 +20635,152 @@ return filteredDocuments
       console.log('combinedMedicalRecords:', combinedMedicalRecords);
       console.log('Combined total count:', combinedMedicalRecords.length);
 
-      if (combinedMedicalRecords.length === 0) {
-        return <div className="text-center text-gray-500 py-8">No medical records found</div>;
+      // Apply filters and search
+      let filteredRecords = combinedMedicalRecords;
+
+      // Apply clinic filter
+      if (medicaldocumentclinicfilter !== 'all') {
+        filteredRecords = filteredRecords.filter(record => {
+          if (medicaldocumentclinicfilter === 'ambher') {
+            return record.recordType === 'Ambher Optical';
+          } else if (medicaldocumentclinicfilter === 'bautista') {
+            return record.recordType === 'Bautista Eye Center';
+          }
+          return true;
+        });
       }
 
-      return combinedMedicalRecords
-        .sort((a, b) => new Date(b.recordDate) - new Date(a.recordDate))
-        .map((record, index) => (
-          <div key={record._id || index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
-            <div className="flex-1 px-3">
-              <h3 className="font-medium text-gray-800 text-base truncate w-70">
-                <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
-                  record.recordType === 'Bautista Eye Center' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {record.recordType === 'Bautista Eye Center' ? 'BEC' : 'AO'}
-                </span>
-               Case No. {record.caseNo} - {record.patientfirstname} {record.patientlastname}
-              </h3>
-              <p className="text-xs text-gray-500">Added by {record.addedbyname}</p>
-            </div>
+      // Apply search filter
+      if (searchmedicaldocuments.trim()) {
+        const searchTerm = searchmedicaldocuments.toLowerCase().trim();
+        filteredRecords = filteredRecords.filter(record => {
+          return (
+            record.patientfirstname?.toLowerCase().includes(searchTerm) ||
+            record.patientlastname?.toLowerCase().includes(searchTerm) ||
+            record.caseNo?.toLowerCase().includes(searchTerm) ||
+            record.addedbyname?.toLowerCase().includes(searchTerm) ||
+            record.recordType?.toLowerCase().includes(searchTerm) ||
+            `${record.patientfirstname} ${record.patientlastname}`.toLowerCase().includes(searchTerm) ||
+            record.diagnosis?.description?.toLowerCase().includes(searchTerm) ||
+            record.chiefComplaint?.toLowerCase().includes(searchTerm)
+          );
+        });
+      }
 
-            <div className="flex-1 px-3 text-center">
-              
-              <p className="font-medium text-gray-800 text-sm">{formatappointmatedates(record.recordDate)}</p>
-              <p className="text-xs text-gray-500">Record Date</p>
-            </div>
+      // Sort the filtered records
+      const sortedRecords = filteredRecords.sort((a, b) => {
+        // Determine current user's clinic
+        let currentUserClinic = '';
+        if (currentuserloggedin === "Staff") {
+          currentUserClinic = localStorage.getItem('staffclinic') || staffclinic;
+        } else if (currentuserloggedin === "Owner") {
+          currentUserClinic = ownerownedclinic;
+        }
+        
+        // Priority sorting: current user's clinic records first
+        const aIsUserClinic = a.recordType === currentUserClinic;
+        const bIsUserClinic = b.recordType === currentUserClinic;
+        
+        // If one record is from user's clinic and the other is not, prioritize user's clinic
+        if (aIsUserClinic && !bIsUserClinic) return -1;
+        if (!aIsUserClinic && bIsUserClinic) return 1;
+        
+        // If both are from the same clinic category (both user's clinic or both not user's clinic),
+        // sort by date (newest first)
+        return new Date(b.recordDate) - new Date(a.recordDate);
+      });
 
-            <div className="flex-1 px-3 text-center">
-              <p className="font-medium text-gray-800 text-sm">{record.addedbyclinic}</p>
-              <p className="text-xs text-gray-500">Clinic</p>
-            </div>
-
-   
-
-             <div className="px-3 flex gap-2">
-               <button 
-                 id={record.recordType === 'Bautista Eye Center' ? "viewfullpatientbautistarecord" : "viewfullpatientambherrecord"}
-                 onClick={() => {
-                   console.log('Clicked view button for record:', record);
-                   console.log('Record type:', record.recordType);
-                   
-                   if (record.recordType === 'Bautista Eye Center') {
-                     console.log('Calling viewBautistaRecord');
-                     viewBautistaRecord(record);
-                   } else {
-                     console.log('Calling viewAmbherRecord');
-                     viewAmbherRecord(record);
-                   }
-                 }}
-                 style={{
-                   backgroundColor: "#1f2937",
-                   color: "white",
-                   padding: "8px 16px",
-                   borderRadius: "8px",
-                   fontSize: "14px",
-                   fontWeight: "500",
-                   border: "none",
-                   cursor: "pointer",
-                   transition: "all 0.2s ease",
-                 }}
-                 onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
-                 onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
-               >
-                 <i className="bx bx-show text-lg"></i>
-               </button>              {/* Only show delete button if current user's clinic matches the record's clinic */}
-              
-            </div>
+      if (sortedRecords.length === 0) {
+        return (
+          <div className="text-center text-gray-500 py-8">
+            {searchmedicaldocuments.trim() || medicaldocumentclinicfilter !== 'all' 
+              ? 'No medical records match your search criteria' 
+              : 'No medical records found'}
           </div>
-        ));
+        );
+      }
+
+      // Get paginated data
+      const paginatedRecords = getPaginatedData(sortedRecords, 'medicalRecords');
+
+      return (
+        <div className="flex flex-col h-full">
+          {/* Records Display */}
+          <div className="flex-1 space-y-3 mb-4">
+            {paginatedRecords.map((record, index) => (
+              <div key={record._id || index} className="h-20 p-4 mb-3 w-full bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center">
+                <div className="flex-1 px-3">
+                  <h3 className="font-medium text-gray-800 text-base truncate w-70">
+                    <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                      record.recordType === 'Bautista Eye Center' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {record.recordType === 'Bautista Eye Center' ? 'BEC' : 'AO'}
+                    </span>
+                   Case No. {record.caseNo} - {record.patientfirstname} {record.patientlastname} 
+                  </h3>
+                  <p className="text-xs text-gray-500">Added by {record.addedbyname} ({record.addedbytype})</p>
+                </div>
+
+                <div className="flex-1 px-3 text-center">
+                  <p className="font-medium text-gray-800 text-sm">{formatappointmatedates(record.recordDate)}</p>
+                  <p className="text-xs text-gray-500">Record Date</p>
+                </div>
+
+                <div className="flex-1 px-3 text-center">
+                  <p className="font-medium text-gray-800 text-sm">{record.addedbyclinic}</p>
+                  <p className="text-xs text-gray-500">Clinic</p>
+                </div>
+
+                <div className="px-3 flex gap-2">
+                  <button 
+                    id={record.recordType === 'Bautista Eye Center' ? "viewfullpatientbautistarecord" : "viewfullpatientambherrecord"}
+                    onClick={() => {
+                      console.log('Clicked view button for record:', record);
+                      console.log('Record type:', record.recordType);
+                      
+                      if (record.recordType === 'Bautista Eye Center') {
+                        console.log('Calling viewBautistaRecord');
+                        viewBautistaRecord(record);
+                      } else {
+                        console.log('Calling viewAmbherRecord');
+                        viewAmbherRecord(record);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: "#1f2937",
+                      color: "white",
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#374151"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "#1f2937"}
+                  >
+                    <i className="bx bx-show text-lg"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination Component */}
+          {sortedRecords.length > medicalRecordsPerPage && (
+            <PaginationComponent
+              currentPage={currentPage.medicalRecords}
+              totalItems={sortedRecords.length}
+              itemsPerPage={medicalRecordsPerPage}
+              onPageChange={(page) => handlePageChange('medicalRecords', page)}
+              itemName="medical records"
+            />
+          )}
+        </div>
+      );
     })()}
   </div>
    </div>
@@ -22076,7 +22157,8 @@ Are you sure you want to delete this medical record?
         <select 
           name="patientphilhealthcategory" 
           defaultValue={selectedbautistarecord?.patientphilhealthcategory || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          disabled={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
         >
           <option value="">Select PhilHealth category...</option>
           <option value="Employed/Formal Economy">Employed/Formal Economy</option>
@@ -22097,7 +22179,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="hmo"
           defaultValue={selectedbautistarecord?.hmo || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           placeholder="Enter HMO provider (if applicable)..."
         />
       </div>
@@ -22116,7 +22199,8 @@ Are you sure you want to delete this medical record?
       <textarea 
         name="chiefComplaint"
         defaultValue={selectedbautistarecord?.chiefComplaint || ''}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
+        readOnly={isbautistaformreadonly}
+        className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
         rows="3"
         maxLength="500"
         placeholder="Enter chief complaint..."
@@ -22131,7 +22215,8 @@ Are you sure you want to delete this medical record?
       <textarea 
         name="historyOfPresentIllness"
         defaultValue={selectedbautistarecord?.historyOfPresentIllness || ''}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
+        readOnly={isbautistaformreadonly}
+        className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
         rows="4"
         maxLength="1000"
         placeholder="Enter history of present illness..."
@@ -22148,6 +22233,7 @@ Are you sure you want to delete this medical record?
               type="checkbox" 
               name="hpn" 
               defaultChecked={selectedbautistarecord?.hpn || false}
+              disabled={isbautistaformreadonly}
               className="mr-2 text-green-500 focus:ring-green-500" 
             />
             <span className="text-sm">HPN (Hypertension)</span>
@@ -22157,6 +22243,7 @@ Are you sure you want to delete this medical record?
               type="checkbox" 
               name="dm" 
               defaultChecked={selectedbautistarecord?.dm || false}
+              disabled={isbautistaformreadonly}
               className="mr-2 text-green-500 focus:ring-green-500" 
             />
             <span className="text-sm">DM (Diabetes Mellitus)</span>
@@ -22166,6 +22253,7 @@ Are you sure you want to delete this medical record?
               type="checkbox" 
               name="asthma" 
               defaultChecked={selectedbautistarecord?.asthma || false}
+              disabled={isbautistaformreadonly}
               className="mr-2 text-green-500 focus:ring-green-500" 
             />
             <span className="text-sm">ASTHMA</span>
@@ -22175,6 +22263,7 @@ Are you sure you want to delete this medical record?
               type="checkbox" 
               name="ptb" 
               defaultChecked={selectedbautistarecord?.ptb || false}
+              disabled={isbautistaformreadonly}
               className="mr-2 text-green-500 focus:ring-green-500" 
             />
             <span className="text-sm">PTB (Pulmonary Tuberculosis)</span>
@@ -22188,7 +22277,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="othersHistory"
           defaultValue={selectedbautistarecord?.othersHistory || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none"
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="5"
           maxLength="200"
           placeholder="Other medical history..."
@@ -22204,7 +22294,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="height"
           defaultValue={selectedbautistarecord?.height || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors"
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           maxLength="10"
           placeholder="e.g., 5'6 inches"
         />
@@ -22215,7 +22306,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="weight"
           defaultValue={selectedbautistarecord?.weight || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors"
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           maxLength="10"
           placeholder="e.g., 70kg"
         />
@@ -22248,7 +22340,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_od_sc" 
                   defaultValue={selectedbautistarecord?.visualExam?.od?.sc || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22257,7 +22350,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_od_cc" 
                   defaultValue={selectedbautistarecord?.visualExam?.od?.cc || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22266,7 +22360,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_od_ph" 
                   defaultValue={selectedbautistarecord?.visualExam?.od?.ph || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22278,7 +22373,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_os_sc" 
                   defaultValue={selectedbautistarecord?.visualExam?.os?.sc || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22287,7 +22383,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_os_cc" 
                   defaultValue={selectedbautistarecord?.visualExam?.os?.cc || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22296,7 +22393,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="visualExam_os_ph" 
                   defaultValue={selectedbautistarecord?.visualExam?.os?.ph || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`} 
                   maxLength="10" 
                 />
               </td>
@@ -22327,7 +22425,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_sphere" 
                   defaultValue={selectedbautistarecord?.refraction?.od?.sphere || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22336,7 +22435,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_cylinder" 
                   defaultValue={selectedbautistarecord?.refraction?.od?.cylinder || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22345,7 +22445,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_axis" 
                   defaultValue={selectedbautistarecord?.refraction?.od?.axis || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22357,7 +22458,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_sphere" 
                   defaultValue={selectedbautistarecord?.refraction?.os?.sphere || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22366,7 +22468,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_cylinder" 
                   defaultValue={selectedbautistarecord?.refraction?.os?.cylinder || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22375,7 +22478,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_axis" 
                   defaultValue={selectedbautistarecord?.refraction?.os?.axis || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-sky-500" 
+                  readOnly={isbautistaformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -22392,7 +22496,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_adds_right" 
             defaultValue={selectedbautistarecord?.refraction?.adds?.right || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
           />
         </div>
@@ -22402,7 +22507,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_adds_left" 
             defaultValue={selectedbautistarecord?.refraction?.adds?.left || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
           />
         </div>
@@ -22412,7 +22518,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_pd" 
             defaultValue={selectedbautistarecord?.refraction?.pd || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
           />
         </div>
@@ -22428,6 +22535,7 @@ Are you sure you want to delete this medical record?
             type="checkbox" 
             name="externalExam_isEssentiallyNormal" 
             defaultChecked={selectedbautistarecord?.externalExam?.isEssentiallyNormal || false}
+            disabled={isbautistaformreadonly}
             className="mr-2 text-green-500 focus:ring-green-500" 
           />
           <span className="text-sm font-medium">Essentially Normal</span>
@@ -22437,7 +22545,8 @@ Are you sure you want to delete this medical record?
           <textarea 
             name="externalExam_details"
             defaultValue={selectedbautistarecord?.externalExam?.details || ''}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             rows="3"
             maxLength="300"
             placeholder="External exam details..."
@@ -22452,7 +22561,8 @@ Are you sure you want to delete this medical record?
       <textarea 
         name="biomicroscopy_details"
         defaultValue={selectedbautistarecord?.biomicroscopy?.details || ''}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+        readOnly={isbautistaformreadonly}
+        className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`} 
         rows="4"
         maxLength="500"
         placeholder="Biomicroscopy findings..."
@@ -22472,7 +22582,8 @@ Are you sure you want to delete this medical record?
                 type="text" 
                 name="funduscopy_od_cdRatio" 
                 defaultValue={selectedbautistarecord?.funduscopy?.od?.cdRatio || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                readOnly={isbautistaformreadonly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                 maxLength="10" 
               />
             </div>
@@ -22481,7 +22592,8 @@ Are you sure you want to delete this medical record?
               <textarea 
                 name="funduscopy_od_details"
                 defaultValue={selectedbautistarecord?.funduscopy?.od?.details || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" 
+                readOnly={isbautistaformreadonly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                 rows="3"
                 maxLength="300"
                 placeholder="OD funduscopy details..."
@@ -22498,7 +22610,8 @@ Are you sure you want to delete this medical record?
                 type="text" 
                 name="funduscopy_os_cdRatio" 
                 defaultValue={selectedbautistarecord?.funduscopy?.os?.cdRatio || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                readOnly={isbautistaformreadonly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                 maxLength="10" 
               />
             </div>
@@ -22507,7 +22620,8 @@ Are you sure you want to delete this medical record?
               <textarea 
                 name="funduscopy_os_details"
                 defaultValue={selectedbautistarecord?.funduscopy?.os?.details || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" 
+                readOnly={isbautistaformreadonly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`} 
                 rows="3"
                 maxLength="300"
                 placeholder="OS funduscopy details..."
@@ -22527,6 +22641,7 @@ Are you sure you want to delete this medical record?
             type="checkbox" 
             name="eoms_isFullAndEqual" 
             defaultChecked={selectedbautistarecord?.eoms?.isFullAndEqual || false}
+            disabled={isbautistaformreadonly}
             className="mr-2 text-green-500 focus:ring-green-500" 
           />
           <span className="text-sm font-medium">Full & Equal</span>
@@ -22537,7 +22652,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="eoms_details"
             defaultValue={selectedbautistarecord?.eoms?.details || ''}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="100"
             placeholder="EOMS details..."
           />
@@ -22555,7 +22671,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="tonometry_time"
             defaultValue={selectedbautistarecord?.tonometry?.time || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="100"
             placeholder="e.g., 10:00 AM"
           />
@@ -22566,7 +22683,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="tonometry_od"
             defaultValue={selectedbautistarecord?.tonometry?.od || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="100"
             placeholder="IOP OD"
           />
@@ -22577,7 +22695,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="tonometry_os"
             defaultValue={selectedbautistarecord?.tonometry?.os || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" 
+            readOnly={isbautistaformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="100"
             placeholder="IOP OS"
           />
@@ -22596,7 +22715,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="diagnosis_description"
           defaultValue={selectedbautistarecord?.diagnosis?.description || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="4"
           maxLength="1000"
           placeholder="Diagnosis description..."
@@ -22609,7 +22729,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="diagnosis_icd10Code"
           defaultValue={selectedbautistarecord?.diagnosis?.icd10Code || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           maxLength="100"
           placeholder="Enter ICD-10 code..."
         />
@@ -22627,7 +22748,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="plans_diagnostics"
           defaultValue={selectedbautistarecord?.plans?.diagnostics || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="6"
           maxLength="1000"
           placeholder="Diagnostic plans..."
@@ -22639,7 +22761,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="plans_therapeutics"
           defaultValue={selectedbautistarecord?.plans?.therapeutics || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="6"
           maxLength="1000"
           placeholder="Therapeutic plans..."
@@ -22658,7 +22781,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="followUp"
           defaultValue={selectedbautistarecord?.followUp || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors resize-none ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="3"
           maxLength="500"
           placeholder="Follow-up instructions..."
@@ -22671,7 +22795,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="mdSignature"
           defaultValue={selectedbautistarecord?.mdSignature || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors" 
+          readOnly={isbautistaformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-colors ${isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           maxLength="100"
           placeholder="Doctor's signature..."
         />
@@ -22859,8 +22984,8 @@ Are you sure you want to delete this medical record?
         <select 
           name="patientstatus" 
           defaultValue={selectedambherrecord?.patientstatus || ''}
-          disabled={selectedambherrecord || isambherformreadonly ? true : false}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${selectedambherrecord ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+          disabled={isambherformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${selectedambherrecord ? 'bg-white cursor-pointer' : 'bg-white'}`}
         >
           <option value="">Select status...</option>
           <option value="New">New</option>
@@ -22980,7 +23105,8 @@ Are you sure you want to delete this medical record?
         <select 
           name="patientphilhealthcategory" 
           defaultValue={selectedambherrecord?.patientphilhealthcategory || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+          disabled={isambherformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
         >
           <option value="">Select PhilHealth category...</option>
           <option value="Employed/Formal Economy">Employed/Formal Economy</option>
@@ -23001,7 +23127,8 @@ Are you sure you want to delete this medical record?
           type="text" 
           name="hmo"
           defaultValue={selectedambherrecord?.hmo || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+          readOnly={isambherformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           placeholder="Enter HMO provider (if applicable)..."
         />
       </div>
@@ -23032,7 +23159,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_sphere" 
                   defaultValue={selectedambherrecord?.refraction?.od?.sphere || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -23041,7 +23169,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_cylinder" 
                   defaultValue={selectedambherrecord?.refraction?.od?.cylinder || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -23050,7 +23179,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_od_axis" 
                   defaultValue={selectedambherrecord?.refraction?.od?.axis || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -23062,7 +23192,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_sphere" 
                   defaultValue={selectedambherrecord?.refraction?.os?.sphere || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -23071,7 +23202,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_cylinder" 
                   defaultValue={selectedambherrecord?.refraction?.os?.cylinder || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`}
                   maxLength="10" 
                 />
               </td>
@@ -23080,7 +23212,8 @@ Are you sure you want to delete this medical record?
                   type="text" 
                   name="refraction_os_axis" 
                   defaultValue={selectedambherrecord?.refraction?.os?.axis || ''}
-                  className="w-full px-2 py-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-green-500" 
+                  readOnly={isambherformreadonly}
+                  className={`w-full px-2 py-1 border-0 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-transparent'}`} 
                   maxLength="10" 
                 />
               </td>
@@ -23097,7 +23230,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_pd" 
             defaultValue={selectedambherrecord?.refraction?.pd || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            readOnly={isambherformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
             placeholder="e.g., 64"
           />
@@ -23108,7 +23242,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_bc" 
             defaultValue={selectedambherrecord?.refraction?.bc || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            readOnly={isambherformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
             placeholder="Base curve"
           />
@@ -23119,7 +23254,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_dia" 
             defaultValue={selectedambherrecord?.refraction?.dia || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            readOnly={isambherformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="10" 
             placeholder="Diameter"
           />
@@ -23130,7 +23266,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_tint" 
             defaultValue={selectedambherrecord?.refraction?.tint || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            readOnly={isambherformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="20" 
             placeholder="Tint specification"
           />
@@ -23144,7 +23281,8 @@ Are you sure you want to delete this medical record?
             type="text" 
             name="refraction_type" 
             defaultValue={selectedambherrecord?.refraction?.type || ''}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+            readOnly={isambherformreadonly}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             maxLength="50" 
             placeholder="Lens type (e.g., Single Vision, Progressive, etc.)"
           />
@@ -23163,7 +23301,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="remarks"
           defaultValue={selectedambherrecord?.remarks || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          readOnly={isambherformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="3"
           maxLength="500"
           placeholder="Additional remarks or notes..."
@@ -23175,7 +23314,8 @@ Are you sure you want to delete this medical record?
         <textarea 
           name="lensRecommendation"
           defaultValue={selectedambherrecord?.lensRecommendation || ''}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none" 
+          readOnly={isambherformreadonly}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors resize-none ${isambherformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
           rows="3"
           maxLength="500"
           placeholder="Recommended lens specifications (e.g., SV / Anti-rad)"
