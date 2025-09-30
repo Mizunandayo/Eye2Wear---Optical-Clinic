@@ -9572,14 +9572,52 @@ const exportBautistaPDF = () => {
     return;
   }
 
-  // Temporarily hide the close button and action buttons for PDF
-  const closeButton = modalContent.querySelector('.bx-x');
-  const buttonContainer = document.querySelector('#bautistapatientmedicalrecordbuttons');
-  const exportButton = document.querySelector('#exportBautistaPDF');
+  // Create a clone for PDF export to avoid modifying the original
+  const clonedContent = modalContent.cloneNode(true);
   
-  if (closeButton) closeButton.style.display = 'none';
-  if (buttonContainer) buttonContainer.style.display = 'none';
-  if (exportButton) exportButton.style.display = 'none';
+  // Remove buttons and close elements from the clone
+  const elementsToRemove = clonedContent.querySelectorAll('.bx-x, #bautistapatientmedicalrecordbuttons, #exportBautistaPDF');
+  elementsToRemove.forEach(el => el.remove());
+  
+  // Apply PDF-safe styles to the clone
+  const applyPDFSafeStyles = (element) => {
+    // Convert problematic classes to inline styles
+    element.style.backgroundColor = element.style.backgroundColor || '#ffffff';
+    element.style.color = element.style.color || '#000000';
+    
+    // Replace potential oklch/modern color functions with safe colors
+    const computedStyle = window.getComputedStyle(element);
+    if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+      element.style.backgroundColor = '#ffffff';
+    }
+    if (computedStyle.color && computedStyle.color.includes('oklch')) {
+      element.style.color = '#000000';
+    }
+    
+    // Apply safe colors for common Tailwind classes
+    if (element.classList.contains('bg-blue-50')) element.style.backgroundColor = '#eff6ff';
+    if (element.classList.contains('bg-gray-50')) element.style.backgroundColor = '#f9fafb';
+    if (element.classList.contains('bg-green-50')) element.style.backgroundColor = '#f0fdf4';
+    if (element.classList.contains('bg-white')) element.style.backgroundColor = '#ffffff';
+    if (element.classList.contains('text-gray-900')) element.style.color = '#111827';
+    if (element.classList.contains('text-gray-700')) element.style.color = '#374151';
+    if (element.classList.contains('text-gray-500')) element.style.color = '#6b7280';
+    if (element.classList.contains('text-red-500')) element.style.color = '#ef4444';
+    if (element.classList.contains('border-blue-200')) element.style.borderColor = '#bfdbfe';
+    if (element.classList.contains('border-green-200')) element.style.borderColor = '#bbf7d0';
+    if (element.classList.contains('border-gray-300')) element.style.borderColor = '#d1d5db';
+    
+    // Process child elements
+    Array.from(element.children).forEach(child => applyPDFSafeStyles(child));
+  };
+  
+  applyPDFSafeStyles(clonedContent);
+  
+  // Temporarily add clone to document for rendering
+  clonedContent.style.position = 'absolute';
+  clonedContent.style.left = '-9999px';
+  clonedContent.style.top = '0';
+  document.body.appendChild(clonedContent);
 
   // Configure PDF options to match the medical record format
   const opt = {
@@ -9591,8 +9629,14 @@ const exportBautistaPDF = () => {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      width: modalContent.scrollWidth,
-      height: modalContent.scrollHeight
+      width: clonedContent.scrollWidth,
+      height: clonedContent.scrollHeight,
+      ignoreElements: function(element) {
+        // Ignore any remaining problematic elements
+        return element.classList.contains('bx-x') || 
+               element.id === 'bautistapatientmedicalrecordbuttons' ||
+               element.id === 'exportBautistaPDF';
+      }
     },
     jsPDF: { 
       unit: 'mm', 
@@ -9603,21 +9647,17 @@ const exportBautistaPDF = () => {
   };
 
   // Generate PDF
-  html2pdf().set(opt).from(modalContent).save().then(() => {
+  html2pdf().set(opt).from(clonedContent).save().then(() => {
     console.log('Bautista PDF exported successfully');
-    
-    // Restore hidden elements after PDF generation
-    if (closeButton) closeButton.style.display = '';
-    if (buttonContainer) buttonContainer.style.display = '';
-    if (exportButton) exportButton.style.display = '';
+    // Remove clone from document
+    document.body.removeChild(clonedContent);
   }).catch((error) => {
     console.error('Error generating Bautista PDF:', error);
     alert('Error generating PDF. Please try again.');
-    
-    // Restore hidden elements even on error
-    if (closeButton) closeButton.style.display = '';
-    if (buttonContainer) buttonContainer.style.display = '';
-    if (exportButton) exportButton.style.display = '';
+    // Remove clone from document even on error
+    if (document.body.contains(clonedContent)) {
+      document.body.removeChild(clonedContent);
+    }
   });
 };
 
@@ -9633,14 +9673,52 @@ const exportAmbherPDF = () => {
     return;
   }
 
-  // Temporarily hide the close button and action buttons for PDF
-  const closeButton = modalContent.querySelector('.bx-x');
-  const buttonContainer = document.querySelector('#ambherpatientmedicalrecordbuttons');
-  const exportButton = document.querySelector('#exportAmbherPDF');
+  // Create a clone for PDF export to avoid modifying the original
+  const clonedContent = modalContent.cloneNode(true);
   
-  if (closeButton) closeButton.style.display = 'none';
-  if (buttonContainer) buttonContainer.style.display = 'none';
-  if (exportButton) exportButton.style.display = 'none';
+  // Remove buttons and close elements from the clone
+  const elementsToRemove = clonedContent.querySelectorAll('.bx-x, #ambherpatientmedicalrecordbuttons, #exportAmbherPDF');
+  elementsToRemove.forEach(el => el.remove());
+  
+  // Apply PDF-safe styles to the clone
+  const applyPDFSafeStyles = (element) => {
+    // Convert problematic classes to inline styles
+    element.style.backgroundColor = element.style.backgroundColor || '#ffffff';
+    element.style.color = element.style.color || '#000000';
+    
+    // Replace potential oklch/modern color functions with safe colors
+    const computedStyle = window.getComputedStyle(element);
+    if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+      element.style.backgroundColor = '#ffffff';
+    }
+    if (computedStyle.color && computedStyle.color.includes('oklch')) {
+      element.style.color = '#000000';
+    }
+    
+    // Apply safe colors for common Tailwind classes
+    if (element.classList.contains('bg-blue-50')) element.style.backgroundColor = '#eff6ff';
+    if (element.classList.contains('bg-gray-50')) element.style.backgroundColor = '#f9fafb';
+    if (element.classList.contains('bg-green-50')) element.style.backgroundColor = '#f0fdf4';
+    if (element.classList.contains('bg-white')) element.style.backgroundColor = '#ffffff';
+    if (element.classList.contains('text-gray-900')) element.style.color = '#111827';
+    if (element.classList.contains('text-gray-700')) element.style.color = '#374151';
+    if (element.classList.contains('text-gray-500')) element.style.color = '#6b7280';
+    if (element.classList.contains('text-red-500')) element.style.color = '#ef4444';
+    if (element.classList.contains('border-blue-200')) element.style.borderColor = '#bfdbfe';
+    if (element.classList.contains('border-green-200')) element.style.borderColor = '#bbf7d0';
+    if (element.classList.contains('border-gray-300')) element.style.borderColor = '#d1d5db';
+    
+    // Process child elements
+    Array.from(element.children).forEach(child => applyPDFSafeStyles(child));
+  };
+  
+  applyPDFSafeStyles(clonedContent);
+  
+  // Temporarily add clone to document for rendering
+  clonedContent.style.position = 'absolute';
+  clonedContent.style.left = '-9999px';
+  clonedContent.style.top = '0';
+  document.body.appendChild(clonedContent);
 
   // Configure PDF options to match the medical record format
   const opt = {
@@ -9652,8 +9730,14 @@ const exportAmbherPDF = () => {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      width: modalContent.scrollWidth,
-      height: modalContent.scrollHeight
+      width: clonedContent.scrollWidth,
+      height: clonedContent.scrollHeight,
+      ignoreElements: function(element) {
+        // Ignore any remaining problematic elements
+        return element.classList.contains('bx-x') || 
+               element.id === 'ambherpatientmedicalrecordbuttons' ||
+               element.id === 'exportAmbherPDF';
+      }
     },
     jsPDF: { 
       unit: 'mm', 
@@ -9664,21 +9748,17 @@ const exportAmbherPDF = () => {
   };
 
   // Generate PDF
-  html2pdf().set(opt).from(modalContent).save().then(() => {
+  html2pdf().set(opt).from(clonedContent).save().then(() => {
     console.log('Ambher PDF exported successfully');
-    
-    // Restore hidden elements after PDF generation
-    if (closeButton) closeButton.style.display = '';
-    if (buttonContainer) buttonContainer.style.display = '';
-    if (exportButton) exportButton.style.display = '';
+    // Remove clone from document
+    document.body.removeChild(clonedContent);
   }).catch((error) => {
     console.error('Error generating Ambher PDF:', error);
     alert('Error generating PDF. Please try again.');
-    
-    // Restore hidden elements even on error
-    if (closeButton) closeButton.style.display = '';
-    if (buttonContainer) buttonContainer.style.display = '';
-    if (exportButton) exportButton.style.display = '';
+    // Remove clone from document even on error
+    if (document.body.contains(clonedContent)) {
+      document.body.removeChild(clonedContent);
+    }
   });
 };
 
@@ -20721,14 +20801,6 @@ return filteredDocuments
       const patientBautistaRecords = selectedpatientmedicalrecord?.patientmedicalrecordbautista || [];
       const patientAmbherRecords = selectedpatientmedicalrecord?.patientmedicalrecordambher || [];
       
-      // Debug logging to see what records are being received
-      console.log('=== MEDICAL RECORDS DEBUG ===');
-      console.log('selectedpatientmedicalrecord:', selectedpatientmedicalrecord);
-      console.log('patientBautistaRecords:', patientBautistaRecords);
-      console.log('patientAmbherRecords:', patientAmbherRecords);
-      console.log('Bautista count:', patientBautistaRecords.length);
-      console.log('Ambher count:', patientAmbherRecords.length);
-      
       // Combine both types of records with a type identifier
       const combinedMedicalRecords = [
         ...patientBautistaRecords.map(record => ({ 
@@ -20742,9 +20814,6 @@ return filteredDocuments
           caseNo: record.ambheropticalcaseno // Map Ambher case number to common field
         }))
       ];
-      
-      console.log('combinedMedicalRecords:', combinedMedicalRecords);
-      console.log('Combined total count:', combinedMedicalRecords.length);
 
       // Apply filters and search
       let filteredRecords = combinedMedicalRecords;
@@ -23465,6 +23534,34 @@ Are you sure you want to delete this medical record?
 
   {/* Submit Button */}
   <div id="ambherpatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
+    
+    {/* Export PDF Button */}
+    <button
+      id="exportAmbherPDF"
+      type="button"
+      onClick={exportAmbherPDF}
+      style={{
+        padding: "12px 24px",
+        backgroundColor: "#22c55e", // green-500
+        color: "#ffffff",
+        borderRadius: "0.5rem",
+        fontWeight: 600,
+        border: "none",
+        cursor: "pointer",
+        transition: "background-color 0.2s ease-in-out",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px"
+      }}
+      onMouseEnter={(e) => (e.target.style.backgroundColor = "#16a34a")} // green-600
+      onMouseLeave={(e) => (e.target.style.backgroundColor = "#22c55e")}
+      onMouseDown={(e) => (e.target.style.backgroundColor = "#15803d")} // green-700
+      onMouseUp={(e) => (e.target.style.backgroundColor = "#16a34a")}
+    >
+      <i className="bx bxs-file-pdf text-lg"></i>
+      Export PDF
+    </button>
+
 <button
   type="button"
   onClick={() => {
