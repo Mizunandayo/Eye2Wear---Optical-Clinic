@@ -16,7 +16,6 @@ import addimage from "../src/assets/images/addimage.png";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
 import { GenderBoxAdminDash } from "./components/GenderBoxAdminDash";
-import { OwnerClinicBox } from "./components/OwnerClinicBox";
 import {OwnereyespecialistYesorNoBox} from "./components/OwnereyespecialistYesorNoBox";
 import { StaffeyespecialistYesorNoBox } from "./components/StaffeyespecialistYesorNoBox";
 import { BautistaeyespecialistBox } from "./components/BautistaeyespecialistBox";
@@ -2921,7 +2920,7 @@ const [showdeletepatientdialog, setshowdeletepatientdialog] = useState(false);
 const [patients, setpatients] = useState([]);
 const [selectedpatientaccount, setselectedpatientaccount] = useState(null);
 const [selectededitpatientaccount, setselectededitpatientaccount] = useState(null);
-const [loadingpatients, setloadingpatients] = useState(true);
+const [loadingpatients, setloadingpatients] = useState(!isAdminRole); // Only load for non-admin users
 const [failedloadingpatients, setfailedloadingpatients] = useState(null);
 const [selectedprofile, setselectedprofile] = useState(null);
 const [previewimage, setpreviewimage] = useState (null);
@@ -3618,7 +3617,7 @@ const [showdeletestaffdialog, setshowdeletestaffdialog] = useState(false);
 const [staffs, setstaffs] = useState([]);
 const [selectedstaffaccount, setselectedstaffaccount] = useState(null);
 const [selectededitstaffaccount, setselectededitstaffaccount] = useState(null);
-const [loadingstaffs, setloadingstaffs] = useState(true);
+const [loadingstaffs, setloadingstaffs] = useState(!isAdminRole); // Only load for non-admin users
 const [failedloadingstaffs, setfailedloadingstaffs] = useState(null);
 const [staffselectedprofile, setstaffselectedprofile] = useState(null);
 const [staffpreviewimage, setstaffpreviewimage] = useState (null);
@@ -3820,41 +3819,43 @@ return (
             {(currentuserloggedin !== "Staff" || (currentuserloggedin === "Staff" && staff.staffemail === JSON.parse(localStorage.getItem("currentuser"))?.email)) && (
               <td className="py-3 px-6 text-center">
                 <div className="flex items-center justify-center gap-2">
-                  <div 
-                    onClick={() => {
-                      setselectededitstaffaccount({
-                        id: staff._id,
-                        email: staff.staffemail,
-                        lastname: staff.stafflastname,
-                        firstname: staff.stafffirstname,
-                        middlename: staff.staffmiddlename,
-                        eyespecialist: staff.staffiseyespecialist,
-                        profilepicture: staff.staffprofilepicture
-                      });
+                  {(currentuserloggedin === "Admin" || (currentuserloggedin === "Staff" && staff.staffemail === JSON.parse(localStorage.getItem("currentuser"))?.email)) && (
+                    <div 
+                      onClick={() => {
+                        setselectededitstaffaccount({
+                          id: staff._id,
+                          email: staff.staffemail,
+                          lastname: staff.stafflastname,
+                          firstname: staff.stafffirstname,
+                          middlename: staff.staffmiddlename,
+                          eyespecialist: staff.staffiseyespecialist,
+                          profilepicture: staff.staffprofilepicture
+                        });
 
-                      setstaffformdata({
-                        role: 'staff',
-                        staffemail: staff.staffemail,
-                        staffpassword: staff.staffpassword,
-                        stafflastname: staff.stafflastname,
-                        stafffirstname: staff.stafffirstname,
-                        staffmiddlename: staff.staffmiddlename,
-                        staffiseyespecialist: staff.staffiseyespecialist,
-                        staffprofilepicture: staff.staffprofilepicture,
-                        staffprofilepicture_public_id: staff.staffprofilepicture_public_id
-                      });
+                        setstaffformdata({
+                          role: 'staff',
+                          staffemail: staff.staffemail,
+                          staffpassword: staff.staffpassword,
+                          stafflastname: staff.stafflastname,
+                          stafffirstname: staff.stafffirstname,
+                          staffmiddlename: staff.staffmiddlename,
+                          staffiseyespecialist: staff.staffiseyespecialist,
+                          staffprofilepicture: staff.staffprofilepicture,
+                          staffprofilepicture_public_id: staff.staffprofilepicture_public_id
+                        });
 
-                      setstaffpreviewimage(staff.staffprofilepicture);
-                      setstaffselectedprofile(null); // Reset selected profile when editing
-                      setshowviewstaffdialog(true);
-                    }}
-                    className="bg-[#383838] hover:bg-[#595959] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
-                  >
-                    <i className="bx bxs-pencil text-white mr-1"/>
-                    <h1 className="text-white">Edit</h1>
-                  </div>
+                        setstaffpreviewimage(staff.staffprofilepicture);
+                        setstaffselectedprofile(null); // Reset selected profile when editing
+                        setshowviewstaffdialog(true);
+                      }}
+                      className="bg-[#383838] hover:bg-[#595959] transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"
+                    >
+                      <i className="bx bxs-pencil text-white mr-1"/>
+                      <h1 className="text-white">Edit</h1>
+                    </div>
+                  )}
                   
-                  {currentuserloggedin !== "Staff" && (
+                  {currentuserloggedin === "Admin" || currentuserloggedin === "Owner" && (
                     <div 
                       onClick={() => {
                         setselectedstaffaccount({
@@ -3942,7 +3943,12 @@ useEffect(() => {
           return;
         }
 
-
+        // If editing and email hasn't changed, don't show error
+        if(selectededitstaffaccount && staffformdata.staffemail === selectededitstaffaccount.email) {
+          setstaffemailerror(false);
+          setstaffemailexist(false);
+          return;
+        }
 
         if(!staffemailcharacters.test(staffformdata.staffemail)) {
           setstaffemailerror(true);
@@ -4003,7 +4009,7 @@ useEffect(() => {
 
       const timer = setTimeout(debounceemailcheck, 500);
       return () => clearTimeout(timer); //Cleanup
-}, [staffformdata.staffemail]);
+}, [staffformdata.staffemail, selectededitstaffaccount]);
 
 
 
@@ -4526,36 +4532,38 @@ const staffhandlechange = (e) => {
                   year: 'numeric'
                 })}
               </td>
-              {currentuserloggedin !== "Staff" && (
+              {(currentuserloggedin !== "Staff" && currentuserloggedin !== "Admin") && (
                 <>
-                  <td><div onClick={() =>  {
-                    setselectededitowneraccount({
-                       id: owner._id,
-                       email: owner.owneremail,
-                       lastname: owner.ownerlastname,
-                       firstname: owner.ownerfirstname,
-                       middlename: owner.ownermiddlename,
-                       clinic: owner.ownerclinic,
-                       eyespecialist: owner.owneriseyespecialist,
-                       profilepicture: owner.ownerprofilepicture
-                       });
-  
-                    setownerformdata({
-                      role: 'owner',
-                      owneremail: owner.owneremail,
-                      ownerpassword: owner.ownerpassword,
-                      ownerlastname: owner.ownerlastname,
-                      ownerfirstname: owner.ownerfirstname,
-                      ownermiddlename: owner.ownermiddlename,
-                      ownerclinic: owner.ownerclinic,
-                      owneriseyespecialist: owner.owneriseyespecialist,
-                      ownerprofilepicture: owner.ownerprofilepicture
-                    });
-  
-                    setownerpreviewimage(owner.ownerprofilepicture);
-                    setshowviewownerdialog(true);}}
-  
-                   className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div></td>
+                  {(currentuserloggedin === "Owner" && owner.owneremail === JSON.parse(localStorage.getItem("currentuser"))?.email) && (
+                    <td><div onClick={() =>  {
+                      setselectededitowneraccount({
+                         id: owner._id,
+                         email: owner.owneremail,
+                         lastname: owner.ownerlastname,
+                         firstname: owner.ownerfirstname,
+                         middlename: owner.ownermiddlename,
+                         clinic: owner.ownerclinic,
+                         eyespecialist: owner.owneriseyespecialist,
+                         profilepicture: owner.ownerprofilepicture
+                         });
+    
+                      setownerformdata({
+                        role: 'owner',
+                        owneremail: owner.owneremail,
+                        ownerpassword: owner.ownerpassword,
+                        ownerlastname: owner.ownerlastname,
+                        ownerfirstname: owner.ownerfirstname,
+                        ownermiddlename: owner.ownermiddlename,
+                        ownerclinic: owner.ownerclinic,
+                        owneriseyespecialist: owner.owneriseyespecialist,
+                        ownerprofilepicture: owner.ownerprofilepicture
+                      });
+    
+                      setownerpreviewimage(owner.ownerprofilepicture);
+                      setshowviewownerdialog(true);}}
+    
+                     className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div></td>
+                  )}
       
                   <td><div onClick={() =>  {
                     setselectedowneraccount({
@@ -4654,6 +4662,13 @@ const staffhandlechange = (e) => {
             setowneremailexist(false);
             return;
           }
+
+          // If editing and email hasn't changed, don't show error
+          if(selectededitowneraccount && ownerformdata.owneremail === selectededitowneraccount.email) {
+            setowneremailerror(false);
+            setowneremailexist(false);
+            return;
+          }
   
   
   
@@ -4714,9 +4729,32 @@ const staffhandlechange = (e) => {
   
         const timer = setTimeout(debounceemailcheck, 500);
         return () => clearTimeout(timer); //Cleanup
-  }, [ownerformdata.owneremail]);
+  }, [ownerformdata.owneremail, selectededitowneraccount]);
 
+  // Auto-populate ownerclinic field based on ownerownedclinic
+  useEffect(() => {
+    if (ownerownedclinic === 'Ambher Optical') {
+      setownerformdata(prev => ({
+        ...prev,
+        ownerclinic: 'Ambher Optical'
+      }));
+    } else if (ownerownedclinic === 'Bautista Eye Center') {
+      setownerformdata(prev => ({
+        ...prev,
+        ownerclinic: 'Bautista Eye Center'
+      }));
+    }
+  }, [ownerownedclinic]);
 
+  // Initialize form with owner's clinic when component mounts or when form is cleared
+  useEffect(() => {
+    if (ownerownedclinic && !ownerformdata.ownerclinic) {
+      setownerformdata(prev => ({
+        ...prev,
+        ownerclinic: ownerownedclinic
+      }));
+    }
+  }, [ownerownedclinic, ownerformdata.ownerclinic]);
 
 
     //Handlechange function to be used in input forms
@@ -4853,7 +4891,7 @@ const staffhandlechange = (e) => {
 
         const fetchresponse = await fetch('/api/owneraccounts', {
             headers:{
-              'Authorization':`Bearer ${localStorage.getItem('admintoken')}`
+              'Authorization':`Bearer ${currentusertoken}`
             }
         });
         
@@ -4862,18 +4900,26 @@ const staffhandlechange = (e) => {
         }
 
         let owneraccounts = await fetchresponse.json();
-        // Apply clinic filtering
-        owneraccounts = filterAccountsByClinic(owneraccounts, 'ownerclinic');
+        
+        // Apply clinic filtering (same logic as initial fetch)
+        if (currentuserloggedin !== "Admin") {
+          if (isAmbherOnlyUser()) {
+            owneraccounts = owneraccounts.filter(owner => owner.ownerclinic === "Ambher Optical");
+          } else if (isBautistaOnlyUser()) {
+            owneraccounts = owneraccounts.filter(owner => owner.ownerclinic === "Bautista Eye Center");
+          }
+        }
+        
         setowners(owneraccounts);
-
-        setshowdeleteownerdialog(false);
-        setselectedowneraccount(null);
-
+        setfilteredowners(owneraccounts);
         
       }catch (error){
         console.error("Failed deleting owner: ", error);
       } finally {
+        // Always close dialog and reset state, even if there's an error
         setisdeletingowner(false);
+        setshowdeleteownerdialog(false);
+        setselectedowneraccount(null);
       }
     };
 
@@ -5144,6 +5190,7 @@ return (
           </td>
           {currentuserloggedin !== "Staff" && (
             <>
+              {(currentuserloggedin === "Admin" && admin.adminemail === JSON.parse(localStorage.getItem("currentuser"))?.email) && (
               <td><div onClick={() =>  {
                 setselectededitadminaccount({
                    id: admin._id,
@@ -5168,16 +5215,18 @@ return (
                 setshowviewadmindialog(true);}}
 
                className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-pencil text-white mr-1"/><h1 className="text-white">Edit</h1></div></td>
+)}
+              {currentuserloggedin === "Owner" && (
+                <td><div onClick={() =>  {
+                  setselectedadminaccount({
+                     id: admin.adminId,
+                     email: admin.adminemail,
+                     name: `${admin.adminfirstname} ${admin.adminlastname}`});
+                              
+                  setshowdeleteadmindialog(true);}}
 
-              <td><div onClick={() =>  {
-                setselectedadminaccount({
-                   id: admin.adminId,
-                   email: admin.adminemail,
-                   name: `${admin.adminfirstname} ${admin.adminlastname}`});
-                            
-                setshowdeleteadmindialog(true);}}
-
-               className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div></td>
+                 className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-300 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div></td>
+              )}
             </>
           )}
 
@@ -5247,6 +5296,13 @@ useEffect(() => {
         return;
       }
 
+      // If editing and email hasn't changed, don't show error
+      if(selectededitadminaccount && adminformdata.adminemail === selectededitadminaccount.email) {
+        setadminemailerror(false);
+        setadminemailexist(false);
+        return;
+      }
+
 
 
       if(!adminemailcharacters.test(adminformdata.adminemail)) {
@@ -5306,7 +5362,7 @@ useEffect(() => {
 
     const timer = setTimeout(debounceemailcheck, 500);
     return () => clearTimeout(timer); //Cleanup
-}, [adminformdata.adminemail]);
+}, [adminformdata.adminemail, selectededitadminaccount]);
 
 
 
@@ -19771,22 +19827,180 @@ useEffect(() => {
         
           {/* Conditionally render sidebar - hide for admin role */}
           {!isAdminRole && (
-          <div className={`relative z-30 transition-all duration-300 ease-in-out flex flex-col justify-between items-start pl-3 bg-black/90  rounded-2xl    ml-3 mb-3 pt-3 pb-3 ${sidebarexpanded ? 'w-[365px]' : 'w-[85px]'}`} id="adminsidebar">
-
-              <div className="group relative " id="expandbtn" onClick={toggleadminsidebar} ><div className="hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl  transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden">{sidebarexpanded &&(<i className='bx bx-collapse-horizontal  p-2 hover:text-white text-white text-[40px] ' ></i>)}   {!sidebarexpanded &&(<i className='bx bx-expand-horizontal  p-2 hover:text-white text-white text-[40px] ' ></i>)}<span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>{sidebarexpanded ? 'Collapse Sidebar' : ''}</span></div></div>
-          
-              <div className="group relative mt-5" onClick={() => showdashboard('summaryoverview')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl mr-2 transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden ${activedashboard ==='summaryoverview' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bx-list-ul  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='summaryoverview' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>   <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Summary Overview</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute  p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Summary Overview</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('accountmanagement')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden ${activedashboard ==='accountmanagement' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-user-account  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='accountmanagement' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Account Management</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Account Management</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('profileinformation')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='profileinformation' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-user-detail  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='profileinformation' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Profile Information</span>  {!sidebarexpanded && (<span className=" pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Profile Information</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('appointmentmanagement')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='appointmentmanagement' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-calendar  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='appointmentmanagement' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Appointment Management</span>  {!sidebarexpanded && (<span className=" pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Appointment Management</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('medicalrecords')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='medicalrecords' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-data  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='medicalrecords' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Medical Records</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Medical Records</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('inventorymanagement')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='inventorymanagement' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-package   p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='inventorymanagement' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={` text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Inventory Management</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Inventory Management</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('billingsandorders')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='billingsandorders' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-receipt   p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='billingsandorders' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Billing & Orders</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Billing & Orders</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('reportsandanalytics')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='reportsandanalytics' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-report  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='reportsandanalytics' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Reports & Analytics</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Reports & Analytics</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('smsmonitoring')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='smsmonitoring' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bxs-message  p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='smsmonitoring' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>SMS Monitoring</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">SMS Monitoring</span>)}  </div></div>
-              <div className="group relative" onClick={() => showdashboard('mappingintegration')}><div className={`hover:bg-[#454545] hover:rounded-2xl  hover:cursor-pointer rounded-3xl transition-all duration-300 ease-in-out flex items-center justify-center w-fit overflow-hidden  ${activedashboard ==='mappingintegration' ? 'bg-[#454545] rounded-2xl' :''}`}><i className={`bx bx-street-view p-3.5    text-[#cacacf] hover:text-white text-[27px]${activedashboard ==='mappingintegration' ? 'bg-[#454545] rounded-2xl text-white text-[27px]' :''}`}></i>  <span className={`text-[16px] text-white font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-2 mr-2 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>Mapping Integration</span>  {!sidebarexpanded && (<span className="pointer-events-none absolute p-4 rounded-2xl ml-4 left-full text-white font-albertsans font-semibold text-[16px] top-1/2 transform -translate-y-1/2  bg-[#2b2a2a]   whitespace-nowrap  group-hover:opacity-100 group-hover:translate-x-0  transition-all duration-300 ease-in-out opacity-0 -translate-x-2 ">Mapping Integration</span>)}  </div></div>
-
+          <div 
+            className={`relative z-30 transition-all duration-300 ease-in-out flex flex-col justify-start items-start bg-gradient-to-b from-black/95 to-black/90 backdrop-blur-xl rounded-3xl ml-3 mb-3 py-6 shadow-2xl border border-white/10 ${sidebarexpanded ? 'w-[380px] px-5' : 'w-[85px] px-3'}`} 
+            id="adminsidebar"
+          >
+            {/* Collapse/Expand Button */}
+            <div className="group relative mb-6 w-full" id="expandbtn" onClick={toggleadminsidebar}>
+              <div className={`hover:bg-gradient-to-r hover:from-[#454545] hover:to-[#505050] hover:shadow-lg cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'justify-start px-4 py-3' : 'justify-center p-3'} ${sidebarexpanded ? 'hover:scale-105' : ''}`}>
+                {sidebarexpanded ? (
+                  <i className='bx bx-collapse-horizontal text-white text-[28px]'></i>
+                ) : (
+                  <i className='bx bx-expand-horizontal text-white text-[28px]'></i>
+                )}
+                <span className={`text-[15px] text-white font-bold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'}`}>
+                  {sidebarexpanded ? 'Collapse Sidebar' : ''}
+                </span>
               </div>
+            </div>
+
+            {/* Divider */}
+            {sidebarexpanded && <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4"></div>}
+          
+            {/* Navigation Items */}
+            <nav className="flex flex-col gap-2 w-full">
+              {/* Summary Overview */}
+              <div className="group relative" onClick={() => showdashboard('summaryoverview')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'summaryoverview' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bx-list-ul text-[24px] transition-colors duration-300 ${activedashboard === 'summaryoverview' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'summaryoverview' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Summary Overview
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Summary Overview
+                  </span>
+                )}
+              </div>
+
+              {/* Account Management */}
+              <div className="group relative" onClick={() => showdashboard('accountmanagement')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'accountmanagement' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-user-account text-[24px] transition-colors duration-300 ${activedashboard === 'accountmanagement' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'accountmanagement' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Account Management
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Account Management
+                  </span>
+                )}
+              </div>
+
+              {/* Profile Information */}
+              <div className="group relative" onClick={() => showdashboard('profileinformation')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'profileinformation' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-user-detail text-[24px] transition-colors duration-300 ${activedashboard === 'profileinformation' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'profileinformation' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Profile Information
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Profile Information
+                  </span>
+                )}
+              </div>
+
+              {/* Appointment Management */}
+              <div className="group relative" onClick={() => showdashboard('appointmentmanagement')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'appointmentmanagement' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-calendar text-[24px] transition-colors duration-300 ${activedashboard === 'appointmentmanagement' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'appointmentmanagement' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Appointment Management
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Appointment Management
+                  </span>
+                )}
+              </div>
+
+              {/* Medical Records */}
+              <div className="group relative" onClick={() => showdashboard('medicalrecords')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'medicalrecords' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-data text-[24px] transition-colors duration-300 ${activedashboard === 'medicalrecords' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'medicalrecords' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Medical Records
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Medical Records
+                  </span>
+                )}
+              </div>
+
+              {/* Inventory Management */}
+              <div className="group relative" onClick={() => showdashboard('inventorymanagement')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'inventorymanagement' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-package text-[24px] transition-colors duration-300 ${activedashboard === 'inventorymanagement' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'inventorymanagement' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Inventory Management
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Inventory Management
+                  </span>
+                )}
+              </div>
+
+              {/* Billing & Orders */}
+              <div className="group relative" onClick={() => showdashboard('billingsandorders')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'billingsandorders' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-receipt text-[24px] transition-colors duration-300 ${activedashboard === 'billingsandorders' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'billingsandorders' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Billing & Orders
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Billing & Orders
+                  </span>
+                )}
+              </div>
+
+              {/* Reports & Analytics */}
+              <div className="group relative" onClick={() => showdashboard('reportsandanalytics')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'reportsandanalytics' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-report text-[24px] transition-colors duration-300 ${activedashboard === 'reportsandanalytics' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'reportsandanalytics' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Reports & Analytics
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Reports & Analytics
+                  </span>
+                )}
+              </div>
+
+              {/* SMS Monitoring */}
+              <div className="group relative" onClick={() => showdashboard('smsmonitoring')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'smsmonitoring' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bxs-message text-[24px] transition-colors duration-300 ${activedashboard === 'smsmonitoring' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'smsmonitoring' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    SMS Monitoring
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    SMS Monitoring
+                  </span>
+                )}
+              </div>
+
+              {/* Mapping Integration */}
+              <div className="group relative" onClick={() => showdashboard('mappingintegration')}>
+                <div className={`cursor-pointer rounded-xl transition-all duration-300 ease-in-out flex items-center ${sidebarexpanded ? 'px-4 py-3.5' : 'justify-center p-3.5'} ${activedashboard === 'mappingintegration' ? 'bg-gradient-to-r from-[#454545] to-[#505050] shadow-lg scale-105' : 'hover:bg-[#454545]/50 hover:shadow-md hover:scale-102'}`}>
+                  <i className={`bx bx-street-view text-[24px] transition-colors duration-300 ${activedashboard === 'mappingintegration' ? 'text-white' : 'text-[#cacacf] group-hover:text-white'}`}></i>
+                  <span className={`text-[15px] font-semibold font-albertsans transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${sidebarexpanded ? 'opacity-100 w-auto ml-3.5 animate-slideIn' : 'opacity-0 w-0 animate-slideOut'} ${activedashboard === 'mappingintegration' ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                    Mapping Integration
+                  </span>
+                </div>
+                {!sidebarexpanded && (
+                  <span className="pointer-events-none absolute p-3 px-4 rounded-xl ml-5 left-full text-white font-albertsans font-semibold text-[14px] top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-[#2b2a2a] to-[#3a3939] shadow-xl border border-white/10 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-in-out opacity-0 -translate-x-2">
+                    Mapping Integration
+                  </span>
+                )}
+              </div>
+            </nav>
+          </div>
           )}
 
         <div  className={`rounded-2xl ${isAdminRole ? 'ml-3' : 'ml-3'} h-screen w-[100%] flex flex-col items-center justify-center mr-3 mb-3`} >
@@ -19804,14 +20018,6 @@ useEffect(() => {
 
 
           <div className="w-full h-[88%]  rounded-2xl" id="overview">
-
-
-
-
-
-
-
-
 
 
 
@@ -19868,6 +20074,11 @@ useEffect(() => {
  
   
 </div> )}
+
+
+
+
+
 
 
 
@@ -20560,7 +20771,11 @@ Are you sure you want to delete this patient account?
             Eye Specialist
           </label>
           <div className="mt-2">
-            <StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} />
+            <StaffeyespecialistYesorNoBox 
+              value={staffformdata.staffiseyespecialist} 
+              onChange={staffhandlechange}
+              clinic={ownerownedclinic || staffformdata.staffclinic}
+            />
           </div>
         </div>
 
@@ -20875,7 +21090,11 @@ Are you sure you want to delete this staff account?
                   Eye Specialist
                 </label>
                 <div className="mt-2">
-                  <StaffeyespecialistYesorNoBox value={staffformdata.staffiseyespecialist} onChange={staffhandlechange} />
+                  <StaffeyespecialistYesorNoBox 
+                    value={staffformdata.staffiseyespecialist} 
+                    onChange={staffhandlechange}
+                    clinic={ownerownedclinic || staffformdata.staffclinic}
+                  />
                 </div>
               </div>
 
@@ -21158,21 +21377,30 @@ Are you sure you want to delete this staff account?
           />
         </div>
         
-        <div className="space-y-2">
+        <div id="ownerclinicfield" className="space-y-2">
           <label className="flex items-center text-sm font-medium text-gray-700">
             Clinic
           </label>
-          <div className="mt-2">
-            <OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} />
-          </div>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+            type="text" 
+            name="ownerclinic" 
+            id="ownerclinic" 
+            value={ownerformdata.ownerclinic} 
+            readOnly
+          />
         </div>
 
-        <div className="space-y-2">
+        <div id="ownereyespecialistfield" className="space-y-2">
           <label className="flex items-center text-sm font-medium text-gray-700">
             Eye Specialist
           </label>
           <div className="mt-2">
-            <OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} />
+            <OwnereyespecialistYesorNoBox 
+              value={ownerformdata.owneriseyespecialist} 
+              onChange={ownerhandlechange} 
+              clinic={ownerownedclinic}
+            />
           </div>
         </div>
 
@@ -21385,15 +21613,23 @@ Are you sure you want to delete this staff account?
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Clinic</label>
-            <div className="w-full">
-              <OwnerClinicBox value={ownerformdata.ownerclinic} onChange={ownerhandlechange} />
-            </div>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+              type="text" 
+              name="ownerclinic" 
+              value={ownerformdata.ownerclinic} 
+              readOnly
+            />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Eye Specialist</label>
             <div className="w-full">
-              <OwnereyespecialistYesorNoBox value={ownerformdata.owneriseyespecialist} onChange={ownerhandlechange} />
+              <OwnereyespecialistYesorNoBox 
+                value={ownerformdata.owneriseyespecialist} 
+                onChange={ownerhandlechange}
+                clinic={ownerownedclinic}
+              />
             </div>
           </div>
 
@@ -22124,6 +22360,10 @@ Are you sure you want to delete this admin account?
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
+
+
+
+
 
 
 
@@ -23022,16 +23262,6 @@ Are you sure you want to delete this patient profile?
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -25195,6 +25425,8 @@ itemName="appointments"
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
+
+
 
 
 
@@ -28356,32 +28588,7 @@ Are you sure you want to delete this medical record?
   {/* Submit Button */}
   <div id="bautistapatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
     
-    {/* Export PDF Button */}
-    <button
-      id="exportBautistaPDF"
-      type="button"
-      onClick={exportBautistaPDF}
-      style={{
-        padding: "12px 24px",
-        backgroundColor: "#3b82f6", // blue-500
-        color: "#ffffff",
-        borderRadius: "0.5rem",
-        fontWeight: 600,
-        border: "none",
-        cursor: "pointer",
-        transition: "background-color 0.2s ease-in-out",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px"
-      }}
-      onMouseEnter={(e) => (e.target.style.backgroundColor = "#2563eb")} // blue-600
-      onMouseLeave={(e) => (e.target.style.backgroundColor = "#3b82f6")}
-      onMouseDown={(e) => (e.target.style.backgroundColor = "#1d4ed8")} // blue-700
-      onMouseUp={(e) => (e.target.style.backgroundColor = "#2563eb")}
-    >
-      <i className="bx bxs-file-pdf text-lg"></i>
-      Export PDF
-    </button>
+
 
 <button
   type="button"
@@ -28904,32 +29111,7 @@ Are you sure you want to delete this medical record?
   {/* Submit Button */}
   <div id="ambherpatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
     
-    {/* Export PDF Button */}
-    <button
-      id="exportAmbherPDF"
-      type="button"
-      onClick={exportAmbherPDF}
-      style={{
-        padding: "12px 24px",
-        backgroundColor: "#22c55e", // green-500
-        color: "#ffffff",
-        borderRadius: "0.5rem",
-        fontWeight: 600,
-        border: "none",
-        cursor: "pointer",
-        transition: "background-color 0.2s ease-in-out",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px"
-      }}
-      onMouseEnter={(e) => (e.target.style.backgroundColor = "#16a34a")} // green-600
-      onMouseLeave={(e) => (e.target.style.backgroundColor = "#22c55e")}
-      onMouseDown={(e) => (e.target.style.backgroundColor = "#15803d")} // green-700
-      onMouseUp={(e) => (e.target.style.backgroundColor = "#16a34a")}
-    >
-      <i className="bx bxs-file-pdf text-lg"></i>
-      Export PDF
-    </button>
+
 
 <button
   type="button"
@@ -36116,6 +36298,17 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
+
+
+
+
+
+
+
 
 
 

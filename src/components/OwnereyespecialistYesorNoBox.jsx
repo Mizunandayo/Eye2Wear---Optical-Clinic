@@ -14,14 +14,22 @@ import { Command, CommandGroup, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const genderOptions = [
-  { value: "Optometrist", label: "Optometrist" },
-  { value: "Ophthalmologist", label: "Ophthalmologist" },
-  { value: "No", label: "No" },
-
+  { value: "Optometrist", label: "Optometrist", clinic: "Ambher Optical" },
+  { value: "Ophthalmologist", label: "Ophthalmologist", clinic: "Bautista Eye Center" },
+  { value: "No", label: "No", clinic: "both" },
 ]
 
-export function OwnereyespecialistYesorNoBox({ value, onChange }) {
+export function OwnereyespecialistYesorNoBox({ value, onChange, clinic }) {
   const [open, setOpen] = React.useState(false)
+
+  // Filter options based on clinic
+  const filteredOptions = React.useMemo(() => {
+    if (!clinic) return genderOptions;
+    
+    return genderOptions.filter(option => 
+      option.clinic === "both" || option.clinic === clinic
+    );
+  }, [clinic]);
 
   const handleSelect = (currentValue) => {
     const newValue = currentValue === value ? "" : currentValue
@@ -49,7 +57,7 @@ export function OwnereyespecialistYesorNoBox({ value, onChange }) {
       <PopoverContent className="w-[200px] p-0 !bg-[#2d2d44] text-white rounded-3xl">
         <Command>
           <CommandGroup>
-            {genderOptions.map((option) => (
+            {filteredOptions.map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.value}
