@@ -2964,13 +2964,30 @@ const filterpatientaccount = useCallback(searchpatientdebounce((term) => {
     return;
   }
 
-  const filtered = patients.filter(patient =>
-    patient.patientlastname.toLowerCase().includes(term.toLowerCase()) ||
-    patient.patientfirstname.toLowerCase().includes(term.toLowerCase()) ||
-    patient.patientmiddlename.toLowerCase().includes(term.toLowerCase()) ||
-    patient.patientemail.toLowerCase().includes(term.toLowerCase()) ||
-    patient.patientId.toString().includes(term)
-  );
+  const searchTerm = term.toLowerCase();
+
+  const filtered = patients.filter(patient => {
+    // Format date for searching
+    const createdDate = new Date(patient.createdAt).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).toLowerCase();
+    
+    // Get status text
+    const status = (patient.isVerified ? 'active' : 'pending').toLowerCase();
+    
+    // Search across all fields
+    return (
+      patient.patientlastname.toLowerCase().includes(searchTerm) ||
+      patient.patientfirstname.toLowerCase().includes(searchTerm) ||
+      patient.patientmiddlename.toLowerCase().includes(searchTerm) ||
+      patient.patientemail.toLowerCase().includes(searchTerm) ||
+      patient.patientId.toString().includes(term) ||
+      createdDate.includes(searchTerm) ||
+      status.includes(searchTerm)
+    );
+  });
 
   setfilteredpatients(filtered);
 }, 300), [patients]);
@@ -5780,11 +5797,13 @@ if (!term) {
 } else {
   const filtered = safePatientDemographics.filter(profile => 
     profile.patientfirstname?.toLowerCase().includes(term.toLowerCase()) ||
+    profile.patientmiddlename?.toLowerCase().includes(term.toLowerCase()) ||
     profile.patientlastname?.toLowerCase().includes(term.toLowerCase()) ||
     profile.patientemail?.toLowerCase().includes(term.toLowerCase()) ||
     profile.patientcontactnumber?.includes(term) ||
     profile.patientgender?.toLowerCase().includes(term.toLowerCase()) ||
-    profile.patienthomeaddress?.toLowerCase().includes(term.toLowerCase())
+    profile.patienthomeaddress?.toLowerCase().includes(term.toLowerCase()) ||
+    profile.patientage?.toString().includes(term)
   );
   setFilteredPatientProfiles(filtered);
 }
@@ -20154,66 +20173,79 @@ useEffect(() => {
         {/*Add Patient Dialog*/}
            {showaddpatientdialog && (
            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-             <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+             <div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
                   {/* Header */}
-                  <div className="bg-sky-800 px-8 py-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="bg-white/20 p-3 rounded-full mr-4">
-                          <i className="bx bx-user-plus text-white text-2xl"></i>
-                        </div>
-                        <div>
-                          <h1 className="text-3xl font-bold text-white mb-1">Add Patient Account</h1>
-                          <p className="text-sky-100">Create a new patient account</p>
-                        </div>
+                  <div className="flex justify-between items-center w-full h-[60px] mb-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                        <i className="bx bx-user-plus text-white text-xl"></i>
                       </div>
-                      <div
-                        onClick={() => {
-                          setshowaddpatientdialog(false);
-                          setmessage('');
-                          // Reset form data
-                          setformdata({
-                            role: 'Patient',
-                            patientemail:'',
-                            patientpassword:'',
-                            patientlastname:'',
-                            patientfirstname:'',
-                            patientmiddlename:'',
-                            patientprofilepicture: ''
-                          });
-                          // Reset image states
-                          setselectedprofile(null);
-                          setpreviewimage(null);
-                          // Reset file input
-                          if(imageinputref.current){
-                            imageinputref.current.value = "";
-                          }
-                          // Reset validation states
-                          setemailerror(false);
-                          setemailexist(false);
-                          setcheckemail(false);
-                          setShowPatientPassword(false);
-                        }}
-                        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-                      >
-                        <i className="bx bx-x text-white text-2xl"></i>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Add Patient Account
+                        </h2>
+                        <p className="text-sm text-gray-500">Create a new patient account</p>
                       </div>
+                    </div>
+                    <div
+                      onClick={() => {
+                        setshowaddpatientdialog(false);
+                        setmessage('');
+                        // Reset form data
+                        setformdata({
+                          role: 'Patient',
+                          patientemail:'',
+                          patientpassword:'',
+                          patientlastname:'',
+                          patientfirstname:'',
+                          patientmiddlename:'',
+                          patientprofilepicture: ''
+                        });
+                        // Reset image states
+                        setselectedprofile(null);
+                        setpreviewimage(null);
+                        // Reset file input
+                        if(imageinputref.current){
+                          imageinputref.current.value = "";
+                        }
+                        // Reset validation states
+                        setemailerror(false);
+                        setemailexist(false);
+                        setcheckemail(false);
+                        setShowPatientPassword(false);
+                      }}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+                    >
+                      <i className="bx bx-x text-gray-600 text-xl"></i>
                     </div>
                   </div>
 
-            <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-              <form onSubmit={handlesubmit} className="p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="mt-15">
+              <form onSubmit={handlesubmit}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Profile Picture Section */}
                   <div className="lg:col-span-1">
                     <div className="flex flex-col items-center space-y-4">
                       <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                        <img 
-                          className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                          src={previewimage || defaultprofilepic}
-                          alt="Profile"
-                        />
+                        {previewimage ? (
+                          <img 
+                            className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                            src={previewimage || defaultprofilepic}
+                            alt="Profile"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : (
+                          <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                            <div className="text-center">
+                              <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                              <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                            </div>
+                          </div>
+                        )}
                         <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                           <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
                         </div>
@@ -20252,14 +20284,14 @@ useEffect(() => {
                   </div>
 
                   {/* Form Fields */}
-                  <div className="lg:col-span-2 space-y-6">
+                  <div className="lg:col-span-2 space-y-4">
                     <div className="space-y-2">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        Email
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Email <span className="text-red-500">*</span>
                       </label>
                       <div className="flex flex-col">
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           placeholder="Enter your email..." 
                           type="text" 
                           name="patientemail" 
@@ -20268,19 +20300,21 @@ useEffect(() => {
                           onChange={handlechange} 
                           required
                         />
-                        {checkemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-                        {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-                        {emailerror && emailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+                        <div className="text-sm mt-1">
+                          {checkemail && <p className="text-gray-500">Checking Email...</p>}
+                          {emailerror && !emailexist && !emailcharacters.test(formdata.patientemail) && (<p className="text-red-500">Enter a valid email address</p>)}
+                          {emailerror && emailexist && (<p className="text-red-500">Email already exist</p>)}
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        Password
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Password <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <input 
-                          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+                          className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                             !formdata.patientpassword || formdata.patientpassword.length === 0 
                               ? 'border-gray-300'
                               : formdata.patientpassword.length >= 6 
@@ -20333,13 +20367,13 @@ useEffect(() => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Last Name
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Last Name <span className="text-red-500">*</span>
                         </label>
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           placeholder="Enter your lastname..." 
                           type="text" 
                           name="patientlastname" 
@@ -20351,11 +20385,11 @@ useEffect(() => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          First Name
+                        <label className="block text-sm font-semibold text-gray-700">
+                          First Name <span className="text-red-500">*</span>
                         </label>
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           placeholder="Enter your firstname..." 
                           type="text" 
                           name="patientfirstname" 
@@ -20368,11 +20402,11 @@ useEffect(() => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Middle Name (Optional)
                       </label>
                       <input 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         placeholder="Enter your middlename..." 
                         type="text" 
                         name="patientmiddlename" 
@@ -20384,30 +20418,35 @@ useEffect(() => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="pt-8 space-y-4">
+                    <div className="pt-6">
                       <button 
                         type="submit" 
                         disabled={issubmitting} 
-                        className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                          issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                        }`}
+                        style={{
+                          width: "100%",
+                          padding: "12px 32px",
+                          backgroundColor: issubmitting ? "#9CA3AF" : "#3B82F6",
+                          color: "white",
+                          borderRadius: "12px",
+                          fontWeight: "600",
+                          fontSize: "16px",
+                          border: "none",
+                          cursor: issubmitting ? "not-allowed" : "pointer",
+                          transition: "all 0.2s ease",
+                          boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+                        }}
                       >
-                        <div className="relative flex items-center">
-                          {issubmitting ? (
-                            <>
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Creating Account...
-                            </>
-                          ) : (
-                            <>
-                              <i className="bx bx-user-plus mr-3"></i>
-                              Create Account
-                            </>
-                          )}
-                        </div>
+                        {issubmitting ? (
+                          <>
+                            <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                            Creating Account...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bx bx-user-plus mr-2"></i>
+                            Create Account
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -20562,41 +20601,54 @@ Are you sure you want to delete this patient account?
 {/*Add staff Dialog*/}
 {showaddstaffdialog && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
   {/* Header */}
-  <div className="bg-sky-800 px-8 py-6">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="bg-white/20 p-3 rounded-full mr-4">
-          <i className="bx bx-user-plus text-white text-2xl"></i>
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Add Staff Account</h1>
-          <p className="text-sky-100">Create a new staff account</p>
-        </div>
+  <div className="flex justify-between items-center w-full h-[60px] mb-6">
+    <div className="flex items-center space-x-4">
+      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+        <i className="bx bx-user-plus text-white text-xl"></i>
       </div>
-      <div
-        onClick={() => setshowaddstaffdialog(false)}
-        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-      >
-        <i className="bx bx-x text-white text-2xl"></i>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Add Staff Account
+        </h2>
+        <p className="text-sm text-gray-500">Create a new staff account</p>
       </div>
+    </div>
+    <div
+      onClick={() => setshowaddstaffdialog(false)}
+      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+    >
+      <i className="bx bx-x text-gray-600 text-xl"></i>
     </div>
   </div>
 
-<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-  <form onSubmit={staffhandlesubmit} className="p-8">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div className="mt-15">
+  <form onSubmit={staffhandlesubmit}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Profile Picture Section */}
       <div className="lg:col-span-1">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <img 
-              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-              src={staffpreviewimage || defaultprofilepic}
-              alt="Profile"
-            />
+            {staffpreviewimage ? (
+              <img 
+                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                src={staffpreviewimage || defaultprofilepic}
+                alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : (
+              <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <div className="text-center">
+                  <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                  <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
               <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
             </div>
@@ -20635,14 +20687,14 @@ Are you sure you want to delete this patient account?
       </div>
 
       {/* Form Fields */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-4">
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Email
+          <label className="block text-sm font-semibold text-gray-700">
+            Email <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col">
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your email..." 
               type="text" 
               name="staffemail" 
@@ -20651,19 +20703,21 @@ Are you sure you want to delete this patient account?
               onChange={staffhandlechange} 
               required
             />
-            {staffcheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-            {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-            {staffemailerror && staffemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+            <div className="text-sm mt-1">
+              {staffcheckemail && <p className="text-gray-500">Checking Email...</p>}
+              {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500">Enter a valid email address</p>)}
+              {staffemailerror && staffemailexist && (<p className="text-red-500">Email already exist</p>)}
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Password
+          <label className="block text-sm font-semibold text-gray-700">
+            Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input 
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+              className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 !staffformdata.staffpassword || staffformdata.staffpassword.length === 0 
                   ? 'border-gray-300'
                   : staffformdata.staffpassword.length >= 6 
@@ -20716,13 +20770,13 @@ Are you sure you want to delete this patient account?
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              Last Name
+            <label className="block text-sm font-semibold text-gray-700">
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your lastname..." 
               type="text" 
               name="stafflastname" 
@@ -20734,11 +20788,11 @@ Are you sure you want to delete this patient account?
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              First Name
+            <label className="block text-sm font-semibold text-gray-700">
+              First Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your firstname..." 
               type="text" 
               name="stafffirstname" 
@@ -20751,11 +20805,11 @@ Are you sure you want to delete this patient account?
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          <label className="block text-sm font-semibold text-gray-700">
+            Middle Name (Optional)
           </label>
           <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your middlename..." 
             type="text" 
             name="staffmiddlename" 
@@ -20767,8 +20821,8 @@ Are you sure you want to delete this patient account?
         </div>
         
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Eye Specialist
+          <label className="block text-sm font-semibold text-gray-700">
+            Eye Specialist <span className="text-red-500">*</span>
           </label>
           <div className="mt-2">
             <StaffeyespecialistYesorNoBox 
@@ -20780,30 +20834,35 @@ Are you sure you want to delete this patient account?
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-8 space-y-4">
+        <div className="pt-6">
           <button 
             type="submit" 
             disabled={staffissubmitting} 
-            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-              staffissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-            }`}
+            style={{
+              width: "100%",
+              padding: "12px 32px",
+              backgroundColor: staffissubmitting ? "#9CA3AF" : "#3B82F6",
+              color: "white",
+              borderRadius: "12px",
+              fontWeight: "600",
+              fontSize: "16px",
+              border: "none",
+              cursor: staffissubmitting ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+            }}
           >
-            <div className="relative flex items-center">
-              {staffissubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <i className="bx bx-user-plus mr-3"></i>
-                  Create Account
-                </>
-              )}
-            </div>
+            {staffissubmitting ? (
+              <>
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Creating Account...
+              </>
+            ) : (
+              <>
+                <i className="bx bx-user-plus mr-2"></i>
+                Create Account
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -20917,17 +20976,17 @@ Are you sure you want to delete this staff account?
 
 {showviewstaffdialog && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+    <div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 overflow-y-auto animate-fadeInUp">
       {/* Header */}
-      <div className="bg-sky-800 px-8 py-6">
+      <div className="bg-white mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="bg-white/20 p-3 rounded-full mr-4">
-              <i className="bx bx-user text-white text-2xl"></i>
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-3">
+              <i className="bx bx-user text-white text-xl"></i>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white mb-1">Edit Staff Account</h1>
-              <p className="text-sky-100">Update staff account information</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-0.5">Edit Staff Account</h1>
+              <p className="text-sm text-gray-500">Update staff account information</p>
             </div>
           </div>
           <div
@@ -20945,190 +21004,216 @@ Are you sure you want to delete this staff account?
                              });
                              setstaffpreviewimage(null);
                              setstaffselectedprofile(null);}}
-            className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+            className="cursor-pointer rounded-full bg-gray-100 hover:bg-gray-200 p-2 transition-colors duration-200"
           >
-            <i className="bx bx-x text-white text-2xl"></i>
+            <i className="bx bx-x text-gray-600 text-xl"></i>
           </div>
         </div>
       </div>
 
-      <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-        <form onSubmit={updatestaffaccount} className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Picture Section */}
-            <div className="lg:col-span-1">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+      <form onSubmit={updatestaffaccount}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Picture Section */}
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                {staffpreviewimage ? (
                   <img 
                     className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
                     src={staffpreviewimage || defaultprofilepic}
                     alt="Profile"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                  <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                    <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                ) : (
+                  <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                    <div className="text-center">
+                      <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                      <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                    </div>
                   </div>
+                )}
+                <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                  <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
                 </div>
-                
-                <input  
-                  className="hidden" 
-                  type="file" 
-                  onChange={staffhandleprofilechange} 
-                  accept="image/jpeg, image/jpg, image/png" 
-                  ref={staffimageinputref} 
-                />
-                
-                <div className="flex items-center gap-2">
-                  {staffselectedprofile && (
-                    <button
-                      type="button"
-                      onClick={staffhandleremoveprofile}
-                      className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                      title="Remove Photo"
-                    >
-                      <i className="bx bx-trash w-4 h-4"></i>
-                    </button>
-                  )}
-                  
+              </div>
+              
+              <input  
+                className="hidden" 
+                type="file" 
+                onChange={staffhandleprofilechange} 
+                accept="image/jpeg, image/jpg, image/png" 
+                ref={staffimageinputref} 
+              />
+              
+              <div className="flex items-center gap-2">
+                {staffselectedprofile && (
                   <button
                     type="button"
-                    onClick={staffhandleuploadclick}
-                    className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    onClick={staffhandleremoveprofile}
+                    className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    title="Remove Photo"
                   >
-                    <i className="bx bx-camera mr-2"></i>
-                    Upload Photo
+                    <i className="bx bx-trash w-4 h-4"></i>
                   </button>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={staffhandleuploadclick}
+                  className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <i className="bx bx-camera mr-2"></i>
+                  Upload Photo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Message Display */}
+            {staffmessage.text && (
+              <div className={`p-4 rounded-lg border ${
+                staffmessage.type === 'error' 
+                  ? 'bg-red-50 border-red-200 text-red-800' 
+                  : 'bg-green-50 border-green-200 text-green-800'
+              }`}>
+                {staffmessage.text}
+              </div>
+            )}
+
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <div className="flex flex-col">
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter your email..." 
+                  type="text" 
+                  name="staffemail" 
+                  id="staffemail" 
+                  value={staffformdata.staffemail} 
+                  onChange={staffhandlechange} 
+                  required
+                />
+                <div className="text-sm mt-1">
+                  {staffcheckemail && <p className="text-gray-500">Checking Email...</p>}
+                  {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (
+                    <p className="text-red-500">Enter a valid email address</p>
+                  )}
+                  {staffemailerror && staffemailexist && (
+                    <p className="text-red-500">Email already exists</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Form Fields */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Message Display */}
-              {staffmessage.text && (
-                <div className={`p-4 rounded-lg ${staffmessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                  {staffmessage.text}
-                </div>
-              )}
-
-              {/* Email Field */}
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <div className="flex flex-col">
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    placeholder="Enter your email..." 
-                    type="text" 
-                    name="staffemail" 
-                    id="staffemail" 
-                    value={staffformdata.staffemail} 
-                    onChange={staffhandlechange} 
-                    required
-                  />
-                  {staffcheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-                  {staffemailerror && !staffemailexist && !staffemailcharacters.test(staffformdata.staffemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-                  {staffemailerror && staffemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
-                </div>
-              </div>
-
-              {/* Name Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    Last Name
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    placeholder="Enter your lastname..." 
-                    type="text" 
-                    name="stafflastname" 
-                    id="stafflastname" 
-                    value={staffformdata.stafflastname} 
-                    onChange={staffhandlechange} 
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    First Name
-                  </label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                    placeholder="Enter your firstname..." 
-                    type="text" 
-                    name="stafffirstname" 
-                    id="stafffirstname" 
-                    value={staffformdata.stafffirstname} 
-                    onChange={staffhandlechange} 
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Last Name <span className="text-red-500">*</span>
                 </label>
                 <input 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                  placeholder="Enter your middlename..." 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter your lastname..." 
                   type="text" 
-                  name="staffmiddlename" 
-                  id="staffmiddlename" 
-                  value={staffformdata.staffmiddlename} 
+                  name="stafflastname" 
+                  id="stafflastname" 
+                  value={staffformdata.stafflastname} 
                   onChange={staffhandlechange} 
                   required
                 />
               </div>
 
-              {/* Eye Specialist Field */}
               <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  Eye Specialist
+                <label className="block text-sm font-semibold text-gray-700">
+                  First Name <span className="text-red-500">*</span>
                 </label>
-                <div className="mt-2">
-                  <StaffeyespecialistYesorNoBox 
-                    value={staffformdata.staffiseyespecialist} 
-                    onChange={staffhandlechange}
-                    clinic={ownerownedclinic || staffformdata.staffclinic}
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-8 space-y-4">
-                <button 
-                  type="submit" 
-                  disabled={staffissubmitting} 
-                  className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                    staffissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  <div className="relative flex items-center">
-                    {staffissubmitting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <i className="bx bx-edit mr-3"></i>
-                        Save Changes
-                      </>
-                    )}
-                  </div>
-                </button>
+                <input 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter your firstname..." 
+                  type="text" 
+                  name="stafffirstname" 
+                  id="stafffirstname" 
+                  value={staffformdata.stafffirstname} 
+                  onChange={staffhandlechange} 
+                  required
+                />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Middle Name (Optional)
+              </label>
+              <input 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Enter your middlename..." 
+                type="text" 
+                name="staffmiddlename" 
+                id="staffmiddlename" 
+                value={staffformdata.staffmiddlename} 
+                onChange={staffhandlechange} 
+                required
+              />
+            </div>
+
+            {/* Eye Specialist Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Eye Specialist <span className="text-red-500">*</span>
+              </label>
+              <div className="w-full">
+                <StaffeyespecialistYesorNoBox 
+                  value={staffformdata.staffiseyespecialist} 
+                  onChange={staffhandlechange}
+                  clinic={ownerownedclinic || staffformdata.staffclinic}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-6">
+              <button 
+                type="submit" 
+                disabled={staffissubmitting} 
+                style={{
+                  width: "100%",
+                  padding: "12px 32px",
+                  backgroundColor: staffissubmitting ? "#9CA3AF" : "#3B82F6",
+                  color: "white",
+                  borderRadius: "12px",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  border: "none",
+                  cursor: staffissubmitting ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+                }}
+              >
+                {staffissubmitting ? (
+                  <>
+                    <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-edit mr-2"></i>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 )}
@@ -21173,41 +21258,54 @@ Are you sure you want to delete this staff account?
 {/*Add owner Dialog*/}
 {showaddownerdialog && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
   {/* Header */}
-  <div className="bg-sky-800 px-8 py-6">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="bg-white/20 p-3 rounded-full mr-4">
-          <i className="bx bx-user-plus text-white text-2xl"></i>
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Add Owner Account</h1>
-          <p className="text-sky-100">Create a new owner account</p>
-        </div>
+  <div className="flex justify-between items-center w-full h-[60px] mb-6">
+    <div className="flex items-center space-x-4">
+      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+        <i className="bx bx-user-plus text-white text-xl"></i>
       </div>
-      <div
-        onClick={() => setshowaddownerdialog(false)}
-        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-      >
-        <i className="bx bx-x text-white text-2xl"></i>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Add Owner Account
+        </h2>
+        <p className="text-sm text-gray-500">Create a new owner account</p>
       </div>
+    </div>
+    <div
+      onClick={() => setshowaddownerdialog(false)}
+      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+    >
+      <i className="bx bx-x text-gray-600 text-xl"></i>
     </div>
   </div>
 
-<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-  <form onSubmit={ownerhandlesubmit} className="p-8">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div className="mt-15">
+  <form onSubmit={ownerhandlesubmit}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Profile Picture Section */}
       <div className="lg:col-span-1">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <img 
-              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-              src={ownerpreviewimage || defaultprofilepic}
-              alt="Profile"
-            />
+            {ownerpreviewimage ? (
+              <img 
+                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                src={ownerpreviewimage || defaultprofilepic}
+                alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : (
+              <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <div className="text-center">
+                  <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                  <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
               <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
             </div>
@@ -21246,14 +21344,14 @@ Are you sure you want to delete this staff account?
       </div>
 
       {/* Form Fields */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-4">
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Email
+          <label className="block text-sm font-semibold text-gray-700">
+            Email <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col">
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your email..." 
               type="text" 
               name="owneremail" 
@@ -21262,19 +21360,21 @@ Are you sure you want to delete this staff account?
               onChange={ownerhandlechange} 
               required
             />
-            {ownercheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-            {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-            {owneremailerror && owneremailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+            <div className="text-sm mt-1">
+              {ownercheckemail && <p className="text-gray-500">Checking Email...</p>}
+              {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (<p className="text-red-500">Enter a valid email address</p>)}
+              {owneremailerror && owneremailexist && (<p className="text-red-500">Email already exist</p>)}
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Password
+          <label className="block text-sm font-semibold text-gray-700">
+            Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input 
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+              className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 !ownerformdata.ownerpassword || ownerformdata.ownerpassword.length === 0 
                   ? 'border-gray-300'
                   : ownerformdata.ownerpassword.length >= 6 
@@ -21327,13 +21427,13 @@ Are you sure you want to delete this staff account?
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              Last Name
+            <label className="block text-sm font-semibold text-gray-700">
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your lastname..." 
               type="text" 
               name="ownerlastname" 
@@ -21345,11 +21445,11 @@ Are you sure you want to delete this staff account?
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              First Name
+            <label className="block text-sm font-semibold text-gray-700">
+              First Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your firstname..." 
               type="text" 
               name="ownerfirstname" 
@@ -21362,11 +21462,11 @@ Are you sure you want to delete this staff account?
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          <label className="block text-sm font-semibold text-gray-700">
+            Middle Name (Optional)
           </label>
           <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your middlename..." 
             type="text" 
             name="ownermiddlename" 
@@ -21378,8 +21478,8 @@ Are you sure you want to delete this staff account?
         </div>
         
         <div id="ownerclinicfield" className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Clinic
+          <label className="block text-sm font-semibold text-gray-700">
+            Clinic <span className="text-red-500">*</span>
           </label>
           <input 
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
@@ -21392,8 +21492,8 @@ Are you sure you want to delete this staff account?
         </div>
 
         <div id="ownereyespecialistfield" className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Eye Specialist
+          <label className="block text-sm font-semibold text-gray-700">
+            Eye Specialist <span className="text-red-500">*</span>
           </label>
           <div className="mt-2">
             <OwnereyespecialistYesorNoBox 
@@ -21405,30 +21505,35 @@ Are you sure you want to delete this staff account?
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-8 space-y-4">
+        <div className="pt-6">
           <button 
             type="submit" 
             disabled={ownerissubmitting} 
-            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-              ownerissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-            }`}
+            style={{
+              width: "100%",
+              padding: "12px 32px",
+              backgroundColor: ownerissubmitting ? "#9CA3AF" : "#3B82F6",
+              color: "white",
+              borderRadius: "12px",
+              fontWeight: "600",
+              fontSize: "16px",
+              border: "none",
+              cursor: ownerissubmitting ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+            }}
           >
-            <div className="relative flex items-center">
-              {ownerissubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <i className="bx bx-user-plus mr-3"></i>
-                  Create Account
-                </>
-              )}
-            </div>
+            {ownerissubmitting ? (
+              <>
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Creating Account...
+              </>
+            ) : (
+              <>
+                <i className="bx bx-user-plus mr-2"></i>
+                Create Account
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -21446,53 +21551,66 @@ Are you sure you want to delete this staff account?
 
 {showviewownerdialog && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
   {/* Header */}
-  <div className="bg-sky-800 px-8 py-6">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="bg-white/20 p-3 rounded-full mr-4">
-          <i className="bx bx-user text-white text-2xl"></i>
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Edit Owner Account</h1>
-          <p className="text-sky-100">Update owner account information</p>
-        </div>
+  <div className="flex justify-between items-center w-full h-[60px] mb-6">
+    <div className="flex items-center space-x-4">
+      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+        <i className="bx bx-user text-white text-xl"></i>
       </div>
-      <div
-        onClick={() => {setshowviewownerdialog(false);
-                         setselectededitowneraccount(null);
-                         setownerformdata({
-                           role: 'Owner',
-                           owneremail: '',
-                           ownerlastname: '',
-                           ownerfirstname: '',
-                           ownermiddlename: '',
-                           ownerclinic: '',
-                           ownerprofilepicture: ''
-                         });
-                         setownerpreviewimage(null);
-                         setownerselectedprofile(null);}}
-        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-      >
-        <i className="bx bx-x text-white text-2xl"></i>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Edit Owner Account
+        </h2>
+        <p className="text-sm text-gray-500">Update owner account information</p>
       </div>
+    </div>
+    <div
+      onClick={() => {setshowviewownerdialog(false);
+                       setselectededitowneraccount(null);
+                       setownerformdata({
+                         role: 'Owner',
+                         owneremail: '',
+                         ownerlastname: '',
+                         ownerfirstname: '',
+                         ownermiddlename: '',
+                         ownerclinic: '',
+                         ownerprofilepicture: ''
+                       });
+                       setownerpreviewimage(null);
+                       setownerselectedprofile(null);}}
+      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+    >
+      <i className="bx bx-x text-gray-600 text-xl"></i>
     </div>
   </div>
 
-  <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-    <form onSubmit={updateowneraccount} className="p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div className="mt-15">
+    <form onSubmit={updateowneraccount}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Picture Section */}
         <div className="lg:col-span-1">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-              <img 
-                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                src={ownerpreviewimage || defaultprofilepic}
-                alt="Profile"
-              />
+              {ownerpreviewimage ? (
+                <img 
+                  className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                  src={ownerpreviewimage || defaultprofilepic}
+                  alt="Profile"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : (
+                <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                    <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                  </div>
+                </div>
+              )}
               <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                 <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
               </div>
@@ -21531,7 +21649,7 @@ Are you sure you want to delete this staff account?
         </div>
 
         {/* Form Fields */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {ownermessage.text && (
             <div className={`p-4 rounded-lg border ${
               ownermessage.type === 'error' 
@@ -21543,12 +21661,12 @@ Are you sure you want to delete this staff account?
           )}
 
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              Email
+            <label className="block text-sm font-semibold text-gray-700">
+              Email <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-col">
               <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter your email..." 
                 type="text" 
                 name="owneremail" 
@@ -21557,21 +21675,25 @@ Are you sure you want to delete this staff account?
                 onChange={ownerhandlechange} 
                 required
               />
-              {ownercheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-              {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (
-                <p className="text-red-500 text-sm mt-1">Enter a valid email address</p>
-              )}
-              {owneremailerror && owneremailexist && (
-                <p className="text-red-500 text-sm mt-1">Email already exists</p>
-              )}
+              <div className="text-sm mt-1">
+                {ownercheckemail && <p className="text-gray-500">Checking Email...</p>}
+                {owneremailerror && !owneremailexist && !owneremailcharacters.test(ownerformdata.owneremail) && (
+                  <p className="text-red-500">Enter a valid email address</p>
+                )}
+                {owneremailerror && owneremailexist && (
+                  <p className="text-red-500">Email already exists</p>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Last Name</label>
+              <label className="block text-sm font-semibold text-gray-700">
+                Last Name <span className="text-red-500">*</span>
+              </label>
               <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter your lastname..." 
                 type="text" 
                 name="ownerlastname" 
@@ -21583,9 +21705,11 @@ Are you sure you want to delete this staff account?
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">First Name</label>
+              <label className="block text-sm font-semibold text-gray-700">
+                First Name <span className="text-red-500">*</span>
+              </label>
               <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter your firstname..." 
                 type="text" 
                 name="ownerfirstname" 
@@ -21598,9 +21722,11 @@ Are you sure you want to delete this staff account?
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Middle Name</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Middle Name (Optional)
+            </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your middlename..." 
               type="text" 
               name="ownermiddlename" 
@@ -21612,7 +21738,9 @@ Are you sure you want to delete this staff account?
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Clinic</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Clinic <span className="text-red-500">*</span>
+            </label>
             <input 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               type="text" 
@@ -21623,7 +21751,9 @@ Are you sure you want to delete this staff account?
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Eye Specialist</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Eye Specialist <span className="text-red-500">*</span>
+            </label>
             <div className="w-full">
               <OwnereyespecialistYesorNoBox 
                 value={ownerformdata.owneriseyespecialist} 
@@ -21637,24 +21767,31 @@ Are you sure you want to delete this staff account?
             <button 
               type="submit" 
               disabled={ownerissubmitting} 
-              className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium rounded-lg hover:from-sky-600 hover:to-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              style={{
+                width: "100%",
+                padding: "12px 32px",
+                backgroundColor: ownerissubmitting ? "#9CA3AF" : "#3B82F6",
+                color: "white",
+                borderRadius: "12px",
+                fontWeight: "600",
+                fontSize: "16px",
+                border: "none",
+                cursor: ownerissubmitting ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+              }}
             >
-              <div className="flex items-center">
-                {ownerissubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving Changes...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-edit mr-3"></i>
-                    Save Changes
-                  </>
-                )}
-              </div>
+              {ownerissubmitting ? (
+                <>
+                  <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                  Saving Changes...
+                </>
+              ) : (
+                <>
+                  <i className="bx bx-edit mr-2"></i>
+                  Save Changes
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -21662,7 +21799,7 @@ Are you sure you want to delete this staff account?
     </form>
   </div>
 </div>
-</div>
+</div>                                                                                                                                                                                                       
 )}
 
 
@@ -21806,41 +21943,54 @@ Are you sure you want to delete this owner account?
 {/*Add admin Dialog*/}
 {showaddadmindialog && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
   {/* Header */}
-  <div className="bg-sky-800 px-8 py-6">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="bg-white/20 p-3 rounded-full mr-4">
-          <i className="bx bx-user-plus text-white text-2xl"></i>
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Add Admin Account</h1>
-          <p className="text-sky-100">Create a new admin account</p>
-        </div>
+  <div className="flex justify-between items-center w-full h-[60px] mb-6">
+    <div className="flex items-center space-x-4">
+      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+        <i className="bx bx-user-plus text-white text-xl"></i>
       </div>
-      <div
-        onClick={() => setshowaddadmindialog(false)}
-        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-      >
-        <i className="bx bx-x text-white text-2xl"></i>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Add Admin Account
+        </h2>
+        <p className="text-sm text-gray-500">Create a new admin account</p>
       </div>
+    </div>
+    <div
+      onClick={() => setshowaddadmindialog(false)}
+      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+    >
+      <i className="bx bx-x text-gray-600 text-xl"></i>
     </div>
   </div>
 
-<div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-  <form onSubmit={adminhandlesubmit} className="p-8">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div className="mt-15">
+  <form onSubmit={adminhandlesubmit}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Profile Picture Section */}
       <div className="lg:col-span-1">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <img 
-              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-              src={adminpreviewimage || defaultprofilepic}
-              alt="Profile"
-            />
+            {adminpreviewimage ? (
+              <img 
+                className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                src={adminpreviewimage || defaultprofilepic}
+                alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : (
+              <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <div className="text-center">
+                  <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                  <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
               <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
             </div>
@@ -21879,14 +22029,14 @@ Are you sure you want to delete this owner account?
       </div>
 
       {/* Form Fields */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-4">
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Email
+          <label className="block text-sm font-semibold text-gray-700">
+            Email <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col">
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your email..." 
               type="text" 
               name="adminemail" 
@@ -21895,25 +22045,21 @@ Are you sure you want to delete this owner account?
               onChange={adminhandlechange} 
               required
             />
-            {admincheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-            {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (<p className="text-red-500 text-sm mt-1">Enter a valid email address</p>)}
-            {adminemailerror && adminemailexist && (<p className="text-red-500 text-sm mt-1">Email already exist</p>)}
+            <div className="text-sm mt-1">
+              {admincheckemail && <p className="text-gray-500">Checking Email...</p>}
+              {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (<p className="text-red-500">Enter a valid email address</p>)}
+              {adminemailerror && adminemailexist && (<p className="text-red-500">Email already exist</p>)}
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className={`flex items-center text-sm font-medium transition-colors duration-200 ${
-            !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
-              ? 'text-gray-700'
-              : adminformdata.adminpassword.length >= 6 
-                ? 'text-green-600' 
-                : 'text-red-600'
-          }`}>
-            Password
+          <label className="block text-sm font-semibold text-gray-700">
+            Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input 
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400 ${
+              className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 !adminformdata.adminpassword || adminformdata.adminpassword.length === 0 
                   ? 'border-gray-300'
                   : adminformdata.adminpassword.length >= 6 
@@ -21966,13 +22112,13 @@ Are you sure you want to delete this owner account?
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              Last Name
+            <label className="block text-sm font-semibold text-gray-700">
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your lastname..." 
               type="text" 
               name="adminlastname" 
@@ -21984,11 +22130,11 @@ Are you sure you want to delete this owner account?
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              First Name
+            <label className="block text-sm font-semibold text-gray-700">
+              First Name <span className="text-red-500">*</span>
             </label>
             <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your firstname..." 
               type="text" 
               name="adminfirstname" 
@@ -22001,11 +22147,11 @@ Are you sure you want to delete this owner account?
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center text-sm font-medium text-gray-700">
-            Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+          <label className="block text-sm font-semibold text-gray-700">
+            Middle Name (Optional)
           </label>
           <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your middlename..." 
             type="text" 
             name="adminmiddlename" 
@@ -22017,30 +22163,35 @@ Are you sure you want to delete this owner account?
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-8 space-y-4">
+        <div className="pt-6">
           <button 
             type="submit" 
             disabled={adminissubmitting} 
-            className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-              adminissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-            }`}
+            style={{
+              width: "100%",
+              padding: "12px 32px",
+              backgroundColor: adminissubmitting ? "#9CA3AF" : "#3B82F6",
+              color: "white",
+              borderRadius: "12px",
+              fontWeight: "600",
+              fontSize: "16px",
+              border: "none",
+              cursor: adminissubmitting ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+            }}
           >
-            <div className="relative flex items-center">
-              {adminissubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <i className="bx bx-user-plus mr-3"></i>
-                  Create Account
-                </>
-              )}
-            </div>
+            {adminissubmitting ? (
+              <>
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Creating Account...
+              </>
+            ) : (
+              <>
+                <i className="bx bx-user-plus mr-2"></i>
+                Create Account
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -22154,17 +22305,17 @@ Are you sure you want to delete this admin account?
 
 {showviewadmindialog && (
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+<div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 overflow-y-auto animate-fadeInUp">
   {/* Header */}
-  <div className="bg-sky-800 px-8 py-6">
+  <div className="bg-white mb-6">
     <div className="flex items-center justify-between">
       <div className="flex items-center">
-        <div className="bg-white/20 p-3 rounded-full mr-4">
-          <i className="bx bx-user text-white text-2xl"></i>
+        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-3">
+          <i className="bx bx-user text-white text-xl"></i>
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Edit Admin Account</h1>
-          <p className="text-sky-100">Update admin account information</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-0.5">Edit Admin Account</h1>
+          <p className="text-sm text-gray-500">Update admin account information</p>
         </div>
       </div>
       <div
@@ -22180,172 +22331,198 @@ Are you sure you want to delete this admin account?
                          });
                          setadminpreviewimage(null);
                          setadminselectedprofile(null);}}
-        className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
+        className="cursor-pointer rounded-full bg-gray-100 hover:bg-gray-200 p-2 transition-colors duration-200"
       >
-        <i className="bx bx-x text-white text-2xl"></i>
+        <i className="bx bx-x text-gray-600 text-xl"></i>
       </div>
     </div>
   </div>
 
-  <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-    <form onSubmit={updateadminaccount} className="p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Picture Section */}
-        <div className="lg:col-span-1">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+  <form onSubmit={updateadminaccount}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Profile Picture Section */}
+      <div className="lg:col-span-1">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+            {adminpreviewimage ? (
               <img 
                 className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
                 src={adminpreviewimage || defaultprofilepic}
                 alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-              <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+            ) : (
+              <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <div className="text-center">
+                  <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                  <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                </div>
               </div>
+            )}
+            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
             </div>
-            
-            <input  
-              className="hidden" 
-              type="file" 
-              onChange={adminhandleprofilechange} 
-              accept="image/jpeg, image/jpg, image/png" 
-              ref={adminimageinputref} 
-            />
-            
-            <div className="flex items-center gap-2">
-              {adminselectedprofile && (
-                <button
-                  type="button"
-                  onClick={adminhandleremoveprofile}
-                  className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                  title="Remove Photo"
-                >
-                  <i className="bx bx-trash w-4 h-4"></i>
-                </button>
-              )}
-              
+          </div>
+          
+          <input  
+            className="hidden" 
+            type="file" 
+            onChange={adminhandleprofilechange} 
+            accept="image/jpeg, image/jpg, image/png" 
+            ref={adminimageinputref} 
+          />
+          
+          <div className="flex items-center gap-2">
+            {adminselectedprofile && (
               <button
                 type="button"
-                onClick={adminhandleuploadclick}
-                className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                onClick={adminhandleremoveprofile}
+                className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                title="Remove Photo"
               >
-                <i className="bx bx-camera mr-2"></i>
-                Upload Photo
+                <i className="bx bx-trash w-4 h-4"></i>
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Form Fields */}
-        <div className="lg:col-span-2 space-y-6">
-          {adminmessage.text && (
-            <div className={`p-4 rounded-lg border ${
-              adminmessage.type === 'error' 
-                ? 'bg-red-50 border-red-200 text-red-800' 
-                : 'bg-green-50 border-green-200 text-green-800'
-            }`}>
-              {adminmessage.text}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <div className="flex flex-col">
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                placeholder="Enter your email..." 
-                type="text" 
-                name="adminemail" 
-                id="adminemail" 
-                value={adminformdata.adminemail} 
-                onChange={adminhandlechange} 
-                required
-              />
-              {admincheckemail && <p className="text-gray-500 text-sm mt-1">Checking Email</p>}
-              {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (
-                <p className="text-red-500 text-sm mt-1">Enter a valid email address</p>
-              )}
-              {adminemailerror && adminemailexist && (
-                <p className="text-red-500 text-sm mt-1">Email already exists</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Last Name</label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                placeholder="Enter your lastname..." 
-                type="text" 
-                name="adminlastname" 
-                id="adminlastname" 
-                value={adminformdata.adminlastname} 
-                onChange={adminhandlechange} 
-                required
-              />
-            </div>
+            )}
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">First Name</label>
-              <input 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                placeholder="Enter your firstname..." 
-                type="text" 
-                name="adminfirstname" 
-                id="adminfirstname" 
-                value={adminformdata.adminfirstname} 
-                onChange={adminhandlechange} 
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Middle Name</label>
-            <input 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-              placeholder="Enter your middlename..." 
-              type="text" 
-              name="adminmiddlename" 
-              id="adminmiddlename" 
-              value={adminformdata.adminmiddlename} 
-              onChange={adminhandlechange} 
-              required
-            />
-          </div>
-
-          <div className="pt-6">
-            <button 
-              type="submit" 
-              disabled={adminissubmitting} 
-              className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium rounded-lg hover:from-sky-600 hover:to-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            <button
+              type="button"
+              onClick={adminhandleuploadclick}
+              className="cursor-pointer flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
-              <div className="flex items-center">
-                {adminissubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving Changes...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-edit mr-3"></i>
-                    Save Changes
-                  </>
-                )}
-              </div>
+              <i className="bx bx-camera mr-2"></i>
+              Upload Photo
             </button>
           </div>
         </div>
       </div>
-    </form>
-  </div>
+
+      {/* Form Fields */}
+      <div className="lg:col-span-2 space-y-4">
+        {adminmessage.text && (
+          <div className={`p-4 rounded-lg border ${
+            adminmessage.type === 'error' 
+              ? 'bg-red-50 border-red-200 text-red-800' 
+              : 'bg-green-50 border-green-200 text-green-800'
+          }`}>
+            {adminmessage.text}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <div className="flex flex-col">
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your email..." 
+              type="text" 
+              name="adminemail" 
+              id="adminemail" 
+              value={adminformdata.adminemail} 
+              onChange={adminhandlechange} 
+              required
+            />
+            <div className="text-sm mt-1">
+              {admincheckemail && <p className="text-gray-500">Checking Email...</p>}
+              {adminemailerror && !adminemailexist && !adminemailcharacters.test(adminformdata.adminemail) && (
+                <p className="text-red-500">Enter a valid email address</p>
+              )}
+              {adminemailerror && adminemailexist && (
+                <p className="text-red-500">Email already exists</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">
+              Last Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your lastname..." 
+              type="text" 
+              name="adminlastname" 
+              id="adminlastname" 
+              value={adminformdata.adminlastname} 
+              onChange={adminhandlechange} 
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">
+              First Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your firstname..." 
+              type="text" 
+              name="adminfirstname" 
+              id="adminfirstname" 
+              value={adminformdata.adminfirstname} 
+              onChange={adminhandlechange} 
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">
+            Middle Name (Optional)
+          </label>
+          <input 
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Enter your middlename..." 
+            type="text" 
+            name="adminmiddlename" 
+            id="adminmiddlename" 
+            value={adminformdata.adminmiddlename} 
+            onChange={adminhandlechange} 
+            required
+          />
+        </div>
+
+        <div className="pt-6">
+          <button 
+            type="submit" 
+            disabled={adminissubmitting} 
+            style={{
+              width: "100%",
+              padding: "12px 32px",
+              backgroundColor: adminissubmitting ? "#9CA3AF" : "#3B82F6",
+              color: "white",
+              borderRadius: "12px",
+              fontWeight: "600",
+              fontSize: "16px",
+              border: "none",
+              cursor: adminissubmitting ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+            }}
+          >
+            {adminissubmitting ? (
+              <>
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Saving Changes...
+              </>
+            ) : (
+              <>
+                <i className="bx bx-edit mr-2"></i>
+                Save Changes
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
 </div>
 )}
@@ -22400,7 +22577,7 @@ Are you sure you want to delete this admin account?
               <i className="bx bx-search absolute left-3 text-2xl text-gray-500"></i>
               <input 
                 type="text" 
-                placeholder="Enter patient name..." 
+                placeholder="Enter patient name, age, sex, contact no., address, etc..." 
                 value={searchPatientProfiles} 
                 onChange={(e) => {setSearchPatientProfiles(e.target.value); filterPatientProfiles(e.target.value);}}
                 className="transition-all duration-300 ease-in-out py-2 pl-10 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
@@ -22422,31 +22599,31 @@ Are you sure you want to delete this admin account?
 
         {showpatientpofile && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
+            <div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
               {/* Header */}
-              <div className="bg-sky-800 px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="bg-white/20 p-3 rounded-full mr-4">
-                      <i className="bx bx-user text-white text-2xl"></i>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Edit Patient Profile</h1>
-                      <p className="text-sky-100">Update patient information</p>
-                    </div>
+              <div className="flex justify-between items-center w-full h-[60px] mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <i className="bx bx-user text-white text-xl"></i>
                   </div>
-                  <div
-                    onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
-                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-                  >
-                    <i className="bx bx-x text-white text-2xl"></i>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Edit Patient Profile
+                    </h2>
+                    <p className="text-sm text-gray-500">Update patient information</p>
                   </div>
+                </div>
+                <div
+                  onClick={() => {setshowpatientpofile(false); resetpatientprofileformdata();}}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+                >
+                  <i className="bx bx-x text-gray-600 text-xl"></i>
                 </div>
               </div>
 
-              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-                <form onSubmit={retrieveandupdatepatientprofile} className="p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="mt-15">
+                <form onSubmit={retrieveandupdatepatientprofile}>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Profile Picture Section */}
                     <div className="lg:col-span-1">
                       <div className="flex flex-col items-center space-y-4">
@@ -22534,15 +22711,15 @@ Are you sure you want to delete this admin account?
                     </div>
 
                     {/* Form Fields */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-2 space-y-4">
                       {/* Name Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Last Name
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Last Name <span className="text-red-500">*</span>
                           </label>
                           <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             value={demoformdata.patientlastname} 
                             onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
                             type="text" 
@@ -22554,11 +22731,11 @@ Are you sure you want to delete this admin account?
                         </div>
 
                         <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            First Name
+                          <label className="block text-sm font-semibold text-gray-700">
+                            First Name <span className="text-red-500">*</span>
                           </label>
                           <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             value={demoformdata.patientfirstname} 
                             onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
                             type="text" 
@@ -22571,11 +22748,11 @@ Are you sure you want to delete this admin account?
                       </div>
 
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Middle Name (Optional)
                         </label>
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           value={demoformdata.patientmiddlename} 
                           onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
                           type="text" 
@@ -22586,10 +22763,10 @@ Are you sure you want to delete this admin account?
                       </div>
 
                       {/* Birthdate and Age */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Birthdate
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Birthdate <span className="text-red-500">*</span>
                           </label>
                           <input 
 
@@ -22613,7 +22790,7 @@ value={demoformdata.patientbirthdate}
                         </div>
 
                         <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
+                          <label className="block text-sm font-semibold text-gray-700">
                             Age
                           </label>
                           <input 
@@ -22630,8 +22807,8 @@ value={demoformdata.patientbirthdate}
 
                       {/* Gender */}
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Gender
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Gender <span className="text-red-500">*</span>
                         </label>
                         <div className="mt-2">
                           <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
@@ -22640,11 +22817,11 @@ value={demoformdata.patientbirthdate}
 
                       {/* Contact Information */}
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Contact Number
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Contact Number <span className="text-red-500">*</span>
                         </label>
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           value={demoformdata.patientcontactnumber} 
                           onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
                           type="text" 
@@ -22656,11 +22833,11 @@ value={demoformdata.patientbirthdate}
                       </div>
 
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Home Address
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Home Address <span className="text-red-500">*</span>
                         </label>
                         <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           value={demoformdata.patienthomeaddress} 
                           onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
                           type="text" 
@@ -22672,8 +22849,8 @@ value={demoformdata.patientbirthdate}
                       </div>
 
                       {/* Emergency Contact Section */}
-                      <div className="border-t border-gray-200 pt-6 mt-8">
-                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
+                      <div className="border-t border-gray-200 pt-4 mt-6">
+                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
                             <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
                               <i className="bx bx-shield text-red-600"></i>
@@ -22685,13 +22862,13 @@ value={demoformdata.patientbirthdate}
                           </p>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="flex items-center text-sm font-medium text-gray-700">
-                              Contact Name
+                            <label className="block text-sm font-semibold text-gray-700">
+                              Contact Name <span className="text-red-500">*</span>
                             </label>
                             <input 
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                               value={demoformdata.patientemergencycontactname} 
                               onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
                               type="text" 
@@ -22703,11 +22880,11 @@ value={demoformdata.patientbirthdate}
                           </div>
 
                           <div className="space-y-2">
-                            <label className="flex items-center text-sm font-medium text-gray-700">
-                              Contact Number
+                            <label className="block text-sm font-semibold text-gray-700">
+                              Contact Number <span className="text-red-500">*</span>
                             </label>
                             <input 
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                               value={demoformdata.patientemergencycontactnumber} 
                               onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
                               type="text" 
@@ -22721,39 +22898,436 @@ value={demoformdata.patientbirthdate}
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="pt-8 space-y-4">
+                      <div className="pt-6 space-y-3">
                         <button 
                           type="submit" 
                           disabled={issubmitting} 
-                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                            issubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                          }`}
+                          style={{
+                            width: "100%",
+                            padding: "12px 32px",
+                            backgroundColor: issubmitting ? "#9CA3AF" : "#3B82F6",
+                            color: "white",
+                            borderRadius: "12px",
+                            fontWeight: "600",
+                            fontSize: "16px",
+                            border: "none",
+                            cursor: issubmitting ? "not-allowed" : "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+                          }}
                         >
-                          <div className="relative flex items-center">
-                            {issubmitting ? (
-                              <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Updating Profile...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bx bx-edit mr-3"></i>
-                                Save Changes
-                              </>
-                            )}
-                          </div>
+                          {issubmitting ? (
+                            <>
+                              <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                              Updating Profile...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bx bx-edit mr-2"></i>
+                              Save Changes
+                            </>
+                          )}
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setshowdeletepatientprofiledialog(true)}
-                          className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                          style={{
+                            width: "100%",
+                            padding: "12px 32px",
+                            backgroundColor: "#EF4444",
+                            color: "white",
+                            borderRadius: "12px",
+                            fontWeight: "600",
+                            fontSize: "16px",
+                            border: "none",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)"
+                          }}
                         >
-                          <i className="bx bx-trash mr-3"></i>
+                          <i className="bx bx-trash mr-2"></i>
                           Delete Patient Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showaddpatientpofile && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white shadow-xl border border-gray-100 rounded-3xl max-w-5xl w-full max-h-[90vh] p-8 animate-fadeInUp overflow-y-auto">
+              {/* Header */}
+              <div className="flex justify-between items-center w-full h-[60px] mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <i className="bx bx-user-plus text-white text-xl"></i>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Add Patient Profile
+                    </h2>
+                    <p className="text-sm text-gray-500">Create a new patient profile</p>
+                  </div>
+                </div>
+                <div
+                  onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+                >
+                  <i className="bx bx-x text-gray-600 text-xl"></i>
+                </div>
+              </div>
+
+              <div className="mt-15">
+                <form onSubmit={addpatientprofile}>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Profile Picture Section */}
+                    <div className="lg:col-span-1">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative group">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                          {addpatientprofileisuploadingimage ? (
+                            /* Loading state */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mb-2 mx-auto"></div>
+                                <p className="text-sky-600 text-sm font-medium">Uploading...</p>
+                              </div>
+                            </div>
+                          ) : addpatientprofilepreviewimage ? (
+                            <img 
+                              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
+                              src={addpatientprofilepreviewimage || defaultprofilepic}
+                              alt="Profile"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : (
+                            /* Fallback placeholder when no image */
+                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
+                                <p className="text-sky-600 text-sm font-medium">No Photo</p>
+                              </div>
+                            </div>
+                          )}
+                          {!addpatientprofileisuploadingimage && (
+                            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <input  
+                          className="hidden" 
+                          type="file" 
+                          onChange={addpatientprofilehandlechange} 
+                          accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+                          ref={addpatientprofileimageinputref} 
+                          disabled={addpatientprofileisuploadingimage}
+                        />
+                        
+                        <div className="flex items-center gap-2">
+                          {(selectedpatientprofile || addpatientprofilepreviewimage) && !addpatientprofileisuploadingimage && (
+                            <button
+                              type="button"
+                              onClick={addpatientprofilehandleremoveprofile}
+                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              title="Remove Photo"
+                            >
+                              <i className="bx bx-trash w-4 h-4"></i>
+                            </button>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={addpatientprofilehandleuploadclick}
+                            disabled={addpatientprofileisuploadingimage}
+                            className={`cursor-pointer flex items-center px-6 py-3 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+                              addpatientprofileisuploadingimage 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700'
+                            }`}
+                          >
+                            {addpatientprofileisuploadingimage ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-camera mr-2"></i>
+                                Upload Photo
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Email Field */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Patient Email <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})}
+                          value={demoformdata.patientemail} 
+                          id="patientemail" 
+                          name="patientemail" 
+                          required 
+                          type="email" 
+                          placeholder="Enter patient email"
+                        />
+                        {/* Email validation messages */}
+                        <div className="text-sm">
+                          {demopatientcheckemail && (
+                            <p className="text-gray-500">Checking Email...</p>
+                          )}
+                          {!demopatientcheckemail && (
+                            <>
+                              {demopatientemailerror && !demopatientemailexist && (
+                                <p className="text-red-500">
+                                  Please enter a valid email address
+                                </p>
+                              )}
+                              {demopatientemailexist && (
+                                <p className="text-red-500">
+                                  A patient profile already exists with this email
+                                </p>
+                              )}
+                              {emailisnotpatienterror && (
+                                <p className="text-red-500">
+                                  This email belongs to a staff/admin account and cannot be used for patient profiles
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Name Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Last Name <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            value={demoformdata.patientlastname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
+                            type="text" 
+                            name="patientlastname" 
+                            id="patientlastname" 
+                            placeholder="Enter last name"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            First Name <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            value={demoformdata.patientfirstname} 
+                            onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
+                            type="text" 
+                            name="patientfirstname" 
+                            id="patientfirstname" 
+                            placeholder="Enter first name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Middle Name (Optional)
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          value={demoformdata.patientmiddlename} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
+                          type="text" 
+                          name="patientmiddlename" 
+                          id="patientmiddlename" 
+                          placeholder="Enter middle name (optional)"
+                        />
+                      </div>
+
+                      {/* Birthdate and Age */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Birthdate <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                            value={demoformdata.patientbirthdate} 
+                            onChange={(e) => {
+                              const newBirthdate = e.target.value;
+                              setdemoformdata({
+                                ...demoformdata, 
+                                patientbirthdate: newBirthdate,
+                                patientage: calculateAge(newBirthdate)
+                              });
+                            }} 
+                            max={new Date().toISOString().split('T')[0]}  
+                            type="date" 
+                            name="patientbirthdate" 
+                            id="patientbirthdate"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Age
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                            value={demoformdata.patientage}  
+                            readOnly 
+                            type="number" 
+                            name="patientage" 
+                            id="patientage" 
+                            placeholder="Auto-calculated from birthdate"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gender */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Gender <span className="text-red-500">*</span>
+                        </label>
+                        <div className="mt-2">
+                          <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Contact Number <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          value={demoformdata.patientcontactnumber} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
+                          type="text" 
+                          name="patientcontactnumber" 
+                          id="patientcontactnumber" 
+                          placeholder="Ex: 09123456789"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Home Address <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          value={demoformdata.patienthomeaddress} 
+                          onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
+                          type="text" 
+                          name="patienthomeaddress" 
+                          id="patienthomeaddress" 
+                          placeholder="Complete home address"
+                          required
+                        />
+                      </div>
+
+                      {/* Emergency Contact Section */}
+                      <div className="border-t border-gray-200 pt-4 mt-6">
+                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                              <i className="bx bx-shield text-red-600"></i>
+                            </div>
+                            Emergency Contact Information
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            This information will be used to contact someone in case of medical emergencies.
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700">
+                              Contact Name <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              value={demoformdata.patientemergencycontactname} 
+                              onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactname" 
+                              id="patientemergencycontactname" 
+                              placeholder="Emergency contact name"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700">
+                              Contact Number <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              value={demoformdata.patientemergencycontactnumber} 
+                              onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
+                              type="text" 
+                              name="patientemergencycontactnumber" 
+                              id="patientemergencycontactnumber" 
+                              placeholder="Emergency contact number"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="pt-6">
+                        <button 
+                          type="submit" 
+                          disabled={addpatientprofileissubmitting} 
+                          style={{
+                            width: "100%",
+                            padding: "12px 32px",
+                            backgroundColor: addpatientprofileissubmitting ? "#9CA3AF" : "#3B82F6",
+                            color: "white",
+                            borderRadius: "12px",
+                            fontWeight: "600",
+                            fontSize: "16px",
+                            border: "none",
+                            cursor: addpatientprofileissubmitting ? "not-allowed" : "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
+                          }}
+                        >
+                          {addpatientprofileissubmitting ? (
+                            <>
+                              <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                              Creating Profile...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bx bx-user-plus mr-2"></i>
+                              Create Patient Profile
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -22844,380 +23418,7 @@ Are you sure you want to delete this patient profile?
 </div>
         )}
 
-        {showaddpatientpofile && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl w-full max-h-[90vh] animate-fadeInUp">
-              {/* Header */}
-              <div className="bg-sky-800 px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="bg-white/20 p-3 rounded-full mr-4">
-                      <i className="bx bx-user-plus text-white text-2xl"></i>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Add Patient Profile</h1>
-                      <p className="text-sky-100">Create a new patient profile</p>
-                    </div>
-                  </div>
-                  <div
-                    onClick={() => {setshowaddpatientprofile(false); resetpatientprofileformdata();}}
-                    className="cursor-pointer bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors duration-200"
-                  >
-                    <i className="bx bx-x text-white text-2xl"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-                <form onSubmit={addpatientprofile} className="p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Profile Picture Section */}
-                    <div className="lg:col-span-1">
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="relative group">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                          {addpatientprofileisuploadingimage ? (
-                            /* Loading state */
-                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
-                              <div className="text-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mb-2 mx-auto"></div>
-                                <p className="text-sky-600 text-sm font-medium">Uploading...</p>
-                              </div>
-                            </div>
-                          ) : addpatientprofilepreviewimage ? (
-                            <img 
-                              className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                              src={addpatientprofilepreviewimage || defaultprofilepic}
-                              alt="Profile"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : (
-                            /* Fallback placeholder when no image */
-                            <div className="relative w-48 h-48 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
-                              <div className="text-center">
-                                <i className="bx bx-user text-sky-400 text-6xl mb-2"></i>
-                                <p className="text-sky-600 text-sm font-medium">No Photo</p>
-                              </div>
-                            </div>
-                          )}
-                          {!addpatientprofileisuploadingimage && (
-                            <div className="absolute inset-0 rounded-full hover:bg-[#0000002b] bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                              <i className="bx bx-camera text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl"></i>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <input  
-                          className="hidden" 
-                          type="file" 
-                          onChange={addpatientprofilehandlechange} 
-                          accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" 
-                          ref={addpatientprofileimageinputref} 
-                          disabled={addpatientprofileisuploadingimage}
-                        />
-                        
-                        <div className="flex items-center gap-2">
-                          {(selectedpatientprofile || addpatientprofilepreviewimage) && !addpatientprofileisuploadingimage && (
-                            <button
-                              type="button"
-                              onClick={addpatientprofilehandleremoveprofile}
-                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                              title="Remove Photo"
-                            >
-                              <i className="bx bx-trash w-4 h-4"></i>
-                            </button>
-                          )}
-                          
-                          <button
-                            type="button"
-                            onClick={addpatientprofilehandleuploadclick}
-                            disabled={addpatientprofileisuploadingimage}
-                            className={`cursor-pointer flex items-center px-6 py-3 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
-                              addpatientprofileisuploadingimage 
-                                ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700'
-                            }`}
-                          >
-                            {addpatientprofileisuploadingimage ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Uploading...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bx bx-camera mr-2"></i>
-                                Upload Photo
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Form Fields */}
-                    <div className="lg:col-span-2 space-y-6">
-                      {/* Email Field */}
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Patient Email
-                        </label>
-                        <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                          onChange={(e) => setdemoformdata({...demoformdata, patientemail: e.target.value.trim()})}
-                          value={demoformdata.patientemail} 
-                          id="patientemail" 
-                          name="patientemail" 
-                          required 
-                          type="email" 
-                          placeholder="Enter patient email"
-                        />
-                        {/* Email validation messages */}
-                        <div className="text-sm">
-                          {demopatientcheckemail && (
-                            <p className="text-gray-500">Checking Email...</p>
-                          )}
-                          {!demopatientcheckemail && (
-                            <>
-                              {demopatientemailerror && !demopatientemailexist && (
-                                <p className="text-red-500">
-                                  Please enter a valid email address
-                                </p>
-                              )}
-                              {demopatientemailexist && (
-                                <p className="text-red-500">
-                                  A patient profile already exists with this email
-                                </p>
-                              )}
-                              {emailisnotpatienterror && (
-                                <p className="text-red-500">
-                                  This email belongs to a staff/admin account and cannot be used for patient profiles
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Name Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Last Name
-                          </label>
-                          <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            value={demoformdata.patientlastname} 
-                            onChange={(e) => setdemoformdata({...demoformdata, patientlastname: e.target.value})} 
-                            type="text" 
-                            name="patientlastname" 
-                            id="patientlastname" 
-                            placeholder="Enter last name"
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            First Name
-                          </label>
-                          <input 
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                            value={demoformdata.patientfirstname} 
-                            onChange={(e) => setdemoformdata({...demoformdata, patientfirstname: e.target.value})}  
-                            type="text" 
-                            name="patientfirstname" 
-                            id="patientfirstname" 
-                            placeholder="Enter first name"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Middle Name <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-                        </label>
-                        <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                          value={demoformdata.patientmiddlename} 
-                          onChange={(e) => setdemoformdata({...demoformdata, patientmiddlename: e.target.value})}  
-                          type="text" 
-                          name="patientmiddlename" 
-                          id="patientmiddlename" 
-                          placeholder="Enter middle name (optional)"
-                        />
-                      </div>
-
-                      {/* Birthdate and Age */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Birthdate
-                          </label>
-                          <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
-                            value={demoformdata.patientbirthdate} 
-                            onChange={(e) => {
-                              const newBirthdate = e.target.value;
-                              setdemoformdata({
-                                ...demoformdata, 
-                                patientbirthdate: newBirthdate,
-                                patientage: calculateAge(newBirthdate)
-                              });
-                            }} 
-                            max={new Date().toISOString().split('T')[0]}  
-                            type="date" 
-                            name="patientbirthdate" 
-                            id="patientbirthdate"
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="flex items-center text-sm font-medium text-gray-700">
-                            Age
-                          </label>
-                          <input 
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
-                            value={demoformdata.patientage}  
-                            readOnly 
-                            type="number" 
-                            name="patientage" 
-                            id="patientage" 
-                            placeholder="Auto-calculated from birthdate"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Gender */}
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Gender
-                        </label>
-                        <div className="mt-2">
-                          <GenderBoxAdminDash value={demoformdata.patientgender} onChange={(e) => setdemoformdata({...demoformdata, patientgender: e.target.value})} />
-                        </div>
-                      </div>
-
-                      {/* Contact Information */}
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Contact Number
-                        </label>
-                        <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                          value={demoformdata.patientcontactnumber} 
-                          onChange={(e) => setdemoformdata({...demoformdata, patientcontactnumber: e.target.value})}  
-                          type="text" 
-                          name="patientcontactnumber" 
-                          id="patientcontactnumber" 
-                          placeholder="Ex: 09123456789"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Home Address
-                        </label>
-                        <input 
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 bg-white hover:border-gray-400"
-                          value={demoformdata.patienthomeaddress} 
-                          onChange={(e) => setdemoformdata({...demoformdata, patienthomeaddress: e.target.value})}  
-                          type="text" 
-                          name="patienthomeaddress" 
-                          id="patienthomeaddress" 
-                          placeholder="Complete home address"
-                          required
-                        />
-                      </div>
-
-                      {/* Emergency Contact Section */}
-                      <div className="border-t border-gray-200 pt-6 mt-8">
-                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 mb-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
-                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                              <i className="bx bx-shield text-red-600"></i>
-                            </div>
-                            Emergency Contact Information
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            This information will be used to contact someone in case of medical emergencies.
-                          </p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <label className="flex items-center text-sm font-medium text-gray-700">
-                              Contact Name
-                            </label>
-                            <input 
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                              value={demoformdata.patientemergencycontactname} 
-                              onChange={(e) => setdemoformdata({...demoformdata,patientemergencycontactname: e.target.value})}  
-                              type="text" 
-                              name="patientemergencycontactname" 
-                              id="patientemergencycontactname" 
-                              placeholder="Emergency contact name"
-                              required
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="flex items-center text-sm font-medium text-gray-700">
-                              Contact Number
-                            </label>
-                            <input 
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white hover:border-gray-400"
-                              value={demoformdata.patientemergencycontactnumber} 
-                              onChange={(e) => setdemoformdata({...demoformdata, patientemergencycontactnumber: e.target.value})}  
-                              type="text" 
-                              name="patientemergencycontactnumber" 
-                              id="patientemergencycontactnumber" 
-                              placeholder="Emergency contact number"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="pt-8">
-                        <button 
-                          type="submit" 
-                          disabled={addpatientprofileissubmitting} 
-                          className={`relative w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-medium rounded-lg shadow-lg hover:from-sky-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 overflow-hidden ${
-                            addpatientprofileissubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
-                          }`}
-                        >
-                          <div className="relative flex items-center">
-                            {addpatientprofileissubmitting ? (
-                              <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Creating Profile...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bx bx-user-plus mr-3"></i>
-                                Create Patient Profile
-                              </>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     )}
 
@@ -23262,6 +23463,35 @@ Are you sure you want to delete this patient profile?
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -27378,6 +27608,10 @@ Are you sure you want to delete this medical record?
 
 </div>
 </div>)}
+
+
+
+
 
 
 
@@ -32147,6 +32381,10 @@ paginatedAmbherOrders.map((order) => (
 
 
         <div key={product.ambherinventoryproductid} onClick={() => {
+                                                            // Prevent selection if product is out of stock
+                                                            if (product.ambherinventoryproductquantity === 0) {
+                                                              return;
+                                                            }
                                                             console.log('Selecting product:', product);
                                                              setselectedorderambherproduct(product);
                                                              setorderambhercurrentimageindex(0);
@@ -32159,7 +32397,7 @@ paginatedAmbherOrders.map((order) => (
                                                              setorderambherinventoryproductnotes(product?.ambherinventoryproductnotes || '');
                                                              setorderambherinventoryproductprice(product?.ambherinventoryproductprice || 0);
                                                              setorderambherinventoryproductquantity(product?.ambherinventoryproductquantity || 0);
-                                                             setorderambherinventoryproductimagepreviewimages(product?.ambherinventoryproductimagepreviewimages || []);}}    className={`${product.ambherinventoryproductquantity == 0 ? 'opacity-50 relative' : ''} mb-2  items-center p-2 min-h-25 h-auto rounded-2xl border-1 hover:shadow-md hover:cursor-pointer transition-all duration-300 ease-in-out max-w-full`} >
+                                                             setorderambherinventoryproductimagepreviewimages(product?.ambherinventoryproductimagepreviewimages || []);}}    className={`${product.ambherinventoryproductquantity == 0 ? 'opacity-50 relative cursor-not-allowed' : ''} mb-2  items-center p-2 min-h-25 h-auto rounded-2xl border-1 hover:shadow-md hover:cursor-pointer transition-all duration-300 ease-in-out max-w-full`} >
              {product.ambherinventoryproductquantity == 0 && (
                             
                   <div className="absolute inset-0 flex items-center  justify-center"><h1 className="font-albertsans font-semibold bg-gray-200 text-lg  px-2 py-1 rounded-lg">Out of Stock</h1></div>
@@ -32260,12 +32498,7 @@ paginatedAmbherOrders.map((order) => (
 
                           <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{orderambherinventoryproductname}</h1>
            
-                          <div className="mt-1 flex items-center">
-                            <img src={starimage} className="w-5 h-5"/>
-                            <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
-                            
-                            <p className="mt-1 font-albertsans border-l-2  border-[#8c8c8c] pl-3  text-[13px]">{ambherproductsoldCount} sold</p>
-                          </div>
+
           
                     
                           <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(orderambherinventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
@@ -32612,12 +32845,7 @@ paginatedAmbherOrders.map((order) => (
 
                           <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{selectedorderambherproduct?.patientorderambherproductname}</h1>
            
-                          <div className="mt-1 flex items-center">
-                            <img src={starimage} className="w-5 h-5"/>
-                            <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
-                            
-                            <p className="mt-1 font-albertsans border-l-2  border-[#8c8c8c] pl-3  text-[13px]">{ambherproductsoldCount} sold</p>
-                          </div>
+
           
                     
                           <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(selectedorderambherproduct?.patientorderambherproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
@@ -33054,6 +33282,10 @@ paginatedBautistaOrders.map((order) => (
 
 
         <div key={product.bautistainventoryproductid} onClick={() => {
+                                                            // Prevent selection if product is out of stock
+                                                            if (product.bautistainventoryproductquantity === 0) {
+                                                              return;
+                                                            }
                                                             console.log('Selecting product:', product);
                                                              setselectedorderbautistaproduct(product);
                                                              setorderbautistacurrentimageindex(0);
@@ -33065,7 +33297,7 @@ paginatedBautistaOrders.map((order) => (
                                                              setorderbautistainventoryproductdescription(product?.bautistainventoryproductdescription || '');
                                                              setorderbautistainventoryproductprice(product?.bautistainventoryproductprice || 0);
                                                              setorderbautistainventoryproductquantity(product?.bautistainventoryproductquantity || 0);
-                                                             setorderbautistainventoryproductimagepreviewimages(product?.bautistainventoryproductimagepreviewimages || []);}}    className={`${product.bautistainventoryproductquantity == 0 ? 'opacity-50 relative' : ''} mb-2  items-center p-2 min-h-25 h-auto rounded-2xl border-1 hover:shadow-md hover:cursor-pointer transition-all duration-300 ease-in-out max-w-full`} >
+                                                             setorderbautistainventoryproductimagepreviewimages(product?.bautistainventoryproductimagepreviewimages || []);}}    className={`${product.bautistainventoryproductquantity == 0 ? 'opacity-50 relative cursor-not-allowed' : ''} mb-2  items-center p-2 min-h-25 h-auto rounded-2xl border-1 hover:shadow-md hover:cursor-pointer transition-all duration-300 ease-in-out max-w-full`} >
              {product.bautistainventoryproductquantity == 0 && (
                             
                   <div className="absolute inset-0 flex items-center  justify-center"><h1 className="font-albertsans font-semibold bg-gray-200 text-lg  px-2 py-1 rounded-lg">Out of Stock</h1></div>
@@ -33166,12 +33398,7 @@ paginatedBautistaOrders.map((order) => (
 
                           <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{orderbautistainventoryproductname}</h1>
            
-                          <div className="mt-1 flex items-center">
-                            <img src={starimage} className="w-5 h-5"/>
-                            <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
-                            
-                            <p className="mt-1 font-albertsans border-l-2  border-[#8c8c8c] pl-3  text-[13px]">{bautistaproductsoldCount} sold</p>
-                          </div>
+
           
                     
                           <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(orderbautistainventoryproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
@@ -33497,12 +33724,7 @@ paginatedBautistaOrders.map((order) => (
 
                           <h1 className="font-albertsans mt-3 min-w-0 break-words h-fit w-full font-albertsans font-bold text-[#212121] text-[29px]">{selectedorderbautistaproduct?.patientorderbautistaproductname}</h1>
            
-                          <div className="mt-1 flex items-center">
-                            <img src={starimage} className="w-5 h-5"/>
-                            <p className="font-albertsans ml-2 mt-1 text-[15px] font-semibold">4.8</p><span className="mt-1 text-[13px] pr-3 ml-2">(89 reviews)</span>
-                            
-                            <p className="mt-1 font-albertsans border-l-2  border-[#8c8c8c] pl-3  text-[13px]">{bautistaproductsoldCount} sold</p>
-                          </div>
+
           
                     
                           <p className="mt-5 font-albertsans font-semibold text-[#478d12] text-[40px]">₱{Number(selectedorderbautistaproduct?.patientorderbautistaproductprice).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p>
@@ -36315,35 +36537,6 @@ paginatedBautistaOrders.map((order) => (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div style={{
@@ -36957,5 +37150,9 @@ paginatedBautistaOrders.map((order) => (
     </>
   )
 }
+
+
+
+
 
 export default AdminDashboard
