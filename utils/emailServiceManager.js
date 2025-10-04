@@ -15,7 +15,11 @@ class EmailServiceManager {
       this.gmailService = new GmailAPIService();
     }
   }
-
+  async initialize() {
+    if (this.emailProvider === 'gmail-api' && this.gmailService) {
+      await this.gmailService.initialize();
+    }
+  }
 
   async sendVerificationEmail(email, token, firstName, clinicName, patientId) {
     try {
