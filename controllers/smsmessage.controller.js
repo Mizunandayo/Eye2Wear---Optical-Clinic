@@ -1182,35 +1182,19 @@ Thank you for choosing ${clinicName}!`;
         });
       }
 
-      // Get clinic-specific details based on clinic type
-      const isAmbher = clinicType.toLowerCase() === 'ambher';
-      
-      // FIX: Use clinic-specific email field for patient lookup (was using wrong field)
-      const appointmentEmail = isAmbher ? 
-        appointment.patientambherappointmentemail : 
-        appointment.patientbautistaappointmentemail;
-
-      console.log(`🔍 Decline SMS - Looking for patient with email: ${appointmentEmail}`);
-      console.log(`🔍 Decline SMS - Clinic type: ${clinicType} (isAmbher: ${isAmbher})`);
-
-      // Get patient demographic information using the clinic-specific appointment email
+      // Get patient demographic information using the appointment email
       const patient = await PatientDemographic.findOne({
-        patientemail: appointmentEmail
+        patientemail: appointment.patientappointmentemail
       });
 
-      console.log(`🔍 Decline SMS - Patient found: ${patient ? 'YES' : 'NO'}`);
-      if (patient) {
-        console.log(`🔍 Decline SMS - Patient name: ${patient.patientfirstname} ${patient.patientlastname}`);
-        console.log(`🔍 Decline SMS - Patient contact: ${patient.patientcontactnumber}`);
-      }
-
       if (!patient || !patient.patientcontactnumber) {
-        console.log(`❌ Decline SMS - Patient lookup failed for email: ${appointmentEmail}`);
         return res.status(400).json({
-          error: `Patient contact number not found for email: ${appointmentEmail}`
+          error: 'Patient contact number not found'
         });
       }
 
+      // Get clinic-specific details based on clinic type
+      const isAmbher = clinicType.toLowerCase() === 'ambher';
       const clinicName = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
       const appointmentDate = isAmbher ? appointment.patientambherappointmentdate : appointment.patientbautistaappointmentdate;
       const appointmentTime = isAmbher ? appointment.patientambherappointmenttime : appointment.patientbautistaappointmenttime;
