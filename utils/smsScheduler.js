@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import PatientAppointment from '../models/patientappointment.js';
+import PatientDemographic from '../models/patientdemographic.js';
 import PatientOrderAmbher from '../models/patientorderambher.js';
 import PatientOrderBautista from '../models/patientorderbautista.js';
 import SmsMessage from '../models/smsmessage.js';
@@ -32,9 +33,17 @@ class SmsScheduler {
   static init() {
     console.log('🕐 Initializing SMS Scheduler...');
     
+    // Schedule appointment reminders - runs every day at 12:00 AM (midnight)
+    cron.schedule('0 0 * * *', () => {
+      console.log('⏰ Running midnight appointment reminder job (12:00 AM)...');
+      this.sendAppointmentReminders();
+    }, {
+      timezone: "Asia/Manila"
+    });
+
     // Schedule appointment reminders - runs every day at 9:00 AM
     cron.schedule('0 9 * * *', () => {
-      console.log('⏰ Running daily appointment reminder job...');
+      console.log('⏰ Running daily appointment reminder job (9:00 AM)...');
       this.sendAppointmentReminders();
     }, {
       timezone: "Asia/Manila"
@@ -42,7 +51,7 @@ class SmsScheduler {
 
     // Schedule appointment reminders - runs every day at 3:00 PM
     cron.schedule('0 15 * * *', () => {
-      console.log('⏰ Running afternoon appointment reminder job...');
+      console.log('⏰ Running afternoon appointment reminder job (3:00 PM)...');
       this.sendAppointmentReminders();
     }, {
       timezone: "Asia/Manila"
@@ -57,10 +66,13 @@ class SmsScheduler {
     });
 
     console.log('✅ SMS Scheduler initialized successfully');
+    console.log('📅 Appointment reminders will run at: 12:00 AM, 9:00 AM, and 3:00 PM (Manila Time)');
   }
 
   static async sendAppointmentReminders() {
     try {
+      console.log('📅 Starting appointment reminder check...');
+      
       // Find appointments for tomorrow
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -69,33 +81,43 @@ class SmsScheduler {
       const dayAfterTomorrow = new Date(tomorrow);
       dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
 
-      // Find Ambher appointments for tomorrow
+      console.log(`🔍 Looking for appointments on: ${tomorrow.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`);
+
+      // Find Ambher appointments for tomorrow with "Accepted" status
       const ambherAppointments = await PatientAppointment.find({
         patientambherappointmentdate: {
-          $gte: tomorrow,
-          $lt: dayAfterTomorrow
+          $gte: tomorrow.toISOString(),
+          $lt: dayAfterTomorrow.toISOString()
         },
-        patientambherappointmentstatus: 'Confirmed'
-      }).populate('patientdemographicid', 'patientcontactnumber patientfirstname patientlastname');
+        patientambherappointmentstatus: 'Accepted'
+      });
 
-      // Find Bautista appointments for tomorrow
+      // Find Bautista appointments for tomorrow with "Accepted" status
       const bautistaAppointments = await PatientAppointment.find({
         patientbautistaappointmentdate: {
-          $gte: tomorrow,
-          $lt: dayAfterTomorrow
+          $gte: tomorrow.toISOString(),
+          $lt: dayAfterTomorrow.toISOString()
         },
-        patientbautistaappointmentstatus: 'Confirmed'
-      }).populate('patientdemographicid', 'patientcontactnumber patientfirstname patientlastname');
+        patientbautistaappointmentstatus: 'Accepted'
+      });
+
+      console.log(`📊 Found ${ambherAppointments.length} Ambher appointments and ${bautistaAppointments.length} Bautista appointments for tomorrow`);
 
       let totalSent = 0;
       let totalFailed = 0;
+      let totalSkipped = 0;
 
       // Send reminders for Ambher appointments
       for (const appointment of ambherAppointments) {
         try {
           const result = await this.sendSingleAppointmentReminder(appointment, 'ambher');
-          if (result.success) totalSent++;
-          else totalFailed++;
+          if (result.success) {
+            totalSent++;
+          } else if (result.skipped) {
+            totalSkipped++;
+          } else {
+            totalFailed++;
+          }
         } catch (error) {
           console.error('Error sending Ambher appointment reminder:', error);
           totalFailed++;
@@ -106,15 +128,20 @@ class SmsScheduler {
       for (const appointment of bautistaAppointments) {
         try {
           const result = await this.sendSingleAppointmentReminder(appointment, 'bautista');
-          if (result.success) totalSent++;
-          else totalFailed++;
+          if (result.success) {
+            totalSent++;
+          } else if (result.skipped) {
+            totalSkipped++;
+          } else {
+            totalFailed++;
+          }
         } catch (error) {
           console.error('Error sending Bautista appointment reminder:', error);
           totalFailed++;
         }
       }
 
-      console.log(`📱 Appointment reminders sent: ${totalSent} successful, ${totalFailed} failed`);
+      console.log(`📱 Appointment reminders completed: ${totalSent} sent, ${totalSkipped} skipped (already sent), ${totalFailed} failed`);
 
     } catch (error) {
       console.error('Error in sendAppointmentReminders:', error);
@@ -123,8 +150,18 @@ class SmsScheduler {
 
   static async sendSingleAppointmentReminder(appointment, clinicType) {
     try {
-      const patient = appointment.patientdemographicid;
-      if (!patient || !patient.patientcontactnumber) {
+      // Get patient demographic using email from appointment
+      const patient = await PatientDemographic.findOne({
+        patientemail: appointment.patientappointmentemail
+      });
+
+      if (!patient) {
+        console.log(`❌ Patient not found for email: ${appointment.patientappointmentemail}`);
+        return { success: false, error: 'Patient not found' };
+      }
+
+      if (!patient.patientcontactnumber) {
+        console.log(`❌ No contact number for patient: ${patient.patientfirstname} ${patient.patientlastname}`);
         return { success: false, error: 'No patient contact number' };
       }
 
@@ -137,6 +174,7 @@ class SmsScheduler {
       const existingReminder = await SmsMessage.findOne({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
         type: 'Appointment',
+        senderClinic: clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center',
         createdAt: {
           $gte: today,
           $lte: endOfDay
@@ -144,8 +182,8 @@ class SmsScheduler {
       });
 
       if (existingReminder) {
-        console.log(`Reminder already sent today for ${patient.patientfirstname} ${patient.patientlastname}`);
-        return { success: false, error: 'Reminder already sent today' };
+        console.log(`⏭️  Reminder already sent today for ${patient.patientfirstname} ${patient.patientlastname} at ${clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center'}`);
+        return { success: false, skipped: true, error: 'Reminder already sent today' };
       }
 
       // Format appointment details
@@ -157,7 +195,14 @@ class SmsScheduler {
         ? appointment.patientambherappointmenttime
         : appointment.patientbautistaappointmenttime;
 
+      const appointmentLocation = clinicType === 'ambher'
+        ? appointment.patientambherappointmentlocationaddress
+        : appointment.patientbautistaappointmentlocationaddress;
+
       const clinicName = clinicType === 'ambher' ? 'Ambher Optical' : 'Bautista Eye Center';
+
+      // Get clinic-specific SMS client
+      const clinicSmsClient = getClinicSMSClient(clinicName);
 
       const formattedDate = new Date(appointmentDate).toLocaleDateString('en-US', {
         weekday: 'long',
@@ -171,11 +216,12 @@ class SmsScheduler {
 
 Hello ${patient.patientfirstname},
 
-This is a friendly reminder that you have an appointment tomorrow:
+This is a friendly reminder that you have an appointment TOMORROW:
 
 Date: ${formattedDate}
 Time: ${appointmentTime}
 Clinic: ${clinicName}
+Location: ${appointmentLocation || 'See appointment details'}
 
 Please arrive 15 minutes early. If you need to reschedule, please contact us immediately.
 
@@ -197,6 +243,8 @@ ${clinicName}`;
         phoneNumber = phoneNumber.startsWith('63') ? phoneNumber : `63${phoneNumber}`;
       }
 
+      console.log(`📱 Sending appointment reminder to ${patient.patientfirstname} ${patient.patientlastname} (${phoneNumber}) for ${clinicName}`);
+
       // Send SMS via iProg using bulk endpoint for consistency
       // Enhanced credits tracking for appointment reminders
       let creditsBeforeSending = null;
@@ -206,7 +254,7 @@ ${clinicName}`;
       // Try multiple times to get accurate credits before sending
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const creditsBeforeResult = await iprogClient.checkSmsCredits();
+          const creditsBeforeResult = await clinicSmsClient.checkSmsCredits();
           if (creditsBeforeResult.success) {
             creditsBeforeSending = creditsBeforeResult.balance;
             console.log(`💳 Appointment SMS credits before (attempt ${attempt}): ${creditsBeforeSending}`);
@@ -220,7 +268,7 @@ ${clinicName}`;
         }
       }
 
-      const bulkSmsResult = await iprogClient.sendBulkSMS([phoneNumber], message);
+      const bulkSmsResult = await clinicSmsClient.sendBulkSMS([phoneNumber], message);
 
       // Enhanced credits check after sending with multiple attempts
       if (creditsBeforeSending !== null && bulkSmsResult.success) {
@@ -233,7 +281,7 @@ ${clinicName}`;
             console.log(`💳 Waiting ${delays[attempt]/1000} seconds for appointment SMS API balance update...`);
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
             
-            const creditsAfterResult = await iprogClient.checkSmsCredits();
+            const creditsAfterResult = await clinicSmsClient.checkSmsCredits();
             if (creditsAfterResult.success) {
               const newCreditsAfter = creditsAfterResult.balance;
               const newActualDeducted = creditsBeforeSending - newCreditsAfter;
@@ -273,9 +321,9 @@ ${clinicName}`;
       // Create SMS record with enhanced credits tracking
       const smsRecord = new SmsMessage({
         recipients: `${patient.patientfirstname} ${patient.patientlastname}`,
-        recipientPhones: [phoneNumber],
+        recipientPhones: [patient.patientcontactnumber],
         senderClinic: clinicName,
-        senderUserId: 'scheduler',
+        senderUserId: new (await import('mongoose')).default.Types.ObjectId(),
         senderUserName: 'Automated Reminder System',
         type: 'Appointment',
         message: message,
@@ -302,7 +350,7 @@ ${clinicName}`;
       await smsRecord.save();
 
       if (smsResult.success) {
-        console.log(`✅ Appointment reminder sent to ${patient.patientfirstname} ${patient.patientlastname} via iProg`);
+        console.log(`✅ Appointment reminder sent to ${patient.patientfirstname} ${patient.patientlastname} for ${clinicName} via iProg`);
         return { success: true, messageId: smsRecord.messageId, iprogMessageId: smsResult.messageId };
       } else {
         console.log(`❌ Failed to send appointment reminder to ${patient.patientfirstname} ${patient.patientlastname}: ${smsResult.error}`);
