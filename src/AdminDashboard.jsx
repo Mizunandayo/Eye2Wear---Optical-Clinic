@@ -2234,6 +2234,1203 @@ function AdminDashboard(){
   const [addPatientProfileIsClicked, setAddPatientProfileIsClicked] = useState(false);
   const [addPatientProfileToastType, setAddPatientProfileToastType] = useState('success'); // 'success', 'error', 'warning'
 
+  // PDF Generation Loading State
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // PDF Generation Loading State for Bautista
+  const [isGeneratingBautistaPdf, setIsGeneratingBautistaPdf] = useState(false);
+
+  const handleExportAmbherRecordToPDF = async () => {
+    const input = document.getElementById('ambherpatientrecord');
+    if (!input) {
+      console.error("Element with id 'ambherpatientrecord' not found.");
+
+      return;
+    }
+
+    try {
+      // Set loading state
+      setIsGeneratingPdf(true);
+      
+
+
+      // Temporarily hide the buttons before capturing HTML
+      const buttons = document.getElementById('ambherpatientmedicalrecordbuttons');
+      const originalButtonDisplay = buttons ? buttons.style.display : '';
+      if (buttons) {
+        buttons.style.display = 'none';
+      }
+
+      // Get the form content (excluding the modal wrapper)
+      const formElement = document.getElementById('ambher-medical-record-form');
+      const headerElement = input.querySelector('.flex.justify-between.items-center');
+      
+      if (!formElement) {
+        throw new Error('Medical record form not found');
+      }
+
+      // Clone the header and form
+      const clonedHeader = headerElement ? headerElement.cloneNode(true) : null;
+      const clonedForm = formElement.cloneNode(true);
+      
+      // Remove the close button from cloned header if it exists
+      if (clonedHeader) {
+        const closeButton = clonedHeader.querySelector('.w-10.h-10');
+        if (closeButton) {
+          closeButton.remove();
+        }
+      }
+      
+      // Get all styles from the document
+      const styles = Array.from(document.styleSheets)
+        .map(styleSheet => {
+          try {
+            return Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join('\n');
+          } catch (e) {
+            console.warn('Could not access stylesheet:', e);
+            return '';
+          }
+        })
+        .join('\n');
+
+      // Create a complete HTML document with all styles and proper layout
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              ${styles}
+              
+              /* Reset and base styles for PDF */
+              * {
+                box-sizing: border-box;
+              }
+              
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* A4 Page settings */
+              @page {
+                size: A4;
+                margin: 10mm;
+              }
+              
+              @media print {
+                html, body {
+                  height: 297mm;
+                  overflow: hidden;
+                  page-break-after: avoid;
+                  page-break-before: avoid;
+                }
+              }
+              
+              /* Main container - A4 dimensions */
+              .pdf-container {
+                width: 210mm;
+                height: 277mm; /* Reduced to account for margins */
+                max-height: 277mm;
+                margin: 0 auto;
+                padding: 8px;
+                background: white;
+                box-sizing: border-box;
+                overflow: hidden;
+                position: relative;
+              }
+              
+              /* Ensure background colors are printed */
+              .bg-green-50,
+              .bg-gray-50,
+              .bg-gray-100,
+              .bg-green-200,
+              .bg-gray-200,
+              .bg-gray-300 {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* Ensure images are displayed */
+              img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+              }
+              
+              /* Table styling for PDF */
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                page-break-inside: avoid;
+              }
+              
+              table td, table th {
+                border: 1px solid #d1d5db;
+                padding: 3px 4px;
+                font-size: 0.65rem;
+                line-height: 1;
+              }
+              
+              /* Remove borders and background from Refraction table data cells */
+              table td input[type="text"],
+              table td input[type="number"] {
+                border: none !important;
+                background: transparent !important;
+              }
+              
+              /* Input fields in PDF should show values clearly */
+              input, textarea, select {
+                border: 1px solid #d1d5db !important;
+                background: white !important;
+                color: #374151 !important;
+                padding: 3px 6px !important;
+                font-size: 0.65rem !important;
+                line-height: 1.1 !important;
+                height: auto !important;
+              }
+              
+              input[readonly], textarea[readonly] {
+                background: #f3f4f6 !important;
+              }
+              
+              /* Override for Refraction section inputs - no background, no border */
+              table td input[type="text"],
+              table td input[type="number"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 2px 4px !important;
+              }
+              
+              /* Prevent page breaks */
+              .page-break {
+                page-break-after: avoid !important;
+              }
+              
+              /* Prevent breaking inside sections */
+              .bg-green-50, .bg-gray-50 {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              
+              /* Prevent orphans and widows */
+              p, h1, h2, h3, h4, h5, h6 {
+                orphans: 3;
+                widows: 3;
+                page-break-after: avoid;
+              }
+              
+              /* Hide buttons in PDF */
+              button {
+                display: none !important;
+              }
+              
+              /* Prevent extra page breaks */
+              form {
+                page-break-after: avoid !important;
+              }
+              
+              /* Remove any extra margins/padding that might cause overflow */
+              * {
+                page-break-after: avoid !important;
+                page-break-before: avoid !important;
+                page-break-inside: avoid !important;
+              }
+              
+              html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+              }
+              
+              /* Spacing adjustments - COMPACT */
+              .space-y-8 > * + * {
+                margin-top: 0.5rem;
+              }
+              
+              .space-y-4 > * + * {
+                margin-top: 0.35rem;
+              }
+              
+              .gap-4 {
+                gap: 0.35rem;
+              }
+              
+              /* Force grid layouts to display properly in PDF */
+              .grid {
+                display: grid !important;
+              }
+              
+              .grid-cols-1 {
+                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-3,
+              .md\\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-4,
+              .md\\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-2,
+              .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+              }
+              
+              /* Ensure rounded corners are visible */
+              .rounded-xl {
+                border-radius: 0.75rem !important;
+              }
+              
+              .rounded-lg {
+                border-radius: 0.5rem !important;
+              }
+              
+              /* Ensure borders are visible */
+              .border-2 {
+                border-width: 2px !important;
+              }
+              
+              .border {
+                border-width: 1px !important;
+              }
+              
+              .border-green-200 {
+                border-color: #bbf7d0 !important;
+              }
+              
+              .border-green-300 {
+                border-color: #86efac !important;
+              }
+              
+              .border-gray-300 {
+                border-color: #d1d5db !important;
+              }
+              
+              /* Ensure padding is maintained - COMPACT */
+              .p-6 {
+                padding: 0.5rem !important;
+              }
+              
+              .px-4 {
+                padding-left: 0.4rem !important;
+                padding-right: 0.4rem !important;
+              }
+              
+              .py-3 {
+                padding-top: 0.3rem !important;
+                padding-bottom: 0.3rem !important;
+              }
+              
+              .mb-2 {
+                margin-bottom: 0.25rem !important;
+              }
+              
+              .mb-4 {
+                margin-bottom: 0.4rem !important;
+              }
+              
+              .mt-4 {
+                margin-top: 0.4rem !important;
+              }
+              
+              .pb-2 {
+                padding-bottom: 0.25rem !important;
+              }
+              
+              /* Text styles - COMPACT */
+              .text-sm {
+                font-size: 0.65rem !important;
+                line-height: 0.9rem !important;
+              }
+              
+              .text-lg {
+                font-size: 0.8rem !important;
+                line-height: 1rem !important;
+              }
+              
+              .font-semibold {
+                font-weight: 600 !important;
+              }
+              
+              .font-bold {
+                font-weight: 700 !important;
+              }
+              
+              /* Background colors */
+              .bg-green-50 {
+                background-color: #f0fdf4 !important;
+              }
+              
+              .bg-gray-50 {
+                background-color: #f9fafb !important;
+              }
+              
+              .bg-gray-100 {
+                background-color: #f3f4f6 !important;
+              }
+              
+              .bg-white {
+                background-color: #ffffff !important;
+              }
+              
+              /* Text colors */
+              .text-gray-700 {
+                color: #374151 !important;
+              }
+              
+              .text-gray-800 {
+                color: #1f2937 !important;
+              }
+              
+              /* Border bottom */
+              .border-b-2 {
+                border-bottom-width: 2px !important;
+              }
+              
+              /* Header adjustments for compactness */
+              .pdf-container > div:first-child {
+                margin-bottom: 0.3rem !important;
+              }
+              
+              .pdf-container h2 {
+                font-size: 1rem !important;
+                line-height: 1.1rem !important;
+                margin: 0 !important;
+              }
+              
+              .pdf-container p {
+                font-size: 0.65rem !important;
+                margin: 0 !important;
+              }
+              
+              /* Logo size adjustment */
+              .pdf-container img {
+                width: 28px !important;
+                height: 28px !important;
+              }
+              
+              /* Textarea compact */
+              textarea {
+                min-height: 32px !important;
+                resize: none !important;
+                padding: 3px 6px !important;
+              }
+              
+              textarea[rows="2"] {
+                height: 32px !important;
+              }
+              
+              textarea[rows="3"] {
+                height: 38px !important;
+              }
+              
+              /* Labels more compact */
+              label {
+                margin-bottom: 0.2rem !important;
+                font-size: 0.65rem !important;
+              }
+              
+              /* Section headers more compact */
+              h3 {
+                font-size: 0.8rem !important;
+                line-height: 1rem !important;
+                margin-bottom: 0.3rem !important;
+                padding-bottom: 0.2rem !important;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="pdf-container">
+              ${clonedHeader ? clonedHeader.outerHTML : ''}
+              ${clonedForm.outerHTML}
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Restore button visibility
+      if (buttons) {
+        buttons.style.display = originalButtonDisplay || 'flex';
+      }
+
+      // Generate filename
+      const patientName = selectedpatientmedicalrecord 
+        ? `${selectedpatientmedicalrecord.patientlastname}_${selectedpatientmedicalrecord.patientfirstname}`
+        : 'Patient';
+      const caseNo = selectedambherrecord?.ambheropticalcaseno || 'UnknownCase';
+      const fileName = `Ambher_Medical_Record_${patientName}_${caseNo}.pdf`;
+
+      // Send HTML to backend for PDF generation
+      const response = await fetch(`${apiUrl}/api/pdf/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          htmlContent,
+          fileName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+
+      // Get the PDF as arrayBuffer for proper binary handling
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Create blob from arrayBuffer with correct MIME type
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup after a short delay to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+
+    
+      
+      // Reset loading state
+      setIsGeneratingPdf(false);
+
+    } catch (err) {
+      console.error("Could not generate PDF", err);
+      
+      // Ensure buttons are visible even if there's an error
+      const buttons = document.getElementById('ambherpatientmedicalrecordbuttons');
+      if (buttons) {
+        buttons.style.display = 'flex';
+      }
+      
+
+      
+      // Reset loading state
+      setIsGeneratingPdf(false);
+    }
+  };
+
+
+
+  const handleExportBautistaRecordToPDF = async () => {
+    const input = document.getElementById('bautistapatientrecord');
+    if (!input) {
+      console.error("Element with id 'bautistapatientrecord' not found.");
+
+      return;
+    }
+
+    try {
+      // Set loading state
+      setIsGeneratingBautistaPdf(true);
+      
+
+
+      // Temporarily hide the buttons before capturing HTML
+      const buttons = document.getElementById('bautistapatientmedicalrecordbuttons');
+      const originalButtonDisplay = buttons ? buttons.style.display : '';
+      if (buttons) {
+        buttons.style.display = 'none';
+      }
+
+      // Get the form content (excluding the modal wrapper)
+      const formElement = document.getElementById('bautista-medical-record-form');
+      const headerElement = input.querySelector('.flex.justify-between.items-center');
+      
+      if (!formElement) {
+        throw new Error('Medical record form not found');
+      }
+
+      // Clone the header and form
+      const clonedHeader = headerElement ? headerElement.cloneNode(true) : null;
+      const clonedForm = formElement.cloneNode(true);
+      
+      // Remove the close button from cloned header if it exists
+      if (clonedHeader) {
+        const closeButton = clonedHeader.querySelector('.w-10.h-10');
+        if (closeButton) {
+          closeButton.remove();
+        }
+      }
+      
+      // Transform diagnosis, plans, and follow-up sections into compact table format
+      const diagnosisSection = clonedForm.querySelector('[class*="DIAGNOSIS"]')?.closest('.bg-gray-50');
+      const plansSection = clonedForm.querySelector('[class*="PLANS"]')?.closest('.bg-gray-50');
+      const followUpSection = clonedForm.querySelector('[class*="FOLLOW-UP"]')?.closest('.bg-gray-50');
+      
+      // Create a compact table for all three sections
+      if (diagnosisSection && plansSection && followUpSection) {
+        // Get the data from each section
+        const diagnosisDesc = clonedForm.querySelector('textarea[name="diagnosis_description"]')?.value || '';
+        const diagnosisICD = clonedForm.querySelector('input[name="diagnosis_icd10Code"]')?.value || '';
+        const plansDiagnostics = clonedForm.querySelector('textarea[name="plans_diagnostics"]')?.value || '';
+        const plansTherapeutics = clonedForm.querySelector('textarea[name="plans_therapeutics"]')?.value || '';
+        const followUp = clonedForm.querySelector('textarea[name="followUp"]')?.value || '';
+        const mdSignature = clonedForm.querySelector('input[name="mdSignature"]')?.value || '';
+        
+        // Create compact table HTML
+        const compactTable = `
+          <div class="diagnosis-plans-container" style="margin-top: 0.5rem; page-break-inside: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
+              <tr>
+                <td class="diagnosis-plans-cell" style="width: 15%; background-color: #f3f4f6; font-weight: 600; vertical-align: top;">
+                  <strong>DIAGNOSIS</strong>
+                </td>
+                <td class="diagnosis-plans-cell" style="width: 85%; padding: 0 !important;" colspan="3">
+                  <table style="width: 100%; border-collapse: collapse; border: none;">
+                    <tr>
+                      <td style="width: 60%; border: none; padding: 4px 6px; vertical-align: top;">
+                        <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; color: #6b7280;">Description:</div>
+                        <div style="font-size: 0.75rem;">${diagnosisDesc || 'N/A'}</div>
+                      </td>
+                      <td style="width: 40%; border: none; padding: 4px 6px; vertical-align: top;">
+                        <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; color: #6b7280;">ICD-10 Code:</div>
+                        <div style="font-size: 0.75rem;">${diagnosisICD || 'N/A'}</div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="diagnosis-plans-cell" style="background-color: #f3f4f6; font-weight: 600;">
+                  <strong>DIAGNOSTICS</strong>
+                </td>
+                <td class="diagnosis-plans-cell">
+                  ${plansDiagnostics || 'N/A'}
+                </td>
+                <td class="diagnosis-plans-cell" style="background-color: #f3f4f6; font-weight: 600;">
+                  <strong>THERAPEUTICS</strong>
+                </td>
+                <td class="diagnosis-plans-cell">
+                  ${plansTherapeutics || 'N/A'}
+                </td>
+              </tr>
+              <tr>
+                <td class="diagnosis-plans-cell" style="width: 15%; background-color: #f3f4f6; font-weight: 600; vertical-align: top;">
+                  <strong>FOLLOW-UP & SIGNATURE</strong>
+                </td>
+                <td class="diagnosis-plans-cell" style="width: 85%; padding: 0 !important;" colspan="3">
+                  <table style="width: 100%; border-collapse: collapse; border: none;">
+                    <tr>
+                      <td style="width: 70%; border: none; padding: 4px 6px; vertical-align: top;">
+                        <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; color: #6b7280;">Follow-up:</div>
+                        <div style="font-size: 0.75rem;">${followUp || 'N/A'}</div>
+                      </td>
+                      <td style="width: 30%; border: none; padding: 4px 6px; vertical-align: top;">
+                        <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; color: #6b7280;">MD Signature:</div>
+                        <div style="font-size: 0.75rem;">${mdSignature || 'N/A'}</div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+        `;
+        
+        // Replace all three sections with the compact table
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = compactTable;
+        const compactTableElement = tempDiv.firstElementChild;
+        
+        // Remove the original three sections
+        diagnosisSection.remove();
+        plansSection.remove();
+        followUpSection.remove();
+        
+        // Insert the compact table at the end of the form
+        clonedForm.appendChild(compactTableElement);
+      }
+      
+      // Get all styles from the document
+      const styles = Array.from(document.styleSheets)
+        .map(styleSheet => {
+          try {
+            return Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join('\n');
+          } catch (e) {
+            console.warn('Could not access stylesheet:', e);
+            return '';
+          }
+        })
+        .join('\n');
+
+      // Create a complete HTML document with all styles and proper layout
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              ${styles}
+              
+              /* Reset and base styles for PDF */
+              * {
+                box-sizing: border-box;
+              }
+              
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* A4 Page settings - Allow multiple pages */
+              @page {
+                size: A4;
+                margin: 10mm;
+              }
+              
+              @media print {
+                html, body {
+                  width: 210mm;
+                  margin: 0;
+                  padding: 0;
+                }
+              }
+              
+              /* Main container - A4 dimensions - Allow overflow to next page */
+              .pdf-container {
+                width: 210mm;
+                margin: 0 auto;
+                padding: 6px;
+                background: white;
+                box-sizing: border-box;
+              }
+              
+              /* Ensure background colors are printed */
+              .bg-blue-50,
+              .bg-gray-50,
+              .bg-gray-100,
+              .bg-blue-200,
+              .bg-gray-200,
+              .bg-gray-300 {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* Ensure images are displayed */
+              img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+              }
+              
+              /* Table styling for PDF */
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                page-break-inside: auto;
+              }
+              
+              table td, table th {
+                border: 1px solid #d1d5db;
+                padding: 4px 6px;
+                font-size: 0.75rem;
+                line-height: 1rem;
+              }
+              
+              /* Remove borders and background from table input fields */
+              table td input[type="text"],
+              table td input[type="number"] {
+                border: none !important;
+                background: transparent !important;
+              }
+              
+              /* Input fields in PDF should show values clearly - COMPACT */
+              input, textarea, select {
+                border: 1px solid #d1d5db !important;
+                background: white !important;
+                color: #374151 !important;
+                padding: 2px 4px !important;
+                font-size: 0.75rem !important;
+                line-height: 1rem !important;
+                height: auto !important;
+              }
+              
+              input[readonly], textarea[readonly] {
+                background: #f3f4f6 !important;
+              }
+              
+              /* Override for table inputs - no background, no border */
+              table td input[type="text"],
+              table td input[type="number"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 2px 4px !important;
+              }
+              
+              /* Allow page breaks where needed */
+              .page-break {
+                page-break-after: auto !important;
+              }
+              
+              /* Allow breaking inside sections if needed */
+              .bg-blue-50, .bg-gray-50 {
+                page-break-inside: auto;
+                break-inside: auto;
+              }
+              
+              /* Prevent orphans and widows */
+              p, h1, h2, h3, h4, h5, h6 {
+                orphans: 2;
+                widows: 2;
+              }
+              
+              /* Hide buttons in PDF */
+              button {
+                display: none !important;
+              }
+              
+              /* Allow form to span multiple pages */
+              form {
+                page-break-after: auto !important;
+              }
+              
+              html, body {
+                height: auto !important;
+              }
+              
+              /* Spacing adjustments - COMPACT */
+              .space-y-8 > * + * {
+                margin-top: 0.75rem;
+              }
+              
+              .space-y-6 > * + * {
+                margin-top: 0.5rem;
+              }
+              
+              .space-y-4 > * + * {
+                margin-top: 0.4rem;
+              }
+              
+              .space-y-3 > * + * {
+                margin-top: 0.3rem;
+              }
+              
+              .space-y-2 > * + * {
+                margin-top: 0.25rem;
+              }
+              
+              .gap-4 {
+                gap: 0.4rem;
+              }
+              
+              .gap-6 {
+                gap: 0.5rem;
+              }
+              
+              .space-x-4 > * + * {
+                margin-left: 0.4rem !important;
+              }
+              
+              /* Force grid layouts to display properly in PDF */
+              .grid {
+                display: grid !important;
+              }
+              
+              .grid-cols-1 {
+                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-3,
+              .md\\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-4,
+              .md\\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              }
+              
+              .grid-cols-2,
+              .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+              }
+              
+              /* Ensure rounded corners are visible */
+              .rounded-xl {
+                border-radius: 0.3rem !important;
+              }
+              
+              .rounded-lg {
+                border-radius: 0.25rem !important;
+              }
+              
+              /* Ensure borders are visible */
+              .border-2 {
+                border-width: 1px !important;
+              }
+              
+              .border {
+                border-width: 1px !important;
+              }
+              
+              .border-blue-200 {
+                border-color: #bfdbfe !important;
+              }
+              
+              .border-blue-300 {
+                border-color: #93c5fd !important;
+              }
+              
+              .border-gray-300 {
+                border-color: #d1d5db !important;
+              }
+              
+              /* Ensure padding is maintained - COMPACT */
+              .p-6 {
+                padding: 0.5rem !important;
+              }
+              
+              .p-8 {
+                padding: 0.5rem !important;
+              }
+              
+              .px-4 {
+                padding-left: 0.4rem !important;
+                padding-right: 0.4rem !important;
+              }
+              
+              .px-3 {
+                padding-left: 0.3rem !important;
+                padding-right: 0.3rem !important;
+              }
+              
+              .py-3 {
+                padding-top: 0.3rem !important;
+                padding-bottom: 0.3rem !important;
+              }
+              
+              .py-2 {
+                padding-top: 0.25rem !important;
+                padding-bottom: 0.25rem !important;
+              }
+              
+              .mb-2 {
+                margin-bottom: 0.25rem !important;
+              }
+              
+              .mb-3 {
+                margin-bottom: 0.3rem !important;
+              }
+              
+              .mb-4 {
+                margin-bottom: 0.4rem !important;
+              }
+              
+              .mb-6 {
+                margin-bottom: 0.5rem !important;
+              }
+              
+              .mt-4 {
+                margin-top: 0.4rem !important;
+              }
+              
+              .mt-6 {
+                margin-top: 0.5rem !important;
+              }
+              
+              .pb-2 {
+                padding-bottom: 0.25rem !important;
+              }
+              
+              .pt-6 {
+                padding-top: 0.5rem !important;
+              }
+              
+              /* Text styles - COMPACT */
+              .text-sm {
+                font-size: 0.75rem !important;
+                line-height: 1rem !important;
+              }
+              
+              .text-md {
+                font-size: 0.8rem !important;
+                line-height: 1.1rem !important;
+              }
+              
+              .text-lg {
+                font-size: 0.875rem !important;
+                line-height: 1.25rem !important;
+              }
+              
+              .text-xl {
+                font-size: 0.9rem !important;
+                line-height: 1.3rem !important;
+              }
+              
+              .text-2xl {
+                font-size: 1rem !important;
+                line-height: 1.4rem !important;
+              }
+              
+              .font-semibold {
+                font-weight: 600 !important;
+              }
+              
+              .font-bold {
+                font-weight: 700 !important;
+              }
+              
+              /* Background colors */
+              .bg-blue-50 {
+                background-color: #eff6ff !important;
+              }
+              
+              .bg-gray-50 {
+                background-color: #f9fafb !important;
+              }
+              
+              .bg-gray-100 {
+                background-color: #f3f4f6 !important;
+              }
+              
+              .bg-white {
+                background-color: #ffffff !important;
+              }
+              
+              /* Text colors */
+              .text-gray-700 {
+                color: #374151 !important;
+              }
+              
+              .text-gray-800 {
+                color: #1f2937 !important;
+              }
+              
+              /* Border bottom */
+              .border-b-2 {
+                border-bottom-width: 1px !important;
+              }
+              
+              /* Header adjustments - COMPACT */
+              .pdf-container > div:first-child {
+                margin-bottom: 0.4rem !important;
+              }
+              
+              .pdf-container h2 {
+                font-size: 1rem !important;
+                line-height: 1.4rem !important;
+                margin: 0 !important;
+              }
+              
+              .pdf-container p {
+                font-size: 0.75rem !important;
+                margin: 0 !important;
+                line-height: 1rem !important;
+              }
+              
+              /* Logo size adjustment - COMPACT */
+              .pdf-container img {
+                width: 28px !important;
+                height: 28px !important;
+              }
+              
+              /* Textarea compact */
+              textarea {
+                min-height: 30px !important;
+                resize: none !important;
+                padding: 3px !important;
+              }
+              
+              textarea[rows="2"] {
+                height: 30px !important;
+              }
+              
+              textarea[rows="3"] {
+                height: 40px !important;
+              }
+              
+              textarea[rows="4"] {
+                height: 50px !important;
+              }
+              
+              textarea[rows="5"] {
+                height: 60px !important;
+              }
+              
+              textarea[rows="6"] {
+                height: 70px !important;
+              }
+              
+              /* Labels compact */
+              label {
+                margin-bottom: 0.2rem !important;
+                font-size: 0.75rem !important;
+                line-height: 1rem !important;
+              }
+              
+              /* Section headers compact */
+              h3 {
+                font-size: 0.875rem !important;
+                line-height: 1.25rem !important;
+                margin-bottom: 0.4rem !important;
+                padding-bottom: 0.2rem !important;
+              }
+              
+              h4 {
+                font-size: 0.8rem !important;
+                line-height: 1.1rem !important;
+                margin-bottom: 0.3rem !important;
+              }
+              
+              /* Checkbox spacing - COMPACT */
+              input[type="checkbox"] {
+                margin-right: 0.3rem !important;
+                width: 12px !important;
+                height: 12px !important;
+              }
+              
+              /* Reduce icon/logo container - COMPACT */
+              .w-10.h-10 {
+                width: 28px !important;
+                height: 28px !important;
+              }
+              
+              .w-9.h-9 {
+                width: 24px !important;
+                height: 24px !important;
+              }
+              
+              /* Compress diagnosis, plans, follow-up sections - COMPACT */
+              .diagnosis-plans-container {
+                display: table;
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 0.5rem;
+              }
+              
+              .diagnosis-plans-row {
+                display: table-row;
+              }
+              
+              .diagnosis-plans-cell {
+                display: table-cell;
+                border: 1px solid #d1d5db;
+                padding: 4px 6px !important;
+                vertical-align: top;
+                font-size: 0.75rem !important;
+                line-height: 1rem !important;
+              }
+              
+              .diagnosis-plans-cell strong {
+                font-size: 0.75rem !important;
+                font-weight: 600 !important;
+              }
+              
+              .diagnosis-plans-cell textarea,
+              .diagnosis-plans-cell input {
+                font-size: 0.75rem !important;
+                padding: 2px !important;
+                line-height: 1rem !important;
+                min-height: 20px !important;
+                height: auto !important;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="pdf-container">
+              ${clonedHeader ? clonedHeader.outerHTML : ''}
+              ${clonedForm.outerHTML}
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Restore button visibility
+      if (buttons) {
+        buttons.style.display = originalButtonDisplay || 'flex';
+      }
+
+      // Generate filename
+      const patientName = selectedpatientmedicalrecord 
+        ? `${selectedpatientmedicalrecord.patientlastname}_${selectedpatientmedicalrecord.patientfirstname}`
+        : 'Patient';
+      const caseNo = selectedbautistarecord?.caseNo || 'UnknownCase';
+      const fileName = `Bautista_Medical_Record_${patientName}_${caseNo}.pdf`;
+
+      // Send HTML to backend for PDF generation
+      const response = await fetch(`${apiUrl}/api/pdf/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          htmlContent,
+          fileName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+
+      // Get the PDF as arrayBuffer for proper binary handling
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Create blob from arrayBuffer with correct MIME type
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup after a short delay to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+
+      
+      // Reset loading state
+      setIsGeneratingBautistaPdf(false);
+
+    } catch (err) {
+      console.error("Could not generate PDF", err);
+      
+      // Ensure buttons are visible even if there's an error
+      const buttons = document.getElementById('bautistapatientmedicalrecordbuttons');
+      if (buttons) {
+        buttons.style.display = 'flex';
+      }
+
+      
+      // Reset loading state
+      setIsGeneratingBautistaPdf(false);
+    }
+  };
+
   // Update Patient Profile Toast States
   const [updatePatientProfileToast, setUpdatePatientProfileToast] = useState(false);
   const [updatePatientProfileToastMessage, setUpdatePatientProfileToastMessage] = useState('');
@@ -7506,7 +8703,7 @@ const showmedicalrecordstable = (medicalrecordstableid) => {
 };
 
 const [showotherclinicrecord, setshowotherclinicrecord] = useState(false);
-const [activepatientmedicalrecordstable, setactivepatientmedicalrecordstable] = useState('medicalrecordsconsultationtable');
+const [activepatientmedicalrecordstable, setactivepatientmedicalrecordstable] = useState('patientmedicalrecord');
 const showpatientmedicalrecordstable = (patientmedicalrecordstableid) => {
     setactivepatientmedicalrecordstable(patientmedicalrecordstableid);
 };
@@ -20059,15 +21256,6 @@ useEffect(() => {
 
 
 
-
-
-
-
-
-
-
-
-
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -25664,6 +26852,15 @@ itemName="appointments"
 
 
 
+
+
+
+
+
+
+
+
+
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -28034,9 +29231,12 @@ Are you sure you want to delete this medical record?
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Record Date</label>
         <input 
-          type="date" 
+          type="text" 
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-not-allowed" 
-          value={selectedbautistarecord ? new Date(selectedbautistarecord.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+          value={selectedbautistarecord 
+            ? new Date(selectedbautistarecord.recordDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          }
           readOnly
         />
       </div>
@@ -28786,7 +29986,7 @@ Are you sure you want to delete this medical record?
   <div className="bg-gray-50 p-6 rounded-xl">
     <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-300">FOLLOW-UP & SIGNATURE</h3>
     
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Follow-up</label>
         <textarea 
@@ -28817,6 +30017,8 @@ Are you sure you want to delete this medical record?
 
   {/* Submit Button */}
   <div id="bautistapatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
+    
+    {/* Export to PDF Button */}
     
 
 
@@ -28876,6 +30078,31 @@ Are you sure you want to delete this medical record?
         Delete Record
       </button>
     )}
+
+    {selectedbautistarecord && (
+    <button
+        type="button"
+        onClick={handleExportBautistaRecordToPDF}
+        disabled={isGeneratingBautistaPdf}
+        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform flex items-center gap-2 ${
+          isGeneratingBautistaPdf 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:scale-105'
+        } text-white`}
+    >
+        {isGeneratingBautistaPdf ? (
+          <>
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating PDF...
+          </>
+        ) : (
+          'Export to PDF'
+        )}
+    </button>
+    )}
     
     {!isbautistaformreadonly && (
       <button
@@ -28891,6 +30118,19 @@ Are you sure you want to delete this medical record?
 
 </div>
 </div>)}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 {/* Ambher Optical Medical Record Form Modal */}
 {showaddambherclinicmedicalrecord && (
@@ -28985,9 +30225,12 @@ Are you sure you want to delete this medical record?
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Record Date</label>
         <input 
-          type="date" 
+          type="text" 
           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-not-allowed" 
-          value={selectedambherrecord ? new Date(selectedambherrecord.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+          value={selectedambherrecord 
+            ? new Date(selectedambherrecord.recordDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          }
           readOnly
         />
       </div>
@@ -29339,11 +30582,9 @@ Are you sure you want to delete this medical record?
   </div>
 
   {/* Submit Button */}
-  <div id="ambherpatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
-    
-
-
-<button
+<div id="ambherpatientmedicalrecordbuttons" className="flex justify-end space-x-4 pt-6">
+  
+  <button
   type="button"
   onClick={() => {
     setshowaddambherclinicmedicalrecord(false);
@@ -29399,6 +30640,32 @@ Are you sure you want to delete this medical record?
         Delete Record
       </button>
     )}
+
+    {/* Export to PDF Button */}
+    {selectedambherrecord && (
+    <button
+        type="button"
+        onClick={handleExportAmbherRecordToPDF}
+        disabled={isGeneratingPdf}
+        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform flex items-center gap-2 ${
+          isGeneratingPdf 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:scale-105'
+        } text-white`}
+    >
+        {isGeneratingPdf ? (
+          <>
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating PDF...
+          </>
+        ) : (
+          'Export to PDF'
+        )}
+    </button>
+    )}
     
     {!isambherformreadonly && (
       <button
@@ -29425,6 +30692,13 @@ Are you sure you want to delete this medical record?
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+
+
+
+
+
+
+
 
 
 
@@ -36523,13 +37797,6 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
-
-
-
-
-
-
-
 
 
 

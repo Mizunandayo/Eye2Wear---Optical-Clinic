@@ -27,6 +27,7 @@ import messagerouter from "./routes/message.route.js";
 import smsrouter from "./routes/sms.js";
 import cloudinaryrouter from "./routes/cloudinary.route.js";
 import emailTestRouter from "./routes/email-test.route.js";
+import pdfrouter from "./routes/pdf.route.js";
 import SmsScheduler from "./utils/smsScheduler.js";
 import { updateConversationParticipants } from "./middleware/conversationMiddleware.js";
 import Conversation from "./models/conversation.js";
@@ -162,6 +163,8 @@ app.use("/api/messages", messagerouter);
 app.use("/api/sms", smsrouter);
 //Cloudinary Image Upload Routes
 app.use("/api/cloudinary", cloudinaryrouter);
+//PDF Generation Routes
+app.use("/api/pdf", pdfrouter);
 //Email Test Routes (for debugging email issues)
 app.use("/api/email-test", emailTestRouter);
 //Routes

@@ -1,6 +1,3 @@
-
-
-
 export default {
    content: [
     "./src/**/*.{ts,tsx,js,jsx}",
@@ -9,6 +6,7 @@ export default {
    
    future: {
     disableColorOpacityUtilitiesByDefault: true,
+    hoverOnlyWhenSupported: true,
    },
    
    corePlugins: {
