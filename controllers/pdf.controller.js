@@ -1,4 +1,28 @@
 import puppeteer from 'puppeteer';
+import { execSync } from 'child_process';
+import { existsSync } from 'fs';
+
+// Helper function to find Chrome executable
+const findChrome = () => {
+  try {
+    // Try to get Chrome path from Puppeteer
+    const result = execSync('npx puppeteer browsers show chrome', { encoding: 'utf8' });
+    const match = result.match(/path: (.+)/);
+    if (match && existsSync(match[1])) {
+      return match[1];
+    }
+  } catch (error) {
+    console.warn('Could not find Chrome via Puppeteer CLI:', error.message);
+  }
+
+  // Default Render.com path
+  const renderPath = '/opt/render/.cache/puppeteer/chrome/linux-141.0.7390.54/chrome-linux64/chrome';
+  if (existsSync(renderPath)) {
+    return renderPath;
+  }
+
+  return null;
+};
 
 // Generate PDF from HTML content using Puppeteer
 export const generatePDF = async (req, res) => {
@@ -14,17 +38,30 @@ export const generatePDF = async (req, res) => {
       });
     }
 
-    // Launch headless browser
-    browser = await puppeteer.launch({
+    // Launch headless browser with production-ready configuration
+    const launchOptions = {
       headless: 'new',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process'
       ]
-    });
+    };
+
+    // In production (Render or other deployment), try to find Chrome
+    const chromePath = findChrome();
+    if (chromePath) {
+      console.log('Using Chrome at:', chromePath);
+      launchOptions.executablePath = chromePath;
+    } else {
+      console.log('Using default Puppeteer Chrome');
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
 

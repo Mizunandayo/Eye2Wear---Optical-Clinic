@@ -2281,15 +2281,23 @@ function AdminDashboard(){
         }
       }
       
-      // Get all styles from the document
+      // Get all styles from the document - with improved error handling
       const styles = Array.from(document.styleSheets)
         .map(styleSheet => {
           try {
+            // Skip external stylesheets that might cause CORS issues
+            if (styleSheet.href && !styleSheet.href.startsWith(window.location.origin)) {
+              console.warn('Skipping external stylesheet:', styleSheet.href);
+              return '';
+            }
             return Array.from(styleSheet.cssRules)
               .map(rule => rule.cssText)
               .join('\n');
           } catch (e) {
-            console.warn('Could not access stylesheet:', e);
+            // This is expected for cross-origin stylesheets
+            if (e.name !== 'SecurityError') {
+              console.warn('Could not access stylesheet:', e);
+            }
             return '';
           }
         })
@@ -2861,15 +2869,23 @@ function AdminDashboard(){
         clonedForm.appendChild(compactTableElement);
       }
       
-      // Get all styles from the document
+      // Get all styles from the document - with improved error handling
       const styles = Array.from(document.styleSheets)
         .map(styleSheet => {
           try {
+            // Skip external stylesheets that might cause CORS issues
+            if (styleSheet.href && !styleSheet.href.startsWith(window.location.origin)) {
+              console.warn('Skipping external stylesheet:', styleSheet.href);
+              return '';
+            }
             return Array.from(styleSheet.cssRules)
               .map(rule => rule.cssText)
               .join('\n');
           } catch (e) {
-            console.warn('Could not access stylesheet:', e);
+            // This is expected for cross-origin stylesheets
+            if (e.name !== 'SecurityError') {
+              console.warn('Could not access stylesheet:', e);
+            }
             return '';
           }
         })
