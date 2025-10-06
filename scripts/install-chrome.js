@@ -10,20 +10,33 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+// Detect if we're in a production/CI environment
+// Render.com sets RENDER=true, Railway sets RAILWAY_ENVIRONMENT, etc.
+const isRender = process.env.RENDER === 'true';
+const isRailway = !!process.env.RAILWAY_ENVIRONMENT;
+const isHeroku = !!process.env.DYNO;
+const isVercel = !!process.env.VERCEL;
+const isNetlify = !!process.env.NETLIFY;
+const isProduction = process.env.NODE_ENV === 'production';
 const isCI = process.env.CI === 'true';
+const isCloudPlatform = isRender || isRailway || isHeroku || isVercel || isNetlify;
 
 console.log('🔍 Chrome Installation Check:');
 console.log(`  NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`  RENDER: ${process.env.RENDER}`);
-console.log(`  CI: ${process.env.CI}`);
 console.log(`  Platform: ${process.platform}`);
+console.log(`  Cloud Platform Detected: ${isCloudPlatform}`);
 
-// Skip installation in development on Windows/Mac
-if (!isProduction && !isCI) {
-  console.log('⏭️  Skipping Chrome installation (development environment)');
+// Skip installation ONLY in local development on Windows/Mac
+// Always install on cloud platforms (Linux servers)
+const isLocalDevelopment = !isProduction && !isCI && !isCloudPlatform && (process.platform === 'win32' || process.platform === 'darwin');
+
+if (isLocalDevelopment) {
+  console.log('⏭️  Skipping Chrome installation (local development on Windows/Mac)');
   process.exit(0);
 }
+
+console.log('✅ Production/Cloud environment detected - proceeding with Chrome check...');
 
 // Check if Chrome executable is already installed
 const cacheDir = process.env.PUPPETEER_CACHE_DIR || join(process.cwd(), '.cache', 'puppeteer');

@@ -7,11 +7,57 @@ import { join } from 'path';
 const findChrome = () => {
   console.log('🔍 Searching for Chrome executable...');
   
-  // Strategy 1: Try Puppeteer CLI
+  // Strategy 1: Check environment variable first
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    console.log('✅ Found Chrome via PUPPETEER_EXECUTABLE_PATH:', process.env.PUPPETEER_EXECUTABLE_PATH);
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  
+  // Strategy 2: Check known Render.com paths FIRST (faster than CLI)
+  const renderPaths = [
+    '/opt/render/.cache/puppeteer/chrome',
+    join(process.env.PUPPETEER_CACHE_DIR || process.env.HOME || '', '.cache', 'puppeteer', 'chrome'),
+    join(process.cwd(), '.cache', 'puppeteer', 'chrome')
+  ];
+
+  for (const basePath of renderPaths) {
+    if (!existsSync(basePath)) {
+      console.log(`   Checking ${basePath}... not found`);
+      continue;
+    }
+    
+    console.log(`   Checking ${basePath}... exists!`);
+    
+    try {
+      // Look for Chrome directories (format: linux-{version})
+      const versions = readdirSync(basePath).filter(dir => dir.startsWith('linux-'));
+      console.log(`   Found ${versions.length} Chrome version(s):`, versions);
+      
+      if (versions.length > 0) {
+        // Sort to get the latest version
+        versions.sort().reverse();
+        const latestVersion = versions[0];
+        const chromePath = join(basePath, latestVersion, 'chrome-linux64', 'chrome');
+        
+        console.log(`   Checking executable at: ${chromePath}`);
+        if (existsSync(chromePath)) {
+          console.log('✅ Found Chrome at:', chromePath);
+          return chromePath;
+        } else {
+          console.warn(`   ⚠️  Executable not found at: ${chromePath}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️  Error checking path ${basePath}:`, error.message);
+    }
+  }
+
+  // Strategy 3: Try Puppeteer CLI (slower, with longer timeout for Render)
   try {
+    console.log('   Trying Puppeteer CLI...');
     const result = execSync('npx puppeteer browsers show chrome', { 
       encoding: 'utf8',
-      timeout: 5000 
+      timeout: 10000  // Increased to 10 seconds for slow Render startup
     });
     const match = result.match(/path:\s*(.+)/);
     if (match && match[1]) {
@@ -25,37 +71,7 @@ const findChrome = () => {
     console.warn('⚠️  Could not find Chrome via Puppeteer CLI:', error.message);
   }
 
-  // Strategy 2: Check known Render.com paths
-  const renderPaths = [
-    '/opt/render/.cache/puppeteer/chrome',
-    join(process.env.HOME || '', '.cache', 'puppeteer', 'chrome'),
-    join(process.cwd(), '.cache', 'puppeteer', 'chrome')
-  ];
-
-  for (const basePath of renderPaths) {
-    if (!existsSync(basePath)) continue;
-    
-    try {
-      // Look for Chrome directories (format: linux-{version})
-      const versions = readdirSync(basePath).filter(dir => dir.startsWith('linux-'));
-      
-      if (versions.length > 0) {
-        // Sort to get the latest version
-        versions.sort().reverse();
-        const latestVersion = versions[0];
-        const chromePath = join(basePath, latestVersion, 'chrome-linux64', 'chrome');
-        
-        if (existsSync(chromePath)) {
-          console.log('✅ Found Chrome at:', chromePath);
-          return chromePath;
-        }
-      }
-    } catch (error) {
-      console.warn(`⚠️  Error checking path ${basePath}:`, error.message);
-    }
-  }
-
-  // Strategy 3: Try common Linux Chrome locations
+  // Strategy 4: Try common Linux Chrome locations
   const linuxPaths = [
     '/usr/bin/google-chrome',
     '/usr/bin/chromium-browser',
@@ -66,6 +82,39 @@ const findChrome = () => {
     if (existsSync(path)) {
       console.log('✅ Found system Chrome at:', path);
       return path;
+    }
+  }
+
+  // Strategy 5: Windows paths (for localhost development)
+  if (process.platform === 'win32') {
+    const windowsPaths = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
+      join(process.env.PROGRAMFILES || '', 'Google\\Chrome\\Application\\chrome.exe'),
+      join(process.env['PROGRAMFILES(X86)'] || '', 'Google\\Chrome\\Application\\chrome.exe')
+    ];
+    
+    for (const path of windowsPaths) {
+      if (existsSync(path)) {
+        console.log('✅ Found Chrome on Windows at:', path);
+        return path;
+      }
+    }
+  }
+
+  // Strategy 6: macOS paths (for localhost development)
+  if (process.platform === 'darwin') {
+    const macPaths = [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      join(process.env.HOME || '', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+    ];
+    
+    for (const path of macPaths) {
+      if (existsSync(path)) {
+        console.log('✅ Found Chrome on macOS at:', path);
+        return path;
+      }
     }
   }
 
@@ -102,20 +151,15 @@ export const generatePDF = async (req, res) => {
     };
 
     // Determine Chrome executable path
-    // Priority: ENV VAR > findChrome() > default
-    let chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    
-    if (!chromePath || !existsSync(chromePath)) {
-      chromePath = findChrome();
-    }
+    const chromePath = findChrome();
     
     if (chromePath) {
       console.log('Using Chrome at:', chromePath);
       launchOptions.executablePath = chromePath;
     } else {
-      console.log('Using default Puppeteer Chrome');
+      console.warn('⚠️  No Chrome found - attempting to use Puppeteer default');
       // Let Puppeteer try to use its bundled Chromium
-      // This will likely fail on Render, but worth trying
+      // This will likely fail on Render if Chrome wasn't installed
     }
 
     browser = await puppeteer.launch(launchOptions);
