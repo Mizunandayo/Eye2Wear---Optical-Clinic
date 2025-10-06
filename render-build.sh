@@ -2,16 +2,15 @@
 # Render build script for Eye2Wear
 echo "🚀 Starting build process..."
 
-# CRITICAL: Unset problematic Puppeteer environment variables
-# These prevent Puppeteer from downloading bundled Chromium
-echo "🔧 Unsetting Puppeteer environment variables..."
-unset PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
-unset PUPPETEER_EXECUTABLE_PATH
-unset PUPPETEER_CACHE_DIR
-echo "✅ Environment variables cleared"
+# CRITICAL: Override Puppeteer's default cache directory
+# Puppeteer v24 defaults to ~/.cache/puppeteer which is ephemeral on Render
+# We MUST set PUPPETEER_CACHE_DIR to a persistent location (node_modules)
+echo "🔧 Configuring Puppeteer cache directory..."
+export PUPPETEER_CACHE_DIR="$(pwd)/node_modules/.cache/puppeteer"
+echo "✅ Puppeteer will download to: $PUPPETEER_CACHE_DIR"
 
 # Install dependencies
-# Puppeteer will now download Chromium to node_modules/
+# Puppeteer will now download Chromium to node_modules/.cache/puppeteer/
 echo "📦 Installing dependencies (Puppeteer will download Chromium)..."
 npm install --legacy-peer-deps
 
