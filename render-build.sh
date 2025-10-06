@@ -1,6 +1,6 @@
 #!/bin/bash
 # Render build script for Eye2Wear
-echo "Starting build process..."
+echo "🚀 Starting build process..."
 
 # CRITICAL: Unset problematic Puppeteer environment variables
 # These prevent Puppeteer from downloading bundled Chromium
@@ -15,11 +15,18 @@ echo "✅ Environment variables cleared"
 echo "📦 Installing dependencies (Puppeteer will download Chromium)..."
 npm install --legacy-peer-deps
 
-# Let Puppeteer download its own Chromium during npm install
-echo "Puppeteer will download Chromium automatically..."
+# Verify Chromium was downloaded
+echo "🔍 Verifying Chromium installation..."
+if [ -d "node_modules/puppeteer/.local-chromium" ]; then
+  echo "✅ Chromium downloaded successfully!"
+  ls -la node_modules/puppeteer/.local-chromium/
+else
+  echo "⚠️  Warning: Chromium directory not found in expected location"
+fi
 
-# Set NODE_ENV and build
+# Set NODE_ENV and build frontend
+echo "🏗️  Building frontend..."
 export NODE_ENV=production
 npm run build
 
-echo "Build completed successfully!"
+echo "✅ Build completed successfully!"
