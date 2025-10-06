@@ -3,6 +3,44 @@ import { execSync } from 'child_process';
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+// Warmup browser instance to prevent cold starts
+let warmBrowser = null;
+let isWarmingUp = false;
+
+// Warmup function - launches browser once on server start
+const warmupBrowser = async () => {
+  if (isWarmingUp || warmBrowser) return;
+  
+  isWarmingUp = true;
+  console.log('🔥 Warming up Puppeteer browser...');
+  
+  try {
+    const launchOptions = {
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--single-process',
+        '--no-zygote'
+      ]
+    };
+    
+    warmBrowser = await puppeteer.launch(launchOptions);
+    console.log('✅ Puppeteer browser warmed up and ready!');
+  } catch (error) {
+    console.error('⚠️  Failed to warm up browser:', error.message);
+    warmBrowser = null;
+  } finally {
+    isWarmingUp = false;
+  }
+};
+
+// Start warmup immediately when module loads (only on Linux/Render)
+if (process.platform !== 'win32') {
+  warmupBrowser();
+}
+
 // Helper function to find Chrome executable with multiple strategies
 const findChrome = () => {
   console.log('🔍 Searching for Chrome executable...');
@@ -146,46 +184,37 @@ export const generatePDF = async (req, res) => {
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
         '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process'
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--single-process', // Helps with Render's memory limits
+        '--no-zygote' // Helps with Render's memory limits
       ]
     };
 
-    // CRITICAL: Determine Chrome executable path
-    let chromePath = null;
-    
-    // Strategy 1: Check if Chrome exists at PUPPETEER_EXECUTABLE_PATH
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-      console.log('🔍 Checking PUPPETEER_EXECUTABLE_PATH:', envPath);
-      
-      if (existsSync(envPath)) {
-        chromePath = envPath;
-        console.log('✅ Chrome found at environment variable path');
-      } else {
-        console.warn('⚠️  PUPPETEER_EXECUTABLE_PATH set but file not found:', envPath);
-        console.log('🔧 Unsetting PUPPETEER_EXECUTABLE_PATH to allow Puppeteer bundled Chromium');
-        // CRITICAL: Unset the env var so Puppeteer doesn't try to use it
-        delete process.env.PUPPETEER_EXECUTABLE_PATH;
+    // On localhost (Windows), try to find system Chrome
+    // On Render, let Puppeteer use PUPPETEER_CACHE_DIR environment variable
+    if (process.platform === 'win32') {
+      console.log('🔍 Looking for system Chrome on Windows...');
+      const chromePath = findChrome();
+      if (chromePath) {
+        launchOptions.executablePath = chromePath;
+        console.log('✅ Using Chrome at:', chromePath);
       }
-    }
-    
-    // Strategy 2: Try to find Chrome using findChrome() for localhost
-    if (!chromePath) {
-      console.log('🔍 Searching for Chrome using findChrome()...');
-      chromePath = findChrome();
-    }
-    
-    // Strategy 3: Let Puppeteer use its bundled Chromium (Render.com fallback)
-    if (!chromePath) {
-      console.log('⚠️  No Chrome found, will try Puppeteer bundled Chromium');
-      // Don't set executablePath - let Puppeteer use its default
     } else {
-      launchOptions.executablePath = chromePath;
-      console.log('🚀 Using Chrome at:', chromePath);
+      console.log('🐧 Linux environment - Puppeteer will use PUPPETEER_CACHE_DIR');
+      console.log('� PUPPETEER_CACHE_DIR:', process.env.PUPPETEER_CACHE_DIR || 'NOT SET');
     }
 
     console.log('🚀 Launching Puppeteer...');
-    browser = await puppeteer.launch(launchOptions);
+    
+    // Try to reuse warm browser instance (only on Linux/Render)
+    if (process.platform !== 'win32' && warmBrowser && warmBrowser.connected) {
+      console.log('♻️  Reusing warm browser instance');
+      browser = warmBrowser;
+      warmBrowser = null; // Clear it so we create a fresh one for next request
+      warmupBrowser(); // Start warming up a new instance for future requests
+    } else {
+      browser = await puppeteer.launch(launchOptions);
+    }
 
     const page = await browser.newPage();
 
@@ -196,10 +225,10 @@ export const generatePDF = async (req, res) => {
       deviceScaleFactor: 2
     });
 
-    // Set the HTML content
+    // Set the HTML content with increased timeout for cold starts
     await page.setContent(htmlContent, {
-      waitUntil: ['networkidle0', 'domcontentloaded'],
-      timeout: 30000
+      waitUntil: ['domcontentloaded'], // Changed from networkidle0 for faster loading
+      timeout: 60000 // Increased to 60 seconds for first-time cold start
     });
 
     // Wait for any images to load
