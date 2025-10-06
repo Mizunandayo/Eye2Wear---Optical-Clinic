@@ -163,6 +163,9 @@ export const generatePDF = async (req, res) => {
         console.log('✅ Chrome found at environment variable path');
       } else {
         console.warn('⚠️  PUPPETEER_EXECUTABLE_PATH set but file not found:', envPath);
+        console.log('🔧 Unsetting PUPPETEER_EXECUTABLE_PATH to allow Puppeteer bundled Chromium');
+        // CRITICAL: Unset the env var so Puppeteer doesn't try to use it
+        delete process.env.PUPPETEER_EXECUTABLE_PATH;
       }
     }
     
