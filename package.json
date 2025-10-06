@@ -13,8 +13,7 @@
             "serve": "node server.js",
             "nodemonserve": "nodemon server.js",
             "start": "run-p dev nodemonserve",
-            "migrate-messages": "node migrate-messages-to-cloudinary.js",
-            "postinstall": "node ./scripts/install-chrome.js"
+            "migrate-messages": "node migrate-messages-to-cloudinary.js"
       },
       "dependencies": {
             "@emotion/react": "^11.14.0",

@@ -151,34 +151,37 @@ export const generatePDF = async (req, res) => {
     };
 
     // CRITICAL: Determine Chrome executable path
-    // Must set executablePath BEFORE Puppeteer reads .puppeteerrc.cjs
     let chromePath = null;
     
-    // Priority 1: Environment variable (for Render)
+    // Strategy 1: Check if Chrome exists at PUPPETEER_EXECUTABLE_PATH
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-      console.log('🎯 Using PUPPETEER_EXECUTABLE_PATH:', chromePath);
-    } else {
-      // Priority 2: Use findChrome() for localhost
-      chromePath = findChrome();
-      if (chromePath) {
-        console.log('✅ Found Chrome via findChrome():', chromePath);
+      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      console.log('🔍 Checking PUPPETEER_EXECUTABLE_PATH:', envPath);
+      
+      if (existsSync(envPath)) {
+        chromePath = envPath;
+        console.log('✅ Chrome found at environment variable path');
+      } else {
+        console.warn('⚠️  PUPPETEER_EXECUTABLE_PATH set but file not found:', envPath);
       }
     }
     
-    if (chromePath) {
-      launchOptions.executablePath = chromePath;
+    // Strategy 2: Try to find Chrome using findChrome() for localhost
+    if (!chromePath) {
+      console.log('🔍 Searching for Chrome using findChrome()...');
+      chromePath = findChrome();
+    }
+    
+    // Strategy 3: Let Puppeteer use its bundled Chromium (Render.com fallback)
+    if (!chromePath) {
+      console.log('⚠️  No Chrome found, will try Puppeteer bundled Chromium');
+      // Don't set executablePath - let Puppeteer use its default
     } else {
-      const errorMsg = 'No Chrome executable found. Please set PUPPETEER_EXECUTABLE_PATH environment variable.';
-      console.error('❌', errorMsg);
-      return res.status(500).json({ 
-        success: false, 
-        message: errorMsg,
-        hint: 'Add PUPPETEER_EXECUTABLE_PATH=/opt/render/.cache/puppeteer/chrome/linux-141.0.7390.54/chrome-linux64/chrome to Render environment variables'
-      });
+      launchOptions.executablePath = chromePath;
+      console.log('🚀 Using Chrome at:', chromePath);
     }
 
-    console.log('🚀 Launching Puppeteer with executablePath:', launchOptions.executablePath);
+    console.log('🚀 Launching Puppeteer...');
     browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
