@@ -1217,11 +1217,7 @@ Time: ${appointmentTime}
 Clinic: ${clinicName}
 Location: ${appointmentLocation}
 
-We apologize for any inconvenience. Please feel free to request a different appointment date/time that may better suit our availability.
-
-You can book a new appointment through our system or contact us directly for assistance.
-
-Thank you for your understanding.
+We apologize for any inconvenience.Please book a new appointment through our system or contact us directly for assistance.
 
 ${clinicName}`;
 

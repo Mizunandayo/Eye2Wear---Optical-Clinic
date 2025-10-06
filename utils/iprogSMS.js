@@ -46,10 +46,10 @@ class iPragSMS {
    * Send single SMS using iProg SMS API (for order status updates)
    * @param {string} phoneNumber - Recipient's phone number  
    * @param {string} message - Message content
-   * @param {number} smsProvider - SMS Provider (0 or 1), default: 0
+   * @param {number} smsProvider - SMS Provider (0, 1, or 2), default: 2 (new provider supporting all networks)
    * @returns {Promise<Object>} SMS sending result
    */
-  async sendSMS(phoneNumber, message, smsProvider = 0) {
+  async sendSMS(phoneNumber, message, smsProvider = 2) {
     try {
       if (!this.apiToken) {
         throw new Error('iProg API token not configured');
@@ -58,18 +58,17 @@ class iPragSMS {
       // Format phone number for Philippines
       const formattedPhone = this.formatPhoneNumber(phoneNumber);
       
-      // Prepare request payload
-      const payload = {
+      console.log(`📱 Sending single SMS via iProg to: ${formattedPhone}`);
+      console.log(`📝 Message: ${message.substring(0, 50)}...`);
+      console.log(`� Using SMS Provider: ${smsProvider}`);
+      
+      // Send SMS request using query parameters (as per iProg API documentation)
+      const response = await axios.post(`${this.baseUrl}/sms_messages`, {
         api_token: this.apiToken,
         phone_number: formattedPhone,
         message: message,
         sms_provider: smsProvider
-      };
-
-      console.log(`📱 Sending single SMS via iProg to: ${formattedPhone}`);
-      
-      // Send SMS request using single SMS endpoint
-      const response = await axios.post(`${this.baseUrl}/sms_messages`, payload, {
+      }, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -105,10 +104,10 @@ class iPragSMS {
    * Send bulk SMS using iProg SMS API (for promotional messages)
    * @param {Array<string>} phoneNumbers - Array of recipient phone numbers
    * @param {string} message - Message content
-   * @param {number} smsProvider - SMS Provider (0 or 1), default: 0
+   * @param {number} smsProvider - SMS Provider (0, 1, or 2), default: 2 (new provider supporting all networks)
    * @returns {Promise<Object>} Bulk SMS sending result
    */
-  async sendBulkSMS(phoneNumbers, message, smsProvider = 0) {
+  async sendBulkSMS(phoneNumbers, message, smsProvider = 2) {
     try {
       if (!this.apiToken) {
         throw new Error('iProg API token not configured');
@@ -227,7 +226,7 @@ class iPragSMS {
         api_token: this.apiToken,
         phone_number: '639123456789', // Test number
         message: 'API Configuration Test - Please ignore this message',
-        sms_provider: 0
+        sms_provider: 2 // Use new provider supporting all networks
       };
 
       const response = await axios.post(`${this.baseUrl}/sms_messages`, testPayload, {
@@ -393,7 +392,7 @@ class iPragSMS {
         'Bulk SMS sending for promotional messages',
         'SMS delivery status checking',
         'SMS credits balance checking',
-        'Multiple SMS providers (0 or 1)',
+        'Multiple SMS providers (0, 1, or 2 - new provider supports all networks)',
         'Queue-based message processing',
         'Message tracking with unique IDs',
         'Clinic-specific API tokens'
