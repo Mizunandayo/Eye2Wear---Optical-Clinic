@@ -10,17 +10,22 @@ export PUPPETEER_CACHE_DIR="$(pwd)/node_modules/.cache/puppeteer"
 echo "✅ Puppeteer will download to: $PUPPETEER_CACHE_DIR"
 
 # Install dependencies
-# Puppeteer will now download Chromium to node_modules/.cache/puppeteer/
-echo "📦 Installing dependencies (Puppeteer will download Chromium)..."
+echo "📦 Installing dependencies..."
 npm install --legacy-peer-deps
+
+# FORCE Puppeteer to download Chromium using npx
+echo "� Downloading Chromium for Puppeteer..."
+npx puppeteer browsers install chrome
 
 # Verify Chromium was downloaded
 echo "🔍 Verifying Chromium installation..."
-if [ -d "node_modules/puppeteer/.local-chromium" ]; then
-  echo "✅ Chromium downloaded successfully!"
-  ls -la node_modules/puppeteer/.local-chromium/
+if [ -d "$PUPPETEER_CACHE_DIR/chrome" ]; then
+  echo "✅ Chromium downloaded successfully to: $PUPPETEER_CACHE_DIR/chrome"
+  ls -la "$PUPPETEER_CACHE_DIR/chrome"
 else
-  echo "⚠️  Warning: Chromium directory not found in expected location"
+  echo "⚠️  Warning: Chromium not found at $PUPPETEER_CACHE_DIR/chrome"
+  echo "🔍 Checking alternative locations..."
+  find node_modules -type d -name "chrome" 2>/dev/null | head -5
 fi
 
 # Set NODE_ENV and build frontend
