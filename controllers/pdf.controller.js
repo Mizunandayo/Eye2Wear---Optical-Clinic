@@ -150,18 +150,35 @@ export const generatePDF = async (req, res) => {
       ]
     };
 
-    // Determine Chrome executable path
-    const chromePath = findChrome();
+    // CRITICAL: Determine Chrome executable path
+    // Must set executablePath BEFORE Puppeteer reads .puppeteerrc.cjs
+    let chromePath = null;
+    
+    // Priority 1: Environment variable (for Render)
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      console.log('🎯 Using PUPPETEER_EXECUTABLE_PATH:', chromePath);
+    } else {
+      // Priority 2: Use findChrome() for localhost
+      chromePath = findChrome();
+      if (chromePath) {
+        console.log('✅ Found Chrome via findChrome():', chromePath);
+      }
+    }
     
     if (chromePath) {
-      console.log('Using Chrome at:', chromePath);
       launchOptions.executablePath = chromePath;
     } else {
-      console.warn('⚠️  No Chrome found - attempting to use Puppeteer default');
-      // Let Puppeteer try to use its bundled Chromium
-      // This will likely fail on Render if Chrome wasn't installed
+      const errorMsg = 'No Chrome executable found. Please set PUPPETEER_EXECUTABLE_PATH environment variable.';
+      console.error('❌', errorMsg);
+      return res.status(500).json({ 
+        success: false, 
+        message: errorMsg,
+        hint: 'Add PUPPETEER_EXECUTABLE_PATH=/opt/render/.cache/puppeteer/chrome/linux-141.0.7390.54/chrome-linux64/chrome to Render environment variables'
+      });
     }
 
+    console.log('🚀 Launching Puppeteer with executablePath:', launchOptions.executablePath);
     browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
