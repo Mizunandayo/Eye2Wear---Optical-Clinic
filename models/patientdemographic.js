@@ -641,6 +641,7 @@ PatientdemographicSchema.pre('save', function(next) {
   this._nameFieldsModified = this.isModified('patientlastname') || 
                             this.isModified('patientfirstname') || 
                             this.isModified('patientmiddlename');
+  this._contactNumberModified = this.isModified('patientcontactnumber');
   this._isNewDocument = this.isNew;
   
   next();
@@ -654,12 +655,16 @@ PatientdemographicSchema.post('save', async function(doc) {
                              (this._isNewDocument && doc.patientprofilepicture && doc.patientprofilepicture !== 'default-profile-url');
     const shouldSyncNames = this._nameFieldsModified || 
                            (this._isNewDocument && (doc.patientlastname || doc.patientfirstname || doc.patientmiddlename));
+    const shouldSyncContact = this._contactNumberModified || 
+                             (this._isNewDocument && doc.patientcontactnumber);
     
-    if (shouldSyncProfile || shouldSyncNames) {
+    if (shouldSyncProfile || shouldSyncNames || shouldSyncContact) {
       try {
         // Import models here to avoid circular dependency issues
         const Patientaccount = mongoose.model('Patientaccount');
         const PatientAppointment = mongoose.model('PatientAppointment');
+        const PatientOrderAmbher = mongoose.model('PatientOrderAmbher');
+        const PatientOrderBautista = mongoose.model('PatientOrderBautista');
         
         // Prepare update object for patient account with only changed fields
         const accountUpdateData = {};
@@ -709,6 +714,43 @@ PatientdemographicSchema.post('save', async function(doc) {
             console.error('❌ Error syncing appointments:', appointmentError);
           });
         }
+
+        // Sync with PatientOrderAmbher and PatientOrderBautista if needed (async without blocking)
+        if (shouldSyncNames || shouldSyncContact) {
+          const orderUpdateData = {};
+          if (shouldSyncNames) {
+            orderUpdateData.patientlastname = doc.patientlastname;
+            orderUpdateData.patientfirstname = doc.patientfirstname;
+            orderUpdateData.patientmiddlename = doc.patientmiddlename;
+          }
+          if (shouldSyncContact) {
+            orderUpdateData.patientcontactnumber = doc.patientcontactnumber;
+          }
+          
+          // Update Ambher orders (fire-and-forget)
+          PatientOrderAmbher.updateMany(
+            { patientemail: doc.patientemail },
+            { $set: orderUpdateData }
+          ).then((ambherResult) => {
+            if (ambherResult.modifiedCount > 0) {
+              console.log(`✅ ${ambherResult.modifiedCount} Ambher order(s) synced for: ${doc.patientemail}`);
+            }
+          }).catch((ambherError) => {
+            console.error('❌ Error syncing Ambher orders:', ambherError);
+          });
+
+          // Update Bautista orders (fire-and-forget)
+          PatientOrderBautista.updateMany(
+            { patientemail: doc.patientemail },
+            { $set: orderUpdateData }
+          ).then((bautistaResult) => {
+            if (bautistaResult.modifiedCount > 0) {
+              console.log(`✅ ${bautistaResult.modifiedCount} Bautista order(s) synced for: ${doc.patientemail}`);
+            }
+          }).catch((bautistaError) => {
+            console.error('❌ Error syncing Bautista orders:', bautistaError);
+          });
+        }
       } catch (error) {
         console.error('❌ Error in sync operation:', error);
       }
@@ -729,6 +771,7 @@ PatientdemographicSchema.pre('findOneAndUpdate', function(next) {
   this._nameFieldsModified = $set.patientlastname !== undefined || 
                             $set.patientfirstname !== undefined || 
                             $set.patientmiddlename !== undefined;
+  this._contactNumberModified = $set.patientcontactnumber !== undefined;
   
   next();
 });
@@ -740,11 +783,14 @@ PatientdemographicSchema.post('findOneAndUpdate', async function(doc) {
   try {
     const shouldSyncProfile = this._profilePictureModified;
     const shouldSyncNames = this._nameFieldsModified;
+    const shouldSyncContact = this._contactNumberModified;
     
-    if (shouldSyncProfile || shouldSyncNames) {
+    if (shouldSyncProfile || shouldSyncNames || shouldSyncContact) {
       // Import models here to avoid circular dependency issues
       const Patientaccount = mongoose.model('Patientaccount');
       const PatientAppointment = mongoose.model('PatientAppointment');
+      const PatientOrderAmbher = mongoose.model('PatientOrderAmbher');
+      const PatientOrderBautista = mongoose.model('PatientOrderBautista');
       
       // Prepare update object for patient account with only changed fields
       const accountUpdateData = {};
@@ -788,6 +834,43 @@ PatientdemographicSchema.post('findOneAndUpdate', async function(doc) {
       }).catch((appointmentError) => {
         console.error('❌ Error syncing appointments via update:', appointmentError);
       });
+
+      // Sync patient orders (fire-and-forget)
+      if (shouldSyncNames || shouldSyncContact) {
+        const orderUpdateData = {};
+        if (shouldSyncNames) {
+          orderUpdateData.patientlastname = doc.patientlastname;
+          orderUpdateData.patientfirstname = doc.patientfirstname;
+          orderUpdateData.patientmiddlename = doc.patientmiddlename;
+        }
+        if (shouldSyncContact) {
+          orderUpdateData.patientcontactnumber = doc.patientcontactnumber;
+        }
+        
+        // Update Ambher orders
+        PatientOrderAmbher.updateMany(
+          { patientemail: doc.patientemail },
+          { $set: orderUpdateData }
+        ).then((ambherResult) => {
+          if (ambherResult.modifiedCount > 0) {
+            console.log(`✅ ${ambherResult.modifiedCount} Ambher order(s) synced via update for: ${doc.patientemail}`);
+          }
+        }).catch((ambherError) => {
+          console.error('❌ Error syncing Ambher orders via update:', ambherError);
+        });
+
+        // Update Bautista orders
+        PatientOrderBautista.updateMany(
+          { patientemail: doc.patientemail },
+          { $set: orderUpdateData }
+        ).then((bautistaResult) => {
+          if (bautistaResult.modifiedCount > 0) {
+            console.log(`✅ ${bautistaResult.modifiedCount} Bautista order(s) synced via update for: ${doc.patientemail}`);
+          }
+        }).catch((bautistaError) => {
+          console.error('❌ Error syncing Bautista orders via update:', bautistaError);
+        });
+      }
     }
   } catch (error) {
     console.error('❌ Error in findOneAndUpdate sync:', error);
@@ -806,20 +889,23 @@ PatientdemographicSchema.post(['updateOne', 'updateMany'], async function(result
       const shouldSyncNames = $set.patientlastname !== undefined || 
                               $set.patientfirstname !== undefined || 
                               $set.patientmiddlename !== undefined;
+      const shouldSyncContact = $set.patientcontactnumber !== undefined;
       
-      if (shouldSyncProfile || shouldSyncNames) {
+      if (shouldSyncProfile || shouldSyncNames || shouldSyncContact) {
         // Get the filter to find affected documents
         const filter = this.getFilter();
         
         // Find all affected demographics to get their emails
         const affectedDemographics = await this.model.find(filter)
-          .select('patientemail patientprofilepicture patientlastname patientfirstname patientmiddlename')
+          .select('patientemail patientprofilepicture patientlastname patientfirstname patientmiddlename patientcontactnumber')
           .lean();
         
         if (affectedDemographics.length > 0) {
           // Import models here to avoid circular dependency issues
           const Patientaccount = mongoose.model('Patientaccount');
           const PatientAppointment = mongoose.model('PatientAppointment');
+          const PatientOrderAmbher = mongoose.model('PatientOrderAmbher');
+          const PatientOrderBautista = mongoose.model('PatientOrderBautista');
           
           // Sync accounts for each affected demographic
           for (const demographic of affectedDemographics) {
@@ -856,6 +942,35 @@ PatientdemographicSchema.post(['updateOne', 'updateMany'], async function(result
             ).catch((appointmentError) => {
               console.error('❌ Error syncing appointments in bulk update:', appointmentError);
             });
+
+            // Sync orders (fire-and-forget)
+            if (shouldSyncNames || shouldSyncContact) {
+              const orderUpdateData = {};
+              if (shouldSyncNames) {
+                orderUpdateData.patientlastname = demographic.patientlastname;
+                orderUpdateData.patientfirstname = demographic.patientfirstname;
+                orderUpdateData.patientmiddlename = demographic.patientmiddlename;
+              }
+              if (shouldSyncContact) {
+                orderUpdateData.patientcontactnumber = demographic.patientcontactnumber;
+              }
+              
+              // Update Ambher orders
+              PatientOrderAmbher.updateMany(
+                { patientemail: demographic.patientemail },
+                { $set: orderUpdateData }
+              ).catch((ambherError) => {
+                console.error('❌ Error syncing Ambher orders in bulk update:', ambherError);
+              });
+
+              // Update Bautista orders
+              PatientOrderBautista.updateMany(
+                { patientemail: demographic.patientemail },
+                { $set: orderUpdateData }
+              ).catch((bautistaError) => {
+                console.error('❌ Error syncing Bautista orders in bulk update:', bautistaError);
+              });
+            }
           }
           
           console.log(`✅ Bulk sync completed for ${affectedDemographics.length} demographic(s)`);
@@ -893,7 +1008,7 @@ PatientdemographicSchema.index({ patientlastname: 1, patientfirstname: 1, patien
 // Optimized static method to sync profile picture and name fields for a specific patient
 PatientdemographicSchema.statics.syncProfilePicture = async function(patientemail) {
   try {
-    const demographic = await this.findOne({ patientemail }).select('patientemail patientprofilepicture patientlastname patientfirstname patientmiddlename').lean();
+    const demographic = await this.findOne({ patientemail }).select('patientemail patientprofilepicture patientlastname patientfirstname patientmiddlename patientcontactnumber').lean();
     if (demographic) {
       // Sync with patient account using updateOne for better performance
       const accountResult = await Patientaccount.updateOne(
@@ -928,9 +1043,49 @@ PatientdemographicSchema.statics.syncProfilePicture = async function(patientemai
         console.error('❌ Error syncing appointments:', appointmentError);
       });
 
+      // Fire-and-forget sync with patient orders
+      const PatientOrderAmbher = mongoose.model('PatientOrderAmbher');
+      const PatientOrderBautista = mongoose.model('PatientOrderBautista');
+      
+      PatientOrderAmbher.updateMany(
+        { patientemail: patientemail },
+        { 
+          $set: {
+            patientlastname: demographic.patientlastname,
+            patientfirstname: demographic.patientfirstname,
+            patientmiddlename: demographic.patientmiddlename,
+            patientcontactnumber: demographic.patientcontactnumber
+          }
+        }
+      ).then((ambherResult) => {
+        if (ambherResult.modifiedCount > 0) {
+          console.log(`✅ Profile synced to ${ambherResult.modifiedCount} Ambher order(s) for: ${patientemail}`);
+        }
+      }).catch((ambherError) => {
+        console.error('❌ Error syncing Ambher orders:', ambherError);
+      });
+
+      PatientOrderBautista.updateMany(
+        { patientemail: patientemail },
+        { 
+          $set: {
+            patientlastname: demographic.patientlastname,
+            patientfirstname: demographic.patientfirstname,
+            patientmiddlename: demographic.patientmiddlename,
+            patientcontactnumber: demographic.patientcontactnumber
+          }
+        }
+      ).then((bautistaResult) => {
+        if (bautistaResult.modifiedCount > 0) {
+          console.log(`✅ Profile synced to ${bautistaResult.modifiedCount} Bautista order(s) for: ${patientemail}`);
+        }
+      }).catch((bautistaError) => {
+        console.error('❌ Error syncing Bautista orders:', bautistaError);
+      });
+
       return { 
         success: true, 
-        message: 'Profile picture and name fields synced successfully to account and appointments',
+        message: 'Profile picture, name fields, and contact number synced successfully to account, appointments, and orders',
         accountModified: accountResult.modifiedCount > 0
       };
     }
@@ -952,7 +1107,8 @@ PatientdemographicSchema.statics.syncAllProfilePictures = async function() {
           patientprofilepicture: 1,
           patientlastname: 1,
           patientfirstname: 1,
-          patientmiddlename: 1
+          patientmiddlename: 1,
+          patientcontactnumber: 1
         }
       }
     ]);
@@ -1009,12 +1165,56 @@ PatientdemographicSchema.statics.syncAllProfilePictures = async function() {
         console.error(`❌ Error syncing appointment batch ${Math.floor(i/batchSize) + 1}:`, appointmentError);
       });
 
+      // Fire-and-forget bulk update for Ambher orders
+      const PatientOrderAmbher = mongoose.model('PatientOrderAmbher');
+      const ambherBulkOps = batch.map(demographic => ({
+        updateMany: {
+          filter: { patientemail: demographic.patientemail },
+          update: {
+            $set: {
+              patientlastname: demographic.patientlastname,
+              patientfirstname: demographic.patientfirstname,
+              patientmiddlename: demographic.patientmiddlename,
+              patientcontactnumber: demographic.patientcontactnumber
+            }
+          }
+        }
+      }));
+
+      PatientOrderAmbher.bulkWrite(ambherBulkOps).then((ambherResult) => {
+        console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: ${ambherResult.modifiedCount} Ambher orders synced`);
+      }).catch((ambherError) => {
+        console.error(`❌ Error syncing Ambher order batch ${Math.floor(i/batchSize) + 1}:`, ambherError);
+      });
+
+      // Fire-and-forget bulk update for Bautista orders
+      const PatientOrderBautista = mongoose.model('PatientOrderBautista');
+      const bautistaBulkOps = batch.map(demographic => ({
+        updateMany: {
+          filter: { patientemail: demographic.patientemail },
+          update: {
+            $set: {
+              patientlastname: demographic.patientlastname,
+              patientfirstname: demographic.patientfirstname,
+              patientmiddlename: demographic.patientmiddlename,
+              patientcontactnumber: demographic.patientcontactnumber
+            }
+          }
+        }
+      }));
+
+      PatientOrderBautista.bulkWrite(bautistaBulkOps).then((bautistaResult) => {
+        console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: ${bautistaResult.modifiedCount} Bautista orders synced`);
+      }).catch((bautistaError) => {
+        console.error(`❌ Error syncing Bautista order batch ${Math.floor(i/batchSize) + 1}:`, bautistaError);
+      });
+
       console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: ${accountResult.modifiedCount} accounts synced`);
     }
     
     return { 
       success: true, 
-      message: `Synced ${syncCount} profile pictures and name fields to accounts. Appointment sync in progress.`,
+      message: `Synced ${syncCount} profile pictures and name fields to accounts. Appointment and order sync in progress.`,
       accountsSynced: syncCount,
       totalProcessed: demographics.length
     };
