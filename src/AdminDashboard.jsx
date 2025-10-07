@@ -4048,6 +4048,21 @@ function AdminDashboard(){
   // Set default dashboard based on user role - admin users default to account management
   const [activedashboard, setactivedashboard] = useState(isAdminRole ? 'accountmanagement' : 'summaryoverview');
   const showdashboard = (dashboardid) => {
+     // Reset filters when navigating away from inventory management
+     if (activedashboard === 'inventorymanagement' && dashboardid !== 'inventorymanagement') {
+       // Reset Ambher filters
+       setactiveambherinventorycategorytable('all');
+       setActiveProductFilter('all');
+       setpricesortingProducts('none');
+       setQuantitySortingProducts('none');
+       
+       // Reset Bautista filters
+       setactivebautistainventorycategorytable('all');
+       setActiveBautistaProductFilter('all');
+       setBautistaPriceSortingProducts('none');
+       setBautistaQuantitySortingProducts('none');
+     }
+     
      setactivedashboard(dashboardid);
   };
 
@@ -21315,6 +21330,15 @@ useEffect(() => {
 
 
 
+
+
+
+
+
+
+
+
+
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -30735,6 +30759,10 @@ Are you sure you want to delete this medical record?
 
 
 
+
+
+
+
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
 {/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}{/*Start of Inventory Management*/}
@@ -31080,9 +31108,18 @@ Lowest to Highest
   </div>
 
 
+
+
+
+
 {/*<div className=""> <AmbherinventorycategoryBox value={ambherinventorycategorynamebox} loading={loadingambherinventorycategorylist} onChange={(e) => setambherinventorycategorynamebox(e.target.value)} categories={ambherinventorycategorylist}/></div>*/}
 
 </div>
+
+
+
+
+
 <div className=" flex flex-col justify-start  ml-2 rounded-2xl w-[90%]  h-auto shadow-b-lg ">
 <div className="flex justify-end items-center w-full h-[9%] rounded-2xl mb-2 mt-3"> <div onClick={() => setshowaddambherinventoryproductdialog(true)}  className="w-50 p-2 hover:cursor-pointer hover:scale-103 bg-[#4ca22b] rounded-3xl flex justify-center items-center pl-3 pr-3 transition-all duration-300 ease-in-out"><i className="bx  bx-plus text-white font-bold text-[30px]"/><p className="font-bold font-albertsans text-white text-[18px] ml-2">Add Product</p></div> </div>
 
@@ -31190,13 +31227,26 @@ Lowest to Highest
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 {/*Ambher Inventory Category*/}
 {showaddambherinventorycategorydialog && (
 
 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
 
-{/* Modal Header */}
+{/* Modal 
+Header */}
 <div className="flex items-center justify-between p-6 border-b border-gray-100">
   <div className="flex items-center space-x-4">
     <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500  rounded-xl flex items-center justify-center">
@@ -31264,25 +31314,29 @@ Lowest to Highest
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img 
-                        src={category.ambherinventorycategoryaddedbyprofilepicture || 'default-profile.png'}
+                        src={category.ambherinventorycategoryaddedbyprofilepicture && category.ambherinventorycategoryaddedbyprofilepicture !== '' ? category.ambherinventorycategoryaddedbyprofilepicture : 'https://via.placeholder.com/40'}
                         alt="Profile" 
                         className="rounded-full h-10 w-10 object-cover mr-3"
                         onError={(e) => {
-                          e.target.src = 'default-profile.png';
+                          if (e.target.src !== 'https://via.placeholder.com/40') {
+                            e.target.src = 'https://via.placeholder.com/40';
+                          }
                         }}
                       />
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {category.ambherinventorycategoryaddedbyfirstname} {category.ambherinventorycategoryaddedbylastname}
+                          {category.ambherinventorycategoryaddedbyfirstname && category.ambherinventorycategoryaddedbylastname 
+                            ? `${category.ambherinventorycategoryaddedbyfirstname} ${category.ambherinventorycategoryaddedbylastname}`
+                            : 'N/A'}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {category.ambherinventorycategoryaddedbytype}
+                          {category.ambherinventorycategoryaddedbytype || 'N/A'}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(category.createdAt).toLocaleDateString()}
+                    {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {(() => {
@@ -31877,7 +31931,7 @@ Are you sure you want to delete this category?
 
                 {/* Price and Quantity */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div id="ambherproductprice">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductprice">
                       Price
                     </label>
@@ -31886,14 +31940,25 @@ Are you sure you want to delete this category?
                       placeholder="0.00" 
                       type="number" 
                       step="0.01"
+                      min="0"
                       name="addambherinventoryproductprice" 
                       id="addambherinventoryproductprice" 
                       value={addambherinventoryproductprice} 
-                      onChange={(e) => setaddambherinventoryproductprice(e.target.value)} 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || parseFloat(value) >= 0) {
+                          setaddambherinventoryproductprice(value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault();
+                        }
+                      }}
                       required
                     />
                   </div>
-                  <div>
+                  <div id="ambherproductquantity">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addambherinventoryproductquantity">
                       Quantity
                     </label>
@@ -31901,10 +31966,21 @@ Are you sure you want to delete this category?
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
                       placeholder="0" 
                       type="number" 
+                      min="0"
                       name="addambherinventoryproductquantity" 
                       id="addambherinventoryproductquantity" 
                       value={addambherinventoryproductquantity} 
-                      onChange={(e) => setaddambherinventoryproductquantity(e.target.value)} 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || parseFloat(value) >= 0) {
+                          setaddambherinventoryproductquantity(value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '.') {
+                          e.preventDefault();
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -32570,25 +32646,29 @@ Are you sure you want to delete this product?
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img 
-                        src={category.bautistainventorycategoryaddedbyprofilepicture || 'default-profile.png'}
+                        src={category.bautistainventorycategoryaddedbyprofilepicture && category.bautistainventorycategoryaddedbyprofilepicture !== '' ? category.bautistainventorycategoryaddedbyprofilepicture : 'https://via.placeholder.com/40'}
                         alt="Profile" 
                         className="rounded-full h-10 w-10 object-cover mr-3"
                         onError={(e) => {
-                          e.target.src = 'default-profile.png';
+                          if (e.target.src !== 'https://via.placeholder.com/40') {
+                            e.target.src = 'https://via.placeholder.com/40';
+                          }
                         }}
                       />
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {category.bautistainventorycategoryaddedbyfirstname} {category.bautistainventorycategoryaddedbylastname}
+                          {category.bautistainventorycategoryaddedbyfirstname && category.bautistainventorycategoryaddedbylastname 
+                            ? `${category.bautistainventorycategoryaddedbyfirstname} ${category.bautistainventorycategoryaddedbylastname}`
+                            : 'N/A'}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {category.bautistainventorycategoryaddedbytype}
+                          {category.bautistainventorycategoryaddedbytype || 'N/A'}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(category.createdAt).toLocaleDateString()}
+                    {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {(() => {
@@ -33186,7 +33266,7 @@ Are you sure you want to delete this category?
 
                 {/* Price and Quantity */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div id="bautistaproductprice">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductprice">
                       Price
                     </label>
@@ -33195,14 +33275,25 @@ Are you sure you want to delete this category?
                       placeholder="0.00" 
                       type="number" 
                       step="0.01"
+                      min="0"
                       name="addbautistainventoryproductprice" 
                       id="addbautistainventoryproductprice" 
                       value={addbautistainventoryproductprice} 
-                      onChange={(e) => setaddbautistainventoryproductprice(e.target.value)} 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || parseFloat(value) >= 0) {
+                          setaddbautistainventoryproductprice(value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault();
+                        }
+                      }}
                       required
                     />
                   </div>
-                  <div>
+                  <div id="bautistaproductquantity">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="addbautistainventoryproductquantity">
                       Quantity
                     </label>
@@ -33210,10 +33301,21 @@ Are you sure you want to delete this category?
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
                       placeholder="0" 
                       type="number" 
+                      min="0"
                       name="addbautistainventoryproductquantity" 
                       id="addbautistainventoryproductquantity" 
                       value={addbautistainventoryproductquantity} 
-                      onChange={(e) => setaddbautistainventoryproductquantity(e.target.value)} 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || parseFloat(value) >= 0) {
+                          setaddbautistainventoryproductquantity(value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '.') {
+                          e.preventDefault();
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -33431,21 +33533,6 @@ Are you sure you want to delete this product?
 {/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}
 {/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}
 {/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}{/*End of Inventory Management*/}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -33682,9 +33769,10 @@ paginatedAmbherOrders.map((order) => (
   ): ambherinventoryproducts.length === 0 ? (
     <div>No Products Found...</div> 
   ):(
-    [...filteredAmbherProducts]
+    [...ambherinventoryproducts]
   .filter(product => 
-    product.ambherinventoryproductname.toLowerCase().includes(searchpatientorderambherTerm.toLowerCase())
+    product.ambherinventoryproductname.toLowerCase().includes(searchpatientorderambherTerm.toLowerCase()) &&
+    !product.isArchived
   )
     .sort((a, b) => {
       const aquant = a.ambherinventoryproductquantity || 0;
@@ -34605,9 +34693,10 @@ paginatedBautistaOrders.map((order) => (
   ): bautistainventoryproducts.length === 0 ? (
     <div>No Products Found...</div> 
   ):(
-    [...filteredBautistaProducts]
+    [...bautistainventoryproducts]
   .filter(product => 
-    product.bautistainventoryproductname.toLowerCase().includes(searchpatientorderbautistaTerm.toLowerCase())
+    product.bautistainventoryproductname.toLowerCase().includes(searchpatientorderbautistaTerm.toLowerCase()) &&
+    !product.isArchived
   )
     .sort((a, b) => {
       const aquant = a.bautistainventoryproductquantity || 0;
@@ -35898,6 +35987,7 @@ paginatedBautistaOrders.map((order) => (
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
+
 
 
 
@@ -37935,6 +38025,15 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
+
+
+
+
+
 
 
 

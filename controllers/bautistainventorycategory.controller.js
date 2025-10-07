@@ -34,11 +34,10 @@ import BautistaInventoryCategory from "../models/bautistainventorycategory.js";
             const count = await BautistaInventoryCategory.countDocuments();
             console.log('Total bautista categories count:', count);
             
-            // Add timeout and simplify query for better performance
+            // Add timeout and query with all necessary fields
             const bautistainventorycategorys = await BautistaInventoryCategory.find({})
-                .select('bautistainventorycategoryid bautistainventorycategoryname')
+                .select('bautistainventorycategoryid bautistainventorycategoryname bautistainventorycategoryaddedbyprofilepicture bautistainventorycategoryaddedbyfirstname bautistainventorycategoryaddedbylastname bautistainventorycategoryaddedbytype createdAt')
                 .sort({_id: -1}) // Use _id instead of categoryid for better index performance
-                .limit(10) // Limit to 10 results for testing
                 .lean() // Returns plain JavaScript objects for better performance
                 .maxTimeMS(5000); // 5 second timeout
             

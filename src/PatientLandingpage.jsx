@@ -813,42 +813,42 @@ function PatientLandingpage() {
           markerEl.title = clinic.isActive ? clinic.clinicName : `${clinic.clinicName} (Inactive)`;
 
           const popupContent = `
-            <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
-              <div class="flex items-center mb-3 pr-6">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
-                  <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-10 h-10 rounded-full object-cover"/>
+            <div class="bg-white p-3 sm:p-4 w-64 sm:w-72 md:w-80 max-w-sm relative">
+              <div class="flex items-center mb-2 sm:mb-3 pr-4 sm:pr-6">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                  <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"/>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <h3 class="font-bold text-lg text-[#1f1f1f]">${clinic.clinicName}</h3>
-                  <span class="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                  <h3 class="font-bold text-sm sm:text-base md:text-lg text-[#1f1f1f] leading-tight">${clinic.clinicName}</h3>
+                  <span class="inline-block rounded-2xl px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-[13px] font-semibold ${
                     clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                   }">
-                    ${clinic.clinicType}
+                    ${clinic.clinicType === 'Ambher Optical' ? 'Ambher' : 'Bautista'}
                   </span>
                 </div>
               </div>
               
-              <div class="space-y-2 text-sm text-gray-600 mb-4">
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              <div class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                <div class="flex items-center gap-2 mb-1 sm:mb-2">
+                  <div class="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                     clinic.isActive 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-gray-100 text-gray-600'
                   }">
-                    <div class="w-2 h-2 rounded-full ${
+                    <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                       clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
                     }"></div>
                     ${clinic.isActive ? 'Active' : 'Inactive'}
                   </div>
                 </div>
-                <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
-                ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
-                ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
+                <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-1.5 sm:mr-2 mt-0.5 flex-shrink-0 text-sm sm:text-base"></i><p class="break-words text-xs sm:text-sm">${clinic.address.fullAddress}</p></div>
+                ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-1.5 sm:mr-2 flex-shrink-0 text-sm sm:text-base"></i><p class="break-all text-xs sm:text-sm">${clinic.contactInfo.phone}</p></div>` : ''}
+                ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-1.5 sm:mr-2 mt-0.5 flex-shrink-0 text-sm sm:text-base"></i><p class="break-all text-xs sm:text-sm"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
               </div>
 
-              <div class="flex w-full h-10 mb-4 gap-1">
-                <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-2xl bg-[#0e80a7] text-xs sm:text-sm"><i class="bx bx-directions"></i> Directions</div>
-                <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-2xl bg-[#dd9a2d] text-xs sm:text-sm"><i class="bx bx-street-view"></i> Street View</div>
+              <div class="flex w-full h-8 sm:h-10 mb-2 sm:mb-4 gap-1">
+                <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-xl sm:rounded-2xl bg-[#0e80a7] text-[10px] sm:text-xs md:text-sm"><i class="bx bx-directions text-sm sm:text-base"></i><span class="hidden xs:inline"> Directions</span></div>
+                <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-xl sm:rounded-2xl bg-[#dd9a2d] text-[10px] sm:text-xs md:text-sm"><i class="bx bx-street-view text-sm sm:text-base"></i><span class="hidden xs:inline"> Street View</span></div>
               </div>
             </div>
           `;
@@ -906,14 +906,14 @@ function PatientLandingpage() {
     userMarkerEl.title = `Your Location (Accuracy: ${Math.round(userLocation.accuracy)}m)`;
 
     const userPopupContent = `
-      <div class="bg-white p-4 w-64 max-w-sm relative">
-        <div class="flex items-center mb-3">
-          <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3">
-            <i class="bx bx-current-location text-white text-lg"></i>
+      <div class="bg-white p-3 sm:p-4 w-60 sm:w-64 md:w-72 max-w-sm relative">
+        <div class="flex items-center mb-2 sm:mb-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500 flex items-center justify-center mr-2 sm:mr-3">
+            <i class="bx bx-current-location text-white text-sm sm:text-lg"></i>
           </div>
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-800 text-lg leading-tight mb-1">Your Location</h3>
-            <span class="px-2 py-1 text-xs rounded-full font-medium ${
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-gray-800 text-sm sm:text-base md:text-lg leading-tight mb-1">Your Location</h3>
+            <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-full font-medium ${
               userLocation.accuracy <= 20 ? 'bg-green-100 text-green-800' :
               userLocation.accuracy <= 50 ? 'bg-blue-100 text-blue-800' :
               userLocation.accuracy <= 100 ? 'bg-yellow-100 text-yellow-800' :
@@ -926,37 +926,37 @@ function PatientLandingpage() {
           </div>
         </div>
         
-        <div class="space-y-2 mb-4">
-          <div class="flex items-center gap-2">
-            <i class="bx bx-current-location text-red-500 text-sm flex-shrink-0"></i>
-            <span class="text-xs text-gray-600 font-mono">${userLocation.latitude.toFixed(6)}°, ${userLocation.longitude.toFixed(6)}°</span>
+        <div class="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <i class="bx bx-current-location text-red-500 text-xs sm:text-sm flex-shrink-0"></i>
+            <span class="text-[10px] sm:text-xs text-gray-600 font-mono truncate">${userLocation.latitude.toFixed(6)}°, ${userLocation.longitude.toFixed(6)}°</span>
           </div>
           
-          <div class="flex items-center gap-2">
-            <i class="bx bx-target-lock text-blue-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-black">Accuracy: ±${Math.round(userLocation.accuracy)} meters</span>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <i class="bx bx-target-lock text-blue-500 text-xs sm:text-sm flex-shrink-0"></i>
+            <span class="text-xs sm:text-sm text-black">Accuracy: ±${Math.round(userLocation.accuracy)} meters</span>
           </div>
           
           ${userLocation.altitude ? `
-          <div class="flex items-center gap-2">
-            <i class="bx bx-trending-up text-green-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-black">Altitude: ${Math.round(userLocation.altitude)}m</span>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <i class="bx bx-trending-up text-green-500 text-xs sm:text-sm flex-shrink-0"></i>
+            <span class="text-xs sm:text-sm text-black">Altitude: ${Math.round(userLocation.altitude)}m</span>
           </div>
           ` : ''}
           
-          <div class="flex items-center gap-2">
-            <i class="bx bx-time text-gray-500 text-sm flex-shrink-0"></i>
-            <span class="text-sm text-black">Updated: ${new Date(userLocation.timestamp).toLocaleTimeString()}</span>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <i class="bx bx-time text-gray-500 text-xs sm:text-sm flex-shrink-0"></i>
+            <span class="text-xs sm:text-sm text-black">Updated: ${new Date(userLocation.timestamp).toLocaleTimeString()}</span>
           </div>
         </div>
         
         <div class="flex gap-2">
           <button 
             onclick="if(window.getUserLocationFunction) { window.getUserLocationFunction(); }"
-            class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-1"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-1"
           >
-            <i class="bx bx-crosshair text-sm"></i>
-            Update Location
+            <i class="bx bx-crosshair text-xs sm:text-sm"></i>
+            <span class="hidden xs:inline">Update </span>Location
           </button>
         </div>
       </div>
@@ -965,7 +965,7 @@ function PatientLandingpage() {
     const userPopup = new mapboxgl.Popup({
       closeButton: true,
       closeOnClick: false,
-      maxWidth: '280px',
+      maxWidth: '320px',
       className: 'user-location-popup'
     }).setHTML(userPopupContent);
 
@@ -1761,39 +1761,39 @@ const handleFullscreenChange = () => {
               {showDirections && (
                 <div 
                   ref={directionsPanelRef} 
-                  className={`absolute top-2.5 left-2.5 w-80 bg-white rounded-xl shadow-xl z-[50] overflow-hidden transition-transform duration-300 ease-in-out ${showDirections ? 'translate-x-0' : '-translate-x-full'}`}
+                  className={`absolute top-2 sm:top-2.5 left-2 sm:left-2.5 w-[calc(100%-16px)] sm:w-80 max-w-[380px] bg-white rounded-lg sm:rounded-xl shadow-xl z-[50] overflow-hidden transition-transform duration-300 ease-in-out ${showDirections ? 'translate-x-0' : '-translate-x-full'}`}
                 >
-                  <div className="bg-[#2781af] text-white pr-2 pl-3 flex justify-between items-center">
-                    <h3 className="font-bold">Route Directions</h3>
-                    <div onClick={hideDirectionsModal} className="bg-transparent border-none duration-300 text-white text-lg cursor-pointer p-1 rounded transition-all ease-in-out">
+                  <div className="bg-[#2781af] text-white pr-2 pl-2 sm:pl-3 py-2 sm:py-2.5 flex justify-between items-center">
+                    <h3 className="font-bold text-sm sm:text-base">Route Directions</h3>
+                    <div onClick={hideDirectionsModal} className="bg-transparent border-none duration-300 text-white text-lg sm:text-xl cursor-pointer p-1 rounded transition-all ease-in-out hover:bg-white/20">
                       <i className="bx bx-x"></i>
                     </div>
                   </div>
-                  <div className="directions-content h-auto max-h-[480px] overflow-y-auto p-2.5">
+                  <div className="directions-content h-auto max-h-[300px] sm:max-h-[400px] md:max-h-[480px] overflow-y-auto p-2 sm:p-2.5">
                     {isLoadingRoute && (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="border-[#096482] animate-spin rounded-full h-8 w-8 border-b-2"></div>
-                        <span className="text-[#1e1e1e] ml-3">Loading route...</span>
+                      <div className="flex items-center justify-center py-6 sm:py-8">
+                        <div className="border-[#096482] animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2"></div>
+                        <span className="text-[#1e1e1e] ml-2 sm:ml-3 text-sm sm:text-base">Loading route...</span>
                       </div>
                     )}
                     {!isLoadingRoute && !routeInfo && directionsSteps.length === 0 && (
-                      <div className="text-[#2f2f2f] text-center py-8">
-                        <i className="bx bx-map-pin text-4xl mb-2"></i>
-                        <p>Select clinic to get directions</p>
+                      <div className="text-[#2f2f2f] text-center py-6 sm:py-8">
+                        <i className="bx bx-map-pin text-3xl sm:text-4xl mb-2"></i>
+                        <p className="text-sm sm:text-base">Select clinic to get directions</p>
                       </div>
                     )}
                     {routeInfo && (
-                      <div className="bg-[#f4f4f4] p-2.5 mb-2.5 rounded-lg">
+                      <div className="bg-[#f4f4f4] p-2 sm:p-2.5 mb-2 sm:mb-2.5 rounded-lg">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="font-semibold text-gray-800">{routeInfo.distance} km</p>
-                            <p className="text-sm text-gray-600">{routeInfo.duration} minutes</p>
+                            <p className="font-semibold text-gray-800 text-sm sm:text-base">{routeInfo.distance} km</p>
+                            <p className="text-xs sm:text-sm text-gray-600">{routeInfo.duration} minutes</p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <i className="bx bx-car text-[25px] text-[#08a0d3]"></i>
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <i className="bx bx-car text-[20px] sm:text-[25px] text-[#08a0d3]"></i>
                             <div 
                               onClick={clearDirections}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors duration-200"
+                              className="bg-red-500 hover:bg-red-600 text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs transition-colors duration-200 cursor-pointer"
                               title="Clear route"
                             >
                               <i className="bx bx-trash"></i>
@@ -1804,15 +1804,15 @@ const handleFullscreenChange = () => {
                     )}
                     {directionsSteps.length > 0 && (
                       <div>
-                        <h4 className="font-semibold mb-3 text-gray-800">Routes</h4>
+                        <h4 className="font-semibold mb-2 sm:mb-3 text-gray-800 text-sm sm:text-base">Routes</h4>
                         {directionsSteps.map((step, index) => (
-                          <div key={index} className={`py-2 flex gap-2.5 items-center ${index !== directionsSteps.length - 1 ? 'border-b border-[#5959593b]' : ''}`}>
-                            <div className="w-6 h-6 bg-[#2781af] rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">
+                          <div key={index} className={`py-1.5 sm:py-2 flex gap-2 sm:gap-2.5 items-center ${index !== directionsSteps.length - 1 ? 'border-b border-[#5959593b]' : ''}`}>
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#2781af] rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs flex-shrink-0">
                               <i className={`bx ${getStepIcon(step.maneuver.type)}`}></i>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-[14px] leading-snug" dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
-                              <p className="text-[11px] text-gray-500 mt-1">{(step.distance / 1000).toFixed(1)} km</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12px] sm:text-[14px] leading-snug" dangerouslySetInnerHTML={{ __html: step.maneuver.instruction }}></p>
+                              <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 sm:mt-1">{(step.distance / 1000).toFixed(1)} km</p>
                             </div>
                           </div>
                         ))}
@@ -1826,13 +1826,13 @@ const handleFullscreenChange = () => {
               {!showDirections && routeInfo && activeRouteClinicId && (
                 <div
                   onClick={() => setShowDirections(true)}
-                  className="cursor-pointer absolute top-2.5 left-2.5 bg-[#2781af] hover:bg-[#1f6b94] text-white px-3 py-2 rounded-lg shadow-lg z-[50] transition-colors duration-200 flex items-center gap-2"
+                  className="cursor-pointer absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#2781af] hover:bg-[#1f6b94] text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg shadow-lg z-[50] transition-colors duration-200 flex items-center gap-1.5 sm:gap-2"
                   title="Show route directions"
                 >
-                  <i className="bx bx-navigation"></i>
+                  <i className="bx bx-navigation text-sm sm:text-base"></i>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Route Info</span>
-                    <span className="text-xs opacity-90">
+                    <span className="text-xs sm:text-sm font-medium">Route Info</span>
+                    <span className="text-[10px] sm:text-xs opacity-90 max-w-[120px] sm:max-w-none truncate">
                       {clinicLocations.find(c => c._id === activeRouteClinicId)?.clinicName || 'Clinic'}
                     </span>
                   </div>
