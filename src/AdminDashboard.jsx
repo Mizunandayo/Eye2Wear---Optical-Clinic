@@ -13663,8 +13663,11 @@ const [orderambherdownPayment, setorderambherdownPayment] = useState('');
 const [orderambhercustomFee, setorderambhercustomFee] = useState('');
 const [orderambheramountPaid, setorderambheramountPaid] = useState('');
 const [orderambherNotes, setorderambherNotes] = useState('');
+const [orderambherDiscount, setorderambherDiscount] = useState('');
 const orderambherSubtotal = Number(orderambherinventoryproductprice) * Number(ambhercount);
-const orderambhertotalwithFee = orderambherSubtotal + Number(orderambhercustomFee);
+const orderambherBeforeDiscount = orderambherSubtotal + Number(orderambhercustomFee);
+const orderambherDiscountAmount = orderambherBeforeDiscount * (Number(orderambherDiscount || 0) / 100);
+const orderambhertotalwithFee = orderambherBeforeDiscount - orderambherDiscountAmount;
 const orderambherremainingBalance = orderambhertotalwithFee - Number(orderambheramountPaid);
 const orderambheramountpaidChange = Number(orderambheramountPaid) - orderambhertotalwithFee;
 const [orderambhercheckEmail, setorderambhercheckEmail] = useState(false);
@@ -13702,10 +13705,13 @@ const [orderbautistacontactNumber, setorderbautistacontactNumber] = useState('')
 const [orderbautistapickupplace, setorderbautistapickupplace] = useState('');
 const [orderbautistadownPayment, setorderbautistadownPayment] = useState('');
 const [orderbautistacustomFee, setorderbautistacustomFee] = useState('');
+const [orderbautistaDiscount, setorderbautistaDiscount] = useState('');
 const [orderbautistaamountPaid, setorderbautistaamountPaid] = useState('');
 const [orderbautistaNotes, setorderbautistaNotes] = useState('');
 const orderbautistaSubtotal = Number(orderbautistainventoryproductprice) * Number(bautistacount);
-const orderbautistatotalwithFee = orderbautistaSubtotal + Number(orderbautistacustomFee);
+const orderbautistaBeforeDiscount = orderbautistaSubtotal + Number(orderbautistacustomFee);
+const orderbautistaDiscountAmount = orderbautistaBeforeDiscount * (Number(orderbautistaDiscount || 0) / 100);
+const orderbautistatotalwithFee = orderbautistaBeforeDiscount - orderbautistaDiscountAmount;
 const orderbautistaremainingBalance = orderbautistatotalwithFee - Number(orderbautistaamountPaid);
 const orderbautistaamountpaidChange = Number(orderbautistaamountPaid) - orderbautistatotalwithFee;
 const [orderbautistacheckEmail, setorderbautistacheckEmail] = useState(false);
@@ -14601,6 +14607,15 @@ const exportBillingToPDF = async (orderData) => {
     const productTotal = isAmbher 
       ? orderData.patientorderambherproducttotal 
       : orderData.patientorderbautistaproducttotal;
+    const customFee = isAmbher 
+      ? orderData.patientorderambhercustomfee 
+      : orderData.patientorderbautistacustomfee;
+    const discountPercentage = isAmbher 
+      ? orderData.patientorderambherdiscount 
+      : orderData.patientorderbautistadiscount;
+    const discountAmount = isAmbher 
+      ? orderData.patientorderambherdiscountamount 
+      : orderData.patientorderbautistadiscountamount;
     const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
     const clinicAddress = isAmbher
       ? orderData.patientorderambherproductchosenpickupplace
@@ -14716,6 +14731,22 @@ const exportBillingToPDF = async (orderData) => {
     pdf.text('Subtotal:', 140, yPos);
     pdf.text(`PHP ${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
     yPos += 8;
+    
+    // Customization Fee (if any)
+    if (customFee > 0) {
+      pdf.text('Custom Fee:', 140, yPos);
+      pdf.text(`PHP ${Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      yPos += 8;
+    }
+    
+    // Discount (if any)
+    if (discountPercentage > 0) {
+      pdf.setTextColor(196, 54, 54); // Red color for discount
+      pdf.text(`Discount (${discountPercentage}%):`, 140, yPos);
+      pdf.text(`-PHP ${Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      pdf.setTextColor(0, 0, 0); // Reset to black
+      yPos += 8;
+    }
     
     // Amount Paid
     pdf.text('Amount Paid:', 140, yPos);
@@ -15692,6 +15723,8 @@ try {
 
     //Total
     patientorderambhercustomfee: Number(orderambhercustomFee),
+    patientorderambherdiscount: Number(orderambherDiscount || 0), // Discount percentage
+    patientorderambherdiscountamount: Number(orderambherDiscountAmount || 0), // Actual discount amount
     patientorderambheramountpaid: Number(orderambheramountPaid),
     patientorderambherproducttotal: orderambhertotalwithFee,
     patientorderambherremainingbalance: orderambherremainingBalance,
@@ -16029,6 +16062,8 @@ try {
 
     //Total
     patientorderbautistacustomfee: Number(orderbautistacustomFee),
+    patientorderbautistadiscount: Number(orderbautistaDiscount || 0), // Discount percentage
+    patientorderbautistadiscountamount: Number(orderbautistaDiscountAmount || 0), // Actual discount amount
     patientorderbautistaamountpaid: Number(orderbautistaamountPaid),
     patientorderbautistaproducttotal: orderbautistatotalwithFee,
     patientorderbautistaremainingbalance: orderbautistaremainingBalance,
@@ -16292,6 +16327,7 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
   setorderbautistacontactNumber('');
   setorderbautistadownPayment('');
   setorderbautistacustomFee('');
+  setorderbautistaDiscount('');
   setorderbautistaamountPaid('');
   setorderbautistaNotes('');
   setbautistaproductsoldCount(0);
@@ -16346,6 +16382,8 @@ try {
 
     //Total
     patientorderambhercustomfee: Number(orderambhercustomFee),
+    patientorderambherdiscount: Number(orderambherDiscount || 0), // Discount percentage
+    patientorderambherdiscountamount: Number(orderambherDiscountAmount || 0), // Actual discount amount
     patientorderambheramountpaid: Number(orderambheramountPaid),
     patientorderambherproducttotal: orderambhertotalwithFee,
     patientorderambherremainingbalance: orderambherremainingBalance,
@@ -16416,6 +16454,7 @@ try {
   setorderambhercontactNumber('');
   setorderambherdownPayment('');
   setorderambhercustomFee('');
+  setorderambherDiscount('');
   setorderambheramountPaid('');
   setorderambherNotes('');
   setambherproductsoldCount(0);
@@ -16466,6 +16505,8 @@ try {
 
     //Total
     patientorderbautistacustomfee: Number(orderbautistacustomFee),
+    patientorderbautistadiscount: Number(orderbautistaDiscount || 0), // Discount percentage
+    patientorderbautistadiscountamount: Number(orderbautistaDiscountAmount || 0), // Actual discount amount
     patientorderbautistaamountpaid: Number(orderbautistaamountPaid),
     patientorderbautistaproducttotal: orderbautistatotalwithFee,
     patientorderbautistaremainingbalance: orderbautistaremainingBalance,
@@ -21250,6 +21291,8 @@ useEffect(() => {
 
 
           <div className="w-full h-[88%]  rounded-2xl" id="overview">
+
+
 
 
 
@@ -26863,20 +26906,6 @@ itemName="appointments"
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -29148,11 +29177,6 @@ Are you sure you want to delete this medical record?
 
 
 
-
-
-
-
-
 {/* Bautista Medical Record Form Modal */}
 {/* Bautista Medical Record Form Modal */}
 {showaddbautistaclinicmedicalrecord && (
@@ -30139,15 +30163,6 @@ Are you sure you want to delete this medical record?
 
 
 
-
-
-
-
-
-
-
-
-
 {/* Ambher Optical Medical Record Form Modal */}
 {showaddambherclinicmedicalrecord && (
 <div id="ambherpatientrecord" className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
@@ -30697,8 +30712,6 @@ Are you sure you want to delete this medical record?
 
 </div>
 </div>)}
-
-
 
 
 
@@ -33424,6 +33437,20 @@ Are you sure you want to delete this product?
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
@@ -33921,7 +33948,29 @@ paginatedAmbherOrders.map((order) => (
                           <h1 className="font-albertsans font-semibold">x {ambhercount}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderambherinventoryproductprice * ambhercount).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderambhercustomFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
-                          <h1 className=" font-albertsans font-medium">0</h1>     
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              value={orderambherDiscount} 
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Ensure percentage is between 0-100
+                                if (value === '' || (Number(value) >= 0 && Number(value) <= 100)) {
+                                  setorderambherDiscount(value);
+                                }
+                              }}
+                              placeholder="0"
+                              min="0"
+                              max="100"
+                              className="font-albertsans font-medium text-right transition-all duration-300 ease-in-out w-16 px-2 py-1 rounded-lg bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                            />
+                            <span className="font-albertsans font-medium text-gray-600">%</span>
+                            {orderambherDiscount && Number(orderambherDiscount) > 0 && (
+                              <span className="font-albertsans font-medium text-red-500 text-sm ml-1">
+                                (-₱{orderambherDiscountAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+                              </span>
+                            )}
+                          </div>
                           <h1 className="font-albertsans font-bold text-[#478d12] text-[25px] mt-3">₱ {Number(orderambhertotalwithFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderambheramountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           {Number(orderambheramountPaid) > Number(orderambhertotalwithFee) ? (
@@ -33998,7 +34047,7 @@ paginatedAmbherOrders.map((order) => (
 
 
 {patientorderambherproductToast && (
-<div className=" bottom-4 right-8  z-101   transform fixed " >
+<div className=" bottom-4 right-8  z-800   transform fixed " >
     <div key={patientorderambherproductisClicked ? 'added' : 'removed'}  className={` ${patientorderambherproductToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s]  motion-ease-spring-smooth' : 'motion-preset-slide-left'}  flex items-center bg-white   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
       {patientorderambherproductisClicked ? (          
          <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle "></i></span>
@@ -34821,7 +34870,29 @@ paginatedBautistaOrders.map((order) => (
                           <h1 className="font-albertsans font-semibold">x {bautistacount}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistainventoryproductprice * bautistacount).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistacustomFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
-                          <h1 className=" font-albertsans font-medium">0</h1>     
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              value={orderbautistaDiscount} 
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Ensure percentage doesn't exceed 100
+                                if (value === '' || (Number(value) >= 0 && Number(value) <= 100)) {
+                                  setorderbautistaDiscount(value);
+                                }
+                              }}
+                              placeholder="0"
+                              min="0"
+                              max="100"
+                              className="font-albertsans font-medium text-right transition-all duration-300 ease-in-out w-16 px-2 py-1 rounded-lg bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                            />
+                            <span className="font-albertsans font-medium text-gray-600">%</span>
+                            {orderbautistaDiscount && (
+                              <span className="font-albertsans font-medium text-red-500 text-sm ml-2">
+                                (-₱{orderbautistaDiscountAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+                              </span>
+                            )}
+                          </div>     
                           <h1 className="font-albertsans font-bold text-[#478d12] text-[25px] mt-3">₱ {Number(orderbautistatotalwithFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistaamountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           {Number(orderbautistaamountPaid) > Number(orderbautistatotalwithFee) ? (
@@ -34895,7 +34966,7 @@ paginatedBautistaOrders.map((order) => (
 
 
 {patientorderbautistaproductToast && (
-<div className=" bottom-4 right-8  z-101   transform fixed " >
+<div className=" bottom-4 right-8  z-800   transform fixed " >
     <div key={patientorderbautistaproductisClicked ? 'added' : 'removed'}  className={` ${patientorderbautistaproductToastClosing ? 'motion-translate-x-out-100 motion-duration-[3s]  motion-ease-spring-smooth' : 'motion-preset-slide-left'}  flex items-center bg-white   rounded-md shadow-lg text-gray-900 font-semibold px-6 py-3`} >
       {patientorderbautistaproductisClicked ? (          
          <span className="text-green-800 font-semibold text-[20px]"><i className="mr-2 bx bx-check-circle "></i></span>
@@ -35147,7 +35218,29 @@ paginatedBautistaOrders.map((order) => (
                           <h1 className="font-albertsans font-semibold">x {bautistacount}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistainventoryproductprice * bautistacount).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistacustomFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
-                          <h1 className=" font-albertsans font-medium">0</h1>     
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              value={orderbautistaDiscount} 
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Ensure percentage doesn't exceed 100
+                                if (value === '' || (Number(value) >= 0 && Number(value) <= 100)) {
+                                  setorderbautistaDiscount(value);
+                                }
+                              }}
+                              placeholder="0"
+                              min="0"
+                              max="100"
+                              className="font-albertsans font-medium text-right transition-all duration-300 ease-in-out w-16 px-2 py-1 rounded-lg bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                            />
+                            <span className="font-albertsans font-medium text-gray-600">%</span>
+                            {orderbautistaDiscount && (
+                              <span className="font-albertsans font-medium text-red-600 text-sm ml-2">
+                                (-₱{orderbautistaDiscountAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+                              </span>
+                            )}
+                          </div>
                           <h1 className="font-albertsans font-bold text-[#478d12] text-[25px] mt-3">₱ {Number(orderbautistatotalwithFee).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           <h1 className="font-albertsans font-medium">₱ {Number(orderbautistaamountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</h1>
                           {Number(orderbautistaamountPaid) > Number(orderbautistatotalwithFee) ? (
@@ -35338,6 +35431,15 @@ paginatedBautistaOrders.map((order) => (
           const productTotal = isAmbher 
             ? selectedOrderForView.patientorderambherproducttotal 
             : selectedOrderForView.patientorderbautistaproducttotal;
+          const customFee = isAmbher 
+            ? selectedOrderForView.patientorderambhercustomfee 
+            : selectedOrderForView.patientorderbautistacustomfee;
+          const discountPercentage = isAmbher 
+            ? selectedOrderForView.patientorderambherdiscount 
+            : selectedOrderForView.patientorderbautistadiscount;
+          const discountAmount = isAmbher 
+            ? selectedOrderForView.patientorderambherdiscountamount 
+            : selectedOrderForView.patientorderbautistadiscountamount;
           const pickupStatus = isAmbher 
             ? selectedOrderForView.patientorderambherproductpickupstatus 
             : selectedOrderForView.patientorderbautistaproductpickupstatus;
@@ -35457,6 +35559,26 @@ paginatedBautistaOrders.map((order) => (
                       <span className="font-semibold font-albertsans">₱{(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     
+                    {/* Customization Fee */}
+                    {customFee > 0 && (
+                      <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
+                        <span className="text-gray-700 font-medium font-albertsans">Customization Fee:</span>
+                        <span className="font-semibold font-albertsans">₱{Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                      </div>
+                    )}
+                    
+                    {/* Discount */}
+                    {discountPercentage > 0 && (
+                      <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
+                        <span className="text-gray-700 font-medium font-albertsans">
+                          Discount ({discountPercentage}%):
+                        </span>
+                        <span className="font-semibold font-albertsans text-red-600">
+                          -₱{Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </span>
+                      </div>
+                    )}
+                    
                     <div className={`bg-white p-5 rounded-lg border shadow-sm ${isAmbher ? 'border-green-300' : 'border-blue-300'}`}>
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-gray-700 font-medium font-albertsans text-sm">
@@ -35475,7 +35597,7 @@ paginatedBautistaOrders.map((order) => (
                       <div className="border-t-2 border-gray-300 pt-3 mt-3">
                         <div className="flex justify-between items-center">
                           <span className="text-lg font-bold font-albertsans text-gray-800">Total Amount:</span>
-                          <span className={`text-2xl font-bold font-albertsans ${isAmbher ? 'text-[#23a54a]' : 'text-[#23a54a]'}`}>₱{(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                          <span className={`text-2xl font-bold font-albertsans ${isAmbher ? 'text-[#23a54a]' : 'text-[#23a54a]'}`}>₱{Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                       </div>
                     </div>
@@ -35776,6 +35898,13 @@ paginatedBautistaOrders.map((order) => (
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
 {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} {/*End of Billings and Orders*/} 
+
+
+
+
+
+
+
 
 
 
@@ -36311,13 +36440,6 @@ paginatedBautistaOrders.map((order) => (
 {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
 {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
 {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} {/*End of Reports and Analytics*/} 
-
-
-
-
-
-
-
 
 
 
@@ -37819,6 +37941,13 @@ paginatedBautistaOrders.map((order) => (
 
 
 
+
+
+
+
+
+
+
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div style={{
@@ -38070,6 +38199,20 @@ paginatedBautistaOrders.map((order) => (
           </div>
         </div>
       )}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -45,10 +45,12 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
 
     //PAYMENT INFORMATION
     patientorderambhercustomfee: { type: Number, default: 0 }, // Clinic customization fee
+    patientorderambherdiscount: { type: Number, default: 0 }, // Discount percentage (0-100)
+    patientorderambherdiscountamount: { type: Number, default: 0 }, // Actual discount amount in currency
     patientorderambheramountpaid: { type: Number, default: 0 }, // Customer total paid amount
     patientorderambherremainingbalance: { type: Number, default: 0 },
     patientorderambheramountpaidchange: { type: Number, default: 0 },  // Computed from deducting overall total to total paid amount
-    patientorderambherproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee
+    patientorderambherproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee - Discount
     patientorderambherproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
     // Payment receipt image - Cloudinary URL
     patientorderambherproductpaymentreceiptimage: String,

@@ -43,10 +43,12 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
 
     //PAYMENT INFORMATION
     patientorderbautistacustomfee: { type: Number, default: 0 }, // Clinic customization fee
+    patientorderbautistadiscount: { type: Number, default: 0 }, // Discount percentage (0-100)
+    patientorderbautistadiscountamount: { type: Number, default: 0 }, // Actual discount amount in currency
     patientorderbautistaamountpaid: { type: Number, default: 0 }, // Customer total paid amount
     patientorderbautistaremainingbalance: { type: Number, default: 0 },
     patientorderbautistaamountpaidchange: { type: Number, default: 0 }, // Computed from deducting overall total to total paid amount
-    patientorderbautistaproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee
+    patientorderbautistaproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee - Discount
     patientorderbautistaproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
     // Payment receipt image - Cloudinary URL
     patientorderbautistaproductpaymentreceiptimage: String,

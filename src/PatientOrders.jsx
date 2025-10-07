@@ -440,6 +440,15 @@ useEffect(() => {
       const productTotal = isAmbher 
         ? orderData.patientorderambherproducttotal 
         : orderData.patientorderbautistaproducttotal;
+      const customFee = isAmbher 
+        ? orderData.patientorderambhercustomfee 
+        : orderData.patientorderbautistacustomfee;
+      const discountPercentage = isAmbher 
+        ? orderData.patientorderambherdiscount 
+        : orderData.patientorderbautistadiscount;
+      const discountAmount = isAmbher 
+        ? orderData.patientorderambherdiscountamount 
+        : orderData.patientorderbautistadiscountamount;
       const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
       const clinicAddress = isAmbher
         ? orderData.patientorderambherproductchosenpickupplace
@@ -555,6 +564,22 @@ useEffect(() => {
       pdf.text('Subtotal:', 140, yPos);
       pdf.text(`PHP ${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
       yPos += 8;
+      
+      // Customization Fee (if any)
+      if (customFee > 0) {
+        pdf.text('Custom Fee:', 140, yPos);
+        pdf.text(`PHP ${Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+        yPos += 8;
+      }
+      
+      // Discount (if any)
+      if (discountPercentage > 0) {
+        pdf.setTextColor(196, 54, 54); // Red color for discount
+        pdf.text(`Discount (${discountPercentage}%):`, 140, yPos);
+        pdf.text(`-PHP ${Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+        pdf.setTextColor(0, 0, 0); // Reset to black
+        yPos += 8;
+      }
       
       // Amount Paid
       pdf.text('Amount Paid:', 140, yPos);
@@ -1124,7 +1149,7 @@ useEffect(() => {
                         </div>
                         <div className="flex items-center justify-between border-t-2 w-full h-10 mt-5">
                           <div></div>
-                          <div className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{(order.patientorderambherproductprice * order.patientorderambherproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
+                          <div id="ambhertotalprice" className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{Number(order.patientorderambherproducttotal).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
                         </div>
                     </div>
                   </div>
@@ -1208,7 +1233,7 @@ useEffect(() => {
                         </div>
                         <div className="flex items-center justify-between border-t-2 w-full h-10 mt-5">
                           <div></div>
-                          <div className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{(order.patientorderbautistaproductprice * order.patientorderbautistaproductquantity).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
+                          <div id="bautistatotalprice" className="flex items-center gap-3 mt-5 h-auto"><h1 className="font-semibold font-albertsans text-[#343434] text-base sm:text-[17px]">Total Price: </h1><p className="font-semibold font-albertsans text-xl sm:text-[25px] text-[#549013]">₱{Number(order.patientorderbautistaproducttotal).toLocaleString('en-PH', {minimumFractionDigits: 2,  maximumFractionDigits: 2})}</p></div>
                         </div>
                     </div>
                   </div>
@@ -1281,6 +1306,15 @@ useEffect(() => {
                   const productTotal = isAmbher 
                     ? selectedOrderForView.patientorderambherproducttotal 
                     : selectedOrderForView.patientorderbautistaproducttotal;
+                  const customFee = isAmbher 
+                    ? selectedOrderForView.patientorderambhercustomfee 
+                    : selectedOrderForView.patientorderbautistacustomfee;
+                  const discountPercentage = isAmbher 
+                    ? selectedOrderForView.patientorderambherdiscount 
+                    : selectedOrderForView.patientorderbautistadiscount;
+                  const discountAmount = isAmbher 
+                    ? selectedOrderForView.patientorderambherdiscountamount 
+                    : selectedOrderForView.patientorderbautistadiscountamount;
                   const pickupStatus = isAmbher 
                     ? selectedOrderForView.patientorderambherproductpickupstatus 
                     : selectedOrderForView.patientorderbautistaproductpickupstatus;
@@ -1385,6 +1419,26 @@ useEffect(() => {
                               <span className="font-semibold font-albertsans">₱{(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             </div>
                             
+                            {/* Customization Fee */}
+                            {customFee > 0 && (
+                              <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
+                                <span className="text-black font-medium font-albertsans">Customization Fee:</span>
+                                <span className="font-semibold font-albertsans">₱{Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                              </div>
+                            )}
+                            
+                            {/* Discount */}
+                            {discountPercentage > 0 && (
+                              <div className={`flex justify-between items-center py-2 border-b ${isAmbher ? 'border-green-200' : 'border-blue-200'}`}>
+                                <span className="text-black font-medium font-albertsans">
+                                  Discount ({discountPercentage}%):
+                                </span>
+                                <span className="font-semibold font-albertsans text-red-600">
+                                  -₱{Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </span>
+                              </div>
+                            )}
+                            
                             <div className={`bg-white p-5 rounded-lg border shadow-sm ${isAmbher ? 'border-green-300' : 'border-blue-300'}`}>
                               <div className="flex justify-between items-center mb-3">
                                 <span className="text-black font-medium font-albertsans text-sm">
@@ -1403,7 +1457,7 @@ useEffect(() => {
                               <div className="border-t-2 border-gray-300 pt-3 mt-3">
                                 <div className="flex justify-between items-center">
                                   <span className="text-lg font-bold font-albertsans text-gray-800">Total Amount:</span>
-                                  <span className={`text-2xl font-bold font-albertsans ${isAmbher ? 'text-[#23a54a]' : 'text-[#23a54a]'}`}>₱{(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                  <span className={`text-2xl font-bold font-albertsans ${isAmbher ? 'text-[#23a54a]' : 'text-[#23a54a]'}`}>₱{Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                                 </div>
                               </div>
                             </div>
