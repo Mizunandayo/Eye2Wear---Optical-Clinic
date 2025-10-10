@@ -40,6 +40,7 @@ import Owneraccount from "./models/owneraccount.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import DatabaseOptimizer from './utils/databaseOptimization.js';
+import AppointmentExpirationScheduler from './utils/appointmentExpirationScheduler.js';
 
 import cliniclocationrouter from "./routes/cliniclocation.route.js";
 
@@ -359,12 +360,16 @@ mongoose
     // Initialize SMS Scheduler
     SmsScheduler.init();
     
+    // Initialize Appointment Expiration Scheduler
+    AppointmentExpirationScheduler.init();
+    
     // Start server
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, '0.0.0.0', () => {
       console.log("🚀 Server listening on all interfaces port", PORT);
       console.log("📊 Database performance optimization enabled");
       console.log("📱 SMS notification system enabled");
+      console.log("⏰ Appointment expiration scheduler enabled");
     });
   })
   .catch((error) => console.error("❌ Database connection error:", error));

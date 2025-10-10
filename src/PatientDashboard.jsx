@@ -258,6 +258,8 @@ function PatientDashboard(){
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAmbherServices, setShowAmbherServices] = useState(false);
   const [showBautistaServices, setShowBautistaServices] = useState(false);
+  const [showAmbherAppointmentForm, setShowAmbherAppointmentForm] = useState(false);
+  const [showBautistaAppointmentForm, setShowBautistaAppointmentForm] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   
   // Demographic profile completion states
@@ -515,6 +517,15 @@ const patientsubmitappointment = async (formData) => {
       throw new Error('Patient name and email are required. Please complete your profile first.');
     }
 
+    // Check which clinics have appointments
+    const hasAmbherAppointment = formData.get('patientambherappointmentdate') && 
+                                  formData.get('patientambherappointmenttime') && 
+                                  formData.get('patientambherappointmentlocation');
+    
+    const hasBautistaAppointment = formData.get('patientbautistaappointmentdate') && 
+                                    formData.get('patientbautistaappointmenttime') && 
+                                    formData.get('patientbautistaappointmentlocation');
+
     const patientappointmentdata = {
 
       patientappointmentstatus: "Pending",
@@ -529,68 +540,73 @@ const patientsubmitappointment = async (formData) => {
       patientappointmentstaffname:"Staff Name",
       
 
-
-      // Ambher Optical Clinic Data
-      patientambherappointmenteyespecialist: "Optometrist Name",
-      patientambherappointmentstaffname: "Ambher Staff Name",
-      patientambherappointmentdate: formData.get('patientambherappointmentdate'),
-      patientambherappointmenttime: formData.get('patientambherappointmenttime'),
-      patientambherappointmentlocation: formData.get('patientambherappointmentlocation'),
-      patientambherappointmentlocationaddress: getLocationAddress(formData.get('patientambherappointmentlocation'), ambherlocations),
-      patientambherappointmentcataractscreening: formData.has('patientambherappointmentcataractscreening'),
-      patientambherappointmentpediatricassessment: formData.has('patientambherappointmentpediatricassessment'),
-      patientambherappointmentcolorvisiontesting: formData.has('patientambherappointmentcolorvisiontesting'),
-      patientambherappointmentlowvisionaid: formData.has('patientambherappointmentlowvisionaid'),
-      patientambherappointmentrefraction: formData.has('patientambherappointmentrefraction'),
-      patientambherappointmentcontactlensefitting: formData.has('patientambherappointmentcontactlensefitting'),
-      patientambherappointmentotherservice: formData.has('patientambherappointmentotherservice'),
-      patientambherappointmentotherservicenote: patientambherappointmentotherservicenote || '',
-      patientambherappointmentstatus: "Pending",
-      patientambherappointmentpaymentotal: 0,
-      patientambherappointmentconsultationremarkssubject: "",
-      patientambherappointmentconsultationremarks:"",
-      patientambherappointmentprescription: "",
-      patientambherappointmentrating: 0,
-      patientambherappointmentfeedback: "",
-
-      
-
-
-
-      // Bautista Eye Clinic Data
-      patientbautistaappointmenteyespecialist: "Ophthalmologist Name",
-      patientbautistaappointmentstaffname: "Bautista Staff Name",
-      patientbautistaappointmentdate: formData.get('patientbautistaappointmentdate'),
-      patientbautistaappointmenttime: formData.get('patientbautistaappointmenttime'),
-      patientbautistaappointmentlocation: formData.get('patientbautistaappointmentlocation'),
-      patientbautistaappointmentlocationaddress: getLocationAddress(formData.get('patientbautistaappointmentlocation'), bautistalocations),
-      patientbautistaappointmentcomprehensiveeyeexam: formData.has('patientbautistaappointmentcomprehensiveeyeexam'),
-      patientbautistaappointmentdiabeticretinopathy: formData.has('patientbautistaappointmentdiabeticretinopathy'),
-      patientbautistaappointmentglaucoma: formData.has('patientbautistaappointmentglaucoma'),
-      patientbautistaappointmenthypertensiveretinopathy: formData.has('patientbautistaappointmenthypertensiveretinopathy'),
-      patientbautistaappointmentretinolproblem: formData.has('patientbautistaappointmentretinolproblem'),
-      patientbautistaappointmentcataractsurgery: formData.has('patientbautistaappointmentcataractsurgery'),
-      patientbautistaappointmentpterygiumsurgery: formData.has('patientbautistaappointmentpterygiumsurgery'),
-      patientbautistaappointmentotherservice: formData.has('patientbautistaappointmentotherservice'),
-      patientbautistaappointmentotherservicenote: patientambherappointmentotherservicenote || '',
-      patientbautistaappointmentstatus: "Pending",
-      patientbautistaappointmentpaymentotal: 0,
-      patientbautistaappointmentconsultationremarkssubject: "",
-      patientbautistaappointmentconsultationremarks: "",
-      patientbautistaappointmentprescription: "",
-      patientbautistaappointmentrating: 0,
-      patientbautistaappointmentfeedback: "",
-
-
-
       patientadditionalappointmentnotes: additionaldetails,
       patientadditionalappointmentnotesimage: "default-profile-url",
       patientappointmentpaymentotal: 0,
     }
 
+    // Only add Ambher Optical data if an appointment is selected
+    if (hasAmbherAppointment) {
+      Object.assign(patientappointmentdata, {
+        // Ambher Optical Clinic Data
+        patientambherappointmenteyespecialist: "Optometrist Name",
+        patientambherappointmentstaffname: "Ambher Staff Name",
+        patientambherappointmentdate: formData.get('patientambherappointmentdate'),
+        patientambherappointmenttime: formData.get('patientambherappointmenttime'),
+        patientambherappointmentlocation: formData.get('patientambherappointmentlocation'),
+        patientambherappointmentlocationaddress: getLocationAddress(formData.get('patientambherappointmentlocation'), ambherlocations),
+        patientambherappointmentcataractscreening: formData.has('patientambherappointmentcataractscreening'),
+        patientambherappointmentpediatricassessment: formData.has('patientambherappointmentpediatricassessment'),
+        patientambherappointmentcolorvisiontesting: formData.has('patientambherappointmentcolorvisiontesting'),
+        patientambherappointmentlowvisionaid: formData.has('patientambherappointmentlowvisionaid'),
+        patientambherappointmentrefraction: formData.has('patientambherappointmentrefraction'),
+        patientambherappointmentcontactlensefitting: formData.has('patientambherappointmentcontactlensefitting'),
+        patientambherappointmentotherservice: formData.has('patientambherappointmentotherservice'),
+        patientambherappointmentotherservicenote: patientambherappointmentotherservicenote || '',
+        patientambherappointmentstatus: "Pending",
+        patientambherappointmentpaymentotal: 0,
+        patientambherappointmentconsultationremarkssubject: "",
+        patientambherappointmentconsultationremarks:"",
+        patientambherappointmentprescription: "",
+        patientambherappointmentrating: 0,
+        patientambherappointmentfeedback: "",
+      });
+    }
+
+    // Only add Bautista Eye Center data if an appointment is selected
+    if (hasBautistaAppointment) {
+      Object.assign(patientappointmentdata, {
+        // Bautista Eye Clinic Data
+        patientbautistaappointmenteyespecialist: "Ophthalmologist Name",
+        patientbautistaappointmentstaffname: "Bautista Staff Name",
+        patientbautistaappointmentdate: formData.get('patientbautistaappointmentdate'),
+        patientbautistaappointmenttime: formData.get('patientbautistaappointmenttime'),
+        patientbautistaappointmentlocation: formData.get('patientbautistaappointmentlocation'),
+        patientbautistaappointmentlocationaddress: getLocationAddress(formData.get('patientbautistaappointmentlocation'), bautistalocations),
+        patientbautistaappointmentcomprehensiveeyeexam: formData.has('patientbautistaappointmentcomprehensiveeyeexam'),
+        patientbautistaappointmentdiabeticretinopathy: formData.has('patientbautistaappointmentdiabeticretinopathy'),
+        patientbautistaappointmentglaucoma: formData.has('patientbautistaappointmentglaucoma'),
+        patientbautistaappointmenthypertensiveretinopathy: formData.has('patientbautistaappointmenthypertensiveretinopathy'),
+        patientbautistaappointmentretinolproblem: formData.has('patientbautistaappointmentretinolproblem'),
+        patientbautistaappointmentcataractsurgery: formData.has('patientbautistaappointmentcataractsurgery'),
+        patientbautistaappointmentpterygiumsurgery: formData.has('patientbautistaappointmentpterygiumsurgery'),
+        patientbautistaappointmentotherservice: formData.has('patientbautistaappointmentotherservice'),
+        patientbautistaappointmentotherservicenote: patientambherappointmentotherservicenote || '',
+        patientbautistaappointmentstatus: "Pending",
+        patientbautistaappointmentpaymentotal: 0,
+        patientbautistaappointmentconsultationremarkssubject: "",
+        patientbautistaappointmentconsultationremarks: "",
+        patientbautistaappointmentprescription: "",
+        patientbautistaappointmentrating: 0,
+        patientbautistaappointmentfeedback: "",
+      });
+    }
+
     // Debug: Log appointment data being sent
     console.log('Appointment data being sent:', patientappointmentdata);
     console.log('Patient demographics:', patientdemographics);
+    console.log('Has Ambher Appointment:', hasAmbherAppointment);
+    console.log('Has Bautista Appointment:', hasBautistaAppointment);
 
     // Create FormData for file uploads
     const submissionFormData = new FormData();
@@ -1012,9 +1028,33 @@ const handleviewappointment = (appointment) => {
  const [currentPage, setCurrentPage] = useState(1);
  const appointmentsPerPage = 6; // Number of appointments to display per page
 
- // Search functionality for appointments
+ // Search functionality for appointments with debounce
  const [searchAppointments, setSearchAppointments] = useState('');
+ const [debouncedSearch, setDebouncedSearch] = useState('');
  const [filteredAppointments, setFilteredAppointments] = useState([]);
+
+ // Sorting and filtering states
+ const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
+ const [statusFilter, setStatusFilter] = useState([]);
+ const [showStatusFilter, setShowStatusFilter] = useState(false);
+ const [showColumnToggle, setShowColumnToggle] = useState(false);
+ const [visibleColumns, setVisibleColumns] = useState({
+   dateCreated: false,
+   ambherAppointment: true,
+   bautistaAppointment: true,
+   actions: true
+ });
+
+ // Debounce search input
+ useEffect(() => {
+   const handler = setTimeout(() => {
+     setDebouncedSearch(searchAppointments);
+   }, 300); // 300ms debounce delay
+
+   return () => {
+     clearTimeout(handler);
+   };
+ }, [searchAppointments]);
 
  
  // Add a ref to track if we're already fetching to prevent duplicate calls
@@ -1087,13 +1127,142 @@ const searchAppointmentsDebounce = useCallback((searchTerm) => {
 // Create debounced search function using useRef to persist the debounced function
 const debouncedSearchRef = useRef();
 
+// Sorting function
+const handleSort = (key) => {
+  let direction = 'asc';
+  if (sortConfig.key === key && sortConfig.direction === 'asc') {
+    direction = 'desc';
+  }
+  setSortConfig({ key, direction });
+};
+
+// Get sorted and filtered appointments
+const getSortedAndFilteredAppointments = () => {
+  let data = [...patientappointments];
+  
+  // Apply status filter
+  if (statusFilter.length > 0) {
+    data = data.filter(appointment => {
+      const ambherMatch = appointment.patientambherappointmentdate && 
+        statusFilter.includes(appointment.patientambherappointmentstatus);
+      const bautistaMatch = appointment.patientbautistaappointmentdate && 
+        statusFilter.includes(appointment.patientbautistaappointmentstatus);
+      return ambherMatch || bautistaMatch;
+    });
+  }
+  
+  // Apply debounced search filter
+  if (debouncedSearch.trim()) {
+    const searchLower = debouncedSearch.toLowerCase();
+    data = data.filter(appointment => {
+      const dateCreated = formatappointmatedates(appointment.createdAt).toLowerCase();
+      const ambherDate = appointment.patientambherappointmentdate ? 
+        formatappointmatedates(appointment.patientambherappointmentdate).toLowerCase() : '';
+      const ambherTime = appointment.patientambherappointmenttime ? 
+        formatappointmenttimes(appointment.patientambherappointmenttime).toLowerCase() : '';
+      const ambherStatus = appointment.patientambherappointmentstatus ? 
+        appointment.patientambherappointmentstatus.toLowerCase() : '';
+      const bautistaDate = appointment.patientbautistaappointmentdate ? 
+        formatappointmatedates(appointment.patientbautistaappointmentdate).toLowerCase() : '';
+      const bautistaTime = appointment.patientbautistaappointmenttime ? 
+        formatappointmenttimes(appointment.patientbautistaappointmenttime).toLowerCase() : '';
+      const bautistaStatus = appointment.patientbautistaappointmentstatus ? 
+        appointment.patientbautistaappointmentstatus.toLowerCase() : '';
+      
+      return dateCreated.includes(searchLower) ||
+        ambherDate.includes(searchLower) ||
+        ambherTime.includes(searchLower) ||
+        ambherStatus.includes(searchLower) ||
+        bautistaDate.includes(searchLower) ||
+        bautistaTime.includes(searchLower) ||
+        bautistaStatus.includes(searchLower);
+    });
+  }
+  
+  // Apply sorting
+  if (sortConfig.key) {
+    data.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch(sortConfig.key) {
+        case 'createdAt':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        case 'ambherDate':
+          aValue = a.patientambherappointmentdate ? new Date(a.patientambherappointmentdate) : new Date(0);
+          bValue = b.patientambherappointmentdate ? new Date(b.patientambherappointmentdate) : new Date(0);
+          break;
+        case 'bautistaDate':
+          aValue = a.patientbautistaappointmentdate ? new Date(a.patientbautistaappointmentdate) : new Date(0);
+          bValue = b.patientbautistaappointmentdate ? new Date(b.patientbautistaappointmentdate) : new Date(0);
+          break;
+        case 'ambherStatus':
+          aValue = a.patientambherappointmentstatus || '';
+          bValue = b.patientambherappointmentstatus || '';
+          break;
+        case 'bautistaStatus':
+          aValue = a.patientbautistaappointmentstatus || '';
+          bValue = b.patientbautistaappointmentstatus || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+  
+  return data;
+};
+
+// Toggle status filter
+const toggleStatusFilter = (status) => {
+  setStatusFilter(prev => {
+    if (prev.includes(status)) {
+      return prev.filter(s => s !== status);
+    } else {
+      return [...prev, status];
+    }
+  });
+  setCurrentPage(1); // Reset to first page when filter changes
+};
+
+// Get unique statuses from appointments
+const getUniqueStatuses = () => {
+  const statuses = new Set();
+  patientappointments.forEach(appointment => {
+    if (appointment.patientambherappointmentstatus) {
+      statuses.add(appointment.patientambherappointmentstatus);
+    }
+    if (appointment.patientbautistaappointmentstatus) {
+      statuses.add(appointment.patientbautistaappointmentstatus);
+    }
+  });
+  return Array.from(statuses).sort();
+};
+
+// Count appointments by status
+const getStatusCount = (status) => {
+  return patientappointments.filter(appointment => 
+    appointment.patientambherappointmentstatus === status ||
+    appointment.patientbautistaappointmentstatus === status
+  ).length;
+};
+
 // Pagination helper functions
 const handlePageChange = (page) => {
   setCurrentPage(page);
 };
 
 const getPaginatedAppointments = () => {
-  const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
+  const dataToDisplay = getSortedAndFilteredAppointments();
   const startIndex = (currentPage - 1) * appointmentsPerPage;
   const endIndex = startIndex + appointmentsPerPage;
   return dataToDisplay.slice(startIndex, endIndex);
@@ -2380,7 +2549,7 @@ useEffect(() => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
                           
                           {/* Ambher Optical Card */}
-                          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
+                          <div  className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 overflow-hidden">
                             <div className="bg-white bg-opacity-80 px-4 sm:px-6 py-3 sm:py-4 border-b border-green-200">
                               <div className="flex items-center gap-4">
                                 <img src={ambherlogo} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
@@ -2392,60 +2561,7 @@ useEffect(() => {
                             </div>
 
                             <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                              {/* Date, Time & Location Selection */}
-                              <div className="flex flex-col items-center justify-center gap-4">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentdate">
-                                    Preferred Date
-                                  </label>
-                                  <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
-                                    min={getdatetomorrow()} 
-                                    max={getuptothreemonthsappointmentavailability()} 
-                                    type="date" 
-                                    name="patientambherappointmentdate" 
-                                    id="patientambherappointmentdate" 
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmenttime">
-                                    Preferred Time
-                                  </label>
-                                  <select 
-                                    name="patientambherappointmenttime" 
-                                    id="patientambherappointmenttime" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                                  >
-                                    <option value="">Select a time</option>
-                                    {ambherappointmentschedules.map((time, index) => (
-                                      <option key={index} value={time}>{time}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentlocation">
-                                    Clinic Location
-                                  </label>
-                                  <select 
-                                    name="patientambherappointmentlocation" 
-                                    id="patientambherappointmentlocation" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                                    disabled={loadinglocations}
-                                  >
-                                    <option value="">
-                                      {loadinglocations ? 'Loading locations...' : 'Select a location'}
-                                    </option>
-                                    {ambherlocations.map((location) => (
-                                      <option key={location.clinicId} value={location.clinicId}>
-                                        {location.clinicName} - {location.address?.city || location.address?.fullAddress}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
+
 
                               {/* Services Description */}
                               <div>
@@ -2532,8 +2648,151 @@ useEffect(() => {
                                 </div>
                                 </div>
                               </div>
+
+                              {/* Appointment Booking Prompt/Mask */}
+                              {!showAmbherAppointmentForm ? (
+                                <div className="flex flex-col items-center justify-center gap-4">
+                                  <div className="text-center space-y-3 sm:space-y-4">
+                                    <h3 className="mt-5 text-base sm:text-lg font-bold text-gray-800">
+                                      Book an Appointment at Ambher Optical?
+                                    </h3>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowAmbherAppointmentForm(true)}
+                                      style={{
+                                        marginTop: '0.5rem',
+                                        padding: isMobile ? '0.625rem 1.25rem' : '0.75rem 1.5rem',
+                                        backgroundColor: '#16a34a',
+                                        color: 'white',
+                                        fontWeight: '600',
+                                        borderRadius: '0.75rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        margin: '0.5rem auto 0',
+                                        fontSize: isMobile ? '0.875rem' : '1rem',
+                                        transform: 'scale(1)'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#15803d';
+                                        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+                                    
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#16a34a';
+                                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+
+                                      }}
+                                    >
+                                      <i className="bx bx-calendar-plus" style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}></i>
+                                      Yes, Book Appointment
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Date, Time & Location Selection */}
+                                  <div id="ambheropticalappointmentdatetimelocationselection" className="flex flex-col items-center justify-center gap-4">
+                                    <div className="w-full flex justify-end mb-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setShowAmbherAppointmentForm(false);
+                                          // Clear the form fields
+                                          document.getElementById('patientambherappointmentdate').value = '';
+                                          document.getElementById('patientambherappointmenttime').value = '';
+                                          document.getElementById('patientambherappointmentlocation').value = '';
+                                        }}
+                                        style={{
+                                          fontSize: '0.875rem',
+                                          color: '#16a34a',
+                                          fontWeight: '500',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          backgroundColor: 'transparent',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          transition: 'color 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.color = '#15803d'}
+                                        onMouseLeave={(e) => e.currentTarget.style.color = '#16a34a'}
+                                      >
+                                        <i className="bx bx-x" style={{ fontSize: '1.125rem' }}></i>
+                                        Cancel Booking
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                      <div>
+                                        <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentdate">
+                                          Preferred Date
+                                        </label>
+                                        <input 
+                                          className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                                          min={getdatetomorrow()} 
+                                          max={getuptothreemonthsappointmentavailability()} 
+                                          type="date" 
+                                          name="patientambherappointmentdate" 
+                                          id="patientambherappointmentdate" 
+                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmenttime">
+                                          Preferred Time
+                                        </label>
+                                        <select 
+                                          name="patientambherappointmenttime" 
+                                          id="patientambherappointmenttime" 
+                                          className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                        >
+                                          <option value="">Select a time</option>
+                                          {ambherappointmentschedules.map((time, index) => (
+                                            <option key={index} value={time}>{time}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientambherappointmentlocation">
+                                        Clinic Location
+                                      </label>
+                                      <select 
+                                        name="patientambherappointmentlocation" 
+                                        id="patientambherappointmentlocation" 
+                                        className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                        disabled={loadinglocations}
+                                      >
+                                        <option value="">
+                                          {loadinglocations ? 'Loading locations...' : 'Select a location'}
+                                        </option>
+                                        {ambherlocations.map((location) => (
+                                          <option key={location.clinicId} value={location.clinicId}>
+                                            {location.clinicName} - {location.address?.city || location.address?.fullAddress}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
+
+
+
+
+
+
+
+
+
+
 
                           {/* Bautista Eye Center Card */}
                           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 overflow-hidden">
@@ -2548,71 +2807,7 @@ useEffect(() => {
                             </div>
 
                             <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                              {/* Date, Time & Location Selection */}
-                              <div className="flex flex-col items-center justify-center gap-4">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentdate">
-                                    Preferred Date
-                                  </label>
-                                  <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
-                                    type="date" 
-                                    name="patientbautistaappointmentdate" 
-                                    id="patientbautistaappointmentdate" 
-                                    min={getdatetomorrow()} 
-                                    max={getuptothreemonthsappointmentavailability()}
-                                    onChange={(e) => {
-                                      if (disablebautistaweekends(e.target.value)) {
-                                        setbautistashownotavailweekendToast(false);
-                                        setbautistashownotavailweekendToastClosing(false);
-                                        setTimeout(() => {
-                                          setbautistashownotavailweekendToast(true);
-                                          e.target.value = "";
-                                        }, 50);
-                                      }
-                                    }}
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmenttime">
-                                    Preferred Time
-                                  </label>
-                                  <select 
-                                    name="patientbautistaappointmenttime" 
-                                    id="patientbautistaappointmenttime" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                                  >
-                                    <option value="">Select a time</option>
-                                    {bautistaappointmentschedules.map((time, index) => (
-                                      <option key={index} value={time}>{time}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                        </div>
-                                <div>
-                                  <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentlocation">
-                                    Clinic Location
-                                  </label>
-                                  <select 
-                                    name="patientbautistaappointmentlocation" 
-                                    id="patientbautistaappointmentlocation" 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                                    disabled={loadinglocations}
-                                  >
-                                    <option value="">
-                                      {loadinglocations ? 'Loading locations...' : 'Select a location'}
-                                    </option>
-                                    {bautistalocations.map((location) => (
-                                      <option key={location.clinicId} value={location.clinicId}>
-                                        {location.clinicName} - {location.address?.city || location.address?.fullAddress}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
 
-                              </div>
 
                               {/* Weekend Toast */}
                               {bautistashownotavailweekendToast && (
@@ -2712,6 +2907,149 @@ useEffect(() => {
                                 </div>
                                 </div>
                               </div>
+
+                              {/* Appointment Booking Prompt/Mask */}
+                              {!showBautistaAppointmentForm ? (
+                                <div className="flex flex-col items-center justify-center gap-4">
+                                  <div className="text-center space-y-3 sm:space-y-4">
+                                    <h3 className="mt-5 text-base sm:text-lg font-bold text-gray-800">
+                                      Book an Appointment at Bautista Eye Center?
+                                    </h3>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowBautistaAppointmentForm(true)}
+                                      style={{
+                                        marginTop: '0.5rem',
+                                        padding: isMobile ? '0.625rem 1.25rem' : '0.75rem 1.5rem',
+                                        backgroundColor: '#2563eb',
+                                        color: 'white',
+                                        fontWeight: '600',
+                                        borderRadius: '0.75rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        margin: '0.5rem auto 0',
+                                        fontSize: isMobile ? '0.875rem' : '1rem',
+                                        transform: 'scale(1)'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#1d4ed8';
+                                        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+                                     
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#2563eb';
+                                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                                     
+                                      }}
+                                    >
+                                      <i className="bx bx-calendar-plus" style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}></i>
+                                      Yes, Book Appointment
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Date, Time & Location Selection */}
+                                  <div id="bautistaeyecenterappointmentdatetimelocationselection" className="flex flex-col items-center justify-center gap-4">
+                                    <div className="w-full flex justify-end mb-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setShowBautistaAppointmentForm(false);
+                                          // Clear the form fields
+                                          document.getElementById('patientbautistaappointmentdate').value = '';
+                                          document.getElementById('patientbautistaappointmenttime').value = '';
+                                          document.getElementById('patientbautistaappointmentlocation').value = '';
+                                        }}
+                                        style={{
+                                          fontSize: '0.875rem',
+                                          color: '#2563eb',
+                                          fontWeight: '500',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          backgroundColor: 'transparent',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          transition: 'color 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
+                                        onMouseLeave={(e) => e.currentTarget.style.color = '#2563eb'}
+                                      >
+                                        <i className="bx bx-x" style={{ fontSize: '1.125rem' }}></i>
+                                        Cancel Booking
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                      <div>
+                                        <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentdate">
+                                          Preferred Date
+                                        </label>
+                                        <input 
+                                          className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                                          type="date" 
+                                          name="patientbautistaappointmentdate" 
+                                          id="patientbautistaappointmentdate" 
+                                          min={getdatetomorrow()} 
+                                          max={getuptothreemonthsappointmentavailability()}
+                                          onChange={(e) => {
+                                            if (disablebautistaweekends(e.target.value)) {
+                                              setbautistashownotavailweekendToast(false);
+                                              setbautistashownotavailweekendToastClosing(false);
+                                              setTimeout(() => {
+                                                setbautistashownotavailweekendToast(true);
+                                                e.target.value = "";
+                                              }, 50);
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmenttime">
+                                          Preferred Time
+                                        </label>
+                                        <select 
+                                          name="patientbautistaappointmenttime" 
+                                          id="patientbautistaappointmenttime" 
+                                          className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                        >
+                                          <option value="">Select a time</option>
+                                          {bautistaappointmentschedules.map((time, index) => (
+                                            <option key={index} value={time}>{time}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-black mb-2" htmlFor="patientbautistaappointmentlocation">
+                                        Clinic Location
+                                      </label>
+                                      <select 
+                                        name="patientbautistaappointmentlocation" 
+                                        id="patientbautistaappointmentlocation" 
+                                        className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-black font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                                        disabled={loadinglocations}
+                                      >
+                                        <option value="">
+                                          {loadinglocations ? 'Loading locations...' : 'Select a location'}
+                                        </option>
+                                        {bautistalocations.map((location) => (
+                                          <option key={location.clinicId} value={location.clinicId}>
+                                            {location.clinicName} - {location.address?.city || location.address?.fullAddress}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2928,32 +3266,273 @@ useEffect(() => {
       { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-16 animate-fadeInUp flex flex-col items-start  w-[100%] h-[83%] rounded-2xl" >
          
          
-               <div className="  flex flex-col sm:flex-row justify-center items-start sm:items-center mb-4 w-full">
-                <h2 className="font-albertsans font-bold text-[18px] text-[#383838] mr-0 sm:mr-3 mb-2 sm:mb-0 flex-shrink-0">Search: </h2>
-                <div className="relative flex items-center justify-center gap-3 w-full flex-1">
-                  <i className="bx bx-search absolute left-3 text-2xl text-gray-500 z-10"></i>
-                  <input       
-                    type="text" 
-                    placeholder="Enter appointment details..."   
-                    value={searchAppointments}
-                    onChange={handleSearchAppointments}
-                    className=" transition-all duration-300 ease-in-out py-2 pl-10 pr-12 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
-                  />
-                  {searchAppointments && (
+               {/* Enhanced Search and Filter Bar */}
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 w-full gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto flex-1">
+                  <h2 className="font-albertsans font-bold text-[18px] text-[#383838] flex-shrink-0">Search:</h2>
+                  <div className="relative flex items-center w-full sm:flex-1">
+                    <i className="bx bx-search absolute left-3 text-2xl text-gray-500 z-10"></i>
+                    <input       
+                      type="text" 
+                      placeholder="Enter appointment details..."   
+                      value={searchAppointments}
+                      onChange={handleSearchAppointments}
+                      className="transition-all duration-300 ease-in-out py-2 pl-10 pr-12 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+                    />
+                    {searchAppointments && (
+                      <div
+                        onClick={() => {
+                          setSearchAppointments('');
+                          setCurrentPage(1);
+                        }}
+                        className="absolute right-3 text-xl text-gray-500 hover:text-black z-10 transition-colors duration-200 cursor-pointer"
+                        title="Clear search"
+                      >
+                        <i className="bx bx-x"></i>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Filter and View Controls */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {/* Status Filter Button */}
+                  <div className="relative">
                     <div
-                      onClick={() => {
-                        setSearchAppointments('');
-                        setFilteredAppointments([]);
-                        setCurrentPage(1);
+                      onClick={() => setShowStatusFilter(!showStatusFilter)}
+                      style={{
+                        backgroundColor: statusFilter.length > 0 ? '#2781af' : '#f3f4f6',
+                        color: statusFilter.length > 0 ? '#ffffff' : '#374151',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s'
                       }}
-                      className="absolute right-3 text-xl text-gray-500 hover:text-black z-10 transition-colors duration-200"
-                      title="Clear search"
+                      className="hover:shadow-md"
                     >
-                      <i className="bx bx-x"></i>
+                      <i className="bx bx-filter text-lg"></i>
+                      Status
+                      {statusFilter.length > 0 && (
+                        <span style={{
+                          backgroundColor: '#ffffff',
+                          color: '#2781af',
+                          borderRadius: '10px',
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontWeight: '700'
+                        }}>
+                          {statusFilter.length}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    
+                    {/* Status Filter Dropdown */}
+                    {showStatusFilter && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '110%',
+                        right: '0',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        padding: '12px',
+                        minWidth: '200px',
+                        zIndex: 50
+                      }}>
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#6b7280',
+                          marginBottom: '8px'
+                        }}>
+                          Filter by Status
+                        </div>
+                        {getUniqueStatuses().map(status => (
+                          <div
+                            key={status}
+                            onClick={() => toggleStatusFilter(status)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              marginBottom: '4px',
+                              backgroundColor: statusFilter.includes(status) ? '#f0f9ff' : 'transparent'
+                            }}
+                            className="hover:bg-gray-50"
+                          >
+                            <div style={{
+                              width: '16px',
+                              height: '16px',
+                              border: '2px solid #d1d5db',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: statusFilter.includes(status) ? '#2781af' : '#ffffff',
+                              borderColor: statusFilter.includes(status) ? '#2781af' : '#d1d5db'
+                            }}>
+                              {statusFilter.includes(status) && (
+                                <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
+                              )}
+                            </div>
+                            <span style={{
+                              fontSize: '14px',
+                              flex: 1,
+                              color: '#374151'
+                            }}>
+                              {status}
+                            </span>
+                            <span style={{
+                              fontSize: '12px',
+                              color: '#9ca3af',
+                              backgroundColor: '#f3f4f6',
+                              padding: '2px 8px',
+                              borderRadius: '10px'
+                            }}>
+                              {getStatusCount(status)}
+                            </span>
+                          </div>
+                        ))}
+                        {statusFilter.length > 0 && (
+                          <div
+                            onClick={() => {
+                              setStatusFilter([]);
+                              setCurrentPage(1);
+                            }}
+                            style={{
+                              marginTop: '8px',
+                              padding: '6px',
+                              textAlign: 'center',
+                              fontSize: '12px',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              borderTop: '1px solid #e5e7eb',
+                              paddingTop: '8px'
+                            }}
+                            className="hover:text-red-700"
+                          >
+                            Clear filters
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Column Toggle Button */}
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowColumnToggle(!showColumnToggle)}
+                      style={{
+                        backgroundColor: '#f3f4f6',
+                        color: '#374151',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s'
+                      }}
+                      className="hover:shadow-md"
+                    >
+                      <i className="bx bx-columns text-lg"></i>
+                      View
+                    </div>
+                    
+                    {/* Column Toggle Dropdown */}
+                    {showColumnToggle && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '110%',
+                        right: '0',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        padding: '12px',
+                        minWidth: '200px',
+                        zIndex: 50
+                      }}>
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#6b7280',
+                          marginBottom: '8px'
+                        }}>
+                          Toggle Columns
+                        </div>
+                        {Object.keys(visibleColumns).filter(col => col !== 'actions').map(column => (
+                          <div
+                            key={column}
+                            onClick={() => setVisibleColumns(prev => ({ ...prev, [column]: !prev[column] }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              marginBottom: '4px'
+                            }}
+                            className="hover:bg-gray-50"
+                          >
+                            <div style={{
+                              width: '16px',
+                              height: '16px',
+                              border: '2px solid #d1d5db',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: visibleColumns[column] ? '#2781af' : '#ffffff',
+                              borderColor: visibleColumns[column] ? '#2781af' : '#d1d5db'
+                            }}>
+                              {visibleColumns[column] && (
+                                <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
+                              )}
+                            </div>
+                            <span style={{
+                              fontSize: '14px',
+                              textTransform: 'capitalize',
+                              color: '#374151'
+                            }}>
+                              {column.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Click outside to close dropdowns */}
+              {(showStatusFilter || showColumnToggle) && (
+                <div
+                  onClick={() => {
+                    setShowStatusFilter(false);
+                    setShowColumnToggle(false);
+                  }}
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 40
+                  }}
+                />
+              )}
 
 
                 <div className="mb-40 flex flex-col justify-center items-start h-[500px] w-full rounded-3xl ">
@@ -2985,80 +3564,221 @@ useEffect(() => {
     
 
   ) : (
- <div className="rounded-t-2xl bg-white shadow-lg w-full h-full overflow-hidden">
+ <div className="bg-white rounded-lg border border-gray-200 shadow-sm w-full h-full overflow-hidden">
       {/* Desktop Table View */}
-      <div className="hidden md:block h-full overflow-y-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-[#2781af] sticky top-0 z-10">
-            <tr className="text-[#ffffff] font-albertsans font-bold">
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center w-1/5">Date Created</th> 
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center w-1/4">Ambher Appointment</th>
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center w-1/12"></th>
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center w-1/4">Bautista Appointment</th>
-              <th className="pb-3 pt-3 pl-2 pr-2 text-center w-1/6">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-          {getPaginatedAppointments().map((appointment) => (
-            <tr 
-              key={appointment._id}
-              className="hover:bg-gray-50 transition-all ease-in-out duration-100 border-b-2"
-            >
-              <td className="py-3 px-6 text-[#454444] text-center font-albertsans font-medium ">
-                {formatappointmatedates(appointment.createdAt)}{}
-              </td>
-              <td className="py-3 px-6 text-[#454444] text-center font-albertsans font-medium ">
-                {appointment.patientambherappointmentdate && (
-                  <div className="text-sm font-albertsans text-gray-900 flex  justify-center items-center">
-                    <span className="font-semibold items-start">{formatappointmatedates(appointment.patientambherappointmentdate)} </span> 
-                    <span className="ml-1 font-semibold items-start">({formatappointmenttimes(appointment.patientambherappointmenttime)})</span> 
-                    <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${appointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-    appointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-    appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-    appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-    appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-    'bg-gray-100 text-gray-800'}`}>{appointment.patientambherappointmentstatus}</span>
-                  </div>
+      <div className="hidden md:block h-full overflow-hidden">
+        <div className="overflow-y-auto h-full">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+              <tr>
+                {visibleColumns.dateCreated && (
+                  <th 
+                    onClick={() => handleSort('createdAt')}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                    title="Click to sort"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Date Created</span>
+                      {sortConfig.key === 'createdAt' ? (
+                        <i className={`bx ${sortConfig.direction === 'asc' ? 'bx-chevron-up' : 'bx-chevron-down'} text-base`}></i>
+                      ) : (
+                        <i className="bx bx-chevron-up text-base opacity-0 group-hover:opacity-30"></i>
+                      )}
+                    </div>
+                  </th>
                 )}
-              </td>
-
-              <td className="py-3 px-6 text-[#454444] text-center font-albertsans font-medium ">
-
-              </td>
-              <td className="py-3 px-6 text-[#454444] text-center font-albertsans font-medium ">
-                {appointment.patientbautistaappointmentdate && (
-                  <div className="text-sm font-albertsans text-gray-900 flex justify-center items-center">
-                    <span className="font-semibold">{formatappointmatedates(appointment.patientbautistaappointmentdate)}</span> 
-                    <span className="ml-1 font-semibold">({formatappointmenttimes(appointment.patientbautistaappointmenttime)})</span> 
-                    
- <span className={`ml-3 font-albertsans font-semibold rounded-full text-[15px] leading-5 px-4 py-2 inline-flex
-  ${appointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-    appointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-    appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-    appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-    appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-    'bg-gray-100 text-gray-800'}`}>{appointment.patientbautistaappointmentstatus}</span>
-                  </div>
+                {visibleColumns.ambherAppointment && (
+                  <th 
+                    onClick={() => handleSort('ambherDate')}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                    title="Click to sort"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Ambher Optical</span>
+                      {sortConfig.key === 'ambherDate' ? (
+                        <i className={`bx ${sortConfig.direction === 'asc' ? 'bx-chevron-up' : 'bx-chevron-down'} text-base`}></i>
+                      ) : (
+                        <i className="bx bx-chevron-up text-base opacity-0 group-hover:opacity-30"></i>
+                      )}
+                    </div>
+                  </th>
                 )}
-              </td>
-
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center items-center">
-               
-              <div onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
-                  className="bg-[#383838]  hover:bg-[#595959]  mr-2 transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><h1 className="text-white">View</h1></div>
-
-              {canDeleteAppointment(appointment) && (
-                <div onClick={() =>  {setdeletepatientappointment(true);
-                                  setselectedpatientappointment(appointment);
-                }}
-                  className="bg-[#8c3226] hover:bg-[#ab4f43]  transition-all duration-100 ease-in-out flex justify-center items-center py-2 px-5 rounded-2xl hover:cursor-pointer"><i className="bx bxs-trash text-white mr-1"/><h1 className="text-white">Delete</h1></div>
-              )}
-              </td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
+                {visibleColumns.bautistaAppointment && (
+                  <th 
+                    onClick={() => handleSort('bautistaDate')}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                    title="Click to sort"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Bautista Eye Center</span>
+                      {sortConfig.key === 'bautistaDate' ? (
+                        <i className={`bx ${sortConfig.direction === 'asc' ? 'bx-chevron-up' : 'bx-chevron-down'} text-base`}></i>
+                      ) : (
+                        <i className="bx bx-chevron-up text-base opacity-0 group-hover:opacity-30"></i>
+                      )}
+                    </div>
+                  </th>
+                )}
+                {visibleColumns.actions && (
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {getPaginatedAppointments().map((appointment) => (
+                <tr 
+                  key={appointment._id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  {visibleColumns.dateCreated && (
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+                        {formatappointmatedates(appointment.createdAt)}
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns.ambherAppointment && (
+                    <td style={{ padding: '16px' }}>
+                      {appointment.patientambherappointmentdate ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+                            {formatappointmatedates(appointment.patientambherappointmentdate)}
+                          </span>
+                          <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                            ({formatappointmenttimes(appointment.patientambherappointmenttime)})
+                          </span>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '2px 10px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            backgroundColor: 
+                              appointment.patientambherappointmentstatus === 'Cancelled' ? '#fed7aa' :
+                              appointment.patientambherappointmentstatus === 'Declined' ? '#fecaca' :
+                              appointment.patientambherappointmentstatus === 'Pending' ? '#fef08a' :
+                              appointment.patientambherappointmentstatus === 'Accepted' ? '#bbf7d0' :
+                              appointment.patientambherappointmentstatus === 'Completed' ? '#bfdbfe' :
+                              appointment.patientambherappointmentstatus === 'Expired' ? '#e5e7eb' :
+                              '#f3f4f6',
+                            color:
+                              appointment.patientambherappointmentstatus === 'Cancelled' ? '#9a3412' :
+                              appointment.patientambherappointmentstatus === 'Declined' ? '#991b1b' :
+                              appointment.patientambherappointmentstatus === 'Pending' ? '#854d0e' :
+                              appointment.patientambherappointmentstatus === 'Accepted' ? '#166534' :
+                              appointment.patientambherappointmentstatus === 'Completed' ? '#1e40af' :
+                              appointment.patientambherappointmentstatus === 'Expired' ? '#374151' :
+                              '#1f2937'
+                          }}>
+                            {appointment.patientambherappointmentstatus}
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '14px', color: '#9ca3af' }}>—</span>
+                      )}
+                    </td>
+                  )}
+                  {visibleColumns.bautistaAppointment && (
+                    <td style={{ padding: '16px' }}>
+                      {appointment.patientbautistaappointmentdate ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+                            {formatappointmatedates(appointment.patientbautistaappointmentdate)}
+                          </span>
+                          <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                            ({formatappointmenttimes(appointment.patientbautistaappointmenttime)})
+                          </span>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '2px 10px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            backgroundColor: 
+                              appointment.patientbautistaappointmentstatus === 'Cancelled' ? '#fed7aa' :
+                              appointment.patientbautistaappointmentstatus === 'Declined' ? '#fecaca' :
+                              appointment.patientbautistaappointmentstatus === 'Pending' ? '#fef08a' :
+                              appointment.patientbautistaappointmentstatus === 'Accepted' ? '#bbf7d0' :
+                              appointment.patientbautistaappointmentstatus === 'Completed' ? '#bfdbfe' :
+                              appointment.patientbautistaappointmentstatus === 'Expired' ? '#e5e7eb' :
+                              '#f3f4f6',
+                            color:
+                              appointment.patientbautistaappointmentstatus === 'Cancelled' ? '#9a3412' :
+                              appointment.patientbautistaappointmentstatus === 'Declined' ? '#991b1b' :
+                              appointment.patientbautistaappointmentstatus === 'Pending' ? '#854d0e' :
+                              appointment.patientbautistaappointmentstatus === 'Accepted' ? '#166534' :
+                              appointment.patientbautistaappointmentstatus === 'Completed' ? '#1e40af' :
+                              appointment.patientbautistaappointmentstatus === 'Expired' ? '#374151' :
+                              '#1f2937'
+                          }}>
+                            {appointment.patientbautistaappointmentstatus}
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '14px', color: '#9ca3af' }}>—</span>
+                      )}
+                    </td>
+                  )}
+                  {visibleColumns.actions && (
+                    <td style={{ padding: '16px', whiteSpace: 'nowrap', textAlign: 'right', fontSize: '14px', fontWeight: '500' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button
+                          onClick={() => {handleviewappointment(appointment); setviewpatientappointment(true);}}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '6px 12px',
+                            border: '1px solid #d1d5db',
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            borderRadius: '6px',
+                            color: '#374151',
+                            backgroundColor: '#ffffff',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                        >
+                          <i className="bx bx-show" style={{ marginRight: '4px' }}></i>
+                          View
+                        </button>
+                        {canDeleteAppointment(appointment) && (
+                          <button
+                            onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '6px 12px',
+                              border: 'none',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              borderRadius: '6px',
+                              color: '#ffffff',
+                              backgroundColor: '#dc2626',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                          >
+                            <i className="bx bx-trash" style={{ marginRight: '4px' }}></i>
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile Card View */}
@@ -3106,6 +3826,7 @@ useEffect(() => {
                       appointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                       appointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]' :
                       appointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]' :
+                      appointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {appointment.patientambherappointmentstatus}
@@ -3143,6 +3864,7 @@ useEffect(() => {
                       appointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                       appointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]' :
                       appointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]' :
+                      appointment.patientbautistaappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {appointment.patientbautistaappointmentstatus}
@@ -3175,45 +3897,139 @@ useEffect(() => {
         ))}
       </div>
 
-      {/* Delete Modal */}
+      {/* Delete Appointment Modal */}
       {deletepatientappointment && (
-        <div className="bg-opacity-0 flex justify-center items-center z-50 fixed inset-0 bg-[#0000004a] bg-opacity-50 px-4">
-          <div className="flex flex-col items bg-white rounded-2xl w-full max-w-md h-fit animate-fadeInUp">
-            <div className="flex items-center rounded-tl-2xl rounded-tr-2xl h-[70px] bg-[#3b1616]">
-              <i className="ml-3 bx bxs-error text-[28px] font-albertsans font-bold text-[#f1f1f1] "/>
-              <h1 className="ml-2 text-[23px] font-albertsans font-bold text-[#f0f0f0]">Delete Appointment</h1>
-            </div>
-            <div className="flex flex-col items-center h-fit rounded-br-2xl rounded-bl-2xl">
-              <div className="px-5 flex flex-col justify-center h-[130px] w-full">
-                <p className="font-albertsans font-medium text-[20px]">Are you sure you want to delete this appointment?</p>
-                {selectedpatientappointment && (
-                  <p className="text-[18px] mt-3">Appointment Id: {selectedpatientappointment.patientappointmentid}</p>
-                )}  
-              </div>        
-              <div className="pr-5 pl-5 flex justify-end items-center h-[80px] w-full">
-                <div className="hover:cursor-pointer mr-2 bg-[#292929] hover:bg-[#414141] rounded-2xl h-fit w-fit px-7 py-3 hover:scale-105 transition-all duration-100 ease-in-out" onClick={() => setdeletepatientappointment(false)}>
-                  <p className="text-[#ffffff]">Cancel</p>
+        <div className="flex justify-center items-center z-50 fixed inset-0 bg-black/50">
+          <div className="bg-white shadow-xl border border-gray-100 rounded-3xl w-[500px] p-8 animate-fadeInUp">
+            <div className="flex justify-between items-center w-full mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                  <i className="bx bxs-trash text-white text-xl"></i>
                 </div>
-                <div 
-                  className={`${deletingappointment ? 'cursor-not-allowed opacity-70' : 'hover:cursor-pointer hover:bg-[#7f1a1a] hover:scale-105'} bg-[#4e0f0f] ml-2 rounded-2xl h-fit w-fit px-7 py-3 transition-all duration-100 ease-in-out flex items-center justify-center`} 
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Delete Appointment</h2>
+                </div>
+              </div>
+              <div 
+                onClick={() => {
+                  setdeletepatientappointment(false);
+                  setselectedpatientappointment(null);
+                }} 
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+              >
+                <i className="bx bx-x text-gray-600 text-xl"/>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete this appointment?
+              </p>
+
+              {selectedpatientappointment && (
+                <div className="bg-gray-50 p-4 rounded-xl mb-6 text-left space-y-3">
+                  <div>
+                    <p className="font-semibold text-gray-900 mb-2">Appointment ID: {selectedpatientappointment.patientappointmentid}</p>
+                  </div>
+                  
+                  {selectedpatientappointment.patientambherappointmentdate && (
+                    <div className="border-t border-gray-200 pt-3">
+                      <p className="font-medium text-gray-700 mb-1">Ambher Optical Center:</p>
+                      <p className="text-sm text-gray-600">Date: {formatappointmatedates(selectedpatientappointment.patientambherappointmentdate)}</p>
+                      <p className="text-sm text-gray-600">Time: {formatappointmenttimes(selectedpatientappointment.patientambherappointmenttime)}</p>
+                      <p className="text-sm text-gray-600">
+                        Status: <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-700' :
+                          selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                          selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-700' :
+                          selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-700' :
+                          selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-gray-100 text-gray-700' :
+                          selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700' : ''
+                        }`}>
+                          {selectedpatientappointment.patientambherappointmentstatus}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  
+                  {selectedpatientappointment.patientbautistaappointmentdate && (
+                    <div className="border-t border-gray-200 pt-3">
+                      <p className="font-medium text-gray-700 mb-1">Bautista Eye Center:</p>
+                      <p className="text-sm text-gray-600">Date: {formatappointmatedates(selectedpatientappointment.patientbautistaappointmentdate)}</p>
+                      <p className="text-sm text-gray-600">Time: {formatappointmenttimes(selectedpatientappointment.patientbautistaappointmenttime)}</p>
+                      <p className="text-sm text-gray-600">
+                        Status: <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-700' :
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-700' :
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-700' :
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-gray-100 text-gray-700' :
+                          selectedpatientappointment.patientbautistaappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700' : ''
+                        }`}>
+                          {selectedpatientappointment.patientbautistaappointmentstatus}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
                   onClick={() => {
+                    setdeletepatientappointment(false);
+                    setselectedpatientappointment(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "12px 24px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#374151",
+                    borderRadius: "12px",
+                    fontWeight: 500,
+                    transition: "background-color 0.2s ease-in-out",
+                    cursor: "pointer",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e5e7eb")}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={deletingappointment ? undefined : () => handledeleteappointment(selectedpatientappointment.patientappointmentid)}
+                  disabled={deletingappointment}
+                  style={{
+                    flex: 1,
+                    padding: "12px 24px",
+                    backgroundColor: deletingappointment ? "#9ca3af" : "#ef4444",
+                    color: "#ffffff",
+                    borderRadius: "12px",
+                    fontWeight: 500,
+                    transition: "background-color 0.2s ease-in-out",
+                    cursor: deletingappointment ? "not-allowed" : "pointer",
+                    opacity: deletingappointment ? 0.6 : 1,
+                  }}
+                  onMouseOver={(e) => {
                     if (!deletingappointment) {
-                      handledeleteappointment(selectedpatientappointment.patientappointmentid);
+                      e.currentTarget.style.backgroundColor = "#dc2626";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!deletingappointment) {
+                      e.currentTarget.style.backgroundColor = "#ef4444";
                     }
                   }}
                 >
                   {deletingappointment ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <p className="text-[#ffffff]">Deleting...</p>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                      Deleting...
                     </>
                   ) : (
-                    <p className="text-[#ffffff]">Delete</p>
+                    'Delete Appointment'
                   )}
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -3224,7 +4040,7 @@ useEffect(() => {
     
   )}  {/* Pagination Component for Appointments */}
   {(() => {
-    const dataToDisplay = searchAppointments.trim() ? filteredAppointments : patientappointments;
+    const dataToDisplay = getSortedAndFilteredAppointments();
     const totalAppointments = dataToDisplay.length;
     const totalPages = Math.ceil(totalAppointments / appointmentsPerPage);
     
@@ -3244,6 +4060,9 @@ useEffect(() => {
                 </div>
 
              </div> )}
+
+
+
                 </div>
            
                  </div>
@@ -3301,6 +4120,7 @@ useEffect(() => {
             selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
             selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
             selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+            selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
             'bg-gray-100 text-gray-800'}`}>
           {selectedpatientappointment.patientambherappointmentstatus}
         </span>
@@ -3527,6 +4347,7 @@ useEffect(() => {
             selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
             selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+            selectedpatientappointment.patientbautistaappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
             'bg-gray-100 text-gray-800'}`}>
           {selectedpatientappointment.patientbautistaappointmentstatus}
         </span>

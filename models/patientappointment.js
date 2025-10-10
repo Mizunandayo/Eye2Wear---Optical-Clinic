@@ -27,11 +27,11 @@ patientappointmentid:{
 },
 
 
-patientappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted','Completed'], default: 'Pending'},
+patientappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired'], default: 'Pending'},
 patientappointmentstatushistory: [{
     status:{
         type:String,
-        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed']
+        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired']
     },
     changedAt:{
         type: Date,
@@ -102,11 +102,11 @@ patientambherappointmentrefraction: {type: Boolean, default: false},
 patientambherappointmentcontactlensefitting: {type: Boolean, default: false},
 patientambherappointmentotherservice: {type: Boolean, default: false},
 patientambherappointmentotherservicenote: String,
-patientambherappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted','Completed'], default: 'Pending'},
+patientambherappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired'], default: 'Pending'},
 patientambherappointmentstatushistory: [{
     status:{
         type:String,
-        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed']
+        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired']
     },
     changedAt:{
         type: Date,
@@ -162,11 +162,11 @@ patientbautistaappointmentcataractsurgery: {type: Boolean, default: false},
 patientbautistaappointmentpterygiumsurgery: {type: Boolean, default: false},
 patientbautistaappointmentotherservice: {type: Boolean, default: false},
 patientbautistaappointmentotherservicenote: String,
-patientbautistaappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted','Completed'], default: 'Pending'},
+patientbautistaappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired'], default: 'Pending'},
 patientbautistaappointmentstatushistory: [{
     status:{
         type:String,
-        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed']
+        enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired']
     },
     changedAt:{
         type: Date,
