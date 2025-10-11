@@ -286,8 +286,16 @@ function PatientDashboard(){
     window.scrollTo(0, 0);
   }, []);
 
+  // Track if initial load has been done to prevent infinite loops
+  const hasLoadedInitialData = useRef(false);
+
   //Retrieveing Data from useAuth Hook
   useEffect(() => {
+    // Prevent running this effect multiple times
+    if (hasLoadedInitialData.current) {
+      return;
+    }
+
     const loadpatient = async () => {
 
       try{
@@ -297,6 +305,26 @@ function PatientDashboard(){
         setpatientfirstname(data.patientfirstname || '');
         setpatientprofilepicture(data.patientprofilepicture || '');
         localStorage.setItem("patientemail", data.patientemail);
+        
+        // Fetch appointments immediately after patient details are loaded
+        if (data.patientemail) {
+          console.log('📅 Patient details loaded, fetching appointments...');
+          try {
+            setloadingappointments(true);
+            const appointmentData = await fetchPatientAppointments(data.patientemail);
+            setpatientappointments(appointmentData || []);
+            sethasInitialLoad(true);
+            hasLoadedInitialData.current = true; // Mark as loaded
+            console.log('📅 Initial appointments loaded:', appointmentData?.length || 0, 'appointments');
+          } catch (error) {
+            console.error("Error fetching initial appointments:", error);
+            seterrorloadingappointments(error.message);
+            setpatientappointments([]);
+            hasLoadedInitialData.current = true; // Mark as attempted even on error
+          } finally {
+            setloadingappointments(false);
+          }
+        }
       }
     }catch(error){
 
@@ -304,7 +332,7 @@ function PatientDashboard(){
 
     }
    }; loadpatient();
-  }, [fetchpatientdetails]);
+  }, [fetchpatientdetails, fetchPatientAppointments]);
 
 
 
@@ -694,6 +722,36 @@ const patientsubmitappointment = async (formData) => {
       }
     });
     
+    // Close both appointment forms
+    setShowAmbherAppointmentForm(false);
+    setShowBautistaAppointmentForm(false);
+    
+    // Clear all form fields using a small delay to ensure form elements are rendered
+    setTimeout(() => {
+      // Ambher Optical fields
+      const ambherDateInput = document.getElementById('patientambherappointmentdate');
+      const ambherTimeInput = document.getElementById('patientambherappointmenttime');
+      const ambherLocationInput = document.getElementById('patientambherappointmentlocation');
+      
+      // Bautista Eye Center fields
+      const bautistaDateInput = document.getElementById('patientbautistaappointmentdate');
+      const bautistaTimeInput = document.getElementById('patientbautistaappointmenttime');
+      const bautistaLocationInput = document.getElementById('patientbautistaappointmentlocation');
+      
+      if (ambherDateInput) ambherDateInput.value = '';
+      if (ambherTimeInput) ambherTimeInput.value = '';
+      if (ambherLocationInput) ambherLocationInput.value = '';
+      if (bautistaDateInput) bautistaDateInput.value = '';
+      if (bautistaTimeInput) bautistaTimeInput.value = '';
+      if (bautistaLocationInput) bautistaLocationInput.value = '';
+      
+      // Clear all checkboxes
+      const checkboxes = document.querySelectorAll('input[type="checkbox"][name^="patient"]');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+    }, 100);
+    
     // Switch to appointment list AFTER refresh completes
     setactiveappointmenttable('appointmentlist');
     
@@ -1028,13 +1086,29 @@ const handleviewappointment = (appointment) => {
  const [currentPage, setCurrentPage] = useState(1);
  const appointmentsPerPage = 6; // Number of appointments to display per page
 
+ // Helper function to check if patient has pending Ambher appointment
+ const hasPendingAmbherAppointment = () => {
+   return patientappointments.some(appointment => 
+     appointment.patientambherappointmentdate && 
+     appointment.patientambherappointmentstatus === 'Pending'
+   );
+ };
+
+ // Helper function to check if patient has pending Bautista appointment
+ const hasPendingBautistaAppointment = () => {
+   return patientappointments.some(appointment => 
+     appointment.patientbautistaappointmentdate && 
+     appointment.patientbautistaappointmentstatus === 'Pending'
+   );
+ };
+
  // Search functionality for appointments with debounce
  const [searchAppointments, setSearchAppointments] = useState('');
  const [debouncedSearch, setDebouncedSearch] = useState('');
  const [filteredAppointments, setFilteredAppointments] = useState([]);
 
  // Sorting and filtering states
- const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
+ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
  const [statusFilter, setStatusFilter] = useState([]);
  const [showStatusFilter, setShowStatusFilter] = useState(false);
  const [showColumnToggle, setShowColumnToggle] = useState(false);
@@ -1217,6 +1291,59 @@ const getSortedAndFilteredAppointments = () => {
       }
       return 0;
     });
+  } else {
+    // Default sorting: Show future appointments first, sorted by nearest date
+    const now = new Date();
+    
+    data.sort((a, b) => {
+      // Get the earliest appointment date for each record
+      const getEarliestAppointment = (appointment) => {
+        const dates = [];
+        
+        if (appointment.patientambherappointmentdate) {
+          const ambherDateTime = new Date(appointment.patientambherappointmentdate);
+          if (appointment.patientambherappointmenttime) {
+            const [hours, minutes] = appointment.patientambherappointmenttime.split(':');
+            ambherDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+          }
+          dates.push(ambherDateTime);
+        }
+        
+        if (appointment.patientbautistaappointmentdate) {
+          const bautistaDateTime = new Date(appointment.patientbautistaappointmentdate);
+          if (appointment.patientbautistaappointmenttime) {
+            const [hours, minutes] = appointment.patientbautistaappointmenttime.split(':');
+            bautistaDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+          }
+          dates.push(bautistaDateTime);
+        }
+        
+        return dates.length > 0 ? new Date(Math.min(...dates)) : null;
+      };
+      
+      const aDate = getEarliestAppointment(a);
+      const bDate = getEarliestAppointment(b);
+      
+      // If no dates, push to end
+      if (!aDate && !bDate) return 0;
+      if (!aDate) return 1;
+      if (!bDate) return -1;
+      
+      const aIsFuture = aDate >= now;
+      const bIsFuture = bDate >= now;
+      
+      // Future appointments first
+      if (aIsFuture && !bIsFuture) return -1;
+      if (!aIsFuture && bIsFuture) return 1;
+      
+      // Both future: sort by nearest first
+      if (aIsFuture && bIsFuture) {
+        return aDate - bDate;
+      }
+      
+      // Both past: sort by most recent first
+      return bDate - aDate;
+    });
   }
   
   return data;
@@ -1232,6 +1359,14 @@ const toggleStatusFilter = (status) => {
     }
   });
   setCurrentPage(1); // Reset to first page when filter changes
+};
+
+// Toggle column visibility
+const toggleColumn = (columnKey) => {
+  setVisibleColumns(prev => ({
+    ...prev,
+    [columnKey]: !prev[columnKey]
+  }));
 };
 
 // Get unique statuses from appointments
@@ -1250,10 +1385,25 @@ const getUniqueStatuses = () => {
 
 // Count appointments by status
 const getStatusCount = (status) => {
-  return patientappointments.filter(appointment => 
-    appointment.patientambherappointmentstatus === status ||
-    appointment.patientbautistaappointmentstatus === status
-  ).length;
+  // Count total clinic appointments (not unique appointment records)
+  // If one appointment has both Ambher and Bautista with same status, count both
+  let count = 0;
+  
+  patientappointments.forEach(appointment => {
+    // Count Ambher appointment if it exists and has this status
+    if (appointment.patientambherappointmentdate && 
+        appointment.patientambherappointmentstatus === status) {
+      count++;
+    }
+    
+    // Count Bautista appointment if it exists and has this status
+    if (appointment.patientbautistaappointmentdate && 
+        appointment.patientbautistaappointmentstatus === status) {
+      count++;
+    }
+  });
+  
+  return count;
 };
 
 // Pagination helper functions
@@ -1494,6 +1644,12 @@ useEffect(() => {
 const handledeleteappointment = async (appointmentId) => {
   setdeletingappointment(true); // Start loading state
   console.log('🗑️ Attempting to delete appointment with ID:', appointmentId);
+  console.log('🗑️ Selected appointment object:', selectedpatientappointment);
+  console.log('🗑️ Full appointment data:', {
+    _id: selectedpatientappointment?._id,
+    patientappointmentid: selectedpatientappointment?.patientappointmentid,
+    receivedParameter: appointmentId
+  });
   
   try{
     const deleteUrl = `/api/patientappointments/appointments/${appointmentId}`;
@@ -1528,29 +1684,38 @@ const handledeleteappointment = async (appointmentId) => {
       return updatedAppointments;
     });
 
-    // Clear cache and trigger updates
+    // Clear ALL appointment-related caches (both frontend and API service caches)
     const email = localStorage.getItem("patientemail");
     if (email) {
-      const cacheKey = `appointmentData_${email}`;
-      console.log('🔄 Invalidating cache:', cacheKey);
-      invalidateCache([cacheKey]);
+      const cacheKeys = [
+        `appointmentData_${email}`,        // SmartCache key
+        `patientAppointments_${email}`     // ApiService cache key
+      ];
+      console.log('🔄 Invalidating all appointment caches:', cacheKeys);
+      invalidateCache(cacheKeys);
     }
     
-    // Trigger real-time updates
-    triggerRealtimeUpdate('appointments');
-    invalidateAppointmentData();
+    // DO NOT trigger real-time updates immediately - let backend cache expire naturally
+    // triggerRealtimeUpdate('appointments'); // REMOVED - causes premature refetch
+    // invalidateAppointmentData(); // REMOVED - causes premature refetch
 
-    // Close the modal after successful deletion
+    // Close the modal and reset selected appointment immediately
     setdeletepatientappointment(false);
+    setselectedpatientappointment(null);
     
-    // Reset the flag after a short delay
+    // Reset the flag after a longer delay to prevent refetch
     setTimeout(() => {
       setjustDeletedAppointment(false);
-    }, 2000);
+      console.log('🔄 Deletion flag reset, backend cache should be expired now');
+    }, 5000); // Increased to 5 seconds to let backend cache expire
 
     }catch(error){
       console.error("Appointment deletion failed: ", error);
       seterrorloadingappointments(error.message);
+      
+      // Close modal on error too to prevent stale state
+      setdeletepatientappointment(false);
+      setselectedpatientappointment(null);
     } finally {
       setdeletingappointment(false); // End loading state
     }
@@ -2652,47 +2817,41 @@ useEffect(() => {
                               {/* Appointment Booking Prompt/Mask */}
                               {!showAmbherAppointmentForm ? (
                                 <div className="flex flex-col items-center justify-center gap-4">
-                                  <div className="text-center space-y-3 sm:space-y-4">
-                                    <h3 className="mt-5 text-base sm:text-lg font-bold text-gray-800">
-                                      Book an Appointment at Ambher Optical?
-                                    </h3>
+                                  {hasPendingAmbherAppointment() ? (
+                                    <div className="text-center py-4">
+                                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-300 rounded-lg">
+                                        <i className="bx bx-info-circle text-yellow-600 text-lg"></i>
+                                        <span className="text-sm text-yellow-800 font-medium">You have a pending appointment</span>
 
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowAmbherAppointmentForm(true)}
-                                      style={{
-                                        marginTop: '0.5rem',
-                                        padding: isMobile ? '0.625rem 1.25rem' : '0.75rem 1.5rem',
-                                        backgroundColor: '#16a34a',
-                                        color: 'white',
-                                        fontWeight: '600',
-                                        borderRadius: '0.75rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        margin: '0.5rem auto 0',
-                                        fontSize: isMobile ? '0.875rem' : '1rem',
-                                        transform: 'scale(1)'
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#15803d';
-                                        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-                                    
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#16a34a';
-                                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-
-                                      }}
-                                    >
-                                      <i className="bx bx-calendar-plus" style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}></i>
-                                      Yes, Book Appointment
-                                    </button>
-                                  </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-4">
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowAmbherAppointmentForm(true)}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '0.5rem',
+                                          padding: '0.5rem 1rem',
+                                          backgroundColor: '#16a34a',
+                                          color: '#ffffff',
+                                          fontSize: '0.875rem',
+                                          fontWeight: '500',
+                                          borderRadius: '0.5rem',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          transition: 'background-color 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+                                      >
+                                        <i className="bx bx-calendar-plus text-base"></i>
+                                        Book Ambher Appointment
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <>
@@ -2812,9 +2971,23 @@ useEffect(() => {
                               {/* Weekend Toast */}
                               {bautistashownotavailweekendToast && (
                                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-                                  <div className={`${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border border-red-200 rounded-lg shadow-lg px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3`}>
-                                    <i className="bx bx-x-circle text-red-500 text-lg sm:text-xl"></i>
-                                    <span className="text-red-800 font-medium text-sm sm:text-base">Bautista weekend dates are not available</span>
+                                  <div className={`${bautistashownotavailweekendToastClosing ? 'motion-opacity-out-0' : 'motion-preset-bounce'} bg-red-50 border-2 border-red-300 rounded-xl shadow-2xl px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 max-w-md`}>
+                                    <div className="flex-shrink-0">
+                                      <i className="bx bx-calendar-x text-red-500 text-2xl sm:text-3xl"></i>
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-red-800 font-semibold text-sm sm:text-base mb-1">Weekend Not Available</p>
+                                      <p className="text-red-700 text-xs sm:text-sm">Bautista Eye Center is only available for appointments on weekdays (Monday - Friday)</p>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        setbautistashownotavailweekendToastClosing(true);
+                                        setTimeout(() => setbautistashownotavailweekendToast(false), 300);
+                                      }}
+                                      className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+                                    >
+                                      <i className="bx bx-x text-xl"></i>
+                                    </button>
                                   </div>
                                 </div>
                               )}
@@ -2911,47 +3084,41 @@ useEffect(() => {
                               {/* Appointment Booking Prompt/Mask */}
                               {!showBautistaAppointmentForm ? (
                                 <div className="flex flex-col items-center justify-center gap-4">
-                                  <div className="text-center space-y-3 sm:space-y-4">
-                                    <h3 className="mt-5 text-base sm:text-lg font-bold text-gray-800">
-                                      Book an Appointment at Bautista Eye Center?
-                                    </h3>
+                                  {hasPendingBautistaAppointment() ? (
+                                    <div className="text-center py-4">
+                                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-300 rounded-lg">
+                                        <i className="bx bx-info-circle text-blue-600 text-lg"></i>
+                                        <span className="text-sm text-blue-800 font-medium">You have a pending appointment</span>
 
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowBautistaAppointmentForm(true)}
-                                      style={{
-                                        marginTop: '0.5rem',
-                                        padding: isMobile ? '0.625rem 1.25rem' : '0.75rem 1.5rem',
-                                        backgroundColor: '#2563eb',
-                                        color: 'white',
-                                        fontWeight: '600',
-                                        borderRadius: '0.75rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        margin: '0.5rem auto 0',
-                                        fontSize: isMobile ? '0.875rem' : '1rem',
-                                        transform: 'scale(1)'
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#1d4ed8';
-                                        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-                                     
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#2563eb';
-                                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                                     
-                                      }}
-                                    >
-                                      <i className="bx bx-calendar-plus" style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}></i>
-                                      Yes, Book Appointment
-                                    </button>
-                                  </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-4">
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowBautistaAppointmentForm(true)}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '0.5rem',
+                                          padding: '0.5rem 1rem',
+                                          backgroundColor: '#2563eb',
+                                          color: '#ffffff',
+                                          fontSize: '0.875rem',
+                                          fontWeight: '500',
+                                          borderRadius: '0.5rem',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          transition: 'background-color 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                                      >
+                                        <i className="bx bx-calendar-plus text-base"></i>
+                                        Book Bautista Appointment
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <>
@@ -3000,11 +3167,25 @@ useEffect(() => {
                                           max={getuptothreemonthsappointmentavailability()}
                                           onChange={(e) => {
                                             if (disablebautistaweekends(e.target.value)) {
+                                              // Clear the input immediately
+                                              e.target.value = "";
+                                              
+                                              // Reset toast state
                                               setbautistashownotavailweekendToast(false);
                                               setbautistashownotavailweekendToastClosing(false);
+                                              
+                                              // Show toast after a brief delay
                                               setTimeout(() => {
                                                 setbautistashownotavailweekendToast(true);
-                                                e.target.value = "";
+                                                
+                                                // Auto-dismiss after 4 seconds
+                                                setTimeout(() => {
+                                                  setbautistashownotavailweekendToastClosing(true);
+                                                  setTimeout(() => {
+                                                    setbautistashownotavailweekendToast(false);
+                                                    setbautistashownotavailweekendToastClosing(false);
+                                                  }, 300);
+                                                }, 4000);
                                               }, 50);
                                             }
                                           }}
@@ -3054,12 +3235,18 @@ useEffect(() => {
                           </div>
                         </div>
 
-                        {/* Additional Information Section */}
-                        <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
-                          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
-                            <i className="bx bx-note text-gray-600"></i>
-                            Additional Information
-                          </h3>
+                        {/* Warning message when both clinics have pending appointments */}
+                        {hasPendingAmbherAppointment() && hasPendingBautistaAppointment() && (
+                            <div className="w-full"></div>
+                        )}
+
+                        {/* Additional Information Section - Hidden if both clinics have pending appointments */}
+                        {!(hasPendingAmbherAppointment() && hasPendingBautistaAppointment()) && (
+                          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
+                              <i className="bx bx-note text-gray-600"></i>
+                              Additional Information
+                            </h3>
                           
                           <div className="flex flex-col gap-6 sm:gap-8">
                             {/* Notes Section */}
@@ -3179,16 +3366,18 @@ useEffect(() => {
                             </div>
                           </div>
                         </div>
+                        )}
 
-                        {/* Submit Section */}
-                        <div className="flex justify-center pt-8">
-                          <button 
-                            type="submit" 
-                            disabled={issubmitting} 
-                            className="rounded-3xl px-12 py-4 text-lg font-semibold transition-all duration-300 flex items-center gap-3 min-w-[280px] justify-center border-0 outline-none focus:outline-none appearance-none"
-                            style={{
-                              backgroundColor: issubmitting ? '#9ca3af' : '#075985',
-                              color: issubmitting ? '#e5e7eb' : '#ffffff',
+                        {/* Submit Section - Hidden if both clinics have pending appointments */}
+                        {!(hasPendingAmbherAppointment() && hasPendingBautistaAppointment()) && (
+                          <div className="flex justify-center pt-8">
+                            <button 
+                              type="submit" 
+                              disabled={issubmitting} 
+                              className="rounded-3xl px-12 py-4 text-lg font-semibold transition-all duration-300 flex items-center gap-3 min-w-[280px] justify-center border-0 outline-none focus:outline-none appearance-none"
+                              style={{
+                                backgroundColor: issubmitting ? '#9ca3af' : '#075985',
+                                color: issubmitting ? '#e5e7eb' : '#ffffff',
                               cursor: issubmitting ? 'not-allowed' : 'pointer',
                               border: 'none',
                               outline: 'none',
@@ -3219,6 +3408,7 @@ useEffect(() => {
                             )}
                           </button>
                         </div>
+                        )}
                       </form>
                     </div>
                   </div>
@@ -3266,273 +3456,7 @@ useEffect(() => {
       { activeappointmenttable === 'appointmentlist' && ( <div id="appointmentlist" className= " mt-16 animate-fadeInUp flex flex-col items-start  w-[100%] h-[83%] rounded-2xl" >
          
          
-               {/* Enhanced Search and Filter Bar */}
-               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 w-full gap-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto flex-1">
-                  <h2 className="font-albertsans font-bold text-[18px] text-[#383838] flex-shrink-0">Search:</h2>
-                  <div className="relative flex items-center w-full sm:flex-1">
-                    <i className="bx bx-search absolute left-3 text-2xl text-gray-500 z-10"></i>
-                    <input       
-                      type="text" 
-                      placeholder="Enter appointment details..."   
-                      value={searchAppointments}
-                      onChange={handleSearchAppointments}
-                      className="transition-all duration-300 ease-in-out py-2 pl-10 pr-12 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
-                    />
-                    {searchAppointments && (
-                      <div
-                        onClick={() => {
-                          setSearchAppointments('');
-                          setCurrentPage(1);
-                        }}
-                        className="absolute right-3 text-xl text-gray-500 hover:text-black z-10 transition-colors duration-200 cursor-pointer"
-                        title="Clear search"
-                      >
-                        <i className="bx bx-x"></i>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Filter and View Controls */}
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  {/* Status Filter Button */}
-                  <div className="relative">
-                    <div
-                      onClick={() => setShowStatusFilter(!showStatusFilter)}
-                      style={{
-                        backgroundColor: statusFilter.length > 0 ? '#2781af' : '#f3f4f6',
-                        color: statusFilter.length > 0 ? '#ffffff' : '#374151',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s'
-                      }}
-                      className="hover:shadow-md"
-                    >
-                      <i className="bx bx-filter text-lg"></i>
-                      Status
-                      {statusFilter.length > 0 && (
-                        <span style={{
-                          backgroundColor: '#ffffff',
-                          color: '#2781af',
-                          borderRadius: '10px',
-                          padding: '2px 8px',
-                          fontSize: '11px',
-                          fontWeight: '700'
-                        }}>
-                          {statusFilter.length}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Status Filter Dropdown */}
-                    {showStatusFilter && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '110%',
-                        right: '0',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                        padding: '12px',
-                        minWidth: '200px',
-                        zIndex: 50
-                      }}>
-                        <div style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#6b7280',
-                          marginBottom: '8px'
-                        }}>
-                          Filter by Status
-                        </div>
-                        {getUniqueStatuses().map(status => (
-                          <div
-                            key={status}
-                            onClick={() => toggleStatusFilter(status)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '8px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              marginBottom: '4px',
-                              backgroundColor: statusFilter.includes(status) ? '#f0f9ff' : 'transparent'
-                            }}
-                            className="hover:bg-gray-50"
-                          >
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              border: '2px solid #d1d5db',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: statusFilter.includes(status) ? '#2781af' : '#ffffff',
-                              borderColor: statusFilter.includes(status) ? '#2781af' : '#d1d5db'
-                            }}>
-                              {statusFilter.includes(status) && (
-                                <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
-                              )}
-                            </div>
-                            <span style={{
-                              fontSize: '14px',
-                              flex: 1,
-                              color: '#374151'
-                            }}>
-                              {status}
-                            </span>
-                            <span style={{
-                              fontSize: '12px',
-                              color: '#9ca3af',
-                              backgroundColor: '#f3f4f6',
-                              padding: '2px 8px',
-                              borderRadius: '10px'
-                            }}>
-                              {getStatusCount(status)}
-                            </span>
-                          </div>
-                        ))}
-                        {statusFilter.length > 0 && (
-                          <div
-                            onClick={() => {
-                              setStatusFilter([]);
-                              setCurrentPage(1);
-                            }}
-                            style={{
-                              marginTop: '8px',
-                              padding: '6px',
-                              textAlign: 'center',
-                              fontSize: '12px',
-                              color: '#ef4444',
-                              cursor: 'pointer',
-                              borderTop: '1px solid #e5e7eb',
-                              paddingTop: '8px'
-                            }}
-                            className="hover:text-red-700"
-                          >
-                            Clear filters
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Column Toggle Button */}
-                  <div className="relative">
-                    <div
-                      onClick={() => setShowColumnToggle(!showColumnToggle)}
-                      style={{
-                        backgroundColor: '#f3f4f6',
-                        color: '#374151',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s'
-                      }}
-                      className="hover:shadow-md"
-                    >
-                      <i className="bx bx-columns text-lg"></i>
-                      View
-                    </div>
-                    
-                    {/* Column Toggle Dropdown */}
-                    {showColumnToggle && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '110%',
-                        right: '0',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                        padding: '12px',
-                        minWidth: '200px',
-                        zIndex: 50
-                      }}>
-                        <div style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#6b7280',
-                          marginBottom: '8px'
-                        }}>
-                          Toggle Columns
-                        </div>
-                        {Object.keys(visibleColumns).filter(col => col !== 'actions').map(column => (
-                          <div
-                            key={column}
-                            onClick={() => setVisibleColumns(prev => ({ ...prev, [column]: !prev[column] }))}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '8px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              marginBottom: '4px'
-                            }}
-                            className="hover:bg-gray-50"
-                          >
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              border: '2px solid #d1d5db',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: visibleColumns[column] ? '#2781af' : '#ffffff',
-                              borderColor: visibleColumns[column] ? '#2781af' : '#d1d5db'
-                            }}>
-                              {visibleColumns[column] && (
-                                <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
-                              )}
-                            </div>
-                            <span style={{
-                              fontSize: '14px',
-                              textTransform: 'capitalize',
-                              color: '#374151'
-                            }}>
-                              {column.replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Click outside to close dropdowns */}
-              {(showStatusFilter || showColumnToggle) && (
-                <div
-                  onClick={() => {
-                    setShowStatusFilter(false);
-                    setShowColumnToggle(false);
-                  }}
-                  style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 40
-                  }}
-                />
-              )}
 
 
                 <div className="mb-40 flex flex-col justify-center items-start h-[500px] w-full rounded-3xl ">
@@ -3555,7 +3479,7 @@ useEffect(() => {
         <p className="text-gray-500 font-albertsans mb-4">You don't have any scheduled appointments yet.</p>
         <div 
           onClick={() => showappointmenttable('bookappointment')}
-          className="bg-[#2781af] hover:bg-[#1f6591] text-white font-albertsans font-semibold py-2 px-6 rounded-2xl transition-all duration-200"
+          className="bg-[#2781af] hover:bg-[#1f6591] text-white font-albertsans font-semibold py-2 px-6 rounded-2xl transition-all duration-200 cursor-pointer"
         >
           Book New Appointment
         </div>
@@ -3564,6 +3488,261 @@ useEffect(() => {
     
 
   ) : (
+    <>
+      {/* Enhanced Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 w-full gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto flex-1">
+          <h2 className="font-albertsans font-bold text-[18px] text-[#383838] flex-shrink-0">Search:</h2>
+          <div className="relative flex items-center w-full sm:flex-1">
+            <i className="bx bx-search absolute left-3 text-2xl text-gray-500 z-10"></i>
+            <input       
+              type="text" 
+              placeholder="Enter appointment details..."   
+              value={searchAppointments}
+              onChange={handleSearchAppointments}
+              className="transition-all duration-300 ease-in-out py-2 pl-10 pr-12 w-full rounded-2xl bg-[#e4e4e4] focus:bg-slate-100 focus:outline-sky-500"
+            />
+            {searchAppointments && (
+              <div
+                onClick={() => {
+                  setSearchAppointments('');
+                  setCurrentPage(1);
+                }}
+                className="absolute right-3 text-xl text-gray-500 hover:text-black z-10 transition-colors duration-200 cursor-pointer"
+                title="Clear search"
+              >
+                <i className="bx bx-x"></i>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Filter and View Controls */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Status Filter Button */}
+          <div className="relative">
+            <div
+              onClick={() => setShowStatusFilter(!showStatusFilter)}
+              style={{
+                backgroundColor: statusFilter.length > 0 ? '#2781af' : '#f3f4f6',
+                color: statusFilter.length > 0 ? '#ffffff' : '#374151',
+                border: '1px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+              className="hover:shadow-md"
+            >
+              <i className="bx bx-filter text-lg"></i>
+              Status
+              {statusFilter.length > 0 && (
+                <span style={{
+                  backgroundColor: '#ffffff',
+                  color: '#2781af',
+                  borderRadius: '10px',
+                  padding: '2px 8px',
+                  fontSize: '11px',
+                  fontWeight: '700'
+                }}>
+                  {statusFilter.length}
+                </span>
+              )}
+            </div>
+            
+            {/* Status Filter Dropdown */}
+            {showStatusFilter && (
+              <div style={{
+                position: 'absolute',
+                top: '110%',
+                right: '0',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                padding: '12px',
+                minWidth: '200px',
+                zIndex: 50
+              }}>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  marginBottom: '8px'
+                }}>
+                  Filter by Status
+                </div>
+                {getUniqueStatuses().map(status => (
+                  <div
+                    key={status}
+                    onClick={() => toggleStatusFilter(status)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      marginBottom: '4px',
+                      backgroundColor: statusFilter.includes(status) ? '#f0f9ff' : 'transparent'
+                    }}
+                    className="hover:bg-gray-50"
+                  >
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: statusFilter.includes(status) ? '#2781af' : '#ffffff',
+                      borderColor: statusFilter.includes(status) ? '#2781af' : '#d1d5db'
+                    }}>
+                      {statusFilter.includes(status) && (
+                        <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: '14px',
+                      flex: 1,
+                      color: '#374151'
+                    }}>
+                      {status}
+                    </span>
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#9ca3af',
+                      backgroundColor: '#f3f4f6',
+                      padding: '2px 8px',
+                      borderRadius: '10px'
+                    }}>
+                      {getStatusCount(status)}
+                    </span>
+                  </div>
+                ))}
+                {statusFilter.length > 0 && (
+                  <div
+                    onClick={() => {
+                      setStatusFilter([]);
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px',
+                      textAlign: 'center',
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      cursor: 'pointer',
+                      borderTop: '1px solid #e5e7eb',
+                      paddingTop: '8px'
+                    }}
+                    className="hover:text-red-700"
+                  >
+                    Clear filters
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Column Toggle Button */}
+          <div className="relative">
+            <div
+              onClick={() => setShowColumnToggle(!showColumnToggle)}
+              style={{
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                border: '1px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+              className="hover:shadow-md"
+            >
+              <i className="bx bx-columns text-lg"></i>
+              Columns
+            </div>
+            
+            {/* Column Toggle Dropdown */}
+            {showColumnToggle && (
+              <div style={{
+                position: 'absolute',
+                top: '110%',
+                right: '0',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                padding: '12px',
+                minWidth: '180px',
+                zIndex: 50
+              }}>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  marginBottom: '8px'
+                }}>
+                  Show/Hide Columns
+                </div>
+                {Object.entries(visibleColumns).map(([key, visible]) => (
+                  <div
+                    key={key}
+                    onClick={() => toggleColumn(key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      marginBottom: '4px',
+                      backgroundColor: visible ? '#f0f9ff' : 'transparent'
+                    }}
+                    className="hover:bg-gray-50"
+                  >
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: visible ? '#2781af' : '#ffffff',
+                      borderColor: visible ? '#2781af' : '#d1d5db'
+                    }}>
+                      {visible && (
+                        <i className="bx bx-check" style={{ fontSize: '12px', color: '#ffffff' }}></i>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: '14px',
+                      color: '#374151',
+                      textTransform: 'capitalize'
+                    }}>
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
  <div className="bg-white rounded-lg border border-gray-200 shadow-sm w-full h-full overflow-hidden">
       {/* Desktop Table View */}
       <div className="hidden md:block h-full overflow-hidden">
@@ -3750,7 +3929,15 @@ useEffect(() => {
                         </button>
                         {canDeleteAppointment(appointment) && (
                           <button
-                            onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
+                            onClick={() => {
+                              console.log('🔍 Setting appointment for deletion:', {
+                                _id: appointment._id,
+                                patientappointmentid: appointment.patientappointmentid,
+                                fullAppointment: appointment
+                              });
+                              setdeletepatientappointment(true); 
+                              setselectedpatientappointment(appointment);
+                            }}
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -3885,7 +4072,15 @@ useEffect(() => {
               </div>
               {canDeleteAppointment(appointment) && (
                 <div
-                  onClick={() => {setdeletepatientappointment(true); setselectedpatientappointment(appointment);}}
+                  onClick={() => {
+                    console.log('🔍 Mobile: Setting appointment for deletion:', {
+                      _id: appointment._id,
+                      patientappointmentid: appointment.patientappointmentid,
+                      fullAppointment: appointment
+                    });
+                    setdeletepatientappointment(true); 
+                    setselectedpatientappointment(appointment);
+                  }}
                   className="flex-1 bg-[#8c3226] hover:bg-[#ab4f43] text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   <i className="bx bx-trash text-lg"></i>
@@ -4037,7 +4232,7 @@ useEffect(() => {
       )}
       
     </div>
-    
+  </>
   )}  {/* Pagination Component for Appointments */}
   {(() => {
     const dataToDisplay = getSortedAndFilteredAppointments();
@@ -4087,7 +4282,6 @@ useEffect(() => {
                                      </div>
                                      <div>
                                        <h1 className="text-lg sm:text-2xl font-bold text-gray-800 font-albertsans">Appointment Details</h1>
-                                       <p className="text-gray-600 mt-1 text-sm sm:text-base">View your scheduled appointment information</p>
                                      </div>
                                    </div>
                                    <div 
@@ -4111,7 +4305,6 @@ useEffect(() => {
           <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
           <div>
             <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
-            <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
@@ -4338,7 +4531,6 @@ useEffect(() => {
           <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
           <div>
             <h2 className="text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
-            <p className="text-gray-900 text-sm">Comprehensive Eye Care & Surgery</p>
           </div>
         </div>
         <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex

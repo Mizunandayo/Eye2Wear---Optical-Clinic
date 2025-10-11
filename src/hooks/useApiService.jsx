@@ -181,7 +181,13 @@ const useApiService = () => {
   };
 
   const invalidateAppointmentData = () => {
-    invalidateCache(['patientAppointments']);
+    // Invalidate all appointment-related caches for all users
+    const email = localStorage.getItem('patientemail');
+    const cacheKeys = ['patientAppointments'];
+    if (email) {
+      cacheKeys.push(`patientAppointments_${email}`);
+    }
+    invalidateCache(cacheKeys);
   };
 
   return {

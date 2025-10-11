@@ -168,17 +168,18 @@ class AppointmentExpirationScheduler {
 
   /**
    * Initialize the scheduler
-   * Runs every minute to check for appointments to expire
+   * Runs every 30 minutes to check for appointments to expire
    */
   init() {
-    // Run every minute: '* * * * *'
-    // For testing, you can use '*/5 * * * *' to run every 5 minutes
-    this.task = cron.schedule('* * * * *', () => {
+    // Run every 30 minutes: '*/30 * * * *'
+    // Cron format: minute hour day month weekday
+    // */30 means "every 30 minutes"
+    this.task = cron.schedule('*/30 * * * *', () => {
       this.checkAndExpireAppointments();
     });
 
     console.log('📅 Appointment expiration scheduler initialized');
-    console.log('⏰ Checking for expiring appointments every minute');
+    console.log('⏰ Checking for expiring appointments every 30 minutes');
     
     // Run immediately on startup
     this.checkAndExpireAppointments();

@@ -1159,7 +1159,7 @@ const submitpatientdemographic = async (e) => {
                                 <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
                                   <FontAwesomeIcon icon={faUserShield} className="text-red-600" />
                                 </div>
-                                Emergency Contact Information
+                                Emergency / Guardian Contact Information
                               </h3>
                               <p className="text-sm text-gray-600">
                                 This information will be used to contact someone in case of medical emergencies.
