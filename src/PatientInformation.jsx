@@ -384,29 +384,108 @@ const calculateAge = (birthdate) => {
   const birthDate = new Date(birthdate);
   const today = new Date();
   
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  // Calculate total months difference
+  const yearsDiff = today.getFullYear() - birthDate.getFullYear();
+  const monthsDiff = today.getMonth() - birthDate.getMonth();
+  const daysDiff = today.getDate() - birthDate.getDate();
   
-  // If birthday hasn't occurred yet this year, subtract 1 from age
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  // Calculate total months
+  let totalMonths = (yearsDiff * 12) + monthsDiff;
+  
+  // Adjust if day hasn't occurred yet this month
+  if (daysDiff < 0) {
+    totalMonths--;
+  }
+  
+  // If less than 12 months old, display in months only
+  if (totalMonths < 12) {
+    return `${totalMonths} months old`;
+  }
+  
+  // Otherwise calculate years and display with "years old"
+  let age = yearsDiff;
+  if (monthsDiff < 0 || (monthsDiff === 0 && daysDiff < 0)) {
     age--;
   }
   
-  return age.toString();
+  return `${age} years old`;
 };
 
+// Function to format date to "Month Day, Year" format
+const formatBirthdate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString + 'T00:00:00'); // Add time to prevent timezone issues
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return date.toLocaleDateString('en-US', options);
+};
+
+// Function to get maximum allowed birthdate (3 months ago from today)
+// Patients must be at least 3 months old, so birthdate cannot be more recent than 3 months ago
+const getMaxBirthdate = () => {
+  const today = new Date();
+  const maxDate = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+  return maxDate.toISOString().split('T')[0];
+};
+
+// Function to validate birthdate
+const validateBirthdate = (birthdate) => {
+  if (!birthdate) return { isValid: true, message: '' };
+  
+  const selectedDate = new Date(birthdate);
+  const today = new Date();
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+  
+  // Check if date is in the future
+  if (selectedDate > today) {
+    return { isValid: false, message: 'Birthdate cannot be in the future' };
+  }
+  
+  // Check if date is less than 3 months old (too recent)
+  if (selectedDate > threeMonthsAgo) {
+    return { isValid: false, message: 'Patient must be at least 3 months old' };
+  }
+  
+  return { isValid: true, message: '' };
+};
 
 
 const handleinputchange = (e) => {
   const {name, value} = e.target;
   
-  // If the changed field is birthdate, calculate age
+  // If the changed field is birthdate, validate and calculate age
   if (name === 'patientbirthdate') {
+    const validation = validateBirthdate(value);
+    
+    if (!validation.isValid) {
+      // Show error message
+      showProfileToast(false, validation.message);
+      // Clear the birthdate and age
+      setdemographicformdata(prev => ({
+        ...prev,
+        [name]: '',
+        patientage: ''
+      }));
+      return;
+    }
+    
     const age = calculateAge(value);
     setdemographicformdata(prev => ({
       ...prev,
       [name]: value,
       patientage: age
+    }));
+  } else if (name === 'patientcontactnumber' || name === 'patientemergencycontactnumber') {
+    // Validate contact number: only allow digits and limit to 11 characters
+    const digitsOnly = value.replace(/\D/g, '');
+    
+    if (digitsOnly.length > 11) {
+      showProfileToast(false, 'Contact number must not exceed 11 digits');
+      return;
+    }
+    
+    setdemographicformdata(prev => ({
+      ...prev,
+      [name]: digitsOnly
     }));
   } else {
     setdemographicformdata(prev => ({
@@ -1078,15 +1157,16 @@ const submitpatientdemographic = async (e) => {
                                 Birthdate
                               </label>
                               <input 
-                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
+                                    className="w-full h-10 sm:h-12 px-3 sm:px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[50%] text-sm sm:text-base"
                                 value={demographicformdata.patientbirthdate} 
                                 onChange={handleinputchange}  
                                 type="date" 
                                 name="patientbirthdate" 
                                 id="patientbirthdate"
-                                max={new Date().toISOString().split('T')[0]}
+                                max={getMaxBirthdate()}
                                 required
                               />
+
                             </div>
 
                             <div className="space-y-2">
@@ -1098,7 +1178,7 @@ const submitpatientdemographic = async (e) => {
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
                                 value={demographicformdata.patientage}  
                                 readOnly 
-                                type="number" 
+                                type="text" 
                                 name="patientage" 
                                 id="patientage" 
                                 placeholder="Auto-calculated from birthdate"
@@ -1131,6 +1211,10 @@ const submitpatientdemographic = async (e) => {
                               name="patientcontactnumber" 
                               id="patientcontactnumber" 
                               placeholder="Ex: 09123456789"
+                              maxLength="11"
+                              pattern="[0-9]{11}"
+                              inputMode="numeric"
+                              title="Please enter exactly 11 digits"
                               required
                             />
                           </div>
@@ -1197,6 +1281,10 @@ const submitpatientdemographic = async (e) => {
                                   name="patientemergencycontactnumber" 
                                   id="patientemergencycontactnumber" 
                                   placeholder="Emergency contact number"
+                                  maxLength="11"
+                                  pattern="[0-9]{11}"
+                                  inputMode="numeric"
+                                  title="Please enter exactly 11 digits"
                                   required
                                 />
                               </div>

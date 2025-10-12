@@ -211,6 +211,169 @@ const PatientdemographicSchema = mongoose.Schema(
 
     //PUT THE VARIABLES INSIDE HERE FOR THE PATIENT MEDICAL RECORD
 
+patientmedicalrecordambher:[{
+    // Record Metadata
+    recordDate: {
+        type: Date,
+        default: Date.now,
+        required: true
+    },
+    ambheropticalcaseno: {
+        type: String,
+        trim: true,
+        maxlength: 50,
+        required: true
+    },
+    
+    // Patient Information (auto-filled from demographic data)
+    patientlastname: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientfirstname: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientmiddlename: {
+        type: String,
+        trim: true,
+        maxlength: 50
+    },
+    patientage: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patientstatus: {
+        type: String,
+        trim: true,
+        enum: ['New', 'Follow-up', 'Emergency', 'Consultation'],
+        maxlength: 20
+    },
+    patientgender: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patienthomeaddress: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    patientbirthdate: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patientcontactnumber: {
+        type: String,
+        trim: true,
+        maxlength: 20
+    },
+    patientphilhealthcategory: {
+        type: String,
+        trim: true,
+        enum: ['Employed/Formal Economy', 'Indigent/Informal Economy', 'Sponsored', 'Senior Citizen', 'PWD', 'Lifetime Member', 'OFW', 'Not Applicable'],
+        maxlength: 50
+    },
+    
+    // Refraction data based on prescription format
+    refraction: {
+        od: {
+            sphere: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            },
+            cylinder: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            },
+            axis: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            }
+        },
+        os: {
+            sphere: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            },
+            cylinder: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            },
+            axis: {
+                type: String,
+                trim: true,
+                maxlength: 10
+            }
+        },
+        pd: {
+            type: String,
+            trim: true,
+            maxlength: 10
+        },
+        bc: {
+            type: String,
+            trim: true,
+            maxlength: 10
+        },
+        dia: {
+            type: String,
+            trim: true,
+            maxlength: 10
+        },
+        tint: {
+            type: String,
+            trim: true,
+            maxlength: 20
+        },
+        type: {
+            type: String,
+            trim: true,
+            maxlength: 50
+        }
+    },
+
+    // Additional fields for remarks and lens recommendation
+    remarks: {
+        type: String,
+        trim: true,
+        maxlength: 500
+    },
+    lensRecommendation: {
+        type: String,
+        trim: true,
+        maxlength: 500
+    },
+
+    addedbyname: {
+        type: String,
+        required: true
+    },
+    addedbyclinic: {
+        type: String,
+        required: true
+    },
+    addedbytype: {
+        type: String,
+        required: true,
+        enum: ['Staff', 'Owner']
+    },
+    addedbydate: {
+        type: Date,
+        default: Date.now
+    }
+}],
+
+
 patientmedicalrecordbautista:[{
     // Record Metadata
     recordDate: {
@@ -244,7 +407,7 @@ patientmedicalrecordbautista:[{
     patientage: {
         type: String,
         trim: true,
-        maxlength: 10
+        maxlength: 20
     },
     patientstatus: {
         type: String,
@@ -386,7 +549,7 @@ patientmedicalrecordbautista:[{
         icd10Code: {
             type: String,
             trim: true,
-            maxlength: 20
+            maxlength: 100
         } 
     },
     
@@ -438,172 +601,7 @@ patientmedicalrecordbautista:[{
 
 
 
-patientmedicalrecordambher:[{
-    // Record Metadata
-    recordDate: {
-        type: Date,
-        default: Date.now,
-        required: true
-    },
-    ambheropticalcaseno: {
-        type: String,
-        trim: true,
-        maxlength: 50,
-        required: true
-    },
-    
-    // Patient Information (auto-filled from demographic data)
-    patientlastname: {
-        type: String,
-        trim: true,
-        maxlength: 50
-    },
-    patientfirstname: {
-        type: String,
-        trim: true,
-        maxlength: 50
-    },
-    patientmiddlename: {
-        type: String,
-        trim: true,
-        maxlength: 50
-    },
-    patientage: {
-        type: String,
-        trim: true,
-        maxlength: 10
-    },
-    patientstatus: {
-        type: String,
-        trim: true,
-        enum: ['New', 'Follow-up', 'Emergency', 'Consultation'],
-        maxlength: 20
-    },
-    patientgender: {
-        type: String,
-        trim: true,
-        maxlength: 20
-    },
-    patienthomeaddress: {
-        type: String,
-        trim: true,
-        maxlength: 200
-    },
-    patientbirthdate: {
-        type: String,
-        trim: true,
-        maxlength: 20
-    },
-    patientcontactnumber: {
-        type: String,
-        trim: true,
-        maxlength: 20
-    },
-    patientphilhealthcategory: {
-        type: String,
-        trim: true,
-        enum: ['Employed/Formal Economy', 'Indigent/Informal Economy', 'Sponsored', 'Senior Citizen', 'PWD', 'Lifetime Member', 'OFW', 'Not Applicable'],
-        maxlength: 50
-    },
-    hmo: {
-        type: String,
-        trim: true,
-        maxlength: 100
-    },
-    
-    // Refraction data based on prescription format
-    refraction: {
-        od: {
-            sphere: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            },
-            cylinder: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            },
-            axis: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            }
-        },
-        os: {
-            sphere: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            },
-            cylinder: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            },
-            axis: {
-                type: String,
-                trim: true,
-                maxlength: 10
-            }
-        },
-        pd: {
-            type: String,
-            trim: true,
-            maxlength: 10
-        },
-        bc: {
-            type: String,
-            trim: true,
-            maxlength: 10
-        },
-        dia: {
-            type: String,
-            trim: true,
-            maxlength: 10
-        },
-        tint: {
-            type: String,
-            trim: true,
-            maxlength: 20
-        },
-        type: {
-            type: String,
-            trim: true,
-            maxlength: 50
-        }
-    },
 
-    // Additional fields for remarks and lens recommendation
-    remarks: {
-        type: String,
-        trim: true,
-        maxlength: 500
-    },
-    lensRecommendation: {
-        type: String,
-        trim: true,
-        maxlength: 500
-    },
-
-    addedbyname: {
-        type: String,
-        required: true
-    },
-    addedbyclinic: {
-        type: String,
-        required: true
-    },
-    addedbytype: {
-        type: String,
-        required: true,
-        enum: ['Staff', 'Owner']
-    },
-    addedbydate: {
-        type: Date,
-        default: Date.now
-    }
-}],
 
 
     isVerified: {type: Boolean, default: false},

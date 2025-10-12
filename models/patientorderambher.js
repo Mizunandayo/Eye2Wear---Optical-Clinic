@@ -52,6 +52,15 @@ const PatientOrderAmbherSchema = new mongoose.Schema({
     patientorderambheramountpaidchange: { type: Number, default: 0 },  // Computed from deducting overall total to total paid amount
     patientorderambherproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee - Discount
     patientorderambherproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
+    // Payment history tracking - records all payments made
+    patientorderambherpaymenthistory: [{
+        amount: { type: Number, required: true }, // Payment amount
+        paymentDate: { type: Date, default: Date.now }, // When payment was made
+        paymentType: { type: String, enum: ['Initial Payment', 'Additional Payment'], default: 'Additional Payment' }, // Type of payment
+        processedBy: String, // Admin who processed the payment
+        paymentMethod: { type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash' }, // Method used
+        remarks: String // Optional notes about the payment
+    }],
     // Payment receipt image - Cloudinary URL
     patientorderambherproductpaymentreceiptimage: String,
     // Cloudinary public_id for payment receipt image

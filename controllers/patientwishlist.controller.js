@@ -1,5 +1,7 @@
 /* eslint-disable no-undef */   
 import Patientwishlist from "../models/patientwishlist.js";
+import AmbherInventoryProduct from "../models/ambherinventoryproduct.js";
+import BautistaInventoryProduct from "../models/bautistainventoryproduct.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
@@ -112,7 +114,37 @@ export const getallpatientwishlistinventoryproduct = async (req, res) => {
             .sort({patientwishlistinventoryproductid: -1})
             .lean(); // Returns plain JavaScript objects for better performance
         
-        res.json(patientwishlistinventoryproducts);
+        // Filter out archived products by checking the source product tables
+        const filteredWishlist = await Promise.all(
+            patientwishlistinventoryproducts.map(async (item) => {
+                try {
+                    let isArchived = false;
+                    
+                    if (item.clinicType === 'ambher') {
+                        const product = await AmbherInventoryProduct.findOne({ 
+                            ambherinventoryproductid: item.patientwishlistinventoryproductid 
+                        }).select('isArchived').lean();
+                        isArchived = product?.isArchived || false;
+                    } else if (item.clinicType === 'bautista') {
+                        const product = await BautistaInventoryProduct.findOne({ 
+                            bautistainventoryproductid: item.patientwishlistinventoryproductid 
+                        }).select('isArchived').lean();
+                        isArchived = product?.isArchived || false;
+                    }
+                    
+                    // Return item with isArchived flag
+                    return { ...item, isArchived };
+                } catch (error) {
+                    console.error('Error checking archived status for wishlist item:', error);
+                    return { ...item, isArchived: false };
+                }
+            })
+        );
+        
+        // Filter out archived products from the wishlist
+        const activeWishlistProducts = filteredWishlist.filter(item => !item.isArchived);
+        
+        res.json(activeWishlistProducts);
     
     }catch(error){
        res.status(500).json({message: error.message});
@@ -141,7 +173,37 @@ export const getallpatientwishlistinventoryproductbyemail = async (req, res) => 
         .sort({ patientwishlistinventoryproductid: -1 })
         .lean(); // Returns plain JavaScript objects for better performance
         
-        res.json(patientwishlistinventoryproducts);
+        // Filter out archived products by checking the source product tables
+        const filteredWishlist = await Promise.all(
+            patientwishlistinventoryproducts.map(async (item) => {
+                try {
+                    let isArchived = false;
+                    
+                    if (item.clinicType === 'ambher') {
+                        const product = await AmbherInventoryProduct.findOne({ 
+                            ambherinventoryproductid: item.patientwishlistinventoryproductid 
+                        }).select('isArchived').lean();
+                        isArchived = product?.isArchived || false;
+                    } else if (item.clinicType === 'bautista') {
+                        const product = await BautistaInventoryProduct.findOne({ 
+                            bautistainventoryproductid: item.patientwishlistinventoryproductid 
+                        }).select('isArchived').lean();
+                        isArchived = product?.isArchived || false;
+                    }
+                    
+                    // Return item with isArchived flag
+                    return { ...item, isArchived };
+                } catch (error) {
+                    console.error('Error checking archived status for wishlist item:', error);
+                    return { ...item, isArchived: false };
+                }
+            })
+        );
+        
+        // Filter out archived products from the wishlist
+        const activeWishlistProducts = filteredWishlist.filter(item => !item.isArchived);
+        
+        res.json(activeWishlistProducts);
     
     } catch(error) {
         console.error("Error fetching patient wishlist:", error);

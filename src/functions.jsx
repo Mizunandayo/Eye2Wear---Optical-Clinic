@@ -1,0 +1,11935 @@
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+//MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS //MEDICAL RECORDS  
+
+// Medical records state variables and search functionality are already defined above
+
+// Medical Records State Variables
+const [otherclinicrecords, setotherclinicrecords] = useState([]);
+const [activemedicalrecordstable, setactivemedicalrecordstable] = useState('allmedicalrecordstable');
+
+const showmedicalrecordstable = (medicalrecordstableid) => {
+    setactivemedicalrecordstable(medicalrecordstableid);
+};
+
+const [showotherclinicrecord, setshowotherclinicrecord] = useState(false);
+const [activepatientmedicalrecordstable, setactivepatientmedicalrecordstable] = useState('patientmedicalrecord');
+const showpatientmedicalrecordstable = (patientmedicalrecordstableid) => {
+    setactivepatientmedicalrecordstable(patientmedicalrecordstableid);
+};
+
+const [selectedpatientmedicalrecord,setselectedpatientmedicalrecord] = useState(null);
+const [showpatientmedicalrecord, setshowpatientmedicalrecord] = useState(false);
+const [showpatientmedicalrecordconsultation, setshowpatientmedicalrecordconsultation] = useState(false);
+const [showpatientaddothermedicalrecord, setshowpatientaddothermedicalrecord] = useState(false);
+const [showotherclinicrecordimage, setshowotherclinicrecordimage] = useState(false);
+
+// Medical Documents State
+const [showpatientaddmedicaldocument, setshowpatientaddmedicaldocument] = useState(false);
+const [showmedicaldocumentimage, setshowmedicaldocumentimage] = useState(false);
+const [selectedmedicaldocument, setselectedmedicaldocument] = useState(null);
+const [medicaldocumentfiles, setmedicaldocumentfiles] = useState([]);
+const [uploaddingmedicaldocument, setuploaddingmedicaldocument] = useState(false);
+const [showdeletemedicaldocumentdialog, setshowdeletemedicaldocumentdialog] = useState(false);
+
+// Delete Medical Record Modal States
+const [showdeletebautistamedicalrecorddialog, setshowdeletebautistamedicalrecorddialog] = useState(false);
+const [showdeleteambhermedicalrecorddialog, setshowdeleteambhermedicalrecorddialog] = useState(false);
+
+//Clinic Documents State
+const [showaddbautistaclinicmedicalrecord, setshowaddbautistaclinicmedicalrecord] = useState(false);
+const [showaddambherclinicmedicalrecord, setshowaddambherclinicmedicalrecord] = useState(false);
+
+// Read-only form state (for cross-clinic viewing)
+const [isbautistaformreadonly, setisbautistaformreadonly] = useState(false);
+const [isambherformreadonly, setisambherformreadonly] = useState(false);
+
+// Bautista Medical Record Edit/View State
+const [selectedbautistarecord, setselectedbautistarecord] = useState(null);
+const [iseditingbautistarecord, setiseditingbautistarecord] = useState(false);
+const [generatedCaseNumber, setgeneratedCaseNumber] = useState('');
+
+// Ambher Medical Record Edit/View State
+const [selectedambherrecord, setselectedambherrecord] = useState(null);
+const [iseditingambherrecord, setiseditingambherrecord] = useState(false);
+const [generatedAmbherCaseNumber, setgeneratedAmbherCaseNumber] = useState('');
+
+// Bautista Medical Record Delete State
+const [showdeletebautistamedicaldialog, setshowdeletebautistamedicaldialog] = useState(false);
+const [selectedbautistarecordtodelete, setselectedbautistarecordtodelete] = useState(null);
+
+// Ambher Medical Record Delete State
+const [showdeleteambhermedicaldialog, setshowdeleteambhermedicaldialog] = useState(false);
+const [selectedambherrecordtodelete, setselectedambherrecordtodelete] = useState(null);
+
+// Bautista Medical Record Toast State
+const [bautistaRecordToast, setBautistaRecordToast] = useState(false);
+const [bautistaRecordToastMessage, setBautistaRecordToastMessage] = useState('');
+const [bautistaRecordToastType, setBautistaRecordToastType] = useState('success');
+const [bautistaRecordToastClosing, setBautistaRecordToastClosing] = useState(false);
+const [bautistaRecordProgressWidth, setBautistaRecordProgressWidth] = useState('0%');
+
+// Ambher Medical Record Toast State
+const [ambherRecordToast, setAmbherRecordToast] = useState(false);
+const [ambherRecordToastMessage, setAmbherRecordToastMessage] = useState('');
+const [ambherRecordToastType, setAmbherRecordToastType] = useState('success');
+const [ambherRecordToastClosing, setAmbherRecordToastClosing] = useState(false);
+const [ambherRecordProgressWidth, setAmbherRecordProgressWidth] = useState('0%');
+
+// Case Number Validation State
+const [caseNoValidation, setCaseNoValidation] = useState({ isChecking: false, isValid: true, message: '' });
+const [caseNoValue, setCaseNoValue] = useState('');
+
+// Ambher Case Number Validation State
+const [ambherCaseNoValidation, setAmbherCaseNoValidation] = useState({ isChecking: false, isValid: true, message: '' });
+const [ambherCaseNoValue, setAmbherCaseNoValue] = useState('');
+
+// Medical Document Form State
+const [medicaldocumentname, setmedicaldocumentname] = useState('');
+const [medicaldocumentdescription, setmedicaldocumentdescription] = useState('');
+const [medicaldocumentselectedfile, setmedicaldocumentselectedfile] = useState(null);
+const [medicaldocumentpreviewurl, setmedicaldocumentpreviewurl] = useState(null);
+const medicaldocumentinputref = useRef(null);
+
+// Medical Records Search State - Separate search states for different sections
+const [searchmedicalrecords, setsearchmedicalrecords] = useState(''); // Main medical records table search
+const [searchpastvisitstable, setsearchpastvisitstable] = useState(''); // Past visits table search
+const [searchmedicaldocuments, setsearchmedicaldocuments] = useState(''); // Medical documents table search
+const [filteredmedicalrecords, setfilteredmedicalrecords] = useState([]);
+const [medicaldocumentclinicfilter, setmedicaldocumentclinicfilter] = useState('all'); // 'all', 'ambher', 'bautista'
+
+// Filtered other clinic records with memoization to prevent infinite loops
+const filteredOtherClinicRecords = React.useMemo(() => {
+  if (!selectedpatientmedicalrecord?.patientemail || !Array.isArray(otherclinicrecords)) {
+    return [];
+  }
+
+  let filtered = otherclinicrecords
+    .filter(record => {
+      const recordEmail = record.patientotherclinicemail?.toLowerCase()?.trim();
+      const selectedEmail = selectedpatientmedicalrecord.patientemail?.toLowerCase()?.trim();
+      return recordEmail === selectedEmail;
+    });
+
+  // Apply search filter if search term exists
+  if (searchpastvisitstable.trim()) {
+    const searchTerm = searchpastvisitstable.toLowerCase().trim();
+    filtered = filtered.filter(record => {
+      const clinicNameMatch = record.patientotherclinicname?.toLowerCase().includes(searchTerm);
+      const eyeSpecialistMatch = record.patientothercliniceyespecialist?.toLowerCase().includes(searchTerm);
+      const submittedByMatch = (
+        record.patientotherclinicsubmittedbyfirstname?.toLowerCase().includes(searchTerm) ||
+        record.patientotherclinicsubmittedbymiddlename?.toLowerCase().includes(searchTerm) ||
+        record.patientotherclinicsubmittedbylastname?.toLowerCase().includes(searchTerm) ||
+        `${record.patientotherclinicsubmittedbyfirstname} ${record.patientotherclinicsubmittedbymiddlename} ${record.patientotherclinicsubmittedbylastname}`.toLowerCase().includes(searchTerm) ||
+        `${record.patientotherclinicsubmittedbyfirstname} ${record.patientotherclinicsubmittedbylastname}`.toLowerCase().includes(searchTerm)
+      );
+      
+      return clinicNameMatch || eyeSpecialistMatch || submittedByMatch;
+    });
+  }
+
+  // Apply clinic filter
+  if (medicaldocumentclinicfilter !== 'all') {
+    filtered = filtered.filter(record => {
+      if (medicaldocumentclinicfilter === 'ambher') {
+        return record.patientotherclinicname?.toLowerCase().includes('ambher');
+      } else if (medicaldocumentclinicfilter === 'bautista') {
+        return record.patientotherclinicname?.toLowerCase().includes('bautista');
+      }
+      return true;
+    });
+  }
+
+  // Sort by consultation date (newest first)
+  return filtered.sort((a, b) => new Date(b.patientotherclinicconsultationdate) - new Date(a.patientotherclinicconsultationdate));
+}, [otherclinicrecords, selectedpatientmedicalrecord?.patientemail, searchpastvisitstable, medicaldocumentclinicfilter]);
+
+// Pagination State Variables
+const [currentPage, setCurrentPage] = useState({
+  patients: 1,
+  staff: 1,
+  owners: 1,
+  administrators: 1,
+  appointments: 1,
+  medicalRecords: 1,
+  ambherInventory: 1,
+  bautistaInventory: 1,
+  ambherOrders: 1,
+  bautistaOrders: 1,
+  profiles: 1
+});
+
+const accountItemsPerPage = 5; // Number of accounts to display per page for account management
+const itemsPerPage = 10; // Number of items to display per page for other tables
+
+// Dynamic inventory per page based on container height
+const [inventoryItemsPerPage, setInventoryItemsPerPage] = useState(20);
+const inventoryContainerRef = useRef(null);
+
+// Dynamic appointments per page based on container height
+const [appointmentsPerPage, setAppointmentsPerPage] = useState(6);
+const appointmentTableRef = useRef(null);
+
+// Medical records per page
+const medicalRecordsPerPage = 6;
+
+// Calculate optimal appointments per page based on container height
+const calculateAppointmentsPerPage = useCallback(() => {
+  if (appointmentTableRef.current) {
+    const containerHeight = appointmentTableRef.current.clientHeight;
+    const headerHeight = 60; // Approximate height of table header
+    const paginationHeight = 60; // Approximate height of pagination
+    const rowHeight = 80; // Approximate height of each appointment row
+    const padding = 20; // Extra padding for better spacing
+    
+    const availableHeight = containerHeight - headerHeight - paginationHeight - padding;
+    const calculatedRows = Math.floor(availableHeight / rowHeight);
+    
+    // Ensure minimum of 3 appointments and maximum of 20 for performance
+    const optimalRows = Math.max(3, Math.min(calculatedRows, 20));
+    
+    if (optimalRows !== appointmentsPerPage) {
+      setAppointmentsPerPage(optimalRows);
+      // Reset to first page when changing page size
+      setCurrentPage(prev => ({ ...prev, appointments: 1 }));
+    }
+  }
+}, [appointmentsPerPage]);
+
+// Calculate optimal inventory items per page based on container height
+const calculateInventoryItemsPerPage = useCallback(() => {
+  if (inventoryContainerRef.current) {
+    const containerHeight = inventoryContainerRef.current.clientHeight;
+    const headerHeight = 100; // Approximate height of filters and search
+    const paginationHeight = 60; // Approximate height of pagination
+    const cardHeight = 320; // Approximate height of each inventory card (220px width + spacing)
+    const cardsPerRow = 4; // Approximate cards per row based on container width
+    const padding = 40; // Extra padding for better spacing
+    
+    const availableHeight = containerHeight - headerHeight - paginationHeight - padding;
+    const calculatedRows = Math.floor(availableHeight / cardHeight);
+    const optimalItems = Math.max(1, calculatedRows) * cardsPerRow;
+    
+    // Ensure minimum of 8 items and maximum of 40 for performance
+    const finalOptimalItems = Math.max(8, Math.min(optimalItems, 40));
+    
+    if (finalOptimalItems !== inventoryItemsPerPage) {
+      setInventoryItemsPerPage(finalOptimalItems);
+      // Reset to first page when changing page size
+      setCurrentPage(prev => ({ 
+        ...prev, 
+        ambherInventory: 1,
+        bautistaInventory: 1
+      }));
+    }
+  }
+}, [inventoryItemsPerPage]);
+
+// Recalculate when window resizes or component mounts
+useEffect(() => {
+  const handleResize = () => {
+    calculateAppointmentsPerPage();
+    calculateInventoryItemsPerPage();
+  };
+
+  // Initial calculation
+  setTimeout(() => {
+    calculateAppointmentsPerPage();
+    calculateInventoryItemsPerPage();
+  }, 100); // Small delay to ensure DOM is ready
+  
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, [calculateAppointmentsPerPage, calculateInventoryItemsPerPage]);
+
+// Recalculate when switching between appointment tables
+useEffect(() => {
+  if (activedashboard === 'appointmentmanagement') {
+    setTimeout(calculateAppointmentsPerPage, 100);
+  }
+}, [activedashboard, activeappointmentstable, calculateAppointmentsPerPage]);
+
+// Recalculate when switching between inventory tables or dashboard
+useEffect(() => {
+  if (activedashboard === 'inventorymanagement') {
+    setTimeout(calculateInventoryItemsPerPage, 100);
+  }
+}, [activedashboard, calculateInventoryItemsPerPage]);
+
+// Pagination functions
+const handlePageChange = (section, page) => {
+  setCurrentPage(prev => ({
+    ...prev,
+    [section]: page
+  }));
+};
+
+// Get paginated data function
+const getPaginatedData = (data, section) => {
+  const page = currentPage[section] || 1;
+  let itemsPerPageToUse;
+  
+  if (section === 'ambherInventory' || section === 'bautistaInventory') {
+    itemsPerPageToUse = inventoryItemsPerPage;
+  } else if (section === 'appointments') {
+    itemsPerPageToUse = appointmentsPerPage;
+  } else if (section === 'medicalRecords') {
+    itemsPerPageToUse = medicalRecordsPerPage;
+  } else if (section === 'patients' || section === 'staff') {
+    itemsPerPageToUse = accountItemsPerPage;
+  } else {
+    itemsPerPageToUse = itemsPerPage;
+  }
+  
+  const startIndex = (page - 1) * itemsPerPageToUse;
+  const endIndex = startIndex + itemsPerPageToUse;
+  return data.slice(startIndex, endIndex);
+};
+
+const [otherclinicselectedimage, setotherclinicselectedimage] = useState(null);
+const [otherclinicpreviewimage, setotherclinicpreviewimage] = useState (null);
+const [otherclinicfiles, setotherclinicfiles] = useState([]);
+const [uploadingotherclinicfiles, setuploadingotherclinicfiles] = useState(false);
+const otherclinicimageinputref = useRef(null);
+
+
+//PROFILE IMAGE TYPE HANDLING - Multi-file support
+const otherclinichandleprofilechange = async (e) => {
+  const files = Array.from(e.target.files);
+  console.log('Files selected:', files);
+  console.log('Files length:', files.length);
+  console.log('File names:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
+  
+  if (!files.length) {
+    console.log('No files selected, returning early');
+    return;
+  }
+
+  // Check maximum of 5 files
+  if (otherclinicfiles.length + files.length > 5) {
+    setSmsToastMessage('Maximum 5 files allowed');
+    setSmsToastType('error');
+    setSmsToast(true);
+    return;
+  }
+
+  // Validate file types and sizes
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+  for (const file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      setSmsToastMessage('Please select image files (JPG, PNG) or PDF documents');
+      setSmsToastType('error');
+      setSmsToast(true);
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setSmsToastMessage(`File "${file.name}" is too large. Please select files under 10MB`);
+      setSmsToastType('error');
+      setSmsToast(true);
+      return;
+    }
+  }
+
+  setuploadingotherclinicfiles(true);
+  
+  try {
+    // Use the new multi-file upload endpoint
+    const formData = new FormData();
+    
+    console.log('Appending files to FormData:', files);
+    
+    // Append all files with the correct field name
+    files.forEach((file, index) => {
+      console.log(`Appending file ${index}:`, file.name, file.type, file.size);
+      formData.append('otherclinicfiles', file);
+    });
+    
+    console.log('FormData entries:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
+    
+    const uploadResponse = await fetch('/api/cloudinary/upload/otherclinic-files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: formData
+    });
+    
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      throw new Error(errorData.message || 'Failed to upload files');
+    }
+    
+    const uploadResult = await uploadResponse.json();
+    console.log('Other clinic multi-file upload successful:', uploadResult);
+    
+    // Process successful uploads
+    const newFiles = uploadResult.uploadedFiles.map((upload, index) => {
+      // Try to get the original filename from multiple possible sources
+      const originalName = upload.originalName || upload.name || files[index]?.name || `file_${index + 1}`;
+      
+      return {
+        name: originalName,
+        type: upload.mimetype.includes('pdf') ? 'pdf' : 'image',
+        size: files[index]?.size || 0,
+        originalFile: files[index],
+        cloudinaryUrl: upload.url,
+        cloudinaryPublicId: upload.public_id,
+        preview: upload.mimetype.includes('pdf') ? null : URL.createObjectURL(files[index])
+      };
+    });
+
+    console.log('Processed new files with names:', newFiles.map(f => ({ name: f.name, type: f.type })));
+
+    // Add new files to the existing list
+    setotherclinicfiles(prev => [...prev, ...newFiles]);
+    
+    let message = `${newFiles.length} file(s) uploaded successfully`;
+    if (uploadResult.failedFiles && uploadResult.failedFiles.length > 0) {
+      message += `, ${uploadResult.failedFiles.length} failed`;
+    }
+    
+    setSmsToastMessage(message);
+    setSmsToastType('success');
+    setSmsToast(true);
+    
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    setSmsToastMessage(`Upload failed: ${error.message}`);
+    setSmsToastType('error');
+    setSmsToast(true);
+  } finally {
+    setuploadingotherclinicfiles(false);
+    // Clear the input
+    if (otherclinicimageinputref.current) {
+      otherclinicimageinputref.current.value = "";
+    }
+  }
+};
+
+//Handles the click event of upload button
+const otherclinichandleuploadclick = () => {
+  otherclinicimageinputref.current.click();
+};
+
+const removeOtherClinicFile = (index) => {
+  setotherclinicfiles(prev => {
+    const newFiles = [...prev];
+    const removedFile = newFiles[index];
+    
+    // Revoke object URL to prevent memory leaks
+    if (removedFile.preview) {
+      URL.revokeObjectURL(removedFile.preview);
+    }
+    
+    newFiles.splice(index, 1);
+    return newFiles;
+  });
+};
+
+const otherclinichandleremoveprofile = () => {
+  setotherclinicselectedimage(null);
+  setotherclinicpreviewimage(null);
+  setotherclinicfiles([]);
+  setuploadingotherclinicfiles(false);
+  if(otherclinicimageinputref.current){
+    otherclinicimageinputref.current.value = "";
+  }
+}
+
+
+
+
+
+
+
+
+
+const fetchotherclinicrecords = async () => {
+  try{
+    const response = await fetch(`/api/otherclinicrecord?includeImages=false`, {
+      headers: {
+        'Authorization' : `Bearer ${currentusertoken}`
+      }
+    });
+
+    if(!response.ok){
+      throw new Error (`HTTP error! Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Handle both old format (array) and new format (object with data property)
+    if (data.data) {
+      setotherclinicrecords(data.data);
+    } else {
+      setotherclinicrecords(data);
+    }
+
+  }catch(error){
+    console.error('Error fetching other clinic records: ', error);
+    setotherclinicrecords([]); // Set empty array on error
+  }
+};
+
+// Fetch patient-specific medical records
+const fetchPatientMedicalRecords = useCallback(async (patientEmail) => {
+  if (!patientEmail) {
+    console.log('No patient email provided');
+    setotherclinicrecords([]);
+    return;
+  }
+
+  try {
+    console.log('Fetching medical records for patient:', patientEmail);
+    const response = await fetch(`/api/otherclinicrecord/patient/${encodeURIComponent(patientEmail)}?includeImages=false`, {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Received medical records data:', data);
+    
+    // Handle both old format (array) and new format (object with data property)
+    if (data.data) {
+      setotherclinicrecords(data.data);
+    } else {
+      setotherclinicrecords(data || []);
+    }
+
+  } catch (error) {
+    console.error('Error fetching patient medical records:', error);
+    setotherclinicrecords([]);
+  }
+}, [currentusertoken]);
+
+// Filter medical records based on search term and clinic filter
+const filterMedicalRecords = useCallback((term) => {
+  let filtered = patientdemographics || [];
+
+  // Apply search filter if term exists
+  if (term.trim()) {
+    const searchTerm = term.toLowerCase().trim();
+    filtered = filtered.filter(patient => {
+      // Extract age number for more flexible age searching
+      const agePattern = searchTerm.match(/(\d+)\s*(?:years?\s*old|yr|y\.o\.?)?/);
+      const ageFromSearch = agePattern ? parseInt(agePattern[1]) : null;
+      
+      // Search in patient basic info
+      const patientMatch = (
+        patient.patientfirstname?.toLowerCase().includes(searchTerm) ||
+        patient.patientmiddlename?.toLowerCase().includes(searchTerm) ||
+        patient.patientlastname?.toLowerCase().includes(searchTerm) ||
+        patient.patientemail?.toLowerCase().includes(searchTerm) ||
+        patient.patientdemographicId?.toString().includes(searchTerm) ||
+        patient.patientage?.toString().includes(searchTerm) ||
+        patient.patientgender?.toLowerCase().includes(searchTerm) ||
+        patient.patientphonenumber?.includes(searchTerm) ||
+        patient.patientaddress?.toLowerCase().includes(searchTerm) ||
+        `${patient.patientfirstname} ${patient.patientmiddlename} ${patient.patientlastname}`.toLowerCase().includes(searchTerm) ||
+        `${patient.patientfirstname} ${patient.patientlastname}`.toLowerCase().includes(searchTerm) ||
+        // Enhanced age searching - match "22 years old", "22 yr", "22 y.o.", etc.
+        (ageFromSearch !== null && patient.patientage === ageFromSearch) ||
+        `${patient.patientage} years old`.toLowerCase().includes(searchTerm) ||
+        `${patient.patientage} year old`.toLowerCase().includes(searchTerm) ||
+        // Gender variations
+        (searchTerm.includes('male') && patient.patientgender?.toLowerCase().includes('male')) ||
+        (searchTerm.includes('female') && patient.patientgender?.toLowerCase().includes('female'))
+      );
+
+      // Search in medical documents
+      const documentsMatch = patient.patientmedicaldocuments?.some(doc => 
+        doc.addedbyname?.toLowerCase().includes(searchTerm) ||
+        doc.documentname?.toLowerCase().includes(searchTerm) ||
+        doc.documentdescription?.toLowerCase().includes(searchTerm) ||
+        doc.addedbyclinic?.toLowerCase().includes(searchTerm)
+      );
+
+      // Search in appointment details
+      const appointmentMatch = patientappointments?.some(appointment => {
+        if (appointment.patientappointmentemail !== patient.patientemail) return false;
+        
+        // Search in raw appointment data
+        const rawAppointmentMatch = (
+          // Ambher appointment details
+          appointment.patientambherappointmentdate?.includes(searchTerm) ||
+          appointment.patientambherappointmenttime?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentstatus?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentlocation?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmenttype?.toLowerCase().includes(searchTerm) ||
+          appointment.patientambherappointmentreason?.toLowerCase().includes(searchTerm) ||
+          
+          // Bautista appointment details
+          appointment.patientbautistaappointmentdate?.includes(searchTerm) ||
+          appointment.patientbautistaappointmenttime?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentstatus?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentlocation?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmenttype?.toLowerCase().includes(searchTerm) ||
+          appointment.patientbautistaappointmentreason?.toLowerCase().includes(searchTerm) ||
+          
+          // General appointment details
+          appointment.patientappointmentid?.toString().includes(searchTerm) ||
+          appointment.consultationremarkssubject?.toLowerCase().includes(searchTerm) ||
+          appointment.consultationremarks?.toLowerCase().includes(searchTerm) ||
+          appointment.prescriptionnotes?.toLowerCase().includes(searchTerm)
+        );
+
+        // Search in formatted appointment data (what's actually displayed in the table)
+        const formattedAppointmentMatch = (
+          // Formatted Ambher appointment date and time
+          (appointment.patientambherappointmentdate && 
+           formatappointmatedates(appointment.patientambherappointmentdate)?.toLowerCase().includes(searchTerm)) ||
+          (appointment.patientambherappointmenttime && 
+           formatappointmenttime(appointment.patientambherappointmenttime)?.toLowerCase().includes(searchTerm)) ||
+           
+          // Formatted Bautista appointment date and time
+          (appointment.patientbautistaappointmentdate && 
+           formatappointmatedates(appointment.patientbautistaappointmentdate)?.toLowerCase().includes(searchTerm)) ||
+          (appointment.patientbautistaappointmenttime && 
+           formatappointmenttime(appointment.patientbautistaappointmenttime)?.toLowerCase().includes(searchTerm))
+        );
+
+        return rawAppointmentMatch || formattedAppointmentMatch;
+      });
+
+      return patientMatch || documentsMatch || appointmentMatch;
+    });
+  }
+
+  setfilteredmedicalrecords(filtered);
+  // Reset to first page when searching or filtering
+  setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
+}, [patientdemographics, patientappointments]);
+
+// Reset medical records pagination when search or filter changes
+useEffect(() => {
+  setCurrentPage(prev => ({ ...prev, medicalRecords: 1 }));
+}, [searchmedicaldocuments, medicaldocumentclinicfilter]);
+
+// Filter individual medical documents based on search term and clinic filter
+const filterPatientDocuments = useCallback((documents) => {
+  if (!documents || documents.length === 0) return [];
+
+  let filtered = [...documents];
+
+  // Apply clinic filter
+  if (medicaldocumentclinicfilter !== 'all') {
+    filtered = filtered.filter(doc => {
+      if (medicaldocumentclinicfilter === 'ambher') {
+        return doc.addedbyclinic?.toLowerCase().includes('ambher');
+      } else if (medicaldocumentclinicfilter === 'bautista') {
+        return doc.addedbyclinic?.toLowerCase().includes('bautista');
+      }
+      return true;
+    });
+  }
+
+  // Apply search filter to document-specific fields
+  if (searchmedicaldocuments.trim()) {
+    const searchTerm = searchmedicaldocuments.toLowerCase().trim();
+    filtered = filtered.filter(doc => 
+      doc.addedbyname?.toLowerCase().includes(searchTerm) ||
+      doc.documentname?.toLowerCase().includes(searchTerm) ||
+      doc.documentdescription?.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  return filtered;
+}, [medicaldocumentclinicfilter, searchmedicaldocuments]);
+
+// Update filtered records when search term or clinic filter changes
+useEffect(() => {
+  filterMedicalRecords(searchmedicalrecords);
+}, [searchmedicalrecords, filterMedicalRecords]);
+
+// Initialize filtered records when patientdemographics changes
+useEffect(() => {
+  setfilteredmedicalrecords(patientdemographics || []);
+}, [patientdemographics]);
+
+useEffect(() => {
+  fetchotherclinicrecords();
+}, []);
+
+// Fetch patient-specific medical records when a patient is selected
+useEffect(() => {
+  if (selectedpatientmedicalrecord?.patientemail) {
+    console.log('Patient selected, fetching medical records for:', selectedpatientmedicalrecord.patientemail);
+    fetchPatientMedicalRecords(selectedpatientmedicalrecord.patientemail);
+  } else {
+    console.log('No patient selected, clearing medical records');
+    setotherclinicrecords([]);
+  }
+}, [selectedpatientmedicalrecord?.patientemail, fetchPatientMedicalRecords]);
+
+// Load medical record image by ID
+const loadMedicalRecordImage = useCallback(async (recordId) => {
+  if (!recordId) {
+    console.log('No record ID provided for image loading');
+    return null;
+  }
+
+  try {
+    console.log('Loading medical record image for ID:', recordId);
+    const response = await fetch(`/api/otherclinicrecord/${recordId}?includeImages=true`, {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Loaded medical record with image:', data);
+    
+    return data.patientotherclinicrecordimage || null;
+
+  } catch (error) {
+    console.error('Error loading medical record image:', error);
+    return null;
+  }
+}, [currentusertoken]);
+
+const [otherclinicname, setotherclinicname] = useState('');
+const [othercliniceyespecialist, setothercliniceyespecialist] = useState('');
+const [otherclinicconsultationdate, setotherclinicconsultationdate] = useState('');
+const [otherclinidescription, setotherclinidescription] = useState('');
+const [otherclinicrecordissubmitting, setotherclinicrecordissubmitting] = useState(false);
+
+const submitotherclinicdata = async (e) => {
+e.preventDefault();
+setotherclinicrecordissubmitting(true);
+
+try{
+  // Prepare file URLs from uploaded files
+  const fileUrls = otherclinicfiles.map(file => file.cloudinaryUrl).filter(Boolean);
+  const filePublicIds = otherclinicfiles.map(file => file.cloudinaryPublicId).filter(Boolean);
+  const fileNames = otherclinicfiles.map(file => file.name).filter(Boolean);
+  
+  console.log('File URLs:', fileUrls);
+  console.log('File Public IDs:', filePublicIds);
+  console.log('File Names:', fileNames);
+
+  const otherclinicrecorddata = {
+      patientotherclinicprofilepicture: selectedpatientmedicalrecord.patientprofilepicture,
+      patientothercliniclastname: selectedpatientmedicalrecord.patientlastname,
+      patientotherclinicfirstname: selectedpatientmedicalrecord.patientfirstname,
+      patientotherclinicmiddlename: selectedpatientmedicalrecord.patientmiddlename,
+      patientotherclinicemail: selectedpatientmedicalrecord.patientemail,
+
+      patientotherclinicname: otherclinicname,
+      patientothercliniceyespecialist: othercliniceyespecialist,
+      patientotherclinicconsultationdate: otherclinicconsultationdate,
+      patientotherclinidescription: otherclinidescription,
+      patientotherclinicsubmittedbyfirstname: adminfirstname,
+      patientotherclinicsubmittedbymiddlename: adminmiddlename,
+      patientotherclinicsubmittedbylastname: adminlastname,
+      patientotherclinicsubmittedbytype: currentuserloggedin,
+
+      // Use first file URL for backward compatibility, add all files array
+      patientotherclinicrecordimage: fileUrls[0] || null,
+      patientotherclinicrecordfiles: fileUrls, // Array of all uploaded file URLs
+      patientotherclinicrecordfiles_public_ids: filePublicIds, // Array of all public IDs
+      patientotherclinicrecordfiles_names: fileNames, // Array of original file names
+      
+      }
+  console.log("Submitting Other Clinic Record", otherclinicrecorddata);
+
+  const response = await fetch(`/api/otherclinicrecord`,{
+          method: "POST",
+          headers: {
+            "Content-Type":"application/json",
+            'Authorization': `Bearer ${currentusertoken}`
+          },
+          body: JSON.stringify(otherclinicrecorddata)
+  });
+
+  if(!response.ok){
+    throw new Error(`HTTP error! Error: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('Other Clinic Record Successfully Submitted', result);
+  
+  setSmsToastMessage('Other clinic record submitted successfully!');
+  setSmsToastType('success');
+  setSmsToast(true);
+  
+  await fetchotherclinicrecords();
+  
+  // Reset form
+  setotherclinicselectedimage(false);
+  setotherclinicpreviewimage(null);
+  setotherclinicfiles([]);
+  setotherclinicname("");
+  setothercliniceyespecialist("");
+  setotherclinicconsultationdate("");
+  setotherclinidescription("");
+
+}catch(error) {
+  console.error('Error Submitting Other Clinic Record: ', error);
+  setSmsToastMessage('Failed to submit other clinic record. Please try again.');
+  setSmsToastType('error');
+  setSmsToast(true);
+}finally{
+  setotherclinicrecordissubmitting(false);
+}
+};
+
+const [showdeleteotherclinicrecorddialog, setshowdeleteotherclinicrecorddialog] = useState(false);
+
+
+const deleteotherclinicrecord = async () => {
+try{
+  if(!selectedpatientappointment) return;
+
+  const response = await fetch(`/api/otherclinicrecord/${selectedpatientappointment.otherclinicid}`,{
+    method: 'DELETE',
+    headers:{
+      'Authorization' : `Bearer ${currentusertoken}`
+    }
+  });
+
+  const result = await response.json();
+  if(!response.ok){
+    throw new Error(result.message || "Failed to delete record");
+  }
+
+  await fetchotherclinicrecords();
+  setselectedpatientappointment(null);
+  setshowdeleteotherclinicrecorddialog(false);
+
+}catch(error){
+  console.error("Failed to delete:", error.message);
+}
+}
+
+// Medical Documents Handlers
+const medicaldocumenthandleupload = async (e) => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  // Check if a patient is selected
+  if (!selectedpatientmedicalrecord?.patientemail) {
+    alert('No patient selected');
+    return;
+  }
+
+  // Validate file sizes
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) {
+      alert(`File "${file.name}" is too large. Please select files under 10MB`);
+      return;
+    }
+  }
+
+  setuploaddingmedicaldocument(true);
+
+  const newFiles = [];
+  
+  for (const file of files) {
+    try {
+      // Upload through backend API with authentication
+      const formData = new FormData();
+      formData.append('recordImage', file);
+      formData.append('recordId', selectedpatientmedicalrecord.patientemail);
+      
+      const uploadResponse = await fetch('/api/cloudinary/upload/clinic-record-images', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.message || 'Failed to upload file');
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      console.log('Medical document upload successful:', uploadResult);
+      
+      // Create file object for display
+      const fileObj = {
+        name: file.name,
+        type: file.type.includes('pdf') ? 'pdf' : 'image',
+        size: file.size,
+        originalFile: file,
+        cloudinaryUrl: uploadResult.data?.recordImageUrl || uploadResult.data?.imageUrl,
+        cloudinaryPublicId: uploadResult.data?.recordImage_public_id || uploadResult.data?.public_id,
+        preview: file.type.includes('pdf') ? null : URL.createObjectURL(file)
+      };
+      
+      newFiles.push(fileObj);
+    } catch (error) {
+      console.error(`Error uploading ${file.name}:`, error);
+      alert(`Failed to upload ${file.name}: ${error.message}`);
+    }
+  }
+
+  // Add new files to the existing list
+  setmedicaldocumentfiles(prev => [...prev, ...newFiles]);
+  
+  // Clear the input
+  if (medicaldocumentinputref.current) {
+    medicaldocumentinputref.current.value = "";
+  }
+
+  setuploaddingmedicaldocument(false);
+};
+
+const removeMedicalDocumentFile = (index) => {
+  setmedicaldocumentfiles(prev => {
+    const newFiles = [...prev];
+    const removedFile = newFiles[index];
+    
+    // Revoke object URL to prevent memory leaks
+    if (removedFile.preview) {
+      URL.revokeObjectURL(removedFile.preview);
+    }
+    
+    newFiles.splice(index, 1);
+    return newFiles;
+  });
+};
+
+const medicaldocumenthandleuploadclick = () => {
+  medicaldocumentinputref.current.click();
+};
+
+const medicaldocumenthandleremove = () => {
+  setmedicaldocumentselectedfile(null);
+  setmedicaldocumentpreviewurl(null);
+  if(medicaldocumentinputref.current){
+    medicaldocumentinputref.current.value = "";
+  }
+  window.cloudinaryMedicalDocumentUrl = null;
+}
+
+const submitMedicalDocuments = async (e) => {
+  e.preventDefault();
+  setuploaddingmedicaldocument(true);
+
+  try {
+    if (!medicaldocumentname.trim()) {
+      alert("Please enter a document name");
+      return;
+    }
+
+    if (medicaldocumentfiles.length === 0) {
+      alert("Please upload at least one document");
+      return;
+    }
+
+    // Submit each file as a separate medical document
+    for (const file of medicaldocumentfiles) {
+      const medicaldocumentdata = {
+        patientEmail: selectedpatientmedicalrecord.patientemail,
+        documentname: medicaldocumentname,
+        documentdescription: medicaldocumentdescription,
+        originalname: file.name,
+        filename: file.name,
+        mimetype: file.originalFile.type,
+        size: file.size,
+        documenturl: file.cloudinaryUrl,
+        public_id: file.cloudinaryPublicId,
+        addedbyname: `${adminfirstname} ${adminmiddlename} ${adminlastname}`,
+        addedbyclinic: localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic'),
+        addedbytype: currentuserloggedin,
+        addedbydate: new Date().toISOString()
+      };
+
+      console.log("Submitting medical document:", medicaldocumentdata);
+
+      const response = await fetch(`/api/patientdemographics/medical-documents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: JSON.stringify(medicaldocumentdata)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Medical document successfully submitted:', result);
+    }
+
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record with new medical documents:', updatedPatientRecord);
+          console.log('New medical documents count:', updatedPatientRecord.patientmedicaldocuments?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+
+    // Refresh patient demographics data in the background
+    fetchDemographicsData(true);
+    
+    // Reset form
+    setmedicaldocumentname("");
+    setmedicaldocumentdescription("");
+    setmedicaldocumentfiles([]);
+    setshowpatientaddmedicaldocument(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage(`Successfully uploaded ${medicaldocumentfiles.length} document(s)`);
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error('Error submitting medical documents:', error);
+    
+    // Show error toast
+    setMedicalDocumentToastMessage('Failed to upload medical documents. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  } finally {
+    setuploaddingmedicaldocument(false);
+  }
+};
+
+// Simple debounce function
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+// Helper function to show Bautista record error toast
+const showBautistaErrorToast = (message) => {
+  setBautistaRecordToastMessage(message);
+  setBautistaRecordToastType('error');
+  setBautistaRecordToast(true);
+  
+  setTimeout(() => {
+    setBautistaRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setBautistaRecordToastClosing(true);
+    setTimeout(() => {
+      setBautistaRecordToast(false);
+      setBautistaRecordToastClosing(false);
+      setBautistaRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+// Case number validation function
+const validateCaseNumber = async (caseNo) => {
+  if (!caseNo || caseNo.trim() === '') {
+    setCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // If editing existing record and case number hasn't changed, skip validation
+  if (selectedbautistarecord && selectedbautistarecord.caseNo === caseNo) {
+    setCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  setCaseNoValidation({ isChecking: true, isValid: true, message: 'Checking...' });
+
+  try {
+    const response = await fetch(`/api/patientdemographics/check-case-number/${encodeURIComponent(caseNo)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to check case number');
+    }
+
+    const result = await response.json();
+    
+    if (result.exists) {
+      setCaseNoValidation({ 
+        isChecking: false, 
+        isValid: false, 
+        message: 'Case number already exists' 
+      });
+    } else {
+      setCaseNoValidation({ 
+        isChecking: false, 
+        isValid: true, 
+        message: 'Case number available' 
+      });
+    }
+  } catch (error) {
+    console.error('Error checking case number:', error);
+    setCaseNoValidation({ 
+      isChecking: false, 
+      isValid: true, 
+      message: 'Unable to verify case number' 
+    });
+  }
+};
+
+// Debounced case number validation
+const debouncedValidateCaseNumber = debounce((caseNo) => validateCaseNumber(caseNo), 500);
+
+// Handle case number input change
+const handleCaseNoChange = (e) => {
+  const value = e.target.value;
+  setCaseNoValue(value);
+  
+  if (!selectedbautistarecord) { // Only validate for new records
+    debouncedValidateCaseNumber(value);
+  }
+};
+
+// Submit Bautista Medical Record Function
+const submitBautistaMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedpatientmedicalrecord) {
+      showBautistaErrorToast('Please select a patient first');
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Validate required fields
+    const caseNo = formData.get('caseNo');
+    const patientstatus = formData.get('patientstatus');
+    
+    // Check for required fields
+    if (!caseNo || caseNo.trim() === '') {
+      showBautistaErrorToast('Case Number is required');
+      return;
+    }
+    
+    if (!patientstatus || patientstatus.trim() === '') {
+      showBautistaErrorToast('Patient Status is required');
+      return;
+    }
+    
+    // Extract form data
+    const medicalRecordData = {
+      caseNo: formData.get('caseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Subjective
+      chiefComplaint: formData.get('chiefComplaint'),
+      historyOfPresentIllness: formData.get('historyOfPresentIllness'),
+      hpn: formData.get('hpn') === 'on',
+      dm: formData.get('dm') === 'on',
+      asthma: formData.get('asthma') === 'on',
+      ptb: formData.get('ptb') === 'on',
+      othersHistory: formData.get('othersHistory'),
+      height: formData.get('height'),
+      weight: formData.get('weight'),
+      
+      // Objective - Visual Exam
+      visualExam: {
+        od: {
+          sc: formData.get('visualExam_od_sc'),
+          cc: formData.get('visualExam_od_cc'),
+          ph: formData.get('visualExam_od_ph')
+        },
+        os: {
+          sc: formData.get('visualExam_os_sc'),
+          cc: formData.get('visualExam_os_cc'),
+          ph: formData.get('visualExam_os_ph')
+        }
+      },
+      
+      // Objective - Refraction
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        adds: {
+          right: formData.get('refraction_adds_right'),
+          left: formData.get('refraction_adds_left')
+        },
+        pd: formData.get('refraction_pd')
+      },
+      
+      // Objective - External Exam
+      externalExam: {
+        isEssentiallyNormal: formData.get('externalExam_isEssentiallyNormal') === 'on',
+        details: formData.get('externalExam_details')
+      },
+      
+      // Objective - Biomicroscopy
+      biomicroscopy: {
+        details: formData.get('biomicroscopy_details')
+      },
+      
+      // Objective - Funduscopy
+      funduscopy: {
+        od: {
+          cdRatio: formData.get('funduscopy_od_cdRatio'),
+          details: formData.get('funduscopy_od_details')
+        },
+        os: {
+          cdRatio: formData.get('funduscopy_os_cdRatio'),
+          details: formData.get('funduscopy_os_details')
+        }
+      },
+      
+      // Objective - EOMS
+      eoms: {
+        isFullAndEqual: formData.get('eoms_isFullAndEqual') === 'on',
+        details: formData.get('eoms_details')
+      },
+      
+      // Objective - Tonometry
+      tonometry: {
+        time: formData.get('tonometry_time'),
+        od: formData.get('tonometry_od'),
+        os: formData.get('tonometry_os')
+      },
+      
+      // Diagnosis
+      diagnosis: {
+        description: formData.get('diagnosis_description'),
+        icd10Code: formData.get('diagnosis_icd10Code')
+      },
+      
+      // Plans
+      plans: {
+        diagnostics: formData.get('plans_diagnostics'),
+        therapeutics: formData.get('plans_therapeutics')
+      },
+      
+      // Follow-up & Signature
+      followUp: formData.get('followUp'),
+      mdSignature: formData.get('mdSignature'),
+      
+      // Added by information
+      addedbyname: `${adminfirstname} ${adminmiddlename} ${adminlastname}`,
+      addedbyclinic: localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'Bautista Eye Center',
+      addedbytype: currentuserloggedin
+    };
+
+    console.log("Submitting Bautista medical record:", medicalRecordData);
+
+    const response = await fetch('/api/patientdemographics/bautista-medical-records', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        patientEmail: selectedpatientmedicalrecord.patientemail,
+        medicalRecord: medicalRecordData
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      
+      // Check for specific validation errors
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        // If there are validation errors, show the first one
+        throw new Error(errorData.errors[0].message || errorData.errors[0]);
+      } else if (errorData.message) {
+        throw new Error(errorData.message);
+      } else if (response.status === 400) {
+        throw new Error('Please check all required fields are filled correctly');
+      } else {
+        throw new Error('Failed to save medical record');
+      }
+    }
+
+    const result = await response.json();
+    console.log('Bautista medical record saved successfully:', result);
+
+    // Reset form and close modal
+    e.target.reset();
+    setshowaddbautistaclinicmedicalrecord(false);
+    setselectedbautistarecord(null);
+    setgeneratedCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record with new medical record:', updatedPatientRecord);
+          console.log('New medical records count:', updatedPatientRecord.patientmedicalrecordbautista?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record saved successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    // Clear the generated case number after successful submission
+    setgeneratedCaseNumber('');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error submitting Bautista medical record:', error);
+    
+    // Parse error message for better user feedback
+    let errorMessage = 'Error saving medical record';
+    
+    if (error.message) {
+      if (error.message.includes('400')) {
+        errorMessage = 'Please check all required fields are filled correctly';
+      } else if (error.message.includes('validation')) {
+        errorMessage = 'Form validation failed - please check all required fields';
+      } else if (error.message.includes('required')) {
+        errorMessage = 'Please fill in all required fields';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid data provided - please check your inputs';
+      } else {
+        errorMessage = 'Error saving medical record: ' + error.message;
+      }
+    }
+    
+    // Show error toast
+    setBautistaRecordToastMessage(errorMessage);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+  }
+};
+
+const deleteMedicalDocument = async () => {
+  try {
+    if (!selectedmedicaldocument) return;
+
+    console.log('Deleting medical document:', selectedmedicaldocument);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+    console.log('Document ID:', selectedmedicaldocument._id);
+
+    const deleteUrl = `/api/patientdemographics/medical-documents/${selectedpatientmedicalrecord.patientemail}/${selectedmedicaldocument._id}`;
+    console.log('Delete URL:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    console.log('Delete response status:', response.status);
+    console.log('Delete response ok:', response.ok);
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error('Delete error response:', result);
+      throw new Error(result.message || "Failed to delete document");
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting medical document');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    setselectedmedicaldocument(null);
+    setshowdeletemedicaldocumentdialog(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage('Medical document deleted successfully');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error("Failed to delete medical document:", error.message);
+    
+    // Show error toast instead of alert
+    setMedicalDocumentToastMessage('Failed to delete document. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  }
+};
+
+// Delete Bautista Medical Record Function
+const deleteBautistaMedicalRecord = async () => {
+  try {
+    if (!selectedbautistarecord || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Bautista medical record:', selectedbautistarecord);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+    console.log('Record ID:', selectedbautistarecord._id);
+
+    const deleteUrl = `/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecord._id}`;
+    console.log('Delete URL:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error('Delete error response:', result);
+      throw new Error(result.message || "Failed to delete medical record");
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Bautista medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    setselectedbautistarecord(null);
+    setshowdeletebautistamedicalrecorddialog(false);
+    setshowaddbautistaclinicmedicalrecord(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage('Bautista medical record deleted successfully');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error("Failed to delete Bautista medical record:", error.message);
+    
+    // Show error toast
+    setMedicalDocumentToastMessage('Failed to delete medical record. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  }
+};
+
+// Delete Ambher Medical Record Function
+const deleteAmbherMedicalRecord = async () => {
+  try {
+    if (!selectedambherrecord || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Ambher medical record:', selectedambherrecord);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+    console.log('Record ID:', selectedambherrecord._id);
+
+    const deleteUrl = `/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecord._id}`;
+    console.log('Delete URL:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error('Delete error response:', result);
+      throw new Error(result.message || "Failed to delete medical record");
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Ambher medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    setselectedambherrecord(null);
+    setshowdeleteambhermedicalrecorddialog(false);
+    setshowaddambherclinicmedicalrecord(false);
+
+    // Show success toast
+    setMedicalDocumentToastMessage('Ambher medical record deleted successfully');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(true);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+  } catch (error) {
+    console.error("Failed to delete Ambher medical record:", error.message);
+    
+    // Show error toast
+    setMedicalDocumentToastMessage('Failed to delete medical record. Please try again.');
+    setMedicalDocumentToast(true);
+    setMedicalDocumentIsClicked(false);
+    setMedicalDocumentToastClosing(false);
+    setMedicalDocumentProgressWidth('0%');
+
+    // Start progress bar animation for error toast
+    setTimeout(() => {
+      setMedicalDocumentProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setMedicalDocumentToastClosing(true);
+      setTimeout(() => {
+        setMedicalDocumentToast(false);
+        setMedicalDocumentToastClosing(false);
+        setMedicalDocumentProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  }
+};
+
+// Function to handle viewing/editing existing Bautista medical record
+const viewBautistaRecord = (record) => {
+  console.log('=== viewBautistaRecord START ===');
+  console.log('Input record:', record);
+  console.log('Record type:', record.recordType);
+  
+  // Get current user's clinic
+  const currentUserClinic = staffclinic || ownerownedclinic || localStorage.getItem('staffclinic') || localStorage.getItem('ownerownedclinic');
+  console.log('Current user clinic:', currentUserClinic);
+  console.log('Record added by clinic:', record.addedbyclinic);
+  
+  // Check if current user's clinic can edit this record
+  const isReadOnly = record.addedbyclinic !== currentUserClinic;
+  console.log('Is Bautista form read-only:', isReadOnly);
+  
+  // Clear any Ambher modal state first
+  console.log('Clearing Ambher modal state...');
+  setshowaddambherclinicmedicalrecord(false);
+  setselectedambherrecord(null);
+  setisambherformreadonly(false);
+  
+  // Use setTimeout to ensure state updates are processed
+  setTimeout(() => {
+    console.log('Setting Bautista record and modal...');
+    setselectedbautistarecord(record);
+    setisbautistaformreadonly(isReadOnly);
+    setshowaddbautistaclinicmedicalrecord(true);
+    
+    console.log('=== viewBautistaRecord END ===');
+  }, 10); // Small delay to ensure state updates
+};
+
+// Function to generate next available case number
+const generateNextCaseNumber = async () => {
+  try {
+    const response = await fetch('/api/patientdemographics/next-case-number', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate case number');
+    }
+
+    const result = await response.json();
+    return result.nextCaseNumber;
+  } catch (error) {
+    console.error('Error generating case number:', error);
+    // Fallback to timestamp-based case number
+    return Date.now().toString();
+  }
+};
+
+// Function to handle opening new medical record form
+const openNewMedicalRecordForm = async () => {
+  const nextCaseNumber = await generateNextCaseNumber();
+  setgeneratedCaseNumber(nextCaseNumber);
+  setselectedbautistarecord(null);
+  // Initialize case number validation state
+  setCaseNoValue(nextCaseNumber);
+  setCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddbautistaclinicmedicalrecord(true);
+};
+
+// Function to handle editing existing Bautista medical record
+const editBautistaRecord = (record) => {
+  console.log('Editing Bautista medical record:', record);
+  setselectedbautistarecord(record);
+  setiseditingbautistarecord(true);
+  // Initialize case number validation state with existing record's case number
+  setCaseNoValue(record.patientmedicalrecordbautista?.caseNo || '');
+  setCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddbautistaclinicmedicalrecord(true);
+};
+
+// Function to update existing Bautista medical record
+const updateBautistaMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedbautistarecord || !selectedpatientmedicalrecord) {
+      alert("Invalid record selection");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Extract form data (same structure as submitBautistaMedicalRecord)
+    const medicalRecordData = {
+      caseNo: formData.get('caseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Subjective
+      chiefComplaint: formData.get('chiefComplaint'),
+      historyOfPresentIllness: formData.get('historyOfPresentIllness'),
+      hpn: formData.get('hpn') === 'on',
+      dm: formData.get('dm') === 'on',
+      asthma: formData.get('asthma') === 'on',
+      ptb: formData.get('ptb') === 'on',
+      othersHistory: formData.get('othersHistory'),
+      height: formData.get('height'),
+      weight: formData.get('weight'),
+      
+      // Objective - Visual Exam
+      visualExam: {
+        od: {
+          sc: formData.get('visualExam_od_sc'),
+          cc: formData.get('visualExam_od_cc'),
+          ph: formData.get('visualExam_od_ph')
+        },
+        os: {
+          sc: formData.get('visualExam_os_sc'),
+          cc: formData.get('visualExam_os_cc'),
+          ph: formData.get('visualExam_os_ph')
+        }
+      },
+      
+      // Objective - Refraction
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        adds: {
+          right: formData.get('refraction_adds_right'),
+          left: formData.get('refraction_adds_left')
+        },
+        pd: formData.get('refraction_pd')
+      },
+      
+      // Objective - External Exam
+      externalExam: {
+        isEssentiallyNormal: formData.get('externalExam_isEssentiallyNormal') === 'on',
+        details: formData.get('externalExam_details')
+      },
+      
+      // Objective - Biomicroscopy
+      biomicroscopy: {
+        details: formData.get('biomicroscopy_details')
+      },
+      
+      // Objective - Funduscopy
+      funduscopy: {
+        od: {
+          cdRatio: formData.get('funduscopy_od_cdRatio'),
+          details: formData.get('funduscopy_od_details')
+        },
+        os: {
+          cdRatio: formData.get('funduscopy_os_cdRatio'),
+          details: formData.get('funduscopy_os_details')
+        }
+      },
+      
+      // Objective - EOMS
+      eoms: {
+        isFullAndEqual: formData.get('eoms_isFullAndEqual') === 'on',
+        details: formData.get('eoms_details')
+      },
+      
+      // Objective - Tonometry
+      tonometry: {
+        time: formData.get('tonometry_time'),
+        od: formData.get('tonometry_od'),
+        os: formData.get('tonometry_os')
+      },
+      
+      // Diagnosis
+      diagnosis: {
+        description: formData.get('diagnosis_description'),
+        icd10Code: formData.get('diagnosis_icd10Code')
+      },
+      
+      // Plans
+      plans: {
+        diagnostics: formData.get('plans_diagnostics'),
+        therapeutics: formData.get('plans_therapeutics')
+      },
+      
+      // Follow-up & Signature
+      followUp: formData.get('followUp'),
+      mdSignature: formData.get('mdSignature')
+    };
+
+    console.log("Updating Bautista medical record:", medicalRecordData);
+    console.log("Record ID:", selectedbautistarecord._id);
+
+    const response = await fetch(`/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecord._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(medicalRecordData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update medical record');
+    }
+
+    const result = await response.json();
+    console.log('Bautista medical record updated successfully:', result);
+
+    // Reset states and close modal
+    setselectedbautistarecord(null);
+    setshowaddbautistaclinicmedicalrecord(false);
+    setgeneratedCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after editing medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record updated successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error updating Bautista medical record:', error);
+    
+    // Show error toast
+    setBautistaRecordToastMessage('Error updating medical record: ' + error.message);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+  }
+};
+
+// Function to delete Bautista medical record
+const deletepatientBautistaMedicalRecord = async () => {
+  try {
+    if (!selectedbautistarecordtodelete || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Bautista medical record:', selectedbautistarecordtodelete._id);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+
+    const deleteUrl = `/api/patientdemographics/bautista-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedbautistarecordtodelete._id}`;
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to delete medical record');
+    }
+
+    const deleteResult = await response.json();
+    console.log('Delete success response:', deleteResult);
+
+    // Refresh patient demographics data
+    await fetchDemographicsData(true);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting medical record');
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Reset states and close dialog
+    setselectedbautistarecordtodelete(null);
+    setshowdeletebautistamedicaldialog(false);
+
+    // Show success toast
+    setBautistaRecordToastMessage('Medical record deleted successfully!');
+    setBautistaRecordToastType('success');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+  } catch (error) {
+    console.error('Error deleting Bautista medical record:', error);
+    
+    // Show error toast
+    setBautistaRecordToastMessage('Error deleting medical record: ' + error.message);
+    setBautistaRecordToastType('error');
+    setBautistaRecordToast(true);
+    
+    // Start progress bar animation
+    setTimeout(() => {
+      setBautistaRecordProgressWidth('100%');
+    }, 100);
+
+    // Auto-hide error toast after 4 seconds
+    setTimeout(() => {
+      setBautistaRecordToastClosing(true);
+      setTimeout(() => {
+        setBautistaRecordToast(false);
+        setBautistaRecordToastClosing(false);
+        setBautistaRecordProgressWidth('0%');
+      }, 300);
+    }, 4000);
+  }
+};
+
+//AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS
+//AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS //AMBHER MEDICAL RECORD FUNCTIONS
+
+// Show Ambher toast functions
+const showAmbherSuccessToast = (message) => {
+  setAmbherRecordToastMessage(message);
+  setAmbherRecordToastType('success');
+  setAmbherRecordToast(true);
+  setTimeout(() => {
+    setAmbherRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setAmbherRecordToastClosing(true);
+    setTimeout(() => {
+      setAmbherRecordToast(false);
+      setAmbherRecordToastClosing(false);
+      setAmbherRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+const showAmbherErrorToast = (message) => {
+  setAmbherRecordToastMessage(message);
+  setAmbherRecordToastType('error');
+  setAmbherRecordToast(true);
+  setTimeout(() => {
+    setAmbherRecordProgressWidth('100%');
+  }, 100);
+  setTimeout(() => {
+    setAmbherRecordToastClosing(true);
+    setTimeout(() => {
+      setAmbherRecordToast(false);
+      setAmbherRecordToastClosing(false);
+      setAmbherRecordProgressWidth('0%');
+    }, 300);
+  }, 4000);
+};
+
+// PDF Export Functions
+const exportBautistaPDF = () => {
+  console.log('Exporting Bautista Patient Record to PDF...');
+  
+  // Get the modal content (the white div inside the modal)
+  const modalContent = document.querySelector('#bautistapatientrecord .bg-white');
+  
+  if (!modalContent) {
+    console.error('Bautista modal content not found');
+    alert('Error: Unable to find the medical record content to export');
+    return;
+  }
+
+  // Create a clone for PDF export to avoid modifying the original
+  const clonedContent = modalContent.cloneNode(true);
+  
+  // Remove buttons and close elements from the clone
+  const elementsToRemove = clonedContent.querySelectorAll('.bx-x, #bautistapatientmedicalrecordbuttons, #exportBautistaPDF');
+  elementsToRemove.forEach(el => el.remove());
+  
+  // Apply PDF-safe styles to the clone
+  const applyPDFSafeStyles = (element) => {
+    // Convert problematic classes to inline styles
+    element.style.backgroundColor = element.style.backgroundColor || '#ffffff';
+    element.style.color = element.style.color || '#000000';
+    
+    // Replace potential oklch/modern color functions with safe colors
+    const computedStyle = window.getComputedStyle(element);
+    if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+      element.style.backgroundColor = '#ffffff';
+    }
+    if (computedStyle.color && computedStyle.color.includes('oklch')) {
+      element.style.color = '#000000';
+    }
+    
+    // Apply safe colors for common Tailwind classes
+    if (element.classList.contains('bg-blue-50')) element.style.backgroundColor = '#eff6ff';
+    if (element.classList.contains('bg-gray-50')) element.style.backgroundColor = '#f9fafb';
+    if (element.classList.contains('bg-green-50')) element.style.backgroundColor = '#f0fdf4';
+    if (element.classList.contains('bg-white')) element.style.backgroundColor = '#ffffff';
+    if (element.classList.contains('text-gray-900')) element.style.color = '#111827';
+    if (element.classList.contains('text-gray-700')) element.style.color = '#374151';
+    if (element.classList.contains('text-gray-500')) element.style.color = '#6b7280';
+    if (element.classList.contains('text-red-500')) element.style.color = '#ef4444';
+    if (element.classList.contains('border-blue-200')) element.style.borderColor = '#bfdbfe';
+    if (element.classList.contains('border-green-200')) element.style.borderColor = '#bbf7d0';
+    if (element.classList.contains('border-gray-300')) element.style.borderColor = '#d1d5db';
+    
+    // Process child elements
+    Array.from(element.children).forEach(child => applyPDFSafeStyles(child));
+  };
+  
+  applyPDFSafeStyles(clonedContent);
+  
+  // Temporarily add clone to document for rendering
+  clonedContent.style.position = 'absolute';
+  clonedContent.style.left = '-9999px';
+  clonedContent.style.top = '0';
+  document.body.appendChild(clonedContent);
+
+  // Configure PDF options to match the medical record format
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `Bautista_Medical_Record_${selectedbautistarecord?.caseNo || 'Unknown'}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: clonedContent.scrollWidth,
+      height: clonedContent.scrollHeight,
+      ignoreElements: function(element) {
+        // Ignore any remaining problematic elements
+        return element.classList.contains('bx-x') || 
+               element.id === 'bautistapatientmedicalrecordbuttons' ||
+               element.id === 'exportBautistaPDF';
+      }
+    },
+    jsPDF: { 
+      unit: 'mm', 
+      format: 'a4', 
+      orientation: 'portrait',
+      compress: true
+    }
+  };
+
+  // Generate PDF
+  html2pdf().set(opt).from(clonedContent).save().then(() => {
+    console.log('Bautista PDF exported successfully');
+    // Remove clone from document
+    document.body.removeChild(clonedContent);
+  }).catch((error) => {
+    console.error('Error generating Bautista PDF:', error);
+    alert('Error generating PDF. Please try again.');
+    // Remove clone from document even on error
+    if (document.body.contains(clonedContent)) {
+      document.body.removeChild(clonedContent);
+    }
+  });
+};
+
+const exportAmbherPDF = () => {
+  console.log('Exporting Ambher Patient Record to PDF...');
+  
+  // Get the modal content (the white div inside the modal)
+  const modalContent = document.querySelector('#ambherpatientrecord .bg-white');
+  
+  if (!modalContent) {
+    console.error('Ambher modal content not found');
+    alert('Error: Unable to find the medical record content to export');
+    return;
+  }
+
+  // Create a clone for PDF export to avoid modifying the original
+  const clonedContent = modalContent.cloneNode(true);
+  
+  // Remove buttons and close elements from the clone
+  const elementsToRemove = clonedContent.querySelectorAll('.bx-x, #ambherpatientmedicalrecordbuttons, #exportAmbherPDF');
+  elementsToRemove.forEach(el => el.remove());
+  
+  // Apply PDF-safe styles to the clone
+  const applyPDFSafeStyles = (element) => {
+    // Convert problematic classes to inline styles
+    element.style.backgroundColor = element.style.backgroundColor || '#ffffff';
+    element.style.color = element.style.color || '#000000';
+    
+    // Replace potential oklch/modern color functions with safe colors
+    const computedStyle = window.getComputedStyle(element);
+    if (computedStyle.backgroundColor && computedStyle.backgroundColor.includes('oklch')) {
+      element.style.backgroundColor = '#ffffff';
+    }
+    if (computedStyle.color && computedStyle.color.includes('oklch')) {
+      element.style.color = '#000000';
+    }
+    
+    // Apply safe colors for common Tailwind classes
+    if (element.classList.contains('bg-blue-50')) element.style.backgroundColor = '#eff6ff';
+    if (element.classList.contains('bg-gray-50')) element.style.backgroundColor = '#f9fafb';
+    if (element.classList.contains('bg-green-50')) element.style.backgroundColor = '#f0fdf4';
+    if (element.classList.contains('bg-white')) element.style.backgroundColor = '#ffffff';
+    if (element.classList.contains('text-gray-900')) element.style.color = '#111827';
+    if (element.classList.contains('text-gray-700')) element.style.color = '#374151';
+    if (element.classList.contains('text-gray-500')) element.style.color = '#6b7280';
+    if (element.classList.contains('text-red-500')) element.style.color = '#ef4444';
+    if (element.classList.contains('border-blue-200')) element.style.borderColor = '#bfdbfe';
+    if (element.classList.contains('border-green-200')) element.style.borderColor = '#bbf7d0';
+    if (element.classList.contains('border-gray-300')) element.style.borderColor = '#d1d5db';
+    
+    // Process child elements
+    Array.from(element.children).forEach(child => applyPDFSafeStyles(child));
+  };
+  
+  applyPDFSafeStyles(clonedContent);
+  
+  // Temporarily add clone to document for rendering
+  clonedContent.style.position = 'absolute';
+  clonedContent.style.left = '-9999px';
+  clonedContent.style.top = '0';
+  document.body.appendChild(clonedContent);
+
+  // Configure PDF options to match the medical record format
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `Ambher_Medical_Record_${selectedambherrecord?.ambheropticalcaseno || 'Unknown'}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: clonedContent.scrollWidth,
+      height: clonedContent.scrollHeight,
+      ignoreElements: function(element) {
+        // Ignore any remaining problematic elements
+        return element.classList.contains('bx-x') || 
+               element.id === 'ambherpatientmedicalrecordbuttons' ||
+               element.id === 'exportAmbherPDF';
+      }
+    },
+    jsPDF: { 
+      unit: 'mm', 
+      format: 'a4', 
+      orientation: 'portrait',
+      compress: true
+    }
+  };
+
+  // Generate PDF
+  html2pdf().set(opt).from(clonedContent).save().then(() => {
+    console.log('Ambher PDF exported successfully');
+    // Remove clone from document
+    document.body.removeChild(clonedContent);
+  }).catch((error) => {
+    console.error('Error generating Ambher PDF:', error);
+    alert('Error generating PDF. Please try again.');
+    // Remove clone from document even on error
+    if (document.body.contains(clonedContent)) {
+      document.body.removeChild(clonedContent);
+    }
+  });
+};
+
+// Validate Ambher case number
+const validateAmbherCaseNumber = async (caseNo) => {
+  if (!caseNo || caseNo.trim() === '') {
+    setAmbherCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // Check if it's the currently selected record's case number
+  if (selectedambherrecord && selectedambherrecord.ambheropticalcaseno === caseNo) {
+    setAmbherCaseNoValidation({ isChecking: false, isValid: true, message: '' });
+    return;
+  }
+
+  // Start validation
+  setAmbherCaseNoValidation({ isChecking: true, isValid: true, message: 'Checking...' });
+
+  try {
+    const response = await fetch(`/api/patientdemographics/validate-ambher-case-number/${encodeURIComponent(caseNo)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Validation request failed');
+    }
+
+    const result = await response.json();
+    
+    if (result.exists) {
+      setAmbherCaseNoValidation({ 
+        isChecking: false, 
+        isValid: false, 
+        message: 'Case number already exists' 
+      });
+    } else {
+      setAmbherCaseNoValidation({ 
+        isChecking: false, 
+        isValid: true, 
+        message: 'Case number is available' 
+      });
+    }
+  } catch (error) {
+    console.error('Error validating case number:', error);
+    setAmbherCaseNoValidation({ 
+      isChecking: false, 
+      isValid: true, 
+      message: 'Unable to verify case number' 
+    });
+  }
+};
+
+// Debounced Ambher case number validation
+const debouncedValidateAmbherCaseNumber = debounce((caseNo) => validateAmbherCaseNumber(caseNo), 500);
+
+// Handle Ambher case number input change
+const handleAmbherCaseNoChange = (e) => {
+  const value = e.target.value;
+  setAmbherCaseNoValue(value);
+  
+  if (!selectedambherrecord) { // Only validate for new records
+    debouncedValidateAmbherCaseNumber(value);
+  }
+};
+
+// Submit Ambher Medical Record Function
+const submitAmbherMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedpatientmedicalrecord) {
+      showAmbherErrorToast('Please select a patient first');
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Validate required fields
+    const caseNo = formData.get('ambherCaseNo');
+    const patientstatus = formData.get('patientstatus');
+    
+    // Check for required fields
+    if (!caseNo || caseNo.trim() === '') {
+      showAmbherErrorToast('Case Number is required');
+      return;
+    }
+    
+    if (!patientstatus || patientstatus.trim() === '') {
+      showAmbherErrorToast('Patient Status is required');
+      return;
+    }
+    
+    // Extract form data based on the provided prescription format
+    const medicalRecordData = {
+      ambheropticalcaseno: formData.get('ambherCaseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Prescription data based on the image format
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        pd: formData.get('refraction_pd'),
+        bc: formData.get('refraction_bc'),
+        dia: formData.get('refraction_dia'),
+        tint: formData.get('refraction_tint'),
+        type: formData.get('refraction_type')
+      },
+      
+      // Additional notes/remarks
+      remarks: formData.get('remarks'),
+      lensRecommendation: formData.get('lensRecommendation'),
+      
+      // Added by information
+      addedbyname: `${adminfirstname} ${adminmiddlename} ${adminlastname}`,
+      addedbyclinic: localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic') || 'Ambher Optical',
+      addedbytype: currentuserloggedin
+    };
+
+    console.log("Submitting Ambher medical record:", medicalRecordData);
+
+    const response = await fetch('/api/patientdemographics/ambher-medical-records', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        patientEmail: selectedpatientmedicalrecord.patientemail,
+        medicalRecord: medicalRecordData
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      
+      // Check for specific validation errors
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        // If there are validation errors, show the first one
+        throw new Error(errorData.errors[0].message || errorData.errors[0]);
+      } else if (errorData.message) {
+        throw new Error(errorData.message);
+      } else if (response.status === 400) {
+        throw new Error('Please check all required fields are filled correctly');
+      } else {
+        throw new Error('Failed to save medical record');
+      }
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record saved successfully:', result);
+
+    // Reset form and close modal
+    e.target.reset();
+    setshowaddambherclinicmedicalrecord(false);
+    setselectedambherrecord(null);
+    setgeneratedAmbherCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record with new Ambher medical record:', updatedPatientRecord);
+          console.log('New Ambher medical records count:', updatedPatientRecord.patientmedicalrecordambher?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record saved successfully!');
+
+    // Clear the generated case number after successful submission
+    setgeneratedAmbherCaseNumber('');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error submitting Ambher medical record:', error);
+    
+    // Parse error message for better user feedback
+    let errorMessage = 'Error saving medical record';
+    
+    if (error.message) {
+      if (error.message.includes('400')) {
+        errorMessage = 'Please check all required fields are filled correctly';
+      } else if (error.message.includes('validation')) {
+        errorMessage = 'Form validation failed - please check all required fields';
+      } else if (error.message.includes('required')) {
+        errorMessage = 'Please fill in all required fields';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid data provided - please check your inputs';
+      } else {
+        errorMessage = 'Error saving medical record: ' + error.message;
+      }
+    }
+    
+    // Show error toast
+    showAmbherErrorToast(errorMessage);
+  }
+};
+
+// Function to handle viewing/editing existing Ambher medical record
+const viewAmbherRecord = (record) => {
+  console.log('=== viewAmbherRecord START ===');
+  console.log('Input record:', record);
+  console.log('Record type:', record.recordType);
+  
+  // Get current user's clinic
+  const currentUserClinic = staffclinic || ownerownedclinic || localStorage.getItem('staffclinic') || localStorage.getItem('ownerownedclinic');
+  console.log('Current user clinic:', currentUserClinic);
+  console.log('Record added by clinic:', record.addedbyclinic);
+  
+  // Check if current user's clinic can edit this record
+  const isReadOnly = record.addedbyclinic !== currentUserClinic;
+  console.log('Is Ambher form read-only:', isReadOnly);
+  
+  // Clear any Bautista modal state first
+  console.log('Clearing Bautista modal state...');
+  setshowaddbautistaclinicmedicalrecord(false);
+  setselectedbautistarecord(null);
+  setisbautistaformreadonly(false);
+  
+  // Use setTimeout to ensure state updates are processed
+  setTimeout(() => {
+    // Ensure the record has the correct structure for Ambher form
+    const ambherRecord = {
+      ...record,
+      ambheropticalcaseno: record.ambheropticalcaseno || record.caseNo // Ensure case number is properly mapped
+    };
+    
+    console.log('Processed Ambher record:', ambherRecord);
+    console.log('Ambher case number:', ambherRecord.ambheropticalcaseno);
+    
+    setselectedambherrecord(ambherRecord);
+    setisambherformreadonly(isReadOnly);
+    
+    // Set Ambher case number validation state for editing
+    setAmbherCaseNoValue(ambherRecord.ambheropticalcaseno || ambherRecord.caseNo || '');
+    setAmbherCaseNoValidation({
+      isChecking: false,
+      isValid: true,
+      message: ''
+    });
+    
+    console.log('Setting Ambher modal to true...');
+    setshowaddambherclinicmedicalrecord(true);
+    
+    console.log('=== viewAmbherRecord END ===');
+  }, 10); // Small delay to ensure state updates
+};
+
+// Function to generate next available Ambher case number
+const generateNextAmbherCaseNumber = async () => {
+  try {
+    const response = await fetch('/api/patientdemographics/next-ambher-case-number', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate case number');
+    }
+
+    const result = await response.json();
+    return result.nextCaseNumber;
+  } catch (error) {
+    console.error('Error generating Ambher case number:', error);
+    // Fallback to timestamp-based case number (simple numeric format)
+    return Date.now().toString().slice(-6); // Use last 6 digits of timestamp
+  }
+};
+
+// Function to handle opening new Ambher medical record form
+const openNewAmbherMedicalRecordForm = async () => {
+  const nextCaseNumber = await generateNextAmbherCaseNumber();
+  setgeneratedAmbherCaseNumber(nextCaseNumber);
+  setselectedambherrecord(null);
+  // Initialize case number validation state
+  setAmbherCaseNoValue(nextCaseNumber);
+  setAmbherCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddambherclinicmedicalrecord(true);
+};
+
+// Function to edit existing Ambher medical record
+const editAmbherRecord = (record) => {
+  console.log('Editing Ambher medical record:', record);
+  setselectedambherrecord(record);
+  // Set case number value for editing
+  setAmbherCaseNoValue(record.patientmedicalrecordambher?.ambheropticalcaseno || '');
+  setAmbherCaseNoValidation({
+    isChecking: false,
+    isValid: true,
+    message: ''
+  });
+  setshowaddambherclinicmedicalrecord(true);
+};
+
+// Update Ambher Medical Record Function
+const updateAmbherMedicalRecord = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!selectedambherrecord || !selectedpatientmedicalrecord) {
+      showAmbherErrorToast('Missing record information');
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    
+    // Extract form data (same structure as submitAmbherMedicalRecord)
+    const medicalRecordData = {
+      ambheropticalcaseno: formData.get('ambherCaseNo'),
+      patientstatus: formData.get('patientstatus'),
+      patientphilhealthcategory: formData.get('patientphilhealthcategory'),
+      hmo: formData.get('hmo'),
+      
+      // Prescription data
+      refraction: {
+        od: {
+          sphere: formData.get('refraction_od_sphere'),
+          cylinder: formData.get('refraction_od_cylinder'),
+          axis: formData.get('refraction_od_axis')
+        },
+        os: {
+          sphere: formData.get('refraction_os_sphere'),
+          cylinder: formData.get('refraction_os_cylinder'),
+          axis: formData.get('refraction_os_axis')
+        },
+        pd: formData.get('refraction_pd'),
+        bc: formData.get('refraction_bc'),
+        dia: formData.get('refraction_dia'),
+        tint: formData.get('refraction_tint'),
+        type: formData.get('refraction_type')
+      },
+      
+      // Additional notes/remarks
+      remarks: formData.get('remarks'),
+      lensRecommendation: formData.get('lensRecommendation')
+    };
+
+    console.log("Updating Ambher medical record:", medicalRecordData);
+    console.log("Record ID:", selectedambherrecord._id);
+
+    const response = await fetch(`/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecord._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(medicalRecordData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update medical record');
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record updated successfully:', result);
+
+    // Reset states and close modal
+    setselectedambherrecord(null);
+    setshowaddambherclinicmedicalrecord(false);
+    setgeneratedAmbherCaseNumber('');
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        // Fetch the updated patient record directly from the API
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after editing Ambher medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record updated successfully!');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error updating Ambher medical record:', error);
+    
+    // Show error toast
+    showAmbherErrorToast('Error updating medical record: ' + error.message);
+  }
+};
+
+// Function to delete Ambher medical record
+const deletepatientAmbherMedicalRecord = async () => {
+  try {
+    if (!selectedambherrecordtodelete || !selectedpatientmedicalrecord) return;
+
+    console.log('Deleting Ambher medical record:', selectedambherrecordtodelete._id);
+    console.log('Patient email:', selectedpatientmedicalrecord.patientemail);
+
+    const deleteUrl = `/api/patientdemographics/ambher-medical-records/${selectedpatientmedicalrecord.patientemail}/${selectedambherrecordtodelete._id}`;
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to delete medical record');
+    }
+
+    const result = await response.json();
+    console.log('Ambher medical record deleted successfully:', result);
+
+    // Close delete dialog
+    setshowdeleteambhermedicaldialog(false);
+    setselectedambherrecordtodelete(null);
+    
+    // Update the selected patient record with the refreshed data
+    if (selectedpatientmedicalrecord?.patientemail) {
+      try {
+        const updatedPatientResponse = await fetch(`/api/patientdemographics/patientemail/${selectedpatientmedicalrecord.patientemail}`, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (updatedPatientResponse.ok) {
+          const updatedPatientRecord = await updatedPatientResponse.json();
+          setselectedpatientmedicalrecord(updatedPatientRecord);
+          console.log('Updated selected patient record after deleting Ambher medical record:', updatedPatientRecord);
+        }
+      } catch (error) {
+        console.error('Error fetching updated patient record:', error);
+      }
+    }
+    
+    // Show success toast
+    showAmbherSuccessToast('Medical record deleted successfully!');
+
+    // Refresh patient demographics in the background
+    fetchDemographicsData(true);
+
+  } catch (error) {
+    console.error('Error deleting Ambher medical record:', error);
+    
+    // Show error toast
+    showAmbherErrorToast('Error deleting medical record: ' + error.message);
+  }
+};
+
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+//CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT //CATEGORIES MANAGEMENT
+
+// Set default inventory table based on user role and clinic
+const getDefaultInventoryTable = () => {
+if (isAmbherOnlyUser()) {
+  return 'ambherinventorytable';
+} else if (isBautistaOnlyUser()) {
+  return 'bautistainventorytable';
+}
+return 'ambherinventorytable'; // Default for admin
+};
+
+const [activeinventorytable, setactiveinventorytable] = useState(getDefaultInventoryTable());
+const showinventorytable = (inventorytableid) => {
+    setactiveinventorytable(inventorytableid);
+};
+
+// Update default tables when user data changes
+useEffect(() => {
+if (userDataLoaded) {
+  // Update inventory table based on current user clinic
+  const staffClinic = localStorage.getItem('staffclinic');
+  const ownerClinic = localStorage.getItem('ownerclinic');
+  
+  if (currentuserloggedin === "Staff") {
+    if (staffClinic === 'Bautista Eye Center' || staffclinic === 'Bautista Eye Center') {
+      setactiveinventorytable('bautistainventorytable');
+    } else if (staffClinic === 'Ambher Optical' || staffclinic === 'Ambher Optical') {
+      setactiveinventorytable('ambherinventorytable');
+    }
+  } else if (currentuserloggedin === "Owner") {
+    if (ownerClinic === 'Bautista Eye Center' || ownerownedclinic === 'Bautista Eye Center') {
+      setactiveinventorytable('bautistainventorytable');
+    } else if (ownerClinic === 'Ambher Optical' || ownerownedclinic === 'Ambher Optical') {
+      setactiveinventorytable('ambherinventorytable');
+    }
+  }
+  // Admin users keep the default 'ambherinventorytable'
+}
+}, [userDataLoaded, staffclinic, ownerownedclinic, currentuserloggedin]);
+
+const [activeambherinventorycategorytable, setactiveambherinventorycategorytable] = useState('all');
+const showambherinventorycategory = (ambherinventorycategorytableid) => {
+    setactiveambherinventorycategorytable(ambherinventorycategorytableid);
+};
+
+const [showaddambherinventorycategorydialog, setshowaddambherinventorycategorydialog] = useState(false);
+const [showaddambheraddinventorycategory, setshowaddambheraddinventorycategory] = useState(false);
+const [showdeleteambherinventorycategorydialog, setshowdeleteambherinventorycategorydialog] = useState(false);
+const [ambherinventorycategorynameset, setambherinventorycategorynameset] = useState("");
+const [ambherinventorycategoryissubmitting, setambherinventorycategoryissubmitting] = useState(false);
+const [ambherinventorycategorynamecheck, setambherinventorycategorynamecheck] = useState(false);
+const [ambherinventorycategorynameerror, setambherinventorycategorynameerror] = useState(false);
+const [ambherinventorycategorynameexist, setambherinventorycategorynameexist] = useState(false);
+const [ambherinventorycategorylist, setambherinventorycategorylist] = useState([]);
+const [loadingambherinventorycategorylist, setloadingambherinventorycategorylist] = useState(true);
+const [selectedambherinventorycategory, setselectedambherinventorycategory] = useState(null);
+
+
+
+
+const currentuserdata = JSON.parse(localStorage.getItem("currentuser")) || {};
+
+
+//INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME 
+const submitambherinventorycategory = async (e) => {
+  e.preventDefault();
+  setambherinventorycategoryissubmitting(true);
+
+try{
+
+
+  const ambherinventorycategorydata = {
+
+
+    ambherinventorycategoryname: ambherinventorycategorynameset,
+
+    ambherinventorycategoryaddedbyprofilepicture: currentuserdata.profilepicture || '',
+    ambherinventorycategoryaddedbylastname: currentuserdata.lastname || '',
+    ambherinventorycategoryaddedbyfirstname: currentuserdata.firstname || '',
+    ambherinventorycategoryaddedbymiddlename: currentuserdata.middlename || '',
+    ambherinventorycategoryaddedbytype: currentuserdata.type || '',
+    ambherinventorycategoryaddedbyemail: currentuserdata.email || '',
+
+
+
+
+  }
+
+  console.log(ambherinventorycategorydata);
+  const response = await fetch(`/api/ambherinventorycategory`,{
+    method: 'POST',
+    headers: {
+      'Content-Type' : 'application/json',
+      'Authorization': `Bearer ${currentusertoken}`
+    },
+    body: JSON.stringify(ambherinventorycategorydata)
+  });
+
+
+
+  if(!response.ok){
+    throw new Error(`Response fetching error! Error: ${response.status}`);
+
+  }
+
+
+  const result = await response.json();
+  console.log('Ambher Inventory Category insertion successful: ', result);
+
+  setambherinventorycategorylist(prev => [result, ...prev]);
+  setambherinventorycategorynameset("");
+  setshowaddambheraddinventorycategory(false);
+
+
+}catch(error) {
+  console.error('Error Ambher Inventory Category insertion: ', error);
+  setambherinventorycategoryissubmitting(false);
+}finally{
+  setambherinventorycategoryissubmitting(false);
+}
+};
+
+
+
+
+//Checks If Category Name is Already is Existing
+useEffect(() => {
+let ismounted = true;
+const checkambherinventorycategoryname = async () => {
+  const categoryname = ambherinventorycategorynameset.trim();
+
+  if(!categoryname){
+    if(ismounted){
+      setambherinventorycategorynameerror(false);
+      setambherinventorycategorynameexist(false);
+    }
+    return;
+  }
+
+
+  if (ismounted) setambherinventorycategorynamecheck(true);
+
+  try{
+    const response = await fetch(`/api/ambherinventorycategory/ambherinventorycategoryname/${encodeURIComponent(categoryname)}`);
+ 
+    if(!ismounted) return;
+
+    const data = await response.json();
+
+    if(response.ok){
+      setambherinventorycategorynameerror(true);
+      setambherinventorycategorynameexist(true);
+    }else if(response.status === 404){
+      setambherinventorycategorynameerror(false);
+      setambherinventorycategorynameexist(false);
+    }
+  
+  }catch(error){
+    if(ismounted){
+      setambherinventorycategorynameerror(false);
+      setambherinventorycategorynameexist(false);
+    }
+  }finally{
+    if(ismounted) setambherinventorycategorynamecheck(false);
+  }
+
+};
+
+
+const timer = setTimeout(checkambherinventorycategoryname, 500);
+return () => {
+  ismounted = false;
+  clearTimeout(timer);
+};
+}, [ambherinventorycategorynameset])
+
+
+
+//Fetching Ambher Inventory Categories
+useEffect(() => {
+const fetchambhercategories = async () => {
+  // Skip fetching if user is Bautista-only (except for Admin)
+  if (isBautistaOnlyUser() && currentuserloggedin !== "Admin") {
+    setloadingambherinventorycategorylist(false);
+    return;
+  }
+  
+  try{
+    const response = await fetch(`/api/ambherinventorycategory`);
+    if(!response.ok) throw new Error("Failed to fetch Ambher Inevntory Categories");
+
+    const data = await response.json();
+    setambherinventorycategorylist(data);
+  
+  }catch(error){
+    console.error("Error fetching ambher categories: ", error);
+  }finally{
+    setloadingambherinventorycategorylist(false);
+  }
+};
+fetchambhercategories();
+}, []);
+
+
+
+const fetchambherinventorycategories = async () => {
+try{
+  const response = await fetch(`/api/ambherinventorycategory`);
+  if(!response.ok) throw new Error("Failed to retrieve ambher inventory categories");
+
+  const data = await response.json();
+  setambherinventorycategorylist(data);
+}catch(error){
+  console.error("Fetching ambherinventorycategory failed", error);
+}finally{
+  setloadingambherinventorycategorylist(false);
+}
+};
+
+useEffect(() => {
+fetchambherinventorycategories();
+}, []);
+
+
+
+//Delete Ambher Inventory Category
+const deleteambherinventorycategory = async () => {
+if(!selectedambherinventorycategory) return;
+
+try{
+  const response = await fetch(`/api/ambherinventorycategory/${selectedambherinventorycategory.ambherinventorycategoryid}`,{
+    method: 'DELETE',
+    headers:{
+      'Authorization' : `Bearer ${currentusertoken}`
+    }
+  });
+
+  if(!response.ok) throw new Error("Failed to delete ambher inventory category");
+
+  setambherinventorycategorylist(prev => prev.filter(cat => cat.ambherinventorycategoryid !== selectedambherinventorycategory.ambherinventorycategoryid));
+  setshowdeleteambherinventorycategorydialog(false);
+  setselectedambherinventorycategory(null);
+
+}catch(error){
+  console.error("Ambher Inventory Category Delete Failed: ", error);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const [activebautistainventorycategorytable, setactivebautistainventorycategorytable] = useState('all');
+const showbautistainventorycategory = (bautistainventorycategorytableid) => {
+    setactivebautistainventorycategorytable(bautistainventorycategorytableid);
+};
+
+// Advanced filters state for Bautista
+const [activeBautistaProductFilter, setActiveBautistaProductFilter] = useState('all');
+const [bautistaPriceSortingProducts, setBautistaPriceSortingProducts] = useState('none');
+const [bautistaQuantitySortingProducts, setBautistaQuantitySortingProducts] = useState('none');
+
+const bautistaProductFilters = [
+  { id: 'polarized', label: 'Polarized' },
+  { id: 'kids', label: 'Kids' },
+  { id: 'adults', label: 'Adults' },
+  { id: 'men', label: "Men's" },
+  { id: 'women', label: "Women's" },
+  { id: 'unisex', label: 'Unisex' }
+];
+
+const [showaddbautistainventorycategorydialog, setshowaddbautistainventorycategorydialog] = useState(false);
+const [showaddbautistaaddinventorycategory, setshowaddbautistaaddinventorycategory] = useState(false);
+const [showdeletebautistainventorycategorydialog, setshowdeletebautistainventorycategorydialog] = useState(false);
+const [bautistainventorycategorynameset, setbautistainventorycategorynameset] = useState("");
+const [bautistainventorycategoryissubmitting, setbautistainventorycategoryissubmitting] = useState(false);
+const [bautistainventorycategorynamecheck, setbautistainventorycategorynamecheck] = useState(false);
+const [bautistainventorycategorynameerror, setbautistainventorycategorynameerror] = useState(false);
+const [bautistainventorycategorynameexist, setbautistainventorycategorynameexist] = useState(false);
+const [bautistainventorycategorylist, setbautistainventorycategorylist] = useState([]);
+const [loadingbautistainventorycategorylist, setloadingbautistainventorycategorylist] = useState(true);
+const [selectedbautistainventorycategory, setselectedbautistainventorycategory] = useState(null);
+
+
+
+
+
+//INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME //INSERT AMBHER INVENTORY CATEGORY NAME 
+const submitbautistainventorycategory = async (e) => {
+  e.preventDefault();
+  setbautistainventorycategoryissubmitting(true);
+
+try{
+
+
+  const bautistainventorycategorydata = {
+
+
+    bautistainventorycategoryname: bautistainventorycategorynameset,
+
+    bautistainventorycategoryaddedbyprofilepicture: currentuserdata.profilepicture || '',
+    bautistainventorycategoryaddedbylastname: currentuserdata.lastname || '',
+    bautistainventorycategoryaddedbyfirstname: currentuserdata.firstname || '',
+    bautistainventorycategoryaddedbymiddlename: currentuserdata.middlename || '',
+    bautistainventorycategoryaddedbytype: currentuserdata.type || '',
+    bautistainventorycategoryaddedbyemail: currentuserdata.email || '',
+
+
+
+
+  }
+
+  console.log(bautistainventorycategorydata);
+  const response = await fetch(`/api/bautistainventorycategory`,{
+    method: 'POST',
+    headers: {
+      'Content-Type' : 'application/json',
+      'Authorization': `Bearer ${currentusertoken}`
+    },
+    body: JSON.stringify(bautistainventorycategorydata)
+  });
+
+
+
+  if(!response.ok){
+    throw new Error(`Response fetching error! Error: ${response.status}`);
+
+  }
+
+
+  const result = await response.json();
+  console.log('Bautista Inventory Category insertion successful: ', result);
+
+  setbautistainventorycategorylist(prev => [result, ...prev]);
+  setbautistainventorycategorynameset("");
+  setshowaddbautistaaddinventorycategory(false);
+
+
+}catch(error) {
+  console.error('Error Bautista Inventory Category insertion: ', error);
+  setbautistainventorycategoryissubmitting(false);
+}finally{
+  setbautistainventorycategoryissubmitting(false);
+}
+};
+
+
+
+
+//Checks If Category Name is Already is Existing
+useEffect(() => {
+let ismounted = true;
+const checkbautistainventorycategoryname = async () => {
+  const categoryname = bautistainventorycategorynameset.trim();
+
+  if(!categoryname){
+    if(ismounted){
+      setbautistainventorycategorynameerror(false);
+      setbautistainventorycategorynameexist(false);
+    }
+    return;
+  }
+
+
+  if (ismounted) setbautistainventorycategorynamecheck(true);
+
+  try{
+    const response = await fetch(`/api/bautistainventorycategory/bautistainventorycategoryname/${encodeURIComponent(categoryname)}`);
+ 
+    if(!ismounted) return;
+
+    const data = await response.json();
+
+    if(response.ok){
+      setbautistainventorycategorynameerror(true);
+      setbautistainventorycategorynameexist(true);
+    }else if(response.status === 404){
+      setbautistainventorycategorynameerror(false);
+      setbautistainventorycategorynameexist(false);
+    }
+  
+  }catch(error){
+    if(ismounted){
+      setbautistainventorycategorynameerror(false);
+      setbautistainventorycategorynameexist(false);
+    }
+  }finally{
+    if(ismounted) setbautistainventorycategorynamecheck(false);
+  }
+
+};
+
+
+const timer = setTimeout(checkbautistainventorycategoryname, 500);
+return () => {
+  ismounted = false;
+  clearTimeout(timer);
+};
+}, [bautistainventorycategorynameset])
+
+
+
+//Fetching Bautista Inventory Categories
+useEffect(() => {
+const fetchbautistacategories = async () => {
+  // Skip fetching if user is Ambher-only (except for Admin)
+  if (isAmbherOnlyUser() && currentuserloggedin !== "Admin") {
+    setloadingbautistainventorycategorylist(false);
+    return;
+  }
+  
+  try{
+    const response = await fetch(`/api/bautistainventorycategory`);
+    if(!response.ok) throw new Error("Failed to fetch Bautista Inevntory Categories");
+
+
+
+    const data = await response.json();
+    setbautistainventorycategorylist(data);
+  
+    console.log("Bautista categories", data);
+
+  }catch(error){
+    console.error("Error fetching bautista categories: ", error);
+  }finally{
+    setloadingbautistainventorycategorylist(false);
+  }
+};
+fetchbautistacategories();
+}, []);
+
+
+
+const fetchbautistainventorycategories = async () => {
+try{
+  const response = await fetch(`/api/bautistainventorycategory`);
+  if(!response.ok) throw new Error("Failed to retrieve bautista inventory categories");
+
+  const data = await response.json();
+  setbautistainventorycategorylist(data);
+}catch(error){
+  console.error("Fetching bautistainventorycategory failed", error);
+}finally{
+  setloadingbautistainventorycategorylist(false);
+}
+};
+
+useEffect(() => {
+fetchbautistainventorycategories();
+}, []);
+
+
+
+//Delete Bautista Inventory Category
+const deletebautistainventorycategory = async () => {
+if(!selectedbautistainventorycategory) return;
+
+try{
+  const response = await fetch(`/api/bautistainventorycategory/${selectedbautistainventorycategory.bautistainventorycategoryid}`,{
+    method: 'DELETE',
+    headers:{
+      'Authorization' : `Bearer ${currentusertoken}`
+    }
+  });
+
+  if(!response.ok) throw new Error("Failed to delete bautista inventory category");
+
+  setbautistainventorycategorylist(prev => prev.filter(cat => cat.bautistainventorycategoryid !== selectedbautistainventorycategory.bautistainventorycategoryid));
+  setshowdeletebautistainventorycategorydialog(false);
+  setselectedbautistainventorycategory(null);
+
+}catch(error){
+  console.error("Bautista Inventory Category Delete Failed: ", error);
+}
+}
+
+
+
+
+
+
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+//INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
+const [showaddambherinventoryproductdialog, setshowaddambherinventoryproductdialog] = useState(false);
+const [ambherinventorycategorynamebox, setambherinventorycategorynamebox] = useState("");
+const [addambherinventoryproductname, setaddambherinventoryproductname] = useState("");
+const [addambherinventoryproductbrand, setaddambherinventoryproductbrand] = useState("");
+const [addambherinventoryproductmodelnumber, setaddambherinventoryproductmodelnumber] = useState("");
+const [addambherinventoryproductdescription, setaddambherinventoryproductdescription] = useState("");
+const [addambherinventoryproductprice, setaddambherinventoryproductprice] = useState();
+const [addambherinventoryproductquantity, setaddambherinventoryproductquantity] = useState();
+const [addambherinventoryproductimageselectedimages, setaddambherinventoryproductimageselectedimages] = useState([]);
+const [addambherinventoryproductimagepreviewimages, setaddambherinventoryproductimagepreviewimages] = useState([]);
+const [currentimageindex, setcurrentimageindex] = useState(0);
+const addambherinventoryproductimageimageinputref = useRef(null);
+const [ambherinventoryproductissubmitting, setambherinventoryproductissubmitting] = useState(false);
+const [ambherinventoryproductimagesuploading, setambherinventoryproductimagesuploading] = useState(false);
+const [ambherinventoryproducts, setambherinventoryproducts] = useState([]);
+const [ambherloadingproducts, setambherloadingproducts] = useState(true);
+const [selectedambherproduct, setselectedambherproduct] = useState(null);
+const [showdeleteambherproduct, setshowdeleteambherproduct] = useState(false);
+const [selecteddeleteambherproduct, setselecteddeleteambherproduct] = useState([]);
+const [wishlistCounts, setWishlistCounts] = useState({});
+
+
+
+
+
+
+
+
+
+
+const fetchWishlistCounts = async (productIds, clinicType) => {
+try {
+  const idsParam = Array.isArray(productIds) ? productIds.join(',') : productIds;
+  
+  const response = await fetch(
+    `/api/patientwishlistinventoryproduct/wishlist-count/${idsParam}/${clinicType}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch wishlist counts. Status: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data;
+} catch(error) {
+  console.error("Error fetching wishlist counts:", error);
+  return Array.isArray(productIds) ? {} : 0;
+}
+};
+
+
+useEffect(() => {
+const fetchAllWishlistCounts = async () => {
+  try {
+    const productIds = ambherinventoryproducts.map(p => p.ambherinventoryproductid);
+    if (productIds.length === 0) return;
+    
+    const counts = await fetchWishlistCounts(productIds, 'ambher');
+    setWishlistCounts(prev => ({ ...prev, ...counts }));
+  } catch(error) {
+    console.error("Error fetching wishlist counts:", error);
+  }
+};
+
+if (ambherinventoryproducts.length > 0) {
+  fetchAllWishlistCounts();
+}
+}, [ambherinventoryproducts, currentusertoken]);
+
+
+
+
+
+
+
+
+
+
+// --- INVENTORY PRODUCT FILTERS STATE & LOGIC ---
+// Place these near your other inventory-related useState declarations
+const [activeProductFilter, setActiveProductFilter] = useState('all');
+const [quantitySortingProducts, setQuantitySortingProducts] = useState('none');
+const productFilters = [
+
+{ id: 'polarized', label: 'Polarized' },
+{ id: 'kids', label: 'Kids' },
+{ id: 'adults', label: 'Adults' },
+{ id: 'men', label: 'Men' },
+{ id: 'women', label: 'Women' },
+{ id: 'unisex', label: 'Unisex' },
+
+
+];
+
+// Filtering logic for Ambher products
+const [pricesortingProducts, setpricesortingProducts] = useState('none');
+const filteredAmbherProducts = ambherinventoryproducts.filter(product => {
+// Category filter
+const categoryMatch =
+  activeambherinventorycategorytable === 'all' ||
+  product.ambherinventoryproductcategory === activeambherinventorycategorytable;
+
+// Product filter
+const nameDesc = `${product.ambherinventoryproductname || ''} ${product.ambherinventoryproductdescription || ''}`.toLowerCase();
+if (activeProductFilter === 'all') return categoryMatch;
+if (activeProductFilter === 'eyeclinic')
+  return categoryMatch && (product.ambherinventoryproducttype?.toLowerCase().includes('clinic') || nameDesc.includes('clinic'));
+if (activeProductFilter === 'polarized')
+  return categoryMatch && (product.ambherinventoryproducttype?.toLowerCase().includes('polarized') || nameDesc.includes('polarized'));
+if (activeProductFilter === 'kids')
+  return categoryMatch && (product.ambherinventoryproductfor?.toLowerCase().includes('kid') || nameDesc.includes('kid'));
+if (activeProductFilter === 'adults')
+  return categoryMatch && (product.ambherinventoryproductfor?.toLowerCase().includes('adult') || nameDesc.includes('adult'));
+if (activeProductFilter === 'men')
+  return categoryMatch && (product.ambherinventoryproductfor?.toLowerCase().includes('men') || nameDesc.includes('men'));
+if (activeProductFilter === 'women')
+  return categoryMatch && (product.ambherinventoryproductfor?.toLowerCase().includes('women') || nameDesc.includes('women'));
+if (activeProductFilter === 'unisex')
+  return categoryMatch && (product.ambherinventoryproductfor?.toLowerCase().includes('unisex') || nameDesc.includes('unisex'));
+if (activeProductFilter === 'frameshape')
+  return categoryMatch && (product.ambherinventoryproductframeshape?.toLowerCase().length > 0 || nameDesc.includes('shape'));
+if (activeProductFilter === 'faceshape')
+  return categoryMatch && (product.ambherinventoryproductfaceshape?.toLowerCase().length > 0 || nameDesc.includes('face'));
+if (activeProductFilter === 'accessories')
+  return categoryMatch && (product.ambherinventoryproducttype?.toLowerCase().includes('accessor') || nameDesc.includes('accessor'));
+return categoryMatch;
+});
+
+// Sorting logic for Ambher products
+const sortedFilteredAmbherProducts = [...filteredAmbherProducts].sort((a, b) => {
+  // Priority 1: Out of stock WITH urgent restock alert (highest priority)
+  const aOutOfStockWithAlert = (a.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[a.ambherinventoryproductid] ?? 0) > 0;
+  const bOutOfStockWithAlert = (b.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[b.ambherinventoryproductid] ?? 0) > 0;
+  
+  if (aOutOfStockWithAlert && !bOutOfStockWithAlert) return -1;
+  if (!aOutOfStockWithAlert && bOutOfStockWithAlert) return 1;
+  if (aOutOfStockWithAlert && bOutOfStockWithAlert) {
+    // Both have urgent alerts, sort by wishlist count (higher count first)
+    return (wishlistCounts[b.ambherinventoryproductid] ?? 0) - (wishlistCounts[a.ambherinventoryproductid] ?? 0);
+  }
+  
+  // Priority 2: Out of stock WITHOUT urgent restock alert
+  const aOutOfStockNoAlert = (a.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[a.ambherinventoryproductid] ?? 0) === 0;
+  const bOutOfStockNoAlert = (b.ambherinventoryproductquantity || 0) === 0 && (wishlistCounts[b.ambherinventoryproductid] ?? 0) === 0;
+  
+  if (aOutOfStockNoAlert && !bOutOfStockNoAlert) return -1;
+  if (!aOutOfStockNoAlert && bOutOfStockNoAlert) return 1;
+  
+  // Priority 3: Critical stock (≤3 items)
+  const aCritical = (a.ambherinventoryproductquantity || 0) > 0 && (a.ambherinventoryproductquantity || 0) <= 3;
+  const bCritical = (b.ambherinventoryproductquantity || 0) > 0 && (b.ambherinventoryproductquantity || 0) <= 3;
+  
+  if (aCritical && !bCritical) return -1;
+  if (!aCritical && bCritical) return 1;
+  if (aCritical && bCritical) {
+    // Both critical, sort by quantity (lower first - more urgent)
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  }
+  
+  // Priority 4: Low stock (4-6 items)
+  const aLowStock = (a.ambherinventoryproductquantity || 0) >= 4 && (a.ambherinventoryproductquantity || 0) <= 6;
+  const bLowStock = (b.ambherinventoryproductquantity || 0) >= 4 && (b.ambherinventoryproductquantity || 0) <= 6;
+  
+  if (aLowStock && !bLowStock) return -1;
+  if (!aLowStock && bLowStock) return 1;
+  if (aLowStock && bLowStock) {
+    // Both low stock, sort by quantity (lower first)
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  }
+  
+  // Priority 5: Regular inventory - apply user-selected sorting
+  if (pricesortingProducts === 'Highesttolowest') {
+    return (b.ambherinventoryproductprice || 0) - (a.ambherinventoryproductprice || 0);
+  } else if (pricesortingProducts === 'Lowesttohighest') {
+    return (a.ambherinventoryproductprice || 0) - (b.ambherinventoryproductprice || 0);
+  } else if (quantitySortingProducts === 'Highesttolowest') {
+    return (b.ambherinventoryproductquantity || 0) - (a.ambherinventoryproductquantity || 0);
+  } else if (quantitySortingProducts === 'Lowesttohighest') {
+    return (a.ambherinventoryproductquantity || 0) - (b.ambherinventoryproductquantity || 0);
+  } else {
+    // Default: highest to lowest quantity
+    return (b.ambherinventoryproductquantity || 0) - (a.ambherinventoryproductquantity || 0);
+  }
+});
+
+// Filter out of stock products if needed
+const finalFilteredAmbherProducts = (() => {
+  let filteredProducts;
+  if (quantitySortingProducts === 'Outofstock') {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => (product.ambherinventoryproductquantity || 0) === 0);
+  } else if (quantitySortingProducts === 'LowStock') {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => {
+      const qty = product.ambherinventoryproductquantity || 0;
+      return qty >= 4 && qty <= 6;
+    });
+  } else if (quantitySortingProducts === 'CriticalStock') {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => {
+      const qty = product.ambherinventoryproductquantity || 0;
+      return qty >= 1 && qty <= 3;
+    });
+  } else if (quantitySortingProducts === 'Archived') {
+    filteredProducts = sortedFilteredAmbherProducts.filter(product => product.isArchived === true);
+  } else {
+    filteredProducts = sortedFilteredAmbherProducts;
+  }
+  
+  // Sort to place archived products at the end (only if not specifically filtering for archived products)
+  if (quantitySortingProducts !== 'Archived') {
+    return filteredProducts.sort((a, b) => {
+      if (a.isArchived && !b.isArchived) return 1; // a is archived, b is not - a comes after b
+      if (!a.isArchived && b.isArchived) return -1; // a is not archived, b is - a comes before b
+      return 0; // Both have same archive status, maintain current order
+    });
+  }
+  
+  return filteredProducts;
+})();
+
+const ambherinventoryproductcount = ambherinventoryproducts.filter(
+product => product.ambherinventoryproductquantity <= 6
+);
+
+
+
+
+//PRODUCT IMAGE HANDLING
+
+const addambherinventoryproductimagehandlechange = async (e) => {
+const files = Array.from(e.target.files);
+
+if(addambherinventoryproductimageselectedimages.length + files.length > 5){
+  alert("Maximum of only 5 product images");
+  return;
+}
+
+const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
+const maximagefile = 2;
+
+for(const file of files) {
+  if(!imagefiletype.includes(file.type)) {
+    alert("Please select image files (JPG / PNG)");
+    return;
+  }
+
+  if(file.size > maximagefile * 1024 * 1024) {
+    alert("Please select images under 2MB");
+    return;
+  }
+}
+
+// Set loading state to true when starting upload
+setambherinventoryproductimagesuploading(true);
+
+try{
+  const compressedimages = await Promise.all(
+    files.map(async (file) => {
+      const imageconfiguration = {
+        maximagemb: 1,
+        maxworh: 800,
+        useWebWorker: true,
+        initialQuality: 0.8
+      };
+
+      const compressedimage = await imageCompression(file, imageconfiguration);
+      return compressedimage;
+    })
+  );
+
+  // Upload compressed images to Cloudinary
+  try {
+    const uploadResult = await uploadProductImages(compressedimages, 'temp', 'ambher');
+    
+    // Debug logging
+    console.log('Upload result:', uploadResult);
+    console.log('Image URLs:', uploadResult.data?.imageUrls);
+    
+    // Use Cloudinary URLs as preview images instead of BASE64
+    const cloudinaryUrls = uploadResult.data?.imageUrls;
+    
+    // Ensure cloudinaryUrls is an array before spreading
+    const urlsArray = Array.isArray(cloudinaryUrls) ? cloudinaryUrls : (cloudinaryUrls ? [cloudinaryUrls] : []);
+    
+    console.log('URLs array:', urlsArray);
+    
+    setaddambherinventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
+    setaddambherinventoryproductimagepreviewimages(prev => {
+      const updated = [...prev, ...urlsArray];
+      console.log('Updated preview images:', updated);
+      return updated;
+    });
+    setcurrentimageindex(0);
+    
+  } catch (uploadError) {
+    console.error("Cloudinary upload failed: ", uploadError.message);
+    alert("Image upload failed. Please try again.");
+    return;
+  }
+
+}catch(error){
+  console.error("Image compression failed: ", error.message);
+  alert("Image compression failed");
+} finally {
+  // Always set loading state to false when finished (success or error)
+  setambherinventoryproductimagesuploading(false);
+}
+
+if(addambherinventoryproductimageimageinputref.current){
+   addambherinventoryproductimageimageinputref.current.value = "";
+}
+
+};
+
+
+
+
+
+
+
+//PREVIOUS  IMAGE
+const handlepreviousimage = (e) => {
+e.preventDefault(); 
+if (selectedambherproduct) {
+  if (!selectedambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
+  setcurrentimageindex(prev => prev === 0 ? selectedambherproduct.ambherinventoryproductimagepreviewimages.length - 1 : prev - 1 );
+
+} else {
+  if (!addambherinventoryproductimagepreviewimages?.length) return;
+  setcurrentimageindex(prev => prev === 0 ? addambherinventoryproductimagepreviewimages.length - 1 : prev - 1 );
+}
+};
+
+//NEXT IMAGE
+const handlenextimage = (e) => {
+e.preventDefault();
+if (selectedambherproduct) {
+  if (!selectedambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
+  setcurrentimageindex(prev => prev === selectedambherproduct.ambherinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+
+} else {
+  if (!addambherinventoryproductimagepreviewimages?.length) return;
+  setcurrentimageindex(prev => prev === addambherinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1);
+
+}
+};
+
+
+
+
+
+const addambherinventoryproductimagehandleremove = (indextoremove) => {
+setaddambherinventoryproductimageselectedimages(prev =>
+  prev.filter((_, index) => index !== indextoremove)
+);
+
+setaddambherinventoryproductimagepreviewimages(prev =>
+  prev.filter((_, index) => index !== indextoremove)
+);
+
+setcurrentimageindex(prev =>
+  prev >= indextoremove && prev > 0 ? prev - 1 : prev
+);
+};
+
+const addambherinventoryproductimagehandleuploadclick = () => {
+addambherinventoryproductimageimageinputref.current.click();
+};
+
+const resetaddambherinventoryproductdialog = () => {
+setambherinventorycategorynamebox("");
+setaddambherinventoryproductname("");
+setaddambherinventoryproductbrand("");
+setaddambherinventoryproductmodelnumber("");
+setaddambherinventoryproductdescription("");
+setaddambherinventoryproductprice("");
+setaddambherinventoryproductquantity("");
+setaddambherinventoryproductimageselectedimages([]);
+setaddambherinventoryproductimagepreviewimages([]);
+setcurrentimageindex(0);
+setmessage('');
+setselectedambherproduct(null);
+};
+
+
+//FETCHING PRODUCTS
+
+const fetchambherproducts = async () => {
+  // Skip fetching if user is Bautista-only (except for Admin)
+  if (isBautistaOnlyUser() && currentuserloggedin !== "Admin") {
+    setambherloadingproducts(false);
+    return;
+  }
+  
+  try{
+    const response = await fetch(`/api/ambherinventoryproduct`, {
+      headers:{
+        'Authorization' : `Bearer ${currentusertoken}`
+      }
+    });
+    
+    if(!response.ok) throw new Error("Failed to fetch products");
+
+    const data = await response.json();
+    setambherinventoryproducts(data);
+     setambherloadingproducts(false);
+  }catch(error){
+    console.error("Failed fetching products: ", error);
+    setambherloadingproducts(false);
+  }
+};
+
+
+useEffect(() => {
+  fetchambherproducts();
+}, []);
+
+
+
+//INSERTING PRODUCT
+const handlesubmitaddambherinventoryproduct = async (e) => {
+
+  e.preventDefault();
+  setambherinventoryproductissubmitting(true);
+
+try{
+
+ if (addambherinventoryproductimagepreviewimages.length === 0) {
+  alert("Upload at least 1 product image");
+         return;
+  }
+
+
+  const ambherinventoryproductdata = {
+
+
+    ambherinventoryproductcategory: ambherinventorycategorynamebox || '',
+    ambherinventoryproductname: addambherinventoryproductname || '',
+    ambherinventoryproductbrand:  addambherinventoryproductbrand || '',
+    ambherinventoryproductmodelnumber: addambherinventoryproductmodelnumber || '',
+    ambherinventoryproductdescription: addambherinventoryproductdescription || '',
+    ambherinventoryproductprice: Number(addambherinventoryproductprice) || 0,
+    ambherinventoryproductquantity:  Number(addambherinventoryproductquantity) || 0,
+    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || [],
+
+
+
+    ambherinventoryproductaddedbyprofilepicture: currentuserdata.profilepicture || '',
+    ambherinventoryproductaddedbylastname: currentuserdata.lastname || '',
+    ambherinventoryproductaddedbyfirstname: currentuserdata.firstname || '',
+    ambherinventoryproductaddedbymiddlename: currentuserdata.middlename || '',
+    ambherinventoryproductaddedbytype: currentuserdata.type || '',
+    ambherinventoryproductaddedbyemail: currentuserdata.email || '',
+     ambherinventoryproductwishlistcount: 0 ,
+
+
+
+  }
+
+  console.log('=== SUBMISSION DEBUG ===');
+  console.log('ambherinventoryproductdata:', ambherinventoryproductdata);
+  console.log('currentusertoken:', currentusertoken ? 'EXISTS' : 'MISSING');
+  console.log('addambherinventoryproductimagepreviewimages length:', addambherinventoryproductimagepreviewimages.length);
+  console.log('Form data values:');
+  console.log('- category:', ambherinventorycategorynamebox);
+  console.log('- name:', addambherinventoryproductname);
+  console.log('- brand:', addambherinventoryproductbrand);
+  console.log('- model:', addambherinventoryproductmodelnumber);
+  console.log('- price:', addambherinventoryproductprice);
+  console.log('- quantity:', addambherinventoryproductquantity);
+  console.log('========================');
+  
+  const response = await fetch(`/api/ambherinventoryproduct`,{
+    method: 'POST',
+    headers: {
+      'Content-Type' : 'application/json',
+      'Authorization': `Bearer ${currentusertoken}`
+    },
+    body: JSON.stringify(ambherinventoryproductdata)
+  });
+
+  console.log('Response status:', response.status);
+  console.log('Response ok:', response.ok);
+
+  if(!response.ok){
+    // Try to get the error message from the response
+    let errorMessage = `Response fetching error! Error: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      console.log('Server error response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (parseError) {
+      console.log('Could not parse error response:', parseError);
+      // Try to get text response
+      try {
+        const errorText = await response.text();
+        console.log('Server error text:', errorText);
+        if (errorText) errorMessage = errorText;
+      } catch (textError) {
+        console.log('Could not get error text:', textError);
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+
+  const result = await response.json();
+  console.log('Ambher Inventory Product insertion successful: ', result);
+  await fetchambherproducts();
+  resetaddambherinventoryproductdialog();
+  setshowaddambherinventoryproductdialog(false);
+
+}catch(error) {
+  console.error('Error Ambher Inventory Product insertion: ', error);
+  setambherinventoryproductissubmitting(false);
+}finally{
+  setambherinventoryproductissubmitting(false);
+}
+
+};
+
+//UPDATING PRODUCT
+const handleupdateambherinventoryproduct = async (e) => {
+
+  e.preventDefault();
+  setambherinventoryproductissubmitting(true);
+
+try{
+ 
+ if (!selectedambherproduct) {
+    throw new Error ("No product is selected"); 
+  }
+
+
+  const updateambherproduct = {
+
+
+    ambherinventoryproductcategory: ambherinventorycategorynamebox || '',
+    ambherinventoryproductname: addambherinventoryproductname || '',
+    ambherinventoryproductbrand:  addambherinventoryproductbrand || '',
+    ambherinventoryproductmodelnumber: addambherinventoryproductmodelnumber || '',
+    ambherinventoryproductdescription: addambherinventoryproductdescription || '',
+    ambherinventoryproductprice: Number(addambherinventoryproductprice) || 0,
+    ambherinventoryproductquantity:  Number(addambherinventoryproductquantity) || 0,
+    ambherinventoryproductimagepreviewimages: addambherinventoryproductimagepreviewimages || [],
+
+
+
+    ambherinventoryproductaddedbyprofilepicture: currentuserdata.profilepicture || '',
+    ambherinventoryproductaddedbylastname: currentuserdata.lastname || '',
+    ambherinventoryproductaddedbyfirstname: currentuserdata.firstname || '',
+    ambherinventoryproductaddedbymiddlename: currentuserdata.middlename || '',
+    ambherinventoryproductaddedbytype: currentuserdata.type || '',
+    ambherinventoryproductaddedbyemail: currentuserdata.email || '',
+    ambherinventoryproductwishlistcount: 0 ,
+
+
+  }
+
+
+  const response = await fetch(`/api/ambherinventoryproduct/${selectedambherproduct.ambherinventoryproductid}`,{
+    method: 'PUT',
+    headers: {
+      'Content-Type' : 'application/json',
+      'Authorization': `Bearer ${currentusertoken}`
+    },
+    body: JSON.stringify(updateambherproduct)
+  });
+
+
+
+  if(!response.ok){
+    throw new Error(`Response fetching error! Error: ${response.status}`);
+
+  }
+
+
+  const result = await response.json();
+  console.log('Ambher Inventory Product updated successful: ', result);
+
+
+  const updatedambherproduct = ambherinventoryproducts.map(product =>
+    product.ambherinventoryproductid === selectedambherproduct.ambherinventoryproductid ? result : product);
+
+  setambherinventoryproducts(updatedambherproduct);
+  resetaddambherinventoryproductdialog();
+  setshowaddambherinventoryproductdialog(false);
+  setselectedambherproduct(null);
+
+}catch(error) {
+  console.error('Error Ambher Inventory Product update: ', error);
+  setambherinventoryproductissubmitting(false);
+}finally{
+  setambherinventoryproductissubmitting(false);
+}
+
+};
+
+
+//DELETE PRODUCT
+const deleteambherproduct = async (e) => {
+  e.preventDefault();
+
+  if(!selectedambherproduct) {
+    alert("No product is selected");
+    return;
+  }
+
+  try{
+    const response = await fetch(`/api/ambherinventoryproduct/${selectedambherproduct.ambherinventoryproductid}`,{
+      method: 'DELETE',
+      headers: {
+        'Authorization' : `Bearer ${currentusertoken}`
+      }
+    });
+
+    if(!response.ok) {
+      throw new Error(`Failed to delete ambher product: ${response.status}`);
+    }
+
+
+    setambherinventoryproducts(prev => prev.filter(product => product.ambherinventoryproductid!== selectedambherproduct.ambherinventoryproductid));
+    resetaddambherinventoryproductdialog();
+    setselectedambherproduct(null);
+    setshowaddambherinventoryproductdialog(false);
+    setshowdeleteambherproduct(false);
+
+ 
+ 
+  }catch(error){
+    console.error('Error deleting ambher product:', error);
+  }
+
+};
+
+// Archive Ambher Product Handler
+const handleArchiveAmbherProduct = async (product) => {
+  try {
+    const response = await fetch(`/api/ambherinventoryproduct/${product.ambherinventoryproductid}/archive`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to archive product: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Update the product in the local state
+    setambherinventoryproducts(prev => 
+      prev.map(p => 
+        p.ambherinventoryproductid === product.ambherinventoryproductid 
+          ? { ...p, isArchived: true }
+          : p
+      )
+    );
+
+    // Update the selected product if it's the same one
+    if (selectedambherproduct?.ambherinventoryproductid === product.ambherinventoryproductid) {
+      setselectedambherproduct(prev => ({ ...prev, isArchived: true }));
+    }
+
+
+  } catch (error) {
+    console.error('Error archiving ambher product:', error);
+    alert('Failed to archive product');
+  }
+};
+
+// Unarchive Ambher Product Handler
+const handleUnarchiveAmbherProduct = async (product) => {
+  try {
+    const response = await fetch(`/api/ambherinventoryproduct/${product.ambherinventoryproductid}/unarchive`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to unarchive product: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Update the product in the local state
+    setambherinventoryproducts(prev => 
+      prev.map(p => 
+        p.ambherinventoryproductid === product.ambherinventoryproductid 
+          ? { ...p, isArchived: false }
+          : p
+      )
+    );
+
+    // Update the selected product if it's the same one
+    if (selectedambherproduct?.ambherinventoryproductid === product.ambherinventoryproductid) {
+      setselectedambherproduct(prev => ({ ...prev, isArchived: false }));
+    }
+
+
+  } catch (error) {
+    console.error('Error unarchiving ambher product:', error);
+    alert('Failed to unarchive product');
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const [showaddbautistainventoryproductdialog, setshowaddbautistainventoryproductdialog] = useState(false);
+const [bautistainventorycategorynamebox, setbautistainventorycategorynamebox] = useState("");
+const [addbautistainventoryproductname, setaddbautistainventoryproductname] = useState("");
+const [addbautistainventoryproductbrand, setaddbautistainventoryproductbrand] = useState("");
+const [addbautistainventoryproductmodelnumber, setaddbautistainventoryproductmodelnumber] = useState("");
+const [addbautistainventoryproductdescription, setaddbautistainventoryproductdescription] = useState("");
+const [addbautistainventoryproductprice, setaddbautistainventoryproductprice] = useState();
+const [addbautistainventoryproductquantity, setaddbautistainventoryproductquantity] = useState();
+const [addbautistainventoryproductimageselectedimages, setaddbautistainventoryproductimageselectedimages] = useState([]);
+const [addbautistainventoryproductimagepreviewimages, setaddbautistainventoryproductimagepreviewimages] = useState([]);
+const [bautistacurrentimageindex, setbautistacurrentimageindex] = useState(0);
+const addbautistainventoryproductimageimageinputref = useRef(null);
+const [bautistainventoryproductissubmitting, setbautistainventoryproductissubmitting] = useState(false);
+const [bautistainventoryproductimagesuploading, setbautistainventoryproductimagesuploading] = useState(false);
+const [bautistainventoryproducts, setbautistainventoryproducts] = useState([]);
+const [bautistaloadingproducts, setbautistaloadingproducts] = useState(true);
+const [selectedbautistaproduct, setselectedbautistaproduct] = useState(null);
+const [showdeletebautistaproduct, setshowdeletebautistaproduct] = useState(false);
+const [selecteddeletebautistaproduct, setselecteddeletebautistaproduct] = useState([]);
+        
+        
+// Filtering logic for Bautista products
+const filteredBautistaProducts = bautistainventoryproducts.filter(product => {
+const categoryMatch =
+  activebautistainventorycategorytable === 'all' ||
+  product.bautistainventoryproductcategory === activebautistainventorycategorytable;
+
+const nameDesc = `${product.bautistainventoryproductname || ''} ${product.bautistainventoryproductdescription || ''}`.toLowerCase();
+if (activeProductFilter === 'all') return categoryMatch;
+if (activeProductFilter === 'eyeclinic')
+  return categoryMatch && (product.bautistainventoryproducttype?.toLowerCase().includes('clinic') || nameDesc.includes('clinic'));
+if (activeProductFilter === 'polarized')
+  return categoryMatch && (product.bautistainventoryproducttype?.toLowerCase().includes('polarized') || nameDesc.includes('polarized'));
+if (activeProductFilter === 'kids')
+  return categoryMatch && (product.bautistainventoryproductfor?.toLowerCase().includes('kid') || nameDesc.includes('kid'));
+if (activeProductFilter === 'adults')
+  return categoryMatch && (product.bautistainventoryproductfor?.toLowerCase().includes('adult') || nameDesc.includes('adult'));
+if (activeProductFilter === 'men')
+  return categoryMatch && (product.bautistainventoryproductfor?.toLowerCase().includes('men') || nameDesc.includes('men'));
+if (activeProductFilter === 'women')
+  return categoryMatch && (product.bautistainventoryproductfor?.toLowerCase().includes('women') || nameDesc.includes('women'));
+if (activeProductFilter === 'unisex')
+  return categoryMatch && (product.bautistainventoryproductfor?.toLowerCase().includes('unisex') || nameDesc.includes('unisex'));
+if (activeProductFilter === 'frameshape')
+  return categoryMatch && (product.bautistainventoryproductframeshape?.toLowerCase().length > 0 || nameDesc.includes('shape'));
+if (activeProductFilter === 'faceshape')
+  return categoryMatch && (product.bautistainventoryproductfaceshape?.toLowerCase().length > 0 || nameDesc.includes('face'));
+if (activeProductFilter === 'accessories')
+  return categoryMatch && (product.bautistainventoryproducttype?.toLowerCase().includes('accessor') || nameDesc.includes('accessor'));
+return categoryMatch;
+});
+
+// Sorting logic for Bautista products
+const sortedFilteredBautistaProducts = [...filteredBautistaProducts].sort((a, b) => {
+  // Priority 1: Out of stock WITH urgent restock alert (highest priority)
+  const aOutOfStockWithAlert = (a.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[a.bautistainventoryproductid] ?? 0) > 0;
+  const bOutOfStockWithAlert = (b.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[b.bautistainventoryproductid] ?? 0) > 0;
+  
+  if (aOutOfStockWithAlert && !bOutOfStockWithAlert) return -1;
+  if (!aOutOfStockWithAlert && bOutOfStockWithAlert) return 1;
+  if (aOutOfStockWithAlert && bOutOfStockWithAlert) {
+    // Both have urgent alerts, sort by wishlist count (higher count first)
+    return (wishlistCounts[b.bautistainventoryproductid] ?? 0) - (wishlistCounts[a.bautistainventoryproductid] ?? 0);
+  }
+  
+  // Priority 2: Out of stock WITHOUT urgent restock alert
+  const aOutOfStockNoAlert = (a.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[a.bautistainventoryproductid] ?? 0) === 0;
+  const bOutOfStockNoAlert = (b.bautistainventoryproductquantity || 0) === 0 && (wishlistCounts[b.bautistainventoryproductid] ?? 0) === 0;
+  
+  if (aOutOfStockNoAlert && !bOutOfStockNoAlert) return -1;
+  if (!aOutOfStockNoAlert && bOutOfStockNoAlert) return 1;
+  
+  // Priority 3: Critical stock (≤3 items)
+  const aCritical = (a.bautistainventoryproductquantity || 0) > 0 && (a.bautistainventoryproductquantity || 0) <= 3;
+  const bCritical = (b.bautistainventoryproductquantity || 0) > 0 && (b.bautistainventoryproductquantity || 0) <= 3;
+  
+  if (aCritical && !bCritical) return -1;
+  if (!aCritical && bCritical) return 1;
+  if (aCritical && bCritical) {
+    // Both critical, sort by quantity (lower first - more urgent)
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  }
+  
+  // Priority 4: Low stock (4-6 items)
+  const aLowStock = (a.bautistainventoryproductquantity || 0) >= 4 && (a.bautistainventoryproductquantity || 0) <= 6;
+  const bLowStock = (b.bautistainventoryproductquantity || 0) >= 4 && (b.bautistainventoryproductquantity || 0) <= 6;
+  
+  if (aLowStock && !bLowStock) return -1;
+  if (!aLowStock && bLowStock) return 1;
+  if (aLowStock && bLowStock) {
+    // Both low stock, sort by quantity (lower first)
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  }
+  
+  // Priority 5: Regular inventory - apply user-selected sorting
+  if (bautistaPriceSortingProducts === 'Highesttolowest') {
+    return (b.bautistainventoryproductprice || 0) - (a.bautistainventoryproductprice || 0);
+  } else if (bautistaPriceSortingProducts === 'Lowesttohighest') {
+    return (a.bautistainventoryproductprice || 0) - (b.bautistainventoryproductprice || 0);
+  } else if (bautistaQuantitySortingProducts === 'Highesttolowest') {
+    return (b.bautistainventoryproductquantity || 0) - (a.bautistainventoryproductquantity || 0);
+  } else if (bautistaQuantitySortingProducts === 'Lowesttohighest') {
+    return (a.bautistainventoryproductquantity || 0) - (b.bautistainventoryproductquantity || 0);
+  } else {
+    // Default: highest to lowest quantity
+    return (b.bautistainventoryproductquantity || 0) - (a.bautistainventoryproductquantity || 0);
+  }
+});
+
+// Filter out of stock products if needed
+const finalFilteredBautistaProducts = (() => {
+  let filteredProducts;
+  if (bautistaQuantitySortingProducts === 'Outofstock') {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => (product.bautistainventoryproductquantity || 0) === 0);
+  } else if (bautistaQuantitySortingProducts === 'LowStock') {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => {
+      const qty = product.bautistainventoryproductquantity || 0;
+      return qty >= 4 && qty <= 6;
+    });
+  } else if (bautistaQuantitySortingProducts === 'CriticalStock') {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => {
+      const qty = product.bautistainventoryproductquantity || 0;
+      return qty >= 1 && qty <= 3;
+    });
+  } else if (bautistaQuantitySortingProducts === 'Archived') {
+    filteredProducts = sortedFilteredBautistaProducts.filter(product => product.isArchived === true);
+  } else {
+    filteredProducts = sortedFilteredBautistaProducts;
+  }
+  
+  // Sort to place archived products at the end (only if not specifically filtering for archived products)
+  if (bautistaQuantitySortingProducts !== 'Archived') {
+    return filteredProducts.sort((a, b) => {
+      if (a.isArchived && !b.isArchived) return 1; // a is archived, b is not - a comes after b
+      if (!a.isArchived && b.isArchived) return -1; // a is not archived, b is - a comes before b
+      return 0; // Both have same archive status, maintain current order
+    });
+  }
+  
+  return filteredProducts;
+})();
+
+const bautistainventoryproductcount = bautistainventoryproducts.filter(
+product => product.bautistainventoryproductquantity <= 6
+);
+
+
+useEffect(() => {
+const fetchAllWishlistCounts = async () => {
+  try {
+    const productIds = bautistainventoryproducts.map(p => p.bautistainventoryproductid);
+    if (productIds.length === 0) return;
+    
+    const counts = await fetchWishlistCounts(productIds, 'bautista');
+    setWishlistCounts(prev => ({ ...prev, ...counts }));
+  } catch(error) {
+    console.error("Error fetching wishlist counts:", error);
+  }
+};
+
+if (bautistainventoryproducts.length > 0) {
+  fetchAllWishlistCounts();
+}
+}, [bautistainventoryproducts, currentusertoken]);
+
+
+
+
+
+        
+        //PRODUCT IMAGE HANDLING
+        
+        const addbautistainventoryproductimagehandlechange = async (e) => {
+          const files = Array.from(e.target.files);
+        
+          if(addbautistainventoryproductimageselectedimages.length + files.length > 5){
+            alert("Maximum of only 5 product images");
+            return;
+          }
+        
+          const imagefiletype = ['image/png', 'image/jpeg', 'image/webp'];
+          const maximagefile = 2;
+        
+          for(const file of files) {
+            if(!imagefiletype.includes(file.type)) {
+              alert("Please select image files (JPG / PNG)");
+              return;
+            }
+        
+            if(file.size > maximagefile * 1024 * 1024) {
+              alert("Please select images under 2MB");
+              return;
+            }
+          }
+        
+          // Set loading state to true when starting upload
+          setbautistainventoryproductimagesuploading(true);
+        
+          try{
+            const compressedimages = await Promise.all(
+              files.map(async (file) => {
+                const imageconfiguration = {
+                  maximagemb: 1,
+                  maxworh: 800,
+                  useWebWorker: true,
+                  initialQuality: 0.8
+                };
+        
+                const compressedimage = await imageCompression(file, imageconfiguration);
+                return compressedimage;
+              })
+            );
+        
+            // Upload compressed images to Cloudinary
+            try {
+              const uploadResult = await uploadProductImages(compressedimages, 'temp', 'bautista');
+              
+              // Debug logging
+              console.log('Bautista Upload result:', uploadResult);
+              console.log('Bautista Image URLs:', uploadResult.data?.imageUrls);
+              
+              // Use Cloudinary URLs as preview images instead of BASE64
+              const cloudinaryUrls = uploadResult.data?.imageUrls;
+              
+              // Ensure cloudinaryUrls is an array before spreading
+              const urlsArray = Array.isArray(cloudinaryUrls) ? cloudinaryUrls : (cloudinaryUrls ? [cloudinaryUrls] : []);
+              
+              console.log('Bautista URLs array:', urlsArray);
+              
+              setaddbautistainventoryproductimageselectedimages(prev => [...prev, ...compressedimages]);
+              setaddbautistainventoryproductimagepreviewimages(prev => {
+                const updated = [...prev, ...urlsArray];
+                console.log('Bautista Updated preview images:', updated);
+                return updated;
+              });
+              setbautistacurrentimageindex(0);
+              
+            } catch (uploadError) {
+              console.error("Cloudinary upload failed: ", uploadError.message);
+              alert("Image upload failed. Please try again.");
+              return;
+            }
+        
+          }catch(error){
+            console.error("Image compression failed: ", error.message);
+            alert("Image compression failed");
+          } finally {
+            // Always set loading state to false when finished (success or error)
+            setbautistainventoryproductimagesuploading(false);
+          }
+        
+          if(addbautistainventoryproductimageimageinputref.current){
+             addbautistainventoryproductimageimageinputref.current.value = "";
+          }
+        
+        };
+        
+        
+        
+        
+        
+        
+        
+        //PREVIOUS  IMAGE
+        const bautistahandlepreviousimage = (e) => {
+          e.preventDefault(); 
+          if (selectedbautistaproduct) {
+            if (!selectedbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
+            setbautistacurrentimageindex(prev => prev === 0 ? selectedbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 : prev - 1 );
+        
+          } else {
+            if (!addbautistainventoryproductimagepreviewimages?.length) return;
+            setbautistacurrentimageindex(prev => prev === 0 ? addbautistainventoryproductimagepreviewimages.length - 1 : prev - 1 );
+          }
+        };
+        
+        //NEXT IMAGE
+        const bautistahandlenextimage = (e) => {
+          e.preventDefault();
+          if (selectedbautistaproduct) {
+            if (!selectedbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
+            setbautistacurrentimageindex(prev => prev === selectedbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+        
+          } else {
+            if (!addbautistainventoryproductimagepreviewimages?.length) return;
+            setbautistacurrentimageindex(prev => prev === addbautistainventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1);
+        
+          }
+        };
+        
+        
+        
+        
+        
+        const addbautistainventoryproductimagehandleremove = (indextoremove) => {
+          setaddbautistainventoryproductimageselectedimages(prev =>
+            prev.filter((_, index) => index !== indextoremove)
+          );
+        
+          setaddbautistainventoryproductimagepreviewimages(prev =>
+            prev.filter((_, index) => index !== indextoremove)
+          );
+        
+          setbautistacurrentimageindex(prev =>
+            prev >= indextoremove && prev > 0 ? prev - 1 : prev
+          );
+        };
+        
+        const addbautistainventoryproductimagehandleuploadclick = () => {
+          addbautistainventoryproductimageimageinputref.current.click();
+        };
+        
+         const resetaddbautistainventoryproductdialog = () => {
+          setbautistainventorycategorynamebox("");
+          setaddbautistainventoryproductname("");
+          setaddbautistainventoryproductbrand("");
+          setaddbautistainventoryproductmodelnumber("");
+          setaddbautistainventoryproductdescription("");
+          setaddbautistainventoryproductprice("");
+          setaddbautistainventoryproductquantity("");
+          setaddbautistainventoryproductimageselectedimages([]);
+          setaddbautistainventoryproductimagepreviewimages([]);
+          setbautistacurrentimageindex(0);
+          setmessage('');
+          setselectedbautistaproduct(null);
+        };
+        
+        
+        //FETCHING PRODUCTS
+        
+          const fetchbautistaproducts = async () => {
+            // Skip fetching if user is Ambher-only (except for Admin)
+            if (isAmbherOnlyUser() && currentuserloggedin !== "Admin") {
+              setbautistaloadingproducts(false);
+              return;
+            }
+            
+            try{
+              const response = await fetch(`/api/bautistainventoryproduct`, {
+                headers:{
+                  'Authorization' : `Bearer ${currentusertoken}`
+                }
+              });
+              
+              if(!response.ok) throw new Error("Failed to fetch products");
+        
+              const data = await response.json();
+              setbautistainventoryproducts(data);
+               setbautistaloadingproducts(false);
+            }catch(error){
+              console.error("Failed fetching products: ", error);
+              setbautistaloadingproducts(false);
+            }
+          };
+        
+        
+          useEffect(() => {
+            fetchbautistaproducts();
+          }, []);
+        
+        
+        
+        //INSERTING PRODUCT
+        const handlesubmitaddbautistainventoryproduct = async (e) => {
+        
+            e.preventDefault();
+            setbautistainventoryproductissubmitting(true);
+        
+          try{
+        
+           if (addbautistainventoryproductimagepreviewimages.length === 0) {
+            alert("Upload at least 1 product image");
+                   return;
+            }
+
+           if (!bautistainventorycategorynamebox || bautistainventorycategorynamebox.trim() === '') {
+            alert("Please select a product category");
+                   return;
+            }
+        
+        
+            const bautistainventoryproductdata = {
+        
+        
+              bautistainventoryproductcategory: bautistainventorycategorynamebox || '',
+              bautistainventoryproductname: addbautistainventoryproductname || '',
+              bautistainventoryproductbrand:  addbautistainventoryproductbrand || '',
+              bautistainventoryproductmodelnumber: addbautistainventoryproductmodelnumber || '',
+              bautistainventoryproductdescription: addbautistainventoryproductdescription || '',
+              bautistainventoryproductprice: Number(addbautistainventoryproductprice) || 0,
+              bautistainventoryproductquantity:  Number(addbautistainventoryproductquantity) || 0,
+              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || [],
+        
+        
+        
+              bautistainventoryproductaddedbyprofilepicture: currentuserdata.profilepicture || '',
+              bautistainventoryproductaddedbylastname: currentuserdata.lastname || '',
+              bautistainventoryproductaddedbyfirstname: currentuserdata.firstname || '',
+              bautistainventoryproductaddedbymiddlename: currentuserdata.middlename || '',
+              bautistainventoryproductaddedbytype: currentuserdata.type || '',
+              bautistainventoryproductaddedbyemail: currentuserdata.email || '',
+              bautistainventoryproductwishlistcount: 0 ,
+
+        
+        
+            }
+        
+            console.log(bautistainventoryproductdata);
+            const response = await fetch(`/api/bautistainventoryproduct`,{
+              method: 'POST',
+              headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${currentusertoken}`
+              },
+              body: JSON.stringify(bautistainventoryproductdata)
+            });
+        
+        
+        
+            if(!response.ok){
+              throw new Error(`Response fetching error! Error: ${response.status}`);
+        
+            }
+        
+        
+            const result = await response.json();
+            console.log('Ambher Inventory Product insertion successful: ', result);
+            await fetchbautistaproducts();
+            resetaddbautistainventoryproductdialog();
+            setshowaddbautistainventoryproductdialog(false);
+        
+          }catch(error) {
+            console.error('Error Ambher Inventory Product insertion: ', error);
+            setbautistainventoryproductissubmitting(false);
+          }finally{
+            setbautistainventoryproductissubmitting(false);
+          }
+        
+        };
+        
+        //UPDATING PRODUCT
+        const handleupdatebautistainventoryproduct = async (e) => {
+        
+            e.preventDefault();
+            setbautistainventoryproductissubmitting(true);
+        
+          try{
+           
+           if (!selectedbautistaproduct) {
+              throw new Error ("No product is selected"); 
+            }
+        
+        
+            const updatebautistaproduct = {
+        
+        
+              bautistainventoryproductcategory: bautistainventorycategorynamebox || '',
+              bautistainventoryproductname: addbautistainventoryproductname || '',
+              bautistainventoryproductbrand:  addbautistainventoryproductbrand || '',
+              bautistainventoryproductmodelnumber: addbautistainventoryproductmodelnumber || '',
+              bautistainventoryproductdescription: addbautistainventoryproductdescription || '',
+              bautistainventoryproductprice: Number(addbautistainventoryproductprice) || 0,
+              bautistainventoryproductquantity:  Number(addbautistainventoryproductquantity) || 0,
+              bautistainventoryproductimagepreviewimages: addbautistainventoryproductimagepreviewimages || [],
+        
+        
+        
+              bautistainventoryproductaddedbyprofilepicture: currentuserdata.profilepicture || '',
+              bautistainventoryproductaddedbylastname: currentuserdata.lastname || '',
+              bautistainventoryproductaddedbyfirstname: currentuserdata.firstname || '',
+              bautistainventoryproductaddedbymiddlename: currentuserdata.middlename || '',
+              bautistainventoryproductaddedbytype: currentuserdata.type || '',
+              bautistainventoryproductaddedbyemail: currentuserdata.email || '',
+               bautistainventoryproductwishlistcount: 0 ,
+        
+        
+            }
+        
+        
+            const response = await fetch(`/api/bautistainventoryproduct/${selectedbautistaproduct.bautistainventoryproductid}`,{
+              method: 'PUT',
+              headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${currentusertoken}`
+              },
+              body: JSON.stringify(updatebautistaproduct)
+            });
+        
+        
+        
+            if(!response.ok){
+              throw new Error(`Response fetching error! Error: ${response.status}`);
+        
+            }
+        
+        
+            const result = await response.json();
+            console.log('Ambher Inventory Product updated successful: ', result);
+        
+        
+            const updatedbautistaproduct = bautistainventoryproducts.map(product =>
+              product.bautistainventoryproductid === selectedbautistaproduct.bautistainventoryproductid ? result : product);
+        
+            setbautistainventoryproducts(updatedbautistaproduct);
+            resetaddbautistainventoryproductdialog();
+            setshowaddbautistainventoryproductdialog(false);
+            setselectedbautistaproduct(null);
+        
+          }catch(error) {
+            console.error('Error Ambher Inventory Product update: ', error);
+            setbautistainventoryproductissubmitting(false);
+          }finally{
+            setbautistainventoryproductissubmitting(false);
+          }
+        
+        };
+        
+        
+        //DELETE PRODUCT
+        const deletebautistaproduct = async (e) => {
+            e.preventDefault();
+        
+            if(!selectedbautistaproduct) {
+              alert("No product is selected");
+              return;
+            }
+        
+            try{
+              const response = await fetch(`/api/bautistainventoryproduct/${selectedbautistaproduct.bautistainventoryproductid}`,{
+                method: 'DELETE',
+                headers: {
+                  'Authorization' : `Bearer ${currentusertoken}`
+                }
+              });
+        
+              if(!response.ok) {
+                throw new Error(`Failed to delete bautista product: ${response.status}`);
+              }
+        
+        
+              setbautistainventoryproducts(prev => prev.filter(product => product.bautistainventoryproductid!== selectedbautistaproduct.bautistainventoryproductid));
+              resetaddbautistainventoryproductdialog();
+              setselectedbautistaproduct(null);
+              setshowaddbautistainventoryproductdialog(false);
+              setshowdeletebautistaproduct(false);
+        
+           
+           
+            }catch(error){
+              console.error('Error deleting bautista product:', error);
+            }
+        
+        };
+
+        // Archive Bautista Product Handler
+        const handleArchiveBautistaProduct = async (product) => {
+          try {
+            const response = await fetch(`/api/bautistainventoryproduct/${product.bautistainventoryproductid}/archive`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to archive product: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Update the product in the local state
+            setbautistainventoryproducts(prev => 
+              prev.map(p => 
+                p.bautistainventoryproductid === product.bautistainventoryproductid 
+                  ? { ...p, isArchived: true }
+                  : p
+              )
+            );
+
+            // Update the selected product if it's the same one
+            if (selectedbautistaproduct?.bautistainventoryproductid === product.bautistainventoryproductid) {
+              setselectedbautistaproduct(prev => ({ ...prev, isArchived: true }));
+            }
+
+          } catch (error) {
+            console.error('Error archiving bautista product:', error);
+            alert('Failed to archive product');
+          }
+        };
+
+        // Unarchive Bautista Product Handler
+        const handleUnarchiveBautistaProduct = async (product) => {
+          try {
+            const response = await fetch(`/api/bautistainventoryproduct/${product.bautistainventoryproductid}/unarchive`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to unarchive product: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Update the product in the local state
+            setbautistainventoryproducts(prev => 
+              prev.map(p => 
+                p.bautistainventoryproductid === product.bautistainventoryproductid 
+                  ? { ...p, isArchived: false }
+                  : p
+              )
+            );
+
+            // Update the selected product if it's the same one
+            if (selectedbautistaproduct?.bautistainventoryproductid === product.bautistainventoryproductid) {
+              setselectedbautistaproduct(prev => ({ ...prev, isArchived: false }));
+            }
+
+
+          } catch (error) {
+            console.error('Error unarchiving bautista product:', error);
+            alert('Failed to unarchive product');
+          }
+        };
+
+
+
+
+
+
+// Add these states near your other state declarations
+const [cliniclowstockProducts, setcliniclowstockProducts] = useState([]);
+const [cliniccriticalstockProducts, setcliniccriticalstockProducts] = useState([]);
+const [clinicoutofstockProducts, setclinicoutofstockProducts] = useState([]);
+
+// Add this useEffect to check stock levels when inventory changes
+useEffect(() => {
+if (activeinventorytable === 'ambherinventorytable') {
+  const criticalStock = ambherinventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity > 0 && 
+              product.ambherinventoryproductquantity <= 3
+  );
+  const lowStock = ambherinventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity >= 4 && 
+              product.ambherinventoryproductquantity <= 6
+  );
+  const outOfStock = ambherinventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.ambherinventoryproductquantity === 0
+  );
+  setcliniccriticalstockProducts(criticalStock);
+  setcliniclowstockProducts(lowStock);
+  setclinicoutofstockProducts(outOfStock);
+} else if (activeinventorytable === 'bautistainventorytable') {
+  const criticalStock = bautistainventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity > 0 && 
+              product.bautistainventoryproductquantity <= 3
+  );
+  const lowStock = bautistainventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity >= 4 && 
+              product.bautistainventoryproductquantity <= 6
+  );
+  const outOfStock = bautistainventoryproducts.filter(
+    product => !product.isArchived && // Exclude archived products
+              product.bautistainventoryproductquantity === 0
+  );
+  setcliniccriticalstockProducts(criticalStock);
+  setcliniclowstockProducts(lowStock);
+  setclinicoutofstockProducts(outOfStock);
+}
+}, [ambherinventoryproducts, bautistainventoryproducts, activeinventorytable]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS 
+//BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS 
+//BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS 
+//BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS 
+//BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS //BILLINGS AND ORDERS 
+
+// Set default billings and orders table based on user role and clinic
+const getDefaultBillingsTable = () => {
+if (isAmbherOnlyUser()) {
+  return 'ambherbillingsandorderstable';
+} else if (isBautistaOnlyUser()) {
+  return 'bautistabillingsandorderstable';
+}
+return 'ambherbillingsandorderstable'; // Default for admin
+};
+
+const [activebillingsandorderstable, setactivebillingsandorderstable] = useState(getDefaultBillingsTable());
+const showbillingsandorderstable = (billingsandorderstableid) => {
+    setactivebillingsandorderstable(billingsandorderstableid);
+};
+
+// Update default billing table when user data changes
+useEffect(() => {
+if (userDataLoaded) {
+  // Update billing and orders table based on current user clinic
+  const staffClinic = localStorage.getItem('staffclinic');
+  const ownerClinic = localStorage.getItem('ownerclinic');
+  
+  if (currentuserloggedin === "Staff") {
+    if (staffClinic === 'Bautista Eye Center' || staffclinic === 'Bautista Eye Center') {
+      setactivebillingsandorderstable('bautistabillingsandorderstable');
+    } else if (staffClinic === 'Ambher Optical' || staffclinic === 'Ambher Optical') {
+      setactivebillingsandorderstable('ambherbillingsandorderstable');
+    }
+  } else if (currentuserloggedin === "Owner") {
+    if (ownerClinic === 'Bautista Eye Center' || ownerownedclinic === 'Bautista Eye Center') {
+      setactivebillingsandorderstable('bautistabillingsandorderstable');
+    } else if (ownerClinic === 'Ambher Optical' || ownerownedclinic === 'Ambher Optical') {
+      setactivebillingsandorderstable('ambherbillingsandorderstable');
+    }
+  }
+  // Admin users keep the default 'ambherbillingsandorderstable'
+}
+}, [userDataLoaded, staffclinic, ownerownedclinic, currentuserloggedin]);
+
+
+const [ambherpickupStatus, setambherpickupStatus] = useState('Later'); 
+const [bautistapickupStatus, setbautistapickupStatus] = useState('Later'); 
+const [activeambherpickupnoworlater, setactiveambherpickupnoworlater] = useState(null);
+const [activebautistapickupnoworlater, setactivebautistapickupnoworlater] = useState(null);
+
+
+const showambherpickupnoworlater = (pickupnoworlaterid) => {
+    setactiveambherpickupnoworlater(pickupnoworlaterid);
+
+if (pickupnoworlaterid === 'ambherorderpickupnow') {
+  setambherpickupStatus('Now');
+} else if (pickupnoworlaterid === 'ambherorderpickuplater') {
+  setambherpickupStatus('Later');
+}
+
+
+
+};
+
+
+const showbautistapickupnoworlater = (pickupnoworlaterid) => {
+    setactivebautistapickupnoworlater(pickupnoworlaterid);
+
+if (pickupnoworlaterid === 'bautistaorderpickupnow') {
+  setbautistapickupStatus('Now');
+} else if (pickupnoworlaterid === 'bautistaorderpickuplater') {
+  setbautistapickupStatus('Later');
+}
+
+
+
+};
+
+const [ambherorders, setambherOrders] = useState([]);
+const [bautistaorders, setbautistaOrders] = useState([]);
+const [ambherfilter, setambherFilter] = useState('All');
+const [bautistafilter, setbautistaFilter] = useState('All');
+const [loadingAmbherOrders, setLoadingAmbherOrders] = useState(true);
+const [loadingBautistaOrders, setLoadingBautistaOrders] = useState(true);
+const [searchambherTerm, setambherSearchTerm] = useState('');
+const [searchbautistaTerm, setbautistaSearchTerm] = useState('');
+
+// Performance optimizations
+const [ordersCache, setOrdersCache] = useState(new Map());
+const [lastFetchTime, setLastFetchTime] = useState(0);
+const CACHE_DURATION = 30000; // 30 seconds cache
+
+// Pagination for performance
+const [ambherCurrentPage, setAmbherCurrentPage] = useState(1);
+const [bautistaCurrentPage, setBautistaCurrentPage] = useState(1);
+const ORDERS_PER_PAGE = 10; // Limit rows per page for performance
+const [searchpatientorderambherTerm, setsearchpatientorderambherTerm] = useState('');
+const [searchpatientorderbautistaTerm, setsearchpatientorderbautistaTerm] = useState('');
+const [showpatientorderambher, setshowpatientorderambher] = useState(false);
+const [showpatientorderbautista, setshowpatientorderbautista] = useState(false);
+const [showpatientorderedambher, setshowpatientorderedambher] = useState(false);
+const [showpatientorderedbautista, setshowpatientorderedbautista] = useState(false);
+const [ambhercount, setambherCount] = useState(1);
+const [bautistacount, setbautistaCount] = useState(1);
+const [selectedorderambherproduct, setselectedorderambherproduct] = useState(null);
+const [selectedorderbautistaproduct, setselectedorderbautistaproduct] = useState(null);
+
+// View Order Modal States
+const [selectedOrderForView, setSelectedOrderForView] = useState(null);
+const [showViewOrderModal, setShowViewOrderModal] = useState(false);
+const [viewOrderCurrentImageIndex, setViewOrderCurrentImageIndex] = useState(0);
+const [selectedPickupDate, setSelectedPickupDate] = useState('');
+const [additionalPayment, setAdditionalPayment] = useState('');
+const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+const [paymentMessage, setPaymentMessage] = useState({ text: '', type: '' });
+
+// Periodic status check - every 5 minutes
+useEffect(() => {
+  const statusCheckInterval = setInterval(async () => {
+    console.log('🔄 Checking for orders with pickup dates matching today...');
+    
+    // Check Ambher orders
+    if (ambherorders.length > 0) {
+      const updatedAmbherOrders = await checkAndUpdateOrderStatus(ambherorders, 'ambher', updateAmbherOrderStatus);
+      if (JSON.stringify(updatedAmbherOrders) !== JSON.stringify(ambherorders)) {
+        setambherOrders(updatedAmbherOrders);
+        console.log('✅ Ambher orders updated due to pickup date changes');
+      }
+    }
+    
+    // Check Bautista orders
+    if (bautistaorders.length > 0) {
+      const updatedBautistaOrders = await checkAndUpdateOrderStatus(bautistaorders, 'bautista', updateBautistaOrderStatus);
+      if (JSON.stringify(updatedBautistaOrders) !== JSON.stringify(bautistaorders)) {
+        setbautistaOrders(updatedBautistaOrders);
+        console.log('✅ Bautista orders updated due to pickup date changes');
+      }
+    }
+  }, 5 * 60 * 1000); // 5 minutes
+
+  return () => clearInterval(statusCheckInterval);
+}, [ambherorders, bautistaorders]);
+
+
+
+//Order Ambher
+const [orderambherinventorycategorynamebox , setorderambherinventorycategorynamebox ] = useState("");
+const [orderambherinventoryproductname , setorderambherinventoryproductname ] = useState("");
+const [orderambherinventoryproductbrand , setorderambherinventoryproductbrand ] = useState("");
+const [orderambherinventoryproductmodelnumber, setorderambherinventoryproductmodelnumber ] = useState("");
+const [orderambherinventoryproductdescription , setorderambherinventoryproductdescription ] = useState("");
+const [orderambherinventoryproductnotes , setorderambherinventoryproductnotes ] = useState("");
+const [orderambherinventoryproductprice , setorderambherinventoryproductprice ] = useState("");
+const [orderambherinventoryproductquantity , setorderambherinventoryproductquantity ] = useState("");
+const [orderambherinventoryproductimagepreviewimages , setorderambherinventoryproductimagepreviewimages ] = useState([]);
+const [orderambhercurrentimageindex, setorderambhercurrentimageindex] = useState(0);
+const [orderambherEmail, setorderambherEmail] = useState('');
+const [orderambherprofilePicture, setorderambherprofilePicture] = useState('');
+const [orderambherfullName,setorderambherfullName] = useState('');
+const [orderambherlastName, setorderambherlastName] = useState('');
+const [orderambhermiddleName, setorderambhermiddleName] = useState('');
+const [orderambherfirstName, setorderambherfirstName] = useState('');
+const [orderambhercontactNumber, setorderambhercontactNumber] = useState('');
+const [orderambherpickupplace, setorderambherpickupplace] = useState('');
+const [orderambherdownPayment, setorderambherdownPayment] = useState('');
+const [orderambhercustomFee, setorderambhercustomFee] = useState('');
+const [orderambheramountPaid, setorderambheramountPaid] = useState('');
+const [orderambherNotes, setorderambherNotes] = useState('');
+const [orderambherDiscount, setorderambherDiscount] = useState('');
+const orderambherSubtotal = Number(orderambherinventoryproductprice) * Number(ambhercount);
+const orderambherBeforeDiscount = orderambherSubtotal + Number(orderambhercustomFee);
+const orderambherDiscountAmount = orderambherBeforeDiscount * (Number(orderambherDiscount || 0) / 100);
+const orderambhertotalwithFee = orderambherBeforeDiscount - orderambherDiscountAmount;
+const orderambherremainingBalance = orderambhertotalwithFee - Number(orderambheramountPaid);
+const orderambheramountpaidChange = Number(orderambheramountPaid) - orderambhertotalwithFee;
+const [orderambhercheckEmail, setorderambhercheckEmail] = useState(false);
+const [orderambheremailError, setorderambheremailError] = useState(false); 
+const [patientorderambherproductisClicked, setpatientorderambherproductisClicked] = useState(false);
+const [patientorderambherproductToast, setpatientorderambherproductToast] = useState(false);
+const [patientorderambherproductToastMessage, setpatientorderambherproductToastMessage] = useState("");
+const [patientorderambherproductToastClosing, setpatientorderambherproductToastClosing] = useState(false);
+const [ambherproductsoldCount, setambherproductsoldCount] = useState(0);
+const [ambherproductsoldCounts, setambherproductsoldCounts] = useState(0);
+const [isSubmittingAmbherCompleteOrder, setIsSubmittingAmbherCompleteOrder] = useState(false);
+const [isSubmittingAmbherPendingOrder, setIsSubmittingAmbherPendingOrder] = useState(false);
+const [isMarkingOrderComplete, setIsMarkingOrderComplete] = useState(false);
+const [sendingSmsForOrder, setSendingSmsForOrder] = useState(null); // Track which order is having SMS sent
+
+
+//Order Bautista
+ const [orderbautistainventorycategorynamebox , setorderbautistainventorycategorynamebox ] = useState("");
+const [orderbautistainventoryproductname , setorderbautistainventoryproductname ] = useState("");
+const [orderbautistainventoryproductbrand , setorderbautistainventoryproductbrand ] = useState("");
+const [orderbautistainventoryproductmodelnumber, setorderbautistainventoryproductmodelnumber ] = useState("");
+const [orderbautistainventoryproductdescription , setorderbautistainventoryproductdescription ] = useState("");
+const [orderbautistainventoryproductnotes , setorderbautistainventoryproductnotes ] = useState("");
+const [orderbautistainventoryproductprice , setorderbautistainventoryproductprice ] = useState( );
+const [orderbautistainventoryproductquantity , setorderbautistainventoryproductquantity ] = useState( );
+const [orderbautistainventoryproductimagepreviewimages , setorderbautistainventoryproductimagepreviewimages ] = useState([]);
+const [orderbautistacurrentimageindex, setorderbautistacurrentimageindex] = useState(0);
+const [orderbautistaEmail, setorderbautistaEmail] = useState('');
+const [orderbautistaprofilePicture, setorderbautistaprofilePicture] = useState('');
+const [orderbautistafullName,setorderbautistafullName] = useState('');
+const [orderbautistalastName, setorderbautistalastName] = useState('');
+const [orderbautistamiddleName, setorderbautistamiddleName] = useState('');
+const [orderbautistafirstName, setorderbautistafirstName] = useState('');
+const [orderbautistacontactNumber, setorderbautistacontactNumber] = useState('');
+const [orderbautistapickupplace, setorderbautistapickupplace] = useState('');
+const [orderbautistadownPayment, setorderbautistadownPayment] = useState('');
+const [orderbautistacustomFee, setorderbautistacustomFee] = useState('');
+const [orderbautistaDiscount, setorderbautistaDiscount] = useState('');
+const [orderbautistaamountPaid, setorderbautistaamountPaid] = useState('');
+const [orderbautistaNotes, setorderbautistaNotes] = useState('');
+const orderbautistaSubtotal = Number(orderbautistainventoryproductprice) * Number(bautistacount);
+const orderbautistaBeforeDiscount = orderbautistaSubtotal + Number(orderbautistacustomFee);
+const orderbautistaDiscountAmount = orderbautistaBeforeDiscount * (Number(orderbautistaDiscount || 0) / 100);
+const orderbautistatotalwithFee = orderbautistaBeforeDiscount - orderbautistaDiscountAmount;
+const orderbautistaremainingBalance = orderbautistatotalwithFee - Number(orderbautistaamountPaid);
+const orderbautistaamountpaidChange = Number(orderbautistaamountPaid) - orderbautistatotalwithFee;
+const [orderbautistacheckEmail, setorderbautistacheckEmail] = useState(false);
+const [orderbautistaemailError, setorderbautistaemailError] = useState(false); 
+const [patientorderbautistaproductisClicked, setpatientorderbautistaproductisClicked] = useState(false);
+const [patientorderbautistaproductToast, setpatientorderbautistaproductToast] = useState(false);
+const [patientorderbautistaproductToastMessage, setpatientorderbautistaproductToastMessage] = useState("");
+const [patientorderbautistaproductToastClosing, setpatientorderbautistaproductToastClosing] = useState(false);
+const [bautistaproductsoldCount, setbautistaproductsoldCount] = useState(0);
+const [bautistaproductsoldCounts, setbautistaproductsoldCounts] = useState(0);
+const [isSubmittingBautistaCompleteOrder, setIsSubmittingBautistaCompleteOrder] = useState(false);
+const [isSubmittingBautistaPendingOrder, setIsSubmittingBautistaPendingOrder] = useState(false);
+
+
+
+
+const [progressWidth, setProgressWidth] = useState('0%');   
+
+
+
+//Fetching ambherproducts sold count  
+useEffect(() => {
+const fetchSoldCount = async () => {
+  if (!selectedorderambherproduct?.ambherinventoryproductid) return;
+
+  try {
+    const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${selectedorderambherproduct.ambherinventoryproductid}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+    if (!response.ok) throw new Error("Failed to fetch sold count");
+    const data = await response.json();
+    setambherproductsoldCount(data.sold || 0);
+  } catch (error) {
+    console.error("Error fetching sold count:", error);
+  }
+};
+
+fetchSoldCount();
+}, [selectedorderambherproduct, currentusertoken]);
+
+
+
+
+
+//Fetching bautistaproducts sold count  
+useEffect(() => {
+const fetchSoldCount = async () => {
+  if (!selectedorderbautistaproduct?.bautistainventoryproductid) return;
+
+  try {
+    const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${selectedorderbautistaproduct.bautistainventoryproductid}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+    if (!response.ok) throw new Error("Failed to fetch sold count");
+    const data = await response.json();
+    setbautistaproductsoldCount(data.sold || 0);
+  } catch (error) {
+    console.error("Error fetching sold count:", error);
+  }
+};
+
+fetchSoldCount();
+}, [selectedorderbautistaproduct, currentusertoken]);
+
+
+
+
+
+//Fetching ambherproducts sold count for every card display 
+useEffect(() => {
+const fetchAllSoldCounts = async () => {
+  const counts = {};
+
+  await Promise.all(
+    ambherinventoryproducts.map(async (product) => {
+      try {
+        const response = await fetch(`/api/patientorderambher/ambherproductsoldcount/${product.ambherinventoryproductid}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        if (!response.ok) throw new Error("Failed to fetch");
+
+        const data = await response.json();
+        counts[product.ambherinventoryproductid] = data.sold || 0;
+      } catch (error) {
+        console.error("Error fetching sold count for", product.ambherinventoryproductid, error);
+        counts[product.ambherinventoryproductid] = 0;
+      }
+    })
+  );
+
+  setambherproductsoldCounts(counts);
+};
+
+if (ambherinventoryproducts.length > 0) {
+  fetchAllSoldCounts();
+}
+}, [ambherinventoryproducts, currentusertoken]);
+
+
+
+
+
+
+
+
+//Fetching bautistaproducts sold count for every card display 
+useEffect(() => {
+const fetchAllSoldCounts = async () => {
+  const counts = {};
+
+  await Promise.all(
+    bautistainventoryproducts.map(async (product) => {
+      try {
+        const response = await fetch(`/api/patientorderbautista/bautistaproductsoldcount/${product.bautistainventoryproductid}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        if (!response.ok) throw new Error("Failed to fetch");
+
+        const data = await response.json();
+        counts[product.bautistainventoryproductid] = data.sold || 0;
+      } catch (error) {
+        console.error("Error fetching sold count for", product.bautistainventoryproductid, error);
+        counts[product.bautistainventoryproductid] = 0;
+      }
+    })
+  );
+
+  setbautistaproductsoldCounts(counts);
+};
+
+if (bautistainventoryproducts.length > 0) {
+  fetchAllSoldCounts();
+}
+}, [bautistainventoryproducts, currentusertoken]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// UseEffect for Product Orddering Toast
+useEffect(() => {
+if (patientorderambherproductToast) {
+  setProgressWidth('0%');
+  setpatientorderambherproductToastClosing(false);
+
+  const progresstimer = setTimeout(() => {
+    setProgressWidth('100%');
+  }, 50);
+
+  // Close toast after 4 seconds
+  const toasttimer = setTimeout(() => {
+    setpatientorderambherproductToastClosing(true);
+    setTimeout(() => {
+      setpatientorderambherproductToast(false);
+      setProgressWidth('0%');
+    }, 300);
+  }, 4000);
+
+  return () => {
+    clearTimeout(progresstimer);
+    clearTimeout(toasttimer);
+  }
+}else if(patientorderbautistaproductToast){
+  setProgressWidth('0%');
+  setpatientorderbautistaproductToastClosing(false);
+
+  const progresstimer = setTimeout(() => {
+    setProgressWidth('100%');
+  }, 50);
+
+  // Close toast after 4 seconds
+  const toasttimer = setTimeout(() => {
+    setpatientorderbautistaproductToastClosing(true);
+    setTimeout(() => {
+      setpatientorderbautistaproductToast(false);
+      setProgressWidth('0%');
+    }, 300);
+  }, 4000);
+
+  return () => {
+    clearTimeout(progresstimer);
+    clearTimeout(toasttimer);
+  }
+}
+}, [patientorderambherproductToast, patientorderbautistaproductToast]);
+
+// UseEffect for PDF Toast
+useEffect(() => {
+  if (pdfToast) {
+    setPdfProgressWidth('0%');
+    setPdfToastClosing(false);
+
+    const progresstimer = setTimeout(() => {
+      setPdfProgressWidth('100%');
+    }, 50);
+
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setPdfToastClosing(true);
+      setTimeout(() => {
+        setPdfToast(false);
+        setPdfProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [pdfToast]);
+
+// UseEffect for Add Patient Profile Toast
+useEffect(() => {
+  if (addPatientProfileToast) {
+    setAddPatientProfileProgressWidth('0%');
+    setAddPatientProfileToastClosing(false);
+
+    const progresstimer = setTimeout(() => {
+      setAddPatientProfileProgressWidth('100%');
+    }, 50);
+
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setAddPatientProfileToastClosing(true);
+      setTimeout(() => {
+        setAddPatientProfileToast(false);
+        setAddPatientProfileProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [addPatientProfileToast]);
+
+// UseEffect for Update Patient Profile Toast
+useEffect(() => {
+  if (updatePatientProfileToast) {
+    setUpdatePatientProfileProgressWidth('0%');
+    setUpdatePatientProfileToastClosing(false);
+
+    const progresstimer = setTimeout(() => {
+      setUpdatePatientProfileProgressWidth('100%');
+    }, 50);
+
+    // Close toast after 4 seconds
+    const toasttimer = setTimeout(() => {
+      setUpdatePatientProfileToastClosing(true);
+      setTimeout(() => {
+        setUpdatePatientProfileToast(false);
+        setUpdatePatientProfileProgressWidth('0%');
+      }, 300);
+    }, 4000);
+
+    return () => {
+      clearTimeout(progresstimer);
+      clearTimeout(toasttimer);
+    }
+  }
+}, [updatePatientProfileToast]);
+
+//CHECK EMAIL IF EXISTS IN AMBHER ORDER FORM
+useEffect(() => {
+const checkAndFetchPatientDetails = async () => {
+  // Check if user has permission to create orders
+  if (currentuserloggedin !== "Staff" && currentuserloggedin !== "Owner") {
+    console.error("Only Staff and Owner can create orders for patients");
+    setorderambheremailError(true);
+    return;
+  }
+
+  if (!orderambherEmail) {
+    setorderambheremailError(false);
+    setorderambherfullName("");
+    setorderambherlastName("");
+    setorderambhermiddleName("");
+    setorderambherfirstName("");
+    setorderambherprofilePicture("");
+    setorderambhercontactNumber("");
+    return;
+  }
+
+  if (!emailcharacters.test(orderambherEmail)) {
+    setorderambheremailError(true);
+    setorderambherfullName("");
+    setorderambherlastName("");
+    setorderambhermiddleName("");
+    setorderambherfirstName("");
+    setorderambherprofilePicture("");
+    setorderambhercontactNumber("");
+    return;
+  }
+
+  // Skip API call if data is already fetched for this email
+  if (orderambherfullName && orderambhercontactNumber && !orderambheremailError) {
+    console.log("Patient data already fetched for:", orderambherEmail);
+    return;
+  }
+
+  setorderambhercheckEmail(true);
+
+  try {
+    // Check if email exists
+    const checkRes = await fetch(`/api/patientaccounts/check-email/${orderambherEmail}`);
+    const checkData = await checkRes.json();
+
+    if (checkData.exists) {
+      setorderambheremailError(false);
+
+      // Get full name info
+      const patientRes = await fetch(`/api/patientaccounts/get-by-email/${orderambherEmail}`);
+      const patient = await patientRes.json();
+
+      const fullName = `${patient.patientfirstname} ${patient.patientmiddlename || ""} ${patient.patientlastname}`.trim();
+      const lastName = ` ${patient.patientlastname}`.trim();
+      const middleName = ` ${patient.patientmiddlename || ""} `.trim();
+      const firstName =` ${patient.patientfirstname}`.trim();
+      const profilePicture = ` ${patient.patientprofilepicture}`.trim();
+
+
+      setorderambherfullName(fullName);
+      setorderambherlastName(lastName);
+      setorderambhermiddleName(middleName);
+      setorderambherfirstName(firstName);
+      setorderambherprofilePicture(profilePicture);
+
+      // Fetch patient demographic data for contact information
+      try {
+        const demographicResponse = await fetch(
+          `/api/patientdemographics/patientemail/${orderambherEmail}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (demographicResponse.ok) {
+          const demographicData = await demographicResponse.json();
+          console.log("Demographics data fetched:", demographicData);
+          
+          if (demographicData.patientcontactnumber) {
+            setorderambhercontactNumber(demographicData.patientcontactnumber);
+          } else {
+            setorderambhercontactNumber("");
+          }
+        } else {
+          console.log("Demographics API response:", demographicResponse.status, demographicResponse.statusText);
+          setorderambhercontactNumber("");
+        }
+      } catch (error) {
+        console.error("Error fetching demographics:", error);
+        setorderambhercontactNumber("");
+      }
+
+    } else {
+    setorderambheremailError(true);
+    setorderambherfullName("");
+    setorderambherlastName("");
+    setorderambhermiddleName("");
+    setorderambherfirstName("");
+    setorderambherprofilePicture("");
+    setorderambhercontactNumber("");
+    }
+  } catch (err) {
+    console.error("Error checking patient details:", err);
+    setorderambheremailError(true);
+    setorderambherfullName("");
+    setorderambherlastName("");
+    setorderambhermiddleName("");
+    setorderambherfirstName("");
+    setorderambherprofilePicture("");
+    setorderambhercontactNumber("");
+  } finally {
+    setorderambhercheckEmail(false);
+  }
+};
+
+// Debounce with 800ms delay to reduce API calls
+const delay = setTimeout(checkAndFetchPatientDetails, 800);
+return () => clearTimeout(delay);
+}, [orderambherEmail, currentusertoken, emailcharacters, currentuserloggedin]);
+
+
+//CHECK EMAIL IF EXISTS IN bautista ORDER FORM
+useEffect(() => {
+const checkAndFetchPatientDetails = async () => {
+  // Check if user has permission to create orders
+  if (currentuserloggedin !== "Staff" && currentuserloggedin !== "Owner") {
+    console.error("Only Staff and Owner can create orders for patients");
+    setorderbautistaemailError(true);
+    return;
+  }
+
+  if (!orderbautistaEmail) {
+    setorderbautistaemailError(false);
+    setorderbautistafullName("");
+    setorderbautistalastName("");
+    setorderbautistamiddleName("");
+    setorderbautistafirstName("");
+    setorderbautistaprofilePicture("");
+    setorderbautistacontactNumber("");
+    return;
+  }
+
+  if (!emailcharacters.test(orderbautistaEmail)) {
+    setorderbautistaemailError(true);
+    setorderbautistafullName("");
+    setorderbautistalastName("");
+    setorderbautistamiddleName("");
+    setorderbautistafirstName("");
+    setorderbautistaprofilePicture("");
+    setorderbautistacontactNumber("");
+    return;
+  }
+
+  // Skip API call if data is already fetched for this email
+  if (orderbautistafullName && orderbautistacontactNumber && !orderbautistaemailError) {
+    console.log("Patient data already fetched for:", orderbautistaEmail);
+    return;
+  }
+
+  setorderbautistacheckEmail(true);
+
+  try {
+    // Check if email exists
+    const checkRes = await fetch(`/api/patientaccounts/check-email/${orderbautistaEmail}`);
+    const checkData = await checkRes.json();
+
+    if (checkData.exists) {
+      setorderbautistaemailError(false);
+
+      // Get full name info
+      const patientRes = await fetch(`/api/patientaccounts/get-by-email/${orderbautistaEmail}`);
+      const patient = await patientRes.json();
+
+      const fullName = `${patient.patientfirstname} ${patient.patientmiddlename || ""} ${patient.patientlastname}`.trim();
+      const lastName = ` ${patient.patientlastname}`.trim();
+      const middleName = ` ${patient.patientmiddlename || ""} `.trim();
+      const firstName =` ${patient.patientfirstname}`.trim();
+      const profilePicture = ` ${patient.patientprofilepicture}`.trim();
+
+
+      setorderbautistafullName(fullName);
+      setorderbautistalastName(lastName);
+      setorderbautistamiddleName(middleName);
+      setorderbautistafirstName(firstName);
+      setorderbautistaprofilePicture(profilePicture);
+
+      // Fetch patient demographic data for contact information
+      try {
+        const demographicResponse = await fetch(
+          `/api/patientdemographics/patientemail/${orderbautistaEmail}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (demographicResponse.ok) {
+          const demographicData = await demographicResponse.json();
+          console.log("Demographics data fetched:", demographicData);
+          
+          if (demographicData.patientcontactnumber) {
+            setorderbautistacontactNumber(demographicData.patientcontactnumber);
+          } else {
+            setorderbautistacontactNumber("");
+          }
+        } else {
+          console.log("Demographics API response:", demographicResponse.status, demographicResponse.statusText);
+          setorderbautistacontactNumber("");
+        }
+      } catch (error) {
+        console.error("Error fetching demographics:", error);
+        setorderbautistacontactNumber("");
+      }
+
+    } else {
+    setorderbautistaemailError(true);
+    setorderbautistafullName("");
+    setorderbautistalastName("");
+    setorderbautistamiddleName("");
+    setorderbautistafirstName("");
+    setorderbautistaprofilePicture("");
+    setorderbautistacontactNumber("");
+    }
+  } catch (err) {
+    console.error("Error checking patient details:", err);
+    setorderbautistaemailError(true);
+    setorderbautistafullName("");
+    setorderbautistalastName("");
+    setorderbautistamiddleName("");
+    setorderbautistafirstName("");
+    setorderbautistaprofilePicture("");
+    setorderbautistacontactNumber("");
+  } finally {
+    setorderbautistacheckEmail(false);
+  }
+};
+
+// Debounce with 800ms delay to reduce API calls
+const delay = setTimeout(checkAndFetchPatientDetails, 800);
+return () => clearTimeout(delay);
+}, [orderbautistaEmail, currentusertoken, emailcharacters, currentuserloggedin]);
+
+  // Function to check if pickup date has passed and update order status
+  const checkAndUpdatePickupStatus = useCallback(async (orders, clinicType) => {
+    // Ensure orders is an array
+    if (!Array.isArray(orders)) {
+      console.warn(`⚠️ ${clinicType} orders is not an array:`, orders);
+      return [];
+    }
+    
+    const currentPhilippinesDate = getPhilippinesDate();
+    const updatedOrders = [];
+    let updatedCount = 0;
+    
+    console.log(`🔍 Checking ${orders.length} ${clinicType} orders for status updates...`);
+    
+    for (const order of orders) {
+      let shouldUpdate = false;
+      let pickupDate;
+      let currentStatus;
+      
+      if (clinicType === 'ambher') {
+        pickupDate = order.patientorderambherproductchosenpickupdate;
+        currentStatus = order.patientorderambherstatus;
+      } else {
+        pickupDate = order.patientorderbautistaproductchosenpickupdate;
+        currentStatus = order.patientorderbautistastatus;
+      }
+      
+      // Log current order status for debugging
+      console.log(`📋 Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Current status = "${currentStatus}"`);
+      
+      // Skip any orders that are not "Pending" - protect completed orders
+      if (currentStatus !== 'Pending') {
+        console.log(`⏭️ Skipping order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Status is "${currentStatus}" (not Pending)`);
+        updatedOrders.push(order);
+        continue;
+      }
+      
+      // Only update orders that are exactly "Pending" - never touch "Ready for Pickup", "Completed", or other statuses
+      if (pickupDate && 
+          pickupDate !== 'Later' && 
+          pickupDate !== 'Now') {
+        
+        // Convert pickup date to comparable format
+        const pickupDateFormatted = new Date(pickupDate).toLocaleDateString('en-CA');
+        
+        console.log(`📦 Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}: Pickup date ${pickupDateFormatted} vs Current date ${currentPhilippinesDate}`);
+        
+        // If pickup date is today or has passed, update status
+        if (pickupDateFormatted <= currentPhilippinesDate) {
+          shouldUpdate = true;
+          console.log(`✅ Order needs status update: Pickup date ${pickupDateFormatted} has passed!`);
+        }
+      }
+      
+      if (shouldUpdate) {
+        try {
+          // Update the order status in the database
+          const updateUrl = clinicType === 'ambher' 
+            ? `/api/patientorderambher/${order.patientorderambherid}`
+            : `/api/patientorderbautista/${order.patientorderbautistaid}`;
+            
+          const statusField = clinicType === 'ambher'
+            ? 'patientorderambherstatus'
+            : 'patientorderbautistastatus';
+            
+          const response = await fetch(updateUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentusertoken}`
+            },
+            body: JSON.stringify({
+              [statusField]: 'Ready for Pickup'
+            })
+          });
+
+          if (response.ok) {
+            // Update the local order object
+            const updatedOrder = { 
+              ...order, 
+              [statusField]: 'Ready for Pickup'
+            };
+            updatedOrders.push(updatedOrder);
+            updatedCount++;
+            console.log(`✅ Order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid} automatically updated to "Ready for Pickup"`);
+          } else {
+            console.error(`❌ Failed to update order ${clinicType === 'ambher' ? order.patientorderambherid : order.patientorderbautistaid}`);
+            updatedOrders.push(order);
+          }
+        } catch (error) {
+          console.error(`❌ Error updating order status:`, error);
+          updatedOrders.push(order);
+        }
+      } else {
+        updatedOrders.push(order);
+      }
+    }
+    
+    console.log(`📊 ${clinicType} orders processed: ${updatedCount} out of ${orders.length} orders updated to "Ready for Pickup"`);
+    return updatedOrders;
+  }, [currentusertoken]);
+
+  // Optimized fetch function with caching and parallel requests
+  const fetchAllOrdersOptimized = useCallback(async (forceRefresh = false) => {
+    const now = Date.now();
+    const cacheKey = `orders_${currentusertoken}`;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && ordersCache.has(cacheKey) && (now - lastFetchTime) < CACHE_DURATION) {
+      const cachedData = ordersCache.get(cacheKey);
+      setambherOrders(cachedData.ambher || []);
+      setbautistaOrders(cachedData.bautista || []);
+      setLoadingAmbherOrders(false);
+      setLoadingBautistaOrders(false);
+      return;
+    }
+
+    try {
+      setLoadingAmbherOrders(true);
+      setLoadingBautistaOrders(true);
+      
+      // Check clinic filtering - only fetch relevant data unless Admin
+      const shouldFetchAmbher = !isBautistaOnlyUser() || currentuserloggedin === "Admin";
+      const shouldFetchBautista = !isAmbherOnlyUser() || currentuserloggedin === "Admin";
+      
+      // Parallel API calls for maximum speed - only fetch what's needed
+      const apiCalls = [];
+      
+      if (shouldFetchAmbher) {
+        apiCalls.push(
+          fetch(`/api/patientorderambher`, {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Cache-Control': 'no-cache'
+            }
+          })
+        );
+      } else {
+        apiCalls.push(Promise.resolve({ ok: true, json: () => Promise.resolve([]) }));
+      }
+      
+      if (shouldFetchBautista) {
+        apiCalls.push(
+          fetch(`/api/patientorderbautista`, {
+            headers: {
+              'Authorization': `Bearer ${currentusertoken}`,
+              'Cache-Control': 'no-cache'
+            }
+          })
+        );
+      } else {
+        apiCalls.push(Promise.resolve({ ok: true, json: () => Promise.resolve([]) }));
+      }
+      
+      const [ambherResponse, bautistaResponse] = await Promise.all(apiCalls);
+
+      if (!ambherResponse.ok || !bautistaResponse.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      // Parallel JSON parsing
+      const [ambherData, bautistaData] = await Promise.all([
+        ambherResponse.json(),
+        bautistaResponse.json()
+      ]);
+
+      // Handle paginated response format - extract orders array from pagination response
+      const ambherOrders = Array.isArray(ambherData) ? ambherData : (ambherData?.orders || []);
+      const bautistaOrders = Array.isArray(bautistaData) ? bautistaData : (bautistaData?.orders || []);
+
+      // Check and update order statuses based on pickup dates
+      const processedAmbherData = await checkAndUpdatePickupStatus(ambherOrders, 'ambher');
+      const processedBautistaData = await checkAndUpdatePickupStatus(bautistaOrders, 'bautista');
+
+      // Update state
+      setambherOrders(processedAmbherData);
+      setbautistaOrders(processedBautistaData);
+
+      // Update cache
+      const newCache = new Map(ordersCache);
+      newCache.set(cacheKey, {
+        ambher: processedAmbherData,
+        bautista: processedBautistaData
+      });
+      setOrdersCache(newCache);
+      setLastFetchTime(now);
+
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoadingAmbherOrders(false);
+      setLoadingBautistaOrders(false);
+    }
+  }, [currentusertoken, ordersCache, lastFetchTime, setOrdersCache, setLastFetchTime, checkAndUpdatePickupStatus, currentuserloggedin, isAmbherOnlyUser, isBautistaOnlyUser]);
+
+  // Separate functions for backward compatibility
+  const fetchambherOrders = useCallback(async () => {
+    await fetchAllOrdersOptimized();
+  }, [fetchAllOrdersOptimized]);
+
+  const fetchbautistaOrders = useCallback(async () => {
+    await fetchAllOrdersOptimized();
+  }, [fetchAllOrdersOptimized]);
+
+useEffect(() => {
+  // Initial load - fetch with status check
+  fetchAllOrdersOptimized(false); 
+}, [fetchAllOrdersOptimized]);
+
+// Periodic status check - runs every hour to catch any missed updates
+useEffect(() => {
+  // Function to check for status updates
+  const performPeriodicStatusCheck = async () => {
+    console.log('🕐 Performing periodic order status check...');
+    
+    // Check Ambher orders
+    if (ambherorders.length > 0) {
+      const updatedAmbherOrders = await checkAndUpdatePickupStatus(ambherorders, 'ambher');
+      const hasAmbherUpdates = updatedAmbherOrders.some((order, index) => 
+        order.patientorderambherstatus !== ambherorders[index]?.patientorderambherstatus
+      );
+      
+      if (hasAmbherUpdates) {
+        setambherOrders(updatedAmbherOrders);
+        console.log('✅ Ambher orders status updated');
+      }
+    }
+    
+    // Check Bautista orders
+    if (bautistaorders.length > 0) {
+      const updatedBautistaOrders = await checkAndUpdatePickupStatus(bautistaorders, 'bautista');
+      const hasBautistaUpdates = updatedBautistaOrders.some((order, index) => 
+        order.patientorderbautistastatus !== bautistaorders[index]?.patientorderbautistastatus
+      );
+      
+      if (hasBautistaUpdates) {
+        setbautistaOrders(updatedBautistaOrders);
+        console.log('✅ Bautista orders status updated');
+      }
+    }
+  };
+
+  // Set up interval for periodic checks (every hour = 3600000ms)
+  const statusCheckInterval = setInterval(performPeriodicStatusCheck, 3600000);
+  
+  // Also run immediately after component mount (with a small delay to ensure orders are loaded)
+  const immediateCheck = setTimeout(performPeriodicStatusCheck, 5000);
+
+  // Cleanup interval on component unmount
+  return () => {
+    clearInterval(statusCheckInterval);
+    clearTimeout(immediateCheck);
+  };
+}, [ambherorders, bautistaorders, checkAndUpdatePickupStatus, setambherOrders, setbautistaOrders]);
+
+// Optimized filtering with useMemo for performance
+const filteredambherOrders = useMemo(() => {
+  return ambherorders.filter(order => {
+    const matchesFilter = ambherfilter === 'All' || order.patientorderambherstatus === ambherfilter;
+    const searchTerm = searchambherTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      order.patientorderambherproductname.toLowerCase().includes(searchTerm) ||
+      order.patientfirstname.toLowerCase().includes(searchTerm) ||
+      order.patientlastname.toLowerCase().includes(searchTerm);
+    return matchesFilter && matchesSearch;
+  });
+}, [ambherorders, ambherfilter, searchambherTerm]);
+
+const filteredbautistaOrders = useMemo(() => {
+  return bautistaorders.filter(order => {
+    const matchesFilter = bautistafilter === 'All' || order.patientorderbautistastatus === bautistafilter;
+    const searchTerm = searchbautistaTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      order.patientorderbautistaproductname.toLowerCase().includes(searchTerm) ||
+      order.patientfirstname.toLowerCase().includes(searchTerm) ||
+      order.patientlastname.toLowerCase().includes(searchTerm);
+    return matchesFilter && matchesSearch;
+  });
+}, [bautistaorders, bautistafilter, searchbautistaTerm]);
+
+// Paginated data for performance
+const paginatedAmbherOrders = useMemo(() => {
+  const startIndex = (ambherCurrentPage - 1) * ORDERS_PER_PAGE;
+  return filteredambherOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+}, [filteredambherOrders, ambherCurrentPage, ORDERS_PER_PAGE]);
+
+const paginatedBautistaOrders = useMemo(() => {
+  const startIndex = (bautistaCurrentPage - 1) * ORDERS_PER_PAGE;
+  return filteredbautistaOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+}, [filteredbautistaOrders, bautistaCurrentPage, ORDERS_PER_PAGE]);
+
+// Optimized refresh function with cache invalidation
+const refreshOrdersWithStatusCheck = useCallback(async () => {
+  console.log('🔄 Refreshing orders with immediate status check...');
+  
+  try {
+    // Force refresh bypasses cache and includes status check
+    await fetchAllOrdersOptimized(true);
+    console.log('✅ Orders refreshed with latest status updates');
+  } catch (error) {
+    console.error('❌ Error refreshing orders:', error);
+  }
+}, [fetchAllOrdersOptimized]);
+
+
+const formatorderDates = (formattednewdate) => {
+  const datedata = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(formattednewdate).toLocaleDateString(undefined, datedata);
+};
+
+// Function to get current Philippines date
+const getPhilippinesDate = () => {
+  const philippinesDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  console.log(`📅 Current Philippines date: ${philippinesDate}`);
+  return philippinesDate; // Returns YYYY-MM-DD format
+};
+
+const formatorderstatusColor = (status) => {
+  switch(status) {
+    case 'Pending':
+      return 'bg-yellow-100 text-yellow-900';
+    case 'Ready for Pickup':
+      return 'bg-blue-100 text-blue-900';
+    case 'Completed':
+      return 'bg-green-100 text-green-900';
+    case 'Cancelled':
+      return 'bg-orange-200 text-orange-900';
+    case 'Declined':
+      return 'bg-red-100 text-red-900';
+    default:
+      return 'bg-gray-100 text-gray-900';
+  }
+};
+
+// PDF Export function for billing details
+const exportBillingToPDF = async (orderData) => {
+  try {
+    // Determine if it's Ambher or Bautista order
+    const isAmbher = orderData.patientorderambherid;
+    
+    // Extract order details
+    const orderId = isAmbher ? orderData.patientorderambherid : orderData.patientorderbautistaid;
+    const productName = isAmbher 
+      ? orderData.patientorderambherproductname 
+      : orderData.patientorderbautistaproductname;
+    const productPrice = isAmbher 
+      ? orderData.patientorderambherproductprice 
+      : orderData.patientorderbautistaproductprice;
+    const productQuantity = isAmbher 
+      ? orderData.patientorderambherproductquantity 
+      : orderData.patientorderbautistaproductquantity;
+    const amountPaid = isAmbher 
+      ? orderData.patientorderambheramountpaid 
+      : orderData.patientorderbautistaamountpaid;
+    const productTotal = isAmbher 
+      ? orderData.patientorderambherproducttotal 
+      : orderData.patientorderbautistaproducttotal;
+    const customFee = isAmbher 
+      ? orderData.patientorderambhercustomfee 
+      : orderData.patientorderbautistacustomfee;
+    const discountPercentage = isAmbher 
+      ? orderData.patientorderambherdiscount 
+      : orderData.patientorderbautistadiscount;
+    const discountAmount = isAmbher 
+      ? orderData.patientorderambherdiscountamount 
+      : orderData.patientorderbautistadiscountamount;
+    const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
+    const clinicAddress = isAmbher
+      ? orderData.patientorderambherproductchosenpickupplace
+      : orderData.patientorderbautistaproductchosenpickupplace;
+    const customerName = `${orderData.patientfirstname} ${orderData.patientlastname}`;
+    const customerEmail = orderData.patientemail;
+    const orderDate = formatorderDates(orderData.createdAt);
+    const orderNotes = isAmbher 
+      ? orderData.patientorderambherproductnotes 
+      : orderData.patientorderbautistaproductnotes;
+
+    // Create new PDF document
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Set font
+    pdf.setFont('helvetica');
+    
+    // Header Section
+    pdf.setFontSize(20);
+    pdf.setTextColor(24, 77, 133); // #184d85
+    pdf.text('OFFICIAL RECEIPT', pageWidth / 2, 25, { align: 'center' });
+    
+    // Clinic Information
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(clinic, pageWidth / 2, 40, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text(clinicAddress, pageWidth / 2, 48, { align: 'center' });
+    
+    // TIN Number (You should replace this with actual TIN)
+    const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
+    pdf.text(tinNumber, pageWidth / 2, 55, { align: 'center' });
+    
+    // Horizontal line
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 65, pageWidth - 20, 65);
+    
+    // Receipt Details
+    pdf.setFontSize(12);
+    const leftCol = 25;
+    const rightCol = 120;
+    let yPos = 80;
+    
+    // Receipt Information
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(`Receipt No: #${orderId}`, leftCol, yPos);
+    pdf.text(`Date: ${orderDate}`, rightCol, yPos);
+    yPos += 10;
+    
+    // Customer Information
+    pdf.text('BILL TO:', leftCol, yPos);
+    yPos += 8;
+    pdf.text(`${customerName}`, leftCol, yPos);
+    yPos += 6;
+    pdf.text(`${customerEmail}`, leftCol, yPos);
+    yPos += 15;
+    
+    // Table Header
+    pdf.setFillColor(24, 77, 133); // #184d85
+    pdf.setTextColor(255, 255, 255);
+    pdf.rect(20, yPos, pageWidth - 40, 10, 'F');
+    
+    pdf.setFontSize(10);
+    pdf.text('DESCRIPTION', 25, yPos + 7);
+    pdf.text('QTY', 120, yPos + 7);
+    pdf.text('UNIT PRICE', 140, yPos + 7);
+    pdf.text('AMOUNT', 170, yPos + 7);
+    
+    yPos += 15;
+    
+    // Product Details
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(10);
+    
+    // Product name (split if too long)
+    const productNameLines = pdf.splitTextToSize(productName, 90);
+    pdf.text(productNameLines, 25, yPos);
+    
+    // Calculate the height needed for product name
+    const lineHeight = 5;
+    const productNameHeight = productNameLines.length * lineHeight;
+    
+    pdf.text(`${productQuantity}`, 120, yPos);
+    pdf.text(`PHP ${Number(productPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 140, yPos);
+    pdf.text(`PHP ${(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    
+    yPos += Math.max(productNameHeight, 8) + 5;
+    
+    // Order notes if available
+    if (orderNotes && orderNotes.trim()) {
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Notes:', 25, yPos);
+      yPos += 5;
+      const notesLines = pdf.splitTextToSize(orderNotes, 160);
+      pdf.text(notesLines, 25, yPos);
+      yPos += notesLines.length * 4 + 5;
+    }
+    
+    // Horizontal line before totals
+    pdf.setLineWidth(0.3);
+    pdf.line(20, yPos, pageWidth - 20, yPos);
+    yPos += 10;
+    
+    // Totals Section
+    pdf.setFontSize(11);
+    pdf.setTextColor(0, 0, 0);
+    
+    const subtotal = Number(productPrice) * Number(productQuantity);
+    
+    pdf.text('Subtotal:', 140, yPos);
+    pdf.text(`PHP ${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    yPos += 8;
+    
+    // Customization Fee (if any)
+    if (customFee > 0) {
+      pdf.text('Custom Fee:', 140, yPos);
+      pdf.text(`PHP ${Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      yPos += 8;
+    }
+    
+    // Discount (if any)
+    if (discountPercentage > 0) {
+      pdf.setTextColor(196, 54, 54); // Red color for discount
+      pdf.text(`Discount (${discountPercentage}%):`, 140, yPos);
+      pdf.text(`-PHP ${Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      pdf.setTextColor(0, 0, 0); // Reset to black
+      yPos += 8;
+    }
+    
+    // Amount Paid
+    pdf.text('Amount Paid:', 140, yPos);
+    pdf.text(`PHP ${Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    yPos += 8;
+    
+    // Remaining Balance (if any)
+    const remainingBalance = Number(productTotal) - Number(amountPaid);
+    if (remainingBalance > 0) {
+      pdf.setTextColor(196, 54, 54); // Red color for balance
+      pdf.text('Remaining Balance:', 140, yPos);
+      pdf.text(`PHP ${remainingBalance.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      yPos += 8;
+    }
+    
+    // Total line
+    pdf.setLineWidth(0.5);
+    pdf.line(135, yPos, pageWidth - 20, yPos);
+    yPos += 8;
+    
+    // Total Amount
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('TOTAL:', 140, yPos);
+    pdf.text(`PHP ${Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+    
+    yPos += 25;
+    
+    // Payment Status
+    pdf.setFontSize(10);
+    if (remainingBalance <= 0) {
+      pdf.setTextColor(35, 165, 74); // Green
+      pdf.text('✓ FULLY PAID', pageWidth / 2, yPos, { align: 'center' });
+    } else {
+      pdf.setTextColor(196, 54, 54); // Red
+      pdf.text('⚠ PARTIAL PAYMENT', pageWidth / 2, yPos, { align: 'center' });
+    }
+    
+    yPos += 20;
+    
+    // Footer
+    pdf.setFontSize(9);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Thank you for your business!', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+    pdf.text('This is an official receipt generated by Eye2Wear Optical System', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+    pdf.text(`Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}`, pageWidth / 2, yPos, { align: 'center' });
+    
+    // Save the PDF
+    const fileName = `Receipt_${clinic.replace(' ', '_')}_Order_${orderId}_${customerName.replace(' ', '_')}.pdf`;
+    pdf.save(fileName);
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+  }
+};
+
+// View Order Modal handlers
+const handleViewOrder = (order) => {
+  setSelectedOrderForView(order);
+  setViewOrderCurrentImageIndex(0);
+  setShowViewOrderModal(true);
+  
+  // Initialize pickup date if already set
+  const isAmbher = order.patientorderambherid;
+  const existingPickupDate = isAmbher 
+    ? order.patientorderambherproductchosenpickupdate 
+    : order.patientorderbautistaproductchosenpickupdate;
+  setSelectedPickupDate(existingPickupDate || '');
+};
+
+const closeViewOrderModal = () => {
+  setShowViewOrderModal(false);
+  setSelectedOrderForView(null);
+  setViewOrderCurrentImageIndex(0);
+  setSelectedPickupDate('');
+};
+
+const nextViewOrderImage = () => {
+  if (selectedOrderForView) {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const images = isAmbher 
+      ? selectedOrderForView.patientorderambherproductimage 
+      : selectedOrderForView.patientorderbautistaproductimage;
+    
+    if (images && images.length > 0) {
+      setViewOrderCurrentImageIndex((prevIndex) => 
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  }
+};
+
+const prevViewOrderImage = () => {
+  if (selectedOrderForView) {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const images = isAmbher 
+      ? selectedOrderForView.patientorderambherproductimage 
+      : selectedOrderForView.patientorderbautistaproductimage;
+    
+    if (images && images.length > 0) {
+      setViewOrderCurrentImageIndex((prevIndex) => 
+        prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      );
+    }
+  }
+};
+
+// Function to update pickup date for orders
+const updatePickupDate = useCallback(async (pickupDate) => {
+  if (!selectedOrderForView || !pickupDate) return;
+  
+  try {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const orderId = isAmbher 
+      ? selectedOrderForView.patientorderambherid 
+      : selectedOrderForView.patientorderbautistaid;
+    
+    const endpoint = isAmbher 
+      ? `${apiUrl}/api/patientorderambher/${orderId}`
+      : `${apiUrl}/api/patientorderbautista/${orderId}`;
+    
+    console.log(`🔄 Updating pickup date for ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} to ${pickupDate}`);
+    
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        // Update the available for pickup date (this is what determines status)
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
+        // Also update the chosen pickup date for consistency
+        patientorderbautistaproductchosenpickupdate: pickupDate,
+        patientorderambherproductchosenpickupdate: pickupDate
+      })
+    });
+
+    if (response.ok) {
+      console.log(`✅ Successfully updated pickup date for ${isAmbher ? 'ambher' : 'bautista'} order ${orderId}`);
+      
+      // Update the local state immediately
+      setSelectedOrderForView(prev => ({
+        ...prev,
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
+        patientorderbautistaproductchosenpickupdate: pickupDate,
+        patientorderambherproductchosenpickupdate: pickupDate
+      }));
+      
+      // Create updated order object for status checking with the new pickup date
+      const updatedOrder = {
+        ...selectedOrderForView,
+        patientorderambheravailableforpickupdate: pickupDate,
+        patientorderbautistaavailableforpickupdate: pickupDate,
+        patientorderbautistaproductchosenpickupdate: pickupDate,
+        patientorderambherproductchosenpickupdate: pickupDate
+      };
+      
+      // Immediately check and update status based on new pickup date
+      console.log('� Checking status after pickup date change...');
+      const clinic = isAmbher ? 'ambher' : 'bautista';
+      const updateCallback = isAmbher ? updateAmbherOrderStatus : updateBautistaOrderStatus;
+      
+      const [updatedOrderWithStatus] = await checkAndUpdateOrderStatus([updatedOrder], clinic, updateCallback);
+      
+      // Update the selected order with the new status if it changed
+      if (updatedOrderWithStatus) {
+        setSelectedOrderForView(updatedOrderWithStatus);
+        console.log(`🎯 Order ${orderId} status immediately updated to: ${isAmbher ? updatedOrderWithStatus.patientorderambherstatus : updatedOrderWithStatus.patientorderbautistastatus}`);
+      }
+      
+      // Refresh the orders list to show updated status immediately
+      setTimeout(() => {
+        refreshOrdersWithStatusCheck();
+      }, 500);
+      
+      console.log('✅ Pickup date updated and status checked with UI refresh');
+    } else {
+      console.error(`❌ Failed to update pickup date: ${response.status} ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error updating pickup date:', error);
+  }
+}, [selectedOrderForView, currentusertoken, apiUrl, checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrderStatus, refreshOrdersWithStatusCheck]);
+
+// Function to send SMS notification for pickup date changes
+const sendPickupDateSMS = useCallback(async (orderDetails, newPickupDate, isUpdate = false) => {
+  try {
+    if (!orderDetails || !newPickupDate) {
+      console.warn('⚠️ Missing order details or pickup date for SMS notification');
+      return;
+    }
+
+    const isAmbher = orderDetails.patientorderambherid;
+    const orderId = isAmbher ? orderDetails.patientorderambherid : orderDetails.patientorderbautistaid;
+    const customerPhone = orderDetails.patientcontactnumber;
+    const customerFirstName = orderDetails.patientfirstname;
+    const customerLastName = orderDetails.patientlastname;
+
+    if (!customerPhone) {
+      console.warn('⚠️ No customer phone number available for SMS notification');
+      return;
+    }
+
+    console.log(`📱 Sending pickup date ${isUpdate ? 'update' : 'schedule'} SMS for order ${orderId}...`);
+
+    // Prepare SMS data
+    const smsData = {
+      orderId: orderId,
+      orderType: isAmbher ? 'ambher' : 'bautista',
+      patientName: `${customerFirstName} ${customerLastName}`,
+      patientPhone: customerPhone,
+      pickupDate: newPickupDate,
+      productName: isAmbher ? orderDetails.patientorderambherproductname : orderDetails.patientorderbautistaproductname,
+      clinicName: isAmbher ? 'Ambher Optical' : 'Bautista Eye Center',
+      isScheduling: !isUpdate
+    };
+
+    const smsResponse = await fetch(`${apiUrl}/api/sms/pickup-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(smsData)
+    });
+
+    console.log('📡 Pickup SMS Response status:', smsResponse.status);
+    const smsResponseData = await smsResponse.json();
+    console.log('📡 Pickup SMS Response data:', smsResponseData);
+
+    if (smsResponse.ok && smsResponseData.success) {
+      console.log(`✅ Pickup date ${isUpdate ? 'update' : 'schedule'} SMS sent successfully`);
+      
+      // Show success toast notification
+      const actionText = isUpdate ? 'updated' : 'scheduled';
+      setSmsToastMessage(`✅ Pickup date ${actionText} SMS sent to ${customerFirstName} ${customerLastName} (${customerPhone})`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Green for success
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+    } else {
+      console.warn(`⚠️ Pickup date ${isUpdate ? 'update' : 'schedule'} SMS failed:`, smsResponseData);
+      
+      // Show error toast notification
+      const actionText = isUpdate ? 'update' : 'schedule';
+      setSmsToastMessage(`❌ Failed to send pickup date ${actionText} SMS to ${customerFirstName} ${customerLastName}`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(false); // Red for error
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+    }
+  } catch (error) {
+    console.error('❌ Error sending pickup date SMS:', error);
+    
+    // Show error toast notification
+    const actionText = isUpdate ? 'update' : 'schedule';
+    setSmsToastMessage(`❌ Error sending pickup date ${actionText} SMS: ${error.message}`);
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    setSmsIsClicked(false); // Red for error
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+  }
+}, [currentusertoken, apiUrl, setSmsToastMessage, setSmsToast, setSmsToastClosing, setSmsIsClicked, setSmsProgressWidth]);
+
+const handlePickupDateChange = (e) => {
+  const selectedDate = e.target.value;
+  const previousPickupDate = selectedOrderForView?.patientorderambherproductchosenpickupdate || 
+                            selectedOrderForView?.patientorderbautistaproductchosenpickupdate;
+  
+  setSelectedPickupDate(selectedDate);
+  updatePickupDate(selectedDate);
+  
+  // Send SMS notification for pickup date change
+  if (selectedDate && selectedOrderForView) {
+    // Determine if this is an update (there was a previous date) or initial scheduling
+    const isUpdate = previousPickupDate && 
+                     previousPickupDate !== 'Later' && 
+                     previousPickupDate !== 'Now' && 
+                     previousPickupDate !== selectedDate;
+    
+    // Send SMS notification after a short delay to ensure the order is updated
+    setTimeout(() => {
+      sendPickupDateSMS(selectedOrderForView, selectedDate, isUpdate);
+    }, 1000);
+  }
+};
+
+// SMS functionality integrated directly into markOrderAsComplete function
+// Previous sendOrderCompletionSMS function removed to prevent duplication
+
+
+
+
+
+
+
+
+
+
+// Function to mark order as complete
+const markOrderAsComplete = useCallback(async () => {
+  // Multi-layer protection against duplicate submissions
+  if (!selectedOrderForView || isMarkingOrderComplete) {
+    console.warn('⚠️ Mark order as complete already in progress, ignoring duplicate click');
+    return;
+  }
+
+  // Additional timestamp-based protection
+  const now = Date.now();
+  const lastSubmissionTime = window.lastMarkCompleteTime || 0;
+  if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+    console.warn('⚠️ Mark complete clicked too soon after last attempt, ignoring duplicate click');
+    return;
+  }
+  window.lastMarkCompleteTime = now;
+  
+  try {
+    setIsMarkingOrderComplete(true);
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const orderId = isAmbher 
+      ? selectedOrderForView.patientorderambherid 
+      : selectedOrderForView.patientorderbautistaid;
+    
+    const endpoint = isAmbher 
+      ? `${apiUrl}/api/patientorderambher/${orderId}`
+      : `${apiUrl}/api/patientorderbautista/${orderId}`;
+    
+    console.log(`🔄 Marking ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
+    
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        // Update order status to Completed based on order type
+        ...(isAmbher ? {
+          patientorderambherstatus: 'Completed',
+          patientorderambherproductpickupstatus: 'Now'
+        } : {
+          patientorderbautistastatus: 'Completed',
+          patientorderbautistaproductpickupstatus: 'Now'
+        }),
+        changedBy: (adminfirstname && adminlastname) ? `${adminfirstname} ${adminlastname}` : 'Admin User'
+      })
+    });
+
+    if (response.ok) {
+      const updatedOrder = await response.json();
+      console.log(`✅ Successfully marked ${isAmbher ? 'ambher' : 'bautista'} order ${orderId} as complete`);
+      
+      // Send SMS notification about order completion
+      try {
+        // Check if SMS is already being sent for this order
+        if (sendingSmsForOrder === orderId) {
+          console.warn('⚠️ SMS already being sent for this order, skipping duplicate');
+          return;
+        }
+        
+        // Additional check: prevent duplicate SMS within a short time window for this specific order
+        const smsKey = `sms_sent_${orderId}_complete`;
+        const lastSmsSentTime = window[smsKey] || 0;
+        const timeSinceLastSms = now - lastSmsSentTime;
+        if (timeSinceLastSms < 10000) { // 10 second cooldown for SMS per order
+          console.warn(`⚠️ SMS for order ${orderId} was sent ${timeSinceLastSms}ms ago, skipping duplicate`);
+          return;
+        }
+        
+        setSendingSmsForOrder(orderId);
+        window[smsKey] = now; // Mark SMS as sent for this order
+        
+        console.log('📱 Attempting to send SMS for order completion:', orderId);
+        console.log('🌐 API URL:', apiUrl);
+        console.log('🔑 Token available:', !!currentusertoken);
+        
+        // Add a small random delay to prevent race conditions
+        const randomDelay = Math.floor(Math.random() * 500) + 100; // 100-600ms
+        await new Promise(resolve => setTimeout(resolve, randomDelay));
+        
+        const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}`
+          },
+          body: JSON.stringify({
+            orderId: orderId,
+            orderType: isAmbher ? 'ambher' : 'bautista',
+            newStatus: 'Completed',
+            timestamp: Date.now(), // Add timestamp to make request unique
+            requestId: `complete-${orderId}-${Date.now()}` // Unique request identifier
+          })
+        });
+
+        console.log('📡 SMS Response status:', smsResponse.status);
+        const smsResponseData = await smsResponse.json();
+        console.log('📡 SMS Response data:', smsResponseData);
+
+        // Check both HTTP status AND the success field in response body
+        // Also check if it's a deduplication case (SMS already sent recently)
+        const isDuplicateSms = smsResponseData.duplicatePrevented || 
+                               (smsResponseData.message && smsResponseData.message.includes('already sent recently'));
+        
+        // Always show success message for order completion, regardless of SMS status
+        // The order was successfully marked as complete, which is what matters most
+        console.log('✅ Order marked as complete successfully');
+        
+        // Show simple success toast for order completion
+        setSmsToastMessage(`✅ Order ${orderId} successfully completed`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(true); // Set to true for success (green)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 5 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+            setSmsIsClicked(false);
+            setSendingSmsForOrder(null);
+          }, 3000);
+        }, 8000);
+        
+        // Log SMS issues for debugging purposes only (don't show to user)
+        if (!smsResponse.ok || (!smsResponseData.success && !isDuplicateSms)) {
+          console.warn('⚠️ SMS notification had an issue but order was still completed');
+          console.warn('SMS Response details:', smsResponseData);
+        } else if (isDuplicateSms) {
+          console.log('ℹ️ SMS already sent recently for this order (deduplication prevented)');
+        }
+      } catch (smsError) {
+        console.warn('⚠️ SMS notification failed but order was still completed:', smsError);
+        
+        // Get customer name and phone from order data
+        const customerFirstName = selectedOrderForView.patientfirstname;
+        const customerLastName = selectedOrderForView.patientlastname;
+        const recipientPhone = selectedOrderForView.patientcontactnumber;
+        
+        // Show error toast with phone number
+        setSmsToastMessage(`⚠️ Order completed but SMS failed for ${customerFirstName} ${customerLastName} (${recipientPhone || 'no phone'}): ${smsError.message}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+            setSmsIsClicked(false);
+            setSendingSmsForOrder(null);
+          }, 3000);
+        }, 6000);
+      }
+      
+      // Update the product quantity after completing the order
+      try {
+        const productId = isAmbher 
+          ? selectedOrderForView.patientorderambherproductid 
+          : selectedOrderForView.patientorderbautistaproductid;
+        const quantityOrdered = isAmbher 
+          ? selectedOrderForView.patientorderambherproductquantity 
+          : selectedOrderForView.patientorderbautistaproductquantity;
+        
+        const inventoryEndpoint = isAmbher 
+          ? `${apiUrl}/api/ambherinventoryproduct/${productId}`
+          : `${apiUrl}/api/bautistainventoryproduct/${productId}`;
+        
+        // Get current product data to calculate new quantity
+        const currentProductResponse = await fetch(inventoryEndpoint, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`
+          }
+        });
+        
+        if (currentProductResponse.ok) {
+          const currentProduct = await currentProductResponse.json();
+          const currentQuantity = isAmbher 
+            ? currentProduct.ambherinventoryproductquantity 
+            : currentProduct.bautistainventoryproductquantity;
+          const newQuantity = currentQuantity - quantityOrdered;
+          
+          const updateBody = isAmbher 
+            ? { ambherinventoryproductquantity: newQuantity }
+            : { bautistainventoryproductquantity: newQuantity };
+          
+          const updateResponse = await fetch(inventoryEndpoint, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentusertoken}`
+            },
+            body: JSON.stringify(updateBody)
+          });
+
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error('Failed to update product quantity:', errorText);
+          } else {
+            console.log(`✅ Successfully updated inventory quantity: ${currentQuantity} → ${newQuantity}`);
+            
+            // Update local inventory state
+            if (isAmbher) {
+              setambherinventoryproducts(prevProducts => 
+                prevProducts.map(product => product.ambherinventoryproductid === productId
+                  ? { ...product, ambherinventoryproductquantity: newQuantity }
+                  : product
+                )
+              );
+            } else {
+              setbautistainventoryproducts(prevProducts => 
+                prevProducts.map(product => product.bautistainventoryproductid === productId
+                  ? { ...product, bautistainventoryproductquantity: newQuantity }
+                  : product
+                )
+              );
+            }
+            
+            // Refresh sold counts after completing the order
+            try {
+              const soldCountResponse = await fetch(`${apiUrl}/api/${isAmbher ? 'patientorderambher' : 'patientorderbautista'}/${isAmbher ? 'ambher' : 'bautista'}productsoldcount/${productId}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              
+              if (soldCountResponse.ok) {
+                const soldData = await soldCountResponse.json();
+                const newSoldCount = soldData.sold || 0;
+                
+                // Update sold counts state
+                if (isAmbher) {
+                  setambherproductsoldCounts(prevCounts => ({
+                    ...prevCounts,
+                    [productId]: newSoldCount
+                  }));
+                } else {
+                  setbautistaproductsoldCounts(prevCounts => ({
+                    ...prevCounts,
+                    [productId]: newSoldCount
+                  }));
+                }
+                
+                console.log(`✅ Updated sold count for product ${productId}: ${newSoldCount}`);
+              } else {
+                console.warn('Failed to fetch updated sold count');
+              }
+            } catch (soldCountError) {
+              console.error('❌ Failed to update sold count:', soldCountError);
+            }
+          }
+        } else {
+          console.error('Failed to get current product data for inventory update');
+        }
+      } catch (inventoryError) {
+        console.error('❌ Failed to update inventory quantity:', inventoryError);
+      }
+      
+      // Remove the product from patient's wishlist after completing the order
+      try {
+        const customerEmail = isAmbher 
+          ? selectedOrderForView.patientemail 
+          : selectedOrderForView.patientemail;
+        const productId = isAmbher 
+          ? selectedOrderForView.patientorderambherproductid 
+          : selectedOrderForView.patientorderbautistaproductid;
+        const clinicType = isAmbher ? 'ambher' : 'bautista';
+
+        const deletewishlistResponse = await fetch(`${apiUrl}/api/patientwishlistinventoryproduct/admin-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentusertoken}` 
+          },
+          body: JSON.stringify({
+            email: customerEmail,
+            productId: productId,
+            clinicType: clinicType
+          })
+        });
+
+        if (!deletewishlistResponse.ok) {
+          const errorText = await deletewishlistResponse.text();
+          console.warn('Failed to delete wishlisted item of the user:', errorText);
+        } else {
+          console.log('✅ Wishlisted product from patient wishlist is successfully deleted');
+        }
+
+      } catch (wishlistError) {
+        console.error('❌ Failed to delete the wishlisted product:', wishlistError);
+      }
+      
+      // Update the local state immediately
+      setSelectedOrderForView(updatedOrder);
+      
+      // Update the orders list to reflect the change
+      if (isAmbher) {
+        setambherOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          )
+        );
+      } else {
+        setbautistaOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          )
+        );
+      }
+      
+      // Refresh orders list to ensure consistency
+      setTimeout(() => {
+        refreshOrdersWithStatusCheck();
+      }, 500);
+      
+      // Note: SMS notification is already sent above in the main try block
+      // No need for additional SMS call here
+      
+      console.log('🎯 Order marked as complete and UI updated');
+    } else {
+      console.error(`❌ Failed to mark order as complete: ${response.status} ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error marking order as complete:', error);
+  } finally {
+    // Always reset the loading state to allow future clicks
+    setIsMarkingOrderComplete(false);
+    setSendingSmsForOrder(null);
+    console.log('🔄 Reset isMarkingOrderComplete to false');
+  }
+}, [selectedOrderForView, currentusertoken, apiUrl, adminfirstname, adminlastname, refreshOrdersWithStatusCheck, setSelectedOrderForView, setambherOrders, setbautistaOrders, setambherinventoryproducts, setbautistainventoryproducts, setambherproductsoldCounts, setbautistaproductsoldCounts, isMarkingOrderComplete, setSmsToast, setSmsToastMessage, setSmsToastClosing, setSmsProgressWidth, setSmsIsClicked, sendingSmsForOrder, setSendingSmsForOrder]);
+
+
+
+
+
+// Function to get minimum date (tomorrow)
+const getMinDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
+// Handle additional payment processing
+const handleAdditionalPayment = async () => {
+  if (!additionalPayment || Number(additionalPayment) <= 0) {
+    setPaymentMessage({ text: 'Please enter a valid payment amount', type: 'error' });
+    return;
+  }
+
+  setIsProcessingPayment(true);
+  setPaymentMessage({ text: '', type: '' });
+
+  try {
+    const isAmbher = selectedOrderForView.patientorderambherid;
+    const currentAmountPaid = Number(isAmbher 
+      ? selectedOrderForView.patientorderambheramountpaid 
+      : selectedOrderForView.patientorderbautistaamountpaid);
+    const productTotal = Number(isAmbher 
+      ? selectedOrderForView.patientorderambherproducttotal 
+      : selectedOrderForView.patientorderbautistaproducttotal);
+    const additionalAmount = Number(additionalPayment);
+    const newTotalPaid = currentAmountPaid + additionalAmount;
+    const remainingBalance = productTotal - currentAmountPaid;
+    
+    // Calculate change if payment exceeds remaining balance
+    const change = additionalAmount > remainingBalance ? additionalAmount - remainingBalance : 0;
+    const finalAmountPaid = Math.min(newTotalPaid, productTotal);
+    
+    const orderId = isAmbher 
+      ? selectedOrderForView.patientorderambherid 
+      : selectedOrderForView.patientorderbautistaid;
+    
+    const endpoint = isAmbher 
+      ? `${apiUrl}/api/patientorderambher/update-payment/${orderId}`
+      : `${apiUrl}/api/patientorderbautista/update-payment/${orderId}`;
+    
+    const updateData = isAmbher ? {
+      patientorderambheramountpaid: finalAmountPaid,
+      patientorderambheramountpaidchange: change
+    } : {
+      patientorderbautistaamountpaid: finalAmountPaid,
+      patientorderbautistaamountpaidchange: change
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify(updateData)
+    });
+
+    if (response.ok) {
+      // Update the selected order view with new payment data
+      const updatedOrder = {
+        ...selectedOrderForView,
+        ...(isAmbher ? {
+          patientorderambheramountpaid: finalAmountPaid,
+          patientorderambheramountpaidchange: change
+        } : {
+          patientorderbautistaamountpaid: finalAmountPaid,
+          patientorderbautistaamountpaidchange: change
+        })
+      };
+      setSelectedOrderForView(updatedOrder);
+      
+      // Refresh the orders list to reflect the updated payment data
+      if (isAmbher) {
+        await fetchambherOrders();
+      } else {
+        await fetchbautistaOrders();
+      }
+      
+      // Clear the additional payment input
+      setAdditionalPayment('');
+      
+      // Show success message
+      if (change > 0) {
+        setPaymentMessage({ 
+          text: `Payment processed successfully. Change: ₱${change.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 
+          type: 'success' 
+        });
+      } else {
+        setPaymentMessage({ text: 'Payment processed successfully', type: 'success' });
+      }
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setPaymentMessage({ text: '', type: '' });
+      }, 3000);
+      
+    } else {
+      throw new Error('Failed to process payment');
+    }
+  } catch (error) {
+    console.error('Error processing payment:', error);
+    setPaymentMessage({ text: 'Failed to process payment. Please try again.', type: 'error' });
+  } finally {
+    setIsProcessingPayment(false);
+  }
+};
+
+const handlePaymentInputChange = (e) => {
+  const value = e.target.value;
+  if (value === '' || (Number(value) >= 0 && !isNaN(Number(value)))) {
+    setAdditionalPayment(value);
+  }
+};
+
+
+
+
+
+
+
+//SET ORDER AMBHER VIEWING PREVIOUS  IMAGE
+        const orderambherhandlepreviousimage = (e) => {
+          e.preventDefault(); 
+          if (selectedorderambherproduct) {
+            if (!selectedorderambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
+            setorderambhercurrentimageindex(prev => prev === 0 ? selectedorderambherproduct.ambherinventoryproductimagepreviewimages.length - 1 : prev - 1 );
+        
+          } else {
+            if (!orderambherinventoryproductimagepreviewimages?.length) return;
+            setorderambhercurrentimageindex(prev => prev === 0 ? orderambherinventoryproductimagepreviewimages.length - 1 : prev - 1 );
+          }
+        };
+        
+        //NEXT IMAGE
+        const orderambherhandlenextimage = (e) => {
+          e.preventDefault();
+          if (selectedorderambherproduct) {
+            if (!selectedorderambherproduct.ambherinventoryproductimagepreviewimages?.length) return;
+            setorderambhercurrentimageindex(prev => prev === selectedorderambherproduct.ambherinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+        
+          } else {
+            if (!orderambherinventoryproductimagepreviewimages?.length) return;
+            setorderambhercurrentimageindex(prev => prev === orderambherinventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1);
+        
+          }
+        };
+
+ 
+
+
+//SET ORDER bautista VIEWING PREVIOUS  IMAGE
+        const orderbautistahandlepreviousimage = (e) => {
+          e.preventDefault(); 
+          if (selectedorderbautistaproduct) {
+            if (!selectedorderbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
+            setorderbautistacurrentimageindex(prev => prev === 0 ? selectedorderbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 : prev - 1 );
+        
+          } else {
+            if (!orderbautistainventoryproductimagepreviewimages?.length) return;
+            setorderbautistacurrentimageindex(prev => prev === 0 ? orderbautistainventoryproductimagepreviewimages.length - 1 : prev - 1 );
+          }
+        };
+        
+        //NEXT IMAGE
+        const orderbautistahandlenextimage = (e) => {
+          e.preventDefault();
+          if (selectedorderbautistaproduct) {
+            if (!selectedorderbautistaproduct.bautistainventoryproductimagepreviewimages?.length) return;
+            setorderbautistacurrentimageindex(prev => prev === selectedorderbautistaproduct.bautistainventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1 );
+        
+          } else {
+            if (!orderbautistainventoryproductimagepreviewimages?.length) return;
+            setorderbautistacurrentimageindex(prev => prev === orderbautistainventoryproductimagepreviewimages.length - 1 ? 0 : prev + 1);
+        
+          }
+        };
+
+
+
+
+
+
+//FUNCTION BUTTON FOR COMPLETE ORDER  
+
+//AMBHER OPTICAL ORDER PRODUCT
+const submitpatientorderambher = async (e) => {
+e.preventDefault();
+
+// PROTECTION: Don't submit new orders if we're marking an existing order as complete
+if (isMarkingOrderComplete) {
+  console.warn('⚠️ Blocking Ambher order submission during order completion process');
+  return;
+}
+
+// Multi-layer protection against duplicate submissions
+if (isSubmittingAmbherCompleteOrder) {
+  console.warn('⚠️ Order submission already in progress (state check), ignoring duplicate click');
+  return;
+}
+
+// Additional timestamp-based protection
+const now = Date.now();
+const lastSubmissionTime = window.lastAmbherSubmissionTime || 0;
+if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+  console.warn('⚠️ Order submission too soon after last attempt, ignoring duplicate click');
+  return;
+}
+window.lastAmbherSubmissionTime = now;
+
+setIsSubmittingAmbherCompleteOrder(true);
+
+try {
+  // Prepare order data
+  const orderData = {
+    // Patient Information
+    patientprofilepicture: orderambherprofilePicture,
+    patientfirstname: orderambherfirstName,
+    patientmiddlename: orderambhermiddleName,
+    patientlastname: orderambherlastName,
+    patientemail: orderambherEmail,
+    patientcontactnumber: orderambhercontactNumber,
+
+    // Ordered Product Info
+    patientorderambherproductid: selectedorderambherproduct?.ambherinventoryproductid,
+    patientorderambherproductname: orderambherinventoryproductname,
+    patientorderambherproductbrand: orderambherinventoryproductbrand,
+    patientorderambherproductmodelnumber: orderambherinventoryproductmodelnumber,
+    patientorderambherproductcategory: orderambherinventorycategorynamebox,
+    patientorderambherproductimage: orderambherinventoryproductimagepreviewimages,
+    patientorderambherproductprice: orderambherinventoryproductprice,
+    patientorderambherproductquantity: ambhercount,
+    patientorderambherproductsubtotal: orderambherinventoryproductprice * ambhercount,
+    patientorderambherproductdescription: orderambherinventoryproductdescription,
+    patientorderambherproductnotes: orderambherNotes,
+
+    //Total
+    patientorderambhercustomfee: Number(orderambhercustomFee),
+    patientorderambherdiscount: Number(orderambherDiscount || 0), // Discount percentage
+    patientorderambherdiscountamount: Number(orderambherDiscountAmount || 0), // Actual discount amount
+    patientorderambheramountpaid: Number(orderambheramountPaid),
+    patientorderambherproducttotal: orderambhertotalwithFee,
+    patientorderambherremainingbalance: orderambherremainingBalance,
+    patientorderambheramountpaidChange: orderambheramountpaidChange,
+
+    //Payment
+    patientorderambherproductpaymentmethod: 'Cash',
+    patientorderambherproductpaymentreceiptimage: '',
+    patientorderambherproductpaymentstatus: 'Fully Paid', //"Partially Paid" or "Fully Paid"
+    patientorderambherproductpaymenttransactionid: '',
+
+    //Pickup if not "Now"
+    patientorderambherproductpickupstatus: ambherpickupStatus, //'Now' or 'Later'
+    patientorderambherproductchosenpickupdate: 'Now',
+    patientorderambherproductchosenpickuptime: 'Default',
+    patientorderambherproductchosenpickupplace: orderambherpickupplace,
+
+    //Authorized Person
+    patientorderambherproducauthorizedname: adminfirstname + " " + adminmiddlename + " " + adminlastname,
+    patientorderambherproducauthorizedtype: currentuserloggedin,
+
+    // Order History
+    patientorderambherstatus: 'Completed',
+    patientorderambherhistory: [{
+      status: 'Completed',
+      changedAt: new Date(),
+      changedBy: `${orderambherfirstName} ${orderambherlastName}`
+    }]
+  };
+
+  console.log('Submitting order:', orderData);
+
+  // Submit order using admin token
+  const response = await fetch(`/api/patientorderambher`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentusertoken}` // Using current user token
+    },
+    body: JSON.stringify(orderData)
+  });
+
+  // Handle response
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Server response:', errorText);
+    throw new Error(errorText || `Server error: ${response.status}`);
+  }
+
+  // If order was successful, update the product quantity
+  const productId = selectedorderambherproduct?.ambherinventoryproductid;
+  const quantityOrdered = ambhercount;
+  
+  const updateResponse = await fetch(`/api/ambherinventoryproduct/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization' : `Bearer ${currentusertoken}` // Using admin token
+    },
+    body: JSON.stringify({
+      ambherinventoryproductquantity: selectedorderambherproduct.ambherinventoryproductquantity - quantityOrdered
+    })
+  });
+
+  if (!updateResponse.ok) {
+    const errorText = await updateResponse.text();
+    console.error('Failed to update product quantity:', errorText);
+    throw new Error(`Failed to update inventory: ${errorText}`);
+  }
+    
+  // Update local state
+  setambherinventoryproducts(prevProducts => 
+    prevProducts.map(product => product.ambherinventoryproductid === productId
+        ? { ...product, ambherinventoryproductquantity: product.ambherinventoryproductquantity - quantityOrdered }
+        : product
+    )
+  );
+
+
+
+
+
+try {
+
+const deletewishlistResponse = await fetch(`/api/patientwishlistinventoryproduct/admin-delete`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${currentusertoken}` 
+  },
+  body: JSON.stringify({
+    email: orderambherEmail,
+    productId: selectedorderambherproduct?.ambherinventoryproductid,
+    clinicType: 'ambher'
+  })
+});
+
+
+if (!deletewishlistResponse.ok) {
+  const errorText = await deletewishlistResponse.text();
+  console.warn('Failed to delete wishlisted item of the user', errorText);
+} else {
+  console.log('Wishlisted product from patient wishlist is successfully deleted');
+}
+
+
+} catch (wishlistError) {
+console.error('Failed to deleting the wishlisted product', wishlistError);
+}
+
+
+
+
+  // Handle success
+  const result = await response.json();
+  
+  // Send SMS notification to customer about new order
+  try {
+    // Extract the actual order data from response
+    const orderData = result.data || result;
+    
+    // Get the order ID - use the numeric patientorderambherid for SMS, not the MongoDB _id
+    const orderId = orderData.patientorderambherid || orderData.id;
+    
+    console.log('📋 Ambher order creation result:', {
+      hasResult: !!result,
+      hasOrderData: !!orderData,
+      resultKeys: result ? Object.keys(result) : [],
+      orderDataKeys: orderData ? Object.keys(orderData) : [],
+      _id: orderData?._id,
+      patientorderambherid: orderData?.patientorderambherid,
+      id: orderData?.id,
+      selectedOrderId: orderId,
+      orderIdType: typeof orderId,
+      orderIdSource: orderData.patientorderambherid ? 'patientorderambherid' : (orderData.id ? 'id' : 'none')
+    });
+    
+    if (result && orderId) {
+      console.log('📱 Attempting to send SMS for order:', orderId);
+      console.log('🌐 API URL:', apiUrl);
+      console.log('🔑 Token available:', !!currentusertoken);
+      
+      const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: JSON.stringify({
+          orderId: orderId,
+          orderType: 'ambher',
+          newStatus: 'Completed'
+        })
+      });
+
+      console.log('📡 SMS Response status:', smsResponse.status);
+      const smsResponseData = await smsResponse.json();
+      console.log('📡 SMS Response data:', smsResponseData);
+
+      // Check both HTTP status AND the success field in response body
+      if (smsResponse.ok && smsResponseData.success) {
+        console.log('✅ Order completion SMS sent successfully');
+        
+        // Show success toast notification
+        setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderambherfirstName} ${orderambherlastName}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(true); // Set to true for success (green)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 4 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 4000);
+      } else {
+        console.warn('⚠️ SMS notification failed but order was still created');
+        console.warn('SMS Error details:', smsResponseData);
+        
+        // Show informative error message based on the error type
+        let errorMessage = 'SMS notification failed';
+        if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
+          errorMessage = `⚠️ Order created but SMS failed: No phone number for ${orderambherfirstName} ${orderambherlastName}`;
+        } else if (smsResponseData.message) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.message}`;
+        } else if (smsResponseData.error) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.error}`;
+        }
+        
+        // Show warning toast
+        setSmsToastMessage(errorMessage);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds (longer for error messages)
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 6000);
+      }
+    } else {
+      console.warn('⚠️ No valid order ID found in Ambher response, cannot send SMS');
+      console.warn('📋 Ambher Response data:', {
+        hasResult: !!result,
+        hasOrderData: !!orderData,
+        orderData: orderData,
+        orderId: orderId
+      });
+      
+      // Still show order creation success, but note SMS failure
+      setSmsToastMessage(`✅ Ambher order created successfully but SMS notification failed: No order ID returned`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Set to true for order success (green), even if SMS failed
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
+    }
+  } catch (smsError) {
+    console.warn('⚠️ SMS notification failed but order was still created:', smsError);
+    // Don't let SMS failure affect the order creation success
+  }
+  
+  setpatientorderambherproductisClicked(true);
+  setpatientorderambherproductToastMessage("Order Submitted Successfully!");
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+
+  // Reset form fields
+  setorderambherEmail('');
+  setorderambherprofilePicture('');
+  setorderambherfullName('');
+  setorderambherlastName('');
+  setorderambhermiddleName('');
+  setorderambherfirstName('');
+  setorderambhercontactNumber('');
+  setorderambherdownPayment('');
+  setorderambhercustomFee('');
+  setorderambheramountPaid('');
+  setorderambherNotes('');
+  setambherproductsoldCount(0);
+  setambherpickupStatus('Later');
+  // Reset state
+  setselectedorderambherproduct(null);
+  setshowpatientorderambher(false);
+  await fetchambherOrders();
+
+} catch (error) {
+  console.error('Submission error:', error);
+  setpatientorderambherproductToastMessage(error.message);
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+} finally {
+  setIsSubmittingAmbherCompleteOrder(false);
+}
+};
+
+//BAUTISTA ORDER PRODUCT
+const submitpatientorderbautista = async (e) => {
+e.preventDefault();
+
+// PROTECTION: Don't submit new orders if we're marking an existing order as complete
+if (isMarkingOrderComplete) {
+  console.warn('⚠️ Blocking Bautista order submission during order completion process');
+  return;
+}
+
+// Multi-layer protection against duplicate submissions
+if (isSubmittingBautistaCompleteOrder) {
+  console.warn('⚠️ Bautista order submission already in progress (state check), ignoring duplicate click');
+  return;
+}
+
+// Additional timestamp-based protection
+const now = Date.now();
+const lastSubmissionTime = window.lastBautistaSubmissionTime || 0;
+if (now - lastSubmissionTime < 2000) { // 2 second cooldown
+  console.warn('⚠️ Bautista order submission too soon after last attempt, ignoring duplicate click');
+  return;
+}
+window.lastBautistaSubmissionTime = now;
+
+setIsSubmittingBautistaCompleteOrder(true);
+
+try {
+  // Prepare order data
+  const orderData = {
+    // Patient Information
+    patientprofilepicture: orderbautistaprofilePicture,
+    patientfirstname: orderbautistafirstName,
+    patientmiddlename: orderbautistamiddleName,
+    patientlastname: orderbautistalastName,
+    patientemail: orderbautistaEmail,
+    patientcontactnumber: orderbautistacontactNumber,
+
+    // Ordered Product Info
+    patientorderbautistaproductid: selectedorderbautistaproduct?.bautistainventoryproductid,
+    patientorderbautistaproductname: orderbautistainventoryproductname,
+    patientorderbautistaproductbrand: orderbautistainventoryproductbrand,
+    patientorderbautistaproductmodelnumber: orderbautistainventoryproductmodelnumber,
+    patientorderbautistaproductcategory: orderbautistainventorycategorynamebox,
+    patientorderbautistaproductimage: orderbautistainventoryproductimagepreviewimages,
+    patientorderbautistaproductprice: orderbautistainventoryproductprice,
+    patientorderbautistaproductquantity: bautistacount,
+    patientorderbautistaproductsubtotal: orderbautistainventoryproductprice * bautistacount,
+    patientorderbautistaproductdescription: orderbautistainventoryproductdescription,
+    patientorderbautistaproductnotes: orderbautistaNotes,
+
+    //Total
+    patientorderbautistacustomfee: Number(orderbautistacustomFee),
+    patientorderbautistadiscount: Number(orderbautistaDiscount || 0), // Discount percentage
+    patientorderbautistadiscountamount: Number(orderbautistaDiscountAmount || 0), // Actual discount amount
+    patientorderbautistaamountpaid: Number(orderbautistaamountPaid),
+    patientorderbautistaproducttotal: orderbautistatotalwithFee,
+    patientorderbautistaremainingbalance: orderbautistaremainingBalance,
+    patientorderbautistaamountpaidChange: orderbautistaamountpaidChange,
+
+    //Payment
+    patientorderbautistaproductpaymentmethod: 'Cash',
+    patientorderbautistaproductpaymentreceiptimage: '',
+    patientorderbautistaproductpaymentstatus: 'Fully Paid', //"Partially Paid" or "Fully Paid"
+    patientorderbautistaproductpaymenttransactionid: '',
+
+    //Pickup if not "Now"
+    patientorderbautistaproductpickupstatus: bautistapickupStatus, //'Now' or 'Later'
+    patientorderbautistaproductchosenpickupdate: 'Now',
+    patientorderbautistaproductchosenpickuptime: 'Default',
+    patientorderbautistaproductchosenpickupplace: orderbautistapickupplace,
+
+    //Authorized Person
+    patientorderbautistaproducauthorizedname: adminfirstname + " " + adminmiddlename + " " + adminlastname,
+    patientorderbautistaproducauthorizedtype: currentuserloggedin,
+
+    // Order History
+    patientorderbautistastatus: 'Completed',
+    patientorderbautistahistory: [{
+      status: 'Completed',
+      changedAt: new Date(),
+      changedBy: `${orderbautistafirstName} ${orderbautistalastName}`
+    }]
+  };
+
+  console.log('Submitting order:', orderData);
+
+  // Submit order using admin token
+  const response = await fetch(`/api/patientorderbautista`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
+    },
+    body: JSON.stringify(orderData)
+  });
+
+  // Handle response
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Server response:', errorText);
+    throw new Error(errorText || `Server error: ${response.status}`);
+  }
+
+  // If order was successful, update the product quantity
+  const productId = selectedorderbautistaproduct?.bautistainventoryproductid;
+  const quantityOrdered = bautistacount;
+  
+  const updateResponse = await fetch(`/api/bautistainventoryproduct/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization' : `Bearer ${currentusertoken}` // Using admin token
+    },
+    body: JSON.stringify({
+      bautistainventoryproductquantity: selectedorderbautistaproduct.bautistainventoryproductquantity - quantityOrdered
+    })
+  });
+
+  if (!updateResponse.ok) {
+    const errorText = await updateResponse.text();
+    console.error('Failed to update product quantity:', errorText);
+    throw new Error(`Failed to update inventory: ${errorText}`);
+  }
+    
+  // Update local state
+  setbautistainventoryproducts(prevProducts => 
+    prevProducts.map(product => product.bautistainventoryproductid === productId
+        ? { ...product, bautistainventoryproductquantity: product.bautistainventoryproductquantity - quantityOrdered }
+        : product
+    )
+  );
+
+
+
+
+
+try {
+
+const deletewishlistResponse = await fetch(`/api/patientwishlistinventoryproduct/admin-delete`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${currentusertoken}` 
+  },
+  body: JSON.stringify({
+    email: orderbautistaEmail,
+    productId: selectedorderbautistaproduct?.bautistainventoryproductid,
+    clinicType: 'bautista'
+  })
+});
+
+
+if (!deletewishlistResponse.ok) {
+  const errorText = await deletewishlistResponse.text();
+  console.warn('Failed to delete wishlisted item of the user', errorText);
+} else {
+  console.log('Wishlisted product from patient wishlist is successfully deleted');
+}
+
+
+} catch (wishlistError) {
+console.error('Failed to deleting the wishlisted product', wishlistError);
+}
+
+
+
+
+  // Handle success
+  const result = await response.json();
+  
+  // Send SMS notification to customer about new order
+  try {
+    // Extract the actual order data from response
+    const orderData = result.data || result;
+    
+    // Get the order ID - use the numeric patientorderbautistaid for SMS, not the MongoDB _id
+    const orderId = orderData.patientorderbautistaid || orderData.id;
+    
+    console.log('📋 Bautista order creation result:', {
+      hasResult: !!result,
+      hasOrderData: !!orderData,
+      resultKeys: result ? Object.keys(result) : [],
+      orderDataKeys: orderData ? Object.keys(orderData) : [],
+      _id: orderData?._id,
+      patientorderbautistaid: orderData?.patientorderbautistaid,
+      id: orderData?.id,
+      selectedOrderId: orderId
+    });
+    
+    if (result && orderId) {
+      console.log('📱 Attempting to send SMS for Bautista order:', orderId);
+      console.log('🌐 API URL:', apiUrl);
+      console.log('🔑 Token available:', !!currentusertoken);
+      
+      const smsResponse = await fetch(`${apiUrl}/api/sms/order-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentusertoken}`
+        },
+        body: JSON.stringify({
+          orderId: orderId,
+          orderType: 'bautista',
+          newStatus: 'Completed'
+        })
+      });
+
+      console.log('📡 SMS Response status:', smsResponse.status);
+      const smsResponseData = await smsResponse.json();
+      console.log('📡 SMS Response data:', smsResponseData);
+
+      // Check both HTTP status AND the success field in response body
+      if (smsResponse.ok && smsResponseData.success) {
+        console.log('✅ Order completion SMS sent successfully');
+        
+        // Show success toast notification
+        setSmsToastMessage(`✅ Order confirmation SMS sent to ${orderbautistafirstName} ${orderbautistalastName}`);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(true); // Set to true for success (green)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 4 seconds
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 4000);
+      } else {
+        console.warn('⚠️ SMS notification failed but order was still created');
+        console.warn('SMS Error details:', smsResponseData);
+        
+        // Show informative error message based on the error type
+        let errorMessage = 'SMS notification failed';
+        if (smsResponseData.message && smsResponseData.message.includes('contact number not found')) {
+          errorMessage = `⚠️ Order created but SMS failed: No phone number for ${orderbautistafirstName} ${orderbautistalastName}`;
+        } else if (smsResponseData.message) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.message}`;
+        } else if (smsResponseData.error) {
+          errorMessage = `⚠️ Order created but SMS failed: ${smsResponseData.error}`;
+        }
+        
+        // Show warning toast
+        setSmsToastMessage(errorMessage);
+        setSmsToast(true);
+        setSmsToastClosing(false);
+        setSmsIsClicked(false); // Set to false for error (red)
+        
+        // Start progress animation
+        setSmsProgressWidth('0%');
+        setTimeout(() => setSmsProgressWidth('100%'), 100);
+        
+        // Auto-hide toast after 6 seconds (longer for error messages)
+        setTimeout(() => {
+          setSmsToastClosing(true);
+          setTimeout(() => {
+            setSmsToast(false);
+            setSmsToastClosing(false);
+            setSmsProgressWidth('0%');
+          }, 3000);
+        }, 6000);
+      }
+    } else {
+      console.warn('⚠️ No valid order ID found in Bautista response, cannot send SMS');
+      console.warn('📋 Bautista Response data:', {
+        hasResult: !!result,
+        hasOrderData: !!orderData,
+        orderData: orderData,
+        orderId: orderId
+      });
+      
+      // Still show order creation success, but note SMS failure
+      setSmsToastMessage(`✅ Bautista order created successfully but SMS notification failed: No order ID returned`);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      setSmsIsClicked(true); // Set to true for order success (green), even if SMS failed
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
+    }
+  } catch (smsError) {
+    console.warn('⚠️ SMS notification failed but Bautista order was still created:', smsError);
+    // Don't let SMS failure affect the order creation success
+  }
+  
+  setpatientorderbautistaproductisClicked(true);
+  setpatientorderbautistaproductToastMessage("Order Submitted Successfully!");
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+
+  // Reset form fields
+  setorderbautistaEmail('');
+  setorderbautistaprofilePicture('');
+  setorderbautistafullName('');
+  setorderbautistalastName('');
+  setorderbautistamiddleName('');
+  setorderbautistafirstName('');
+  setorderbautistacontactNumber('');
+  setorderbautistadownPayment('');
+  setorderbautistacustomFee('');
+  setorderbautistaDiscount('');
+  setorderbautistaamountPaid('');
+  setorderbautistaNotes('');
+  setbautistaproductsoldCount(0);
+  setbautistapickupStatus('Later');
+  // Reset state
+  setselectedorderbautistaproduct(null);
+  setshowpatientorderbautista(false);
+  await fetchbautistaOrders();
+
+} catch (error) {
+  console.error('Submission error:', error);
+  setpatientorderbautistaproductToastMessage(error.message);
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+} finally {
+  setIsSubmittingBautistaCompleteOrder(false);
+}
+};
+
+
+
+//FUNCTION BUTTON FOR PENDING ORDER
+
+//AMBHER OPTICAL ORDER PRODUCT
+const submitpatientpendingorderambher = async (e) => {
+e.preventDefault();
+setIsSubmittingAmbherPendingOrder(true);
+
+try {
+  // Prepare order data
+  const orderData = {
+    // Patient Information
+    patientprofilepicture: orderambherprofilePicture,
+    patientfirstname: orderambherfirstName,
+    patientmiddlename: orderambhermiddleName,
+    patientlastname: orderambherlastName,
+    patientemail: orderambherEmail,
+    patientcontactnumber: orderambhercontactNumber,
+
+    // Ordered Product Info
+    patientorderambherproductid: selectedorderambherproduct?.ambherinventoryproductid,
+    patientorderambherproductname: orderambherinventoryproductname,
+    patientorderambherproductbrand: orderambherinventoryproductbrand,
+    patientorderambherproductmodelnumber: orderambherinventoryproductmodelnumber,
+    patientorderambherproductcategory: orderambherinventorycategorynamebox,
+    patientorderambherproductimage: orderambherinventoryproductimagepreviewimages,
+    patientorderambherproductprice: orderambherinventoryproductprice,
+    patientorderambherproductquantity: ambhercount,
+    patientorderambherproductsubtotal: orderambherinventoryproductprice * ambhercount,
+    patientorderambherproductdescription: orderambherinventoryproductdescription,
+    patientorderambherproductnotes: orderambherNotes,
+
+    //Total
+    patientorderambhercustomfee: Number(orderambhercustomFee),
+    patientorderambherdiscount: Number(orderambherDiscount || 0), // Discount percentage
+    patientorderambherdiscountamount: Number(orderambherDiscountAmount || 0), // Actual discount amount
+    patientorderambheramountpaid: Number(orderambheramountPaid),
+    patientorderambherproducttotal: orderambhertotalwithFee,
+    patientorderambherremainingbalance: orderambherremainingBalance,
+    patientorderambheramountpaidChange: orderambheramountpaidChange,
+
+    //Payment
+    patientorderambherproductpaymentmethod: 'Cash',
+    patientorderambherproductpaymentreceiptimage: '',
+    patientorderambherproductpaymentstatus: 'Partially Paid', //"Partially Paid" or "Fully Paid"
+    patientorderambherproductpaymenttransactionid: '',
+
+    //Pickup if not "Now"
+    patientorderambherproductpickupstatus: ambherpickupStatus, //'Now' or 'Later'
+    patientorderambherproductchosenpickupdate: 'Later',
+    patientorderambherproductchosenpickuptime: 'Default',
+    patientorderambherproductchosenpickupplace: orderambherpickupplace,
+
+    //Authorized Person
+    patientorderambherproducauthorizedname: adminfirstname + " " + adminmiddlename + " " + adminlastname,
+    patientorderambherproducauthorizedtype: currentuserloggedin,
+
+    // Order History
+    patientorderambherstatus: 'Pending',
+    patientorderambherhistory: [{
+      status: 'Pending',
+      changedAt: new Date(),
+      changedBy: `${orderambherfirstName} ${orderambherlastName}`
+    }]
+  };
+
+  console.log('Submitting order:', orderData);
+
+  // Submit order using admin token
+  const response = await fetch(`/api/patientorderambher`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
+    },
+    body: JSON.stringify(orderData)
+  });
+
+  // Handle response
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Server response:', errorText);
+    throw new Error(errorText || `Server error: ${response.status}`);
+  }
+
+  
+
+
+  // Handle success
+  const result = await response.json();
+  console.log(result);
+  setpatientorderambherproductisClicked(true);
+  setpatientorderambherproductToastMessage("Pending Order Submitted Successfully!");
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+
+  // Reset form fields
+  setorderambherEmail('');
+  setorderambherprofilePicture('');
+  setorderambherfullName('');
+  setorderambherlastName('');
+  setorderambhermiddleName('');
+  setorderambherfirstName('');
+  setorderambhercontactNumber('');
+  setorderambherdownPayment('');
+  setorderambhercustomFee('');
+  setorderambherDiscount('');
+  setorderambheramountPaid('');
+  setorderambherNotes('');
+  setambherproductsoldCount(0);
+  setambherpickupStatus('Later');
+  // Reset state
+  setselectedorderambherproduct(null);
+  setshowpatientorderambher(false);
+  await fetchambherOrders();
+
+} catch (error) {
+  console.error('Submission error:', error);
+  setpatientorderambherproductToastMessage(error.message);
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+} finally {
+  setIsSubmittingAmbherPendingOrder(false);
+}
+};
+
+//BAUTISTA ORDER PRODUCT
+const submitpatientpendingorderbautista = async (e) => {
+e.preventDefault();
+setIsSubmittingBautistaPendingOrder(true);
+
+try {
+  // Prepare order data
+  const orderData = {
+    // Patient Information
+    patientprofilepicture: orderbautistaprofilePicture,
+    patientfirstname: orderbautistafirstName,
+    patientmiddlename: orderbautistamiddleName,
+    patientlastname: orderbautistalastName,
+    patientemail: orderbautistaEmail,
+    patientcontactnumber: orderbautistacontactNumber,
+
+    // Ordered Product Info
+    patientorderbautistaproductid: selectedorderbautistaproduct?.bautistainventoryproductid,
+    patientorderbautistaproductname: orderbautistainventoryproductname,
+    patientorderbautistaproductbrand: orderbautistainventoryproductbrand,
+    patientorderbautistaproductmodelnumber: orderbautistainventoryproductmodelnumber,
+    patientorderbautistaproductcategory: orderbautistainventorycategorynamebox,
+    patientorderbautistaproductimage: orderbautistainventoryproductimagepreviewimages,
+    patientorderbautistaproductprice: orderbautistainventoryproductprice,
+    patientorderbautistaproductquantity: bautistacount,
+    patientorderbautistaproductsubtotal: orderbautistainventoryproductprice * bautistacount,
+    patientorderbautistaproductdescription: orderbautistainventoryproductdescription,
+    patientorderbautistaproductnotes: orderbautistaNotes,
+
+    //Total
+    patientorderbautistacustomfee: Number(orderbautistacustomFee),
+    patientorderbautistadiscount: Number(orderbautistaDiscount || 0), // Discount percentage
+    patientorderbautistadiscountamount: Number(orderbautistaDiscountAmount || 0), // Actual discount amount
+    patientorderbautistaamountpaid: Number(orderbautistaamountPaid),
+    patientorderbautistaproducttotal: orderbautistatotalwithFee,
+    patientorderbautistaremainingbalance: orderbautistaremainingBalance,
+    patientorderbautistaamountpaidChange: orderbautistaamountpaidChange,
+
+    //Payment
+    patientorderbautistaproductpaymentmethod: 'Cash',
+    patientorderbautistaproductpaymentreceiptimage: '',
+    patientorderbautistaproductpaymentstatus: 'Partially Paid', //"Partially Paid" or "Fully Paid"
+    patientorderbautistaproductpaymenttransactionid: '',
+
+    //Pickup if not "Now"
+    patientorderbautistaproductpickupstatus: bautistapickupStatus, //'Now' or 'Later'
+    patientorderbautistaproductchosenpickupdate: 'Later',
+    patientorderbautistaproductchosenpickuptime: 'Default',
+    patientorderbautistaproductchosenpickupplace: orderbautistapickupplace,
+
+    //Authorized Person
+    patientorderbautistaproducauthorizedname: adminfirstname + " " + adminmiddlename + " " + adminlastname,
+    patientorderbautistaproducauthorizedtype: currentuserloggedin,
+
+    // Order History
+    patientorderbautistastatus: 'Pending',
+    patientorderbautistahistory: [{
+      status: 'Pending',
+      changedAt: new Date(),
+      changedBy: `${orderbautistafirstName} ${orderbautistalastName}`
+    }]
+  };
+
+  console.log('Submitting order:', orderData);
+
+  // Submit order using admin token
+  const response = await fetch(`/api/patientorderbautista`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentusertoken}` // Using admin token
+    },
+    body: JSON.stringify(orderData)
+  });
+
+  // Handle response
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Server response:', errorText);
+    throw new Error(errorText || `Server error: ${response.status}`);
+  }
+
+  
+
+
+  // Handle success
+  const result = await response.json();
+  console.log(result);
+  setpatientorderbautistaproductisClicked(true);
+  setpatientorderbautistaproductToastMessage("Pending Order Submitted Successfully!");
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+
+  // Reset form fields
+  setorderbautistaEmail('');
+  setorderbautistaprofilePicture('');
+  setorderbautistafullName('');
+  setorderbautistalastName('');
+  setorderbautistamiddleName('');
+  setorderbautistafirstName('');
+  setorderbautistacontactNumber('');
+  setorderbautistadownPayment('');
+  setorderbautistacustomFee('');
+  setorderbautistaamountPaid('');
+  setorderbautistaNotes('');
+  setbautistaproductsoldCount(0);
+  setbautistapickupStatus('Later');  
+  // Reset state
+  setselectedorderbautistaproduct(null);
+  setshowpatientorderbautista(false);
+  await fetchbautistaOrders();
+
+} catch (error) {
+  console.error('Submission error:', error);
+  setpatientorderbautistaproductToastMessage(error.message);
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+} finally {
+  setIsSubmittingBautistaPendingOrder(false);
+}
+};
+
+  // Note: chartsData is now handled by processedChartsData and filteredChartsData useMemo hooks
+
+  // Get current user clinic from localStorage
+  const getCurrentUserClinic = useCallback(() => {
+    const staffClinic = localStorage.getItem('staffclinic');
+    const ownerClinic = localStorage.getItem('ownerclinic');
+    return staffClinic || ownerClinic || '';
+  }, []);
+
+  // Optimized Reports Data Fetching with Smart Cache and Parallel Requests
+  const fetchReportsData = useCallback(async (forceRefresh = false) => {
+    const startTime = performance.now();
+    console.log('� Optimized fetchReportsData called');
+    setReportsData(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      const userClinic = getCurrentUserClinic();
+      console.log('👤 User clinic:', userClinic);
+      
+      // Create cache keys for different data types
+      const appointmentsCacheKey = `reports_appointments_${userClinic}`;
+      const ambherOrdersCacheKey = `reports_ambher_orders_${userClinic}`;
+      const bautistaOrdersCacheKey = `reports_bautista_orders_${userClinic}`;
+      
+      // Define API calls based on clinic - use smart cache for all
+      const apiCalls = [];
+      
+      // Always fetch appointments (filter client-side for better caching)
+      apiCalls.push(
+        smartFetch(
+          appointmentsCacheKey,
+          async () => {
+            const response = await fetch('/api/patientappointments/appointments', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('stafftoken') || localStorage.getItem('ownertoken') || localStorage.getItem('admintoken')}`
+              }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch appointments: ${response.statusText}`);
+            return response.json();
+          },
+          CACHE_DURATIONS.MEDIUM, // 5-minute cache
+          forceRefresh
+        )
+      );
+      
+      // Fetch orders based on clinic - parallel execution
+      if (userClinic === 'Ambher Optical') {
+        apiCalls.push(
+          smartFetch(
+            ambherOrdersCacheKey,
+            async () => {
+              const response = await fetch('/api/patientorderambher/', {
+                method: 'GET',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          ),
+          Promise.resolve([]) // Empty bautista orders
+        );
+      } else if (userClinic === 'Bautista Eye Center') {
+        apiCalls.push(
+          Promise.resolve([]), // Empty ambher orders
+          smartFetch(
+            bautistaOrdersCacheKey,
+            async () => {
+              const response = await fetch('/api/patientorderbautista/', {
+                method: 'GET',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          )
+        );
+      } else {
+        // Admin: fetch both in parallel
+        apiCalls.push(
+          smartFetch(
+            ambherOrdersCacheKey,
+            async () => {
+              const response = await fetch('/api/patientorderambher/', {
+                method: 'GET',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Ambher orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          ),
+          smartFetch(
+            bautistaOrdersCacheKey,
+            async () => {
+              const response = await fetch('/api/patientorderbautista/', {
+                method: 'GET',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${currentusertoken}`
+                }
+              });
+              if (!response.ok) throw new Error(`Failed to fetch Bautista orders: ${response.statusText}`);
+              return response.json();
+            },
+            CACHE_DURATIONS.MEDIUM,
+            forceRefresh
+          )
+        );
+      }
+      
+      // Execute all API calls in parallel
+      console.log('� Executing parallel API calls...');
+      const [appointmentsData, ambherOrdersData, bautistaOrdersData] = await Promise.all(apiCalls);
+      
+      // Client-side filtering for appointments (better caching)
+      let filteredAppointments = appointmentsData || [];
+      console.log('📊 Raw appointments data:', filteredAppointments?.length || 0);
+      console.log('👤 Current user clinic:', userClinic);
+      
+      if (userClinic === 'Ambher Optical') {
+        filteredAppointments = filteredAppointments.filter(appointment => 
+          appointment.patientambherappointmentdate && 
+          appointment.patientambherappointmentdate.trim() !== '' &&
+          appointment.patientambherappointmenttime &&
+          appointment.patientambherappointmenttime.trim() !== ''
+        );
+        console.log('🏥 Filtered Ambher appointments:', filteredAppointments?.length || 0);
+      } else if (userClinic === 'Bautista Eye Center') {
+        filteredAppointments = filteredAppointments.filter(appointment => 
+          appointment.patientbautistaappointmentdate && 
+          appointment.patientbautistaappointmentdate.trim() !== '' &&
+          appointment.patientbautistaappointmenttime &&
+          appointment.patientbautistaappointmenttime.trim() !== ''
+        );
+        console.log('🏥 Filtered Bautista appointments:', filteredAppointments?.length || 0);
+      }
+      console.log('✅ Final filtered appointments:', filteredAppointments?.length || 0);
+      
+      const endTime = performance.now();
+      console.log(`✅ Reports data fetched in ${(endTime - startTime).toFixed(2)}ms`);
+      
+      // Handle paginated response format - extract orders array from pagination response
+      const ambherOrders = Array.isArray(ambherOrdersData) ? ambherOrdersData : (ambherOrdersData?.orders || []);
+      const bautistaOrders = Array.isArray(bautistaOrdersData) ? bautistaOrdersData : (bautistaOrdersData?.orders || []);
+      
+      setReportsData({
+        appointments: filteredAppointments,
+        ambherOrders: ambherOrders,
+        bautistaOrders: bautistaOrders,
+        loading: false,
+        error: null
+      });
+      
+      console.log('📊 Reports data loaded:', {
+        appointmentsCount: filteredAppointments?.length || 0,
+        ambherOrdersCount: ambherOrders.length,
+        bautistaOrdersCount: bautistaOrders.length,
+        fetchTime: `${(endTime - startTime).toFixed(2)}ms`
+      });
+
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+      setReportsData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Failed to fetch reports data'
+      }));
+    }
+  }, [smartFetch, CACHE_DURATIONS, getCurrentUserClinic, currentusertoken]);
+
+  // Refresh reports data function - clears cache and reloads data
+  const refreshReportsData = useCallback(async () => {
+    console.log('🔄 Manual refresh of reports data triggered');
+    await fetchReportsData(true); // Force refresh bypassing cache
+    console.log('✅ Manual refresh completed');
+  }, [fetchReportsData]);
+
+  // Refresh appointment data function
+  const refreshAppointmentData = useCallback(async () => {
+    console.log('🔄 Manual refresh of appointment data triggered');
+    setloadingappointments(true);
+    try {
+      await fetchAppointmentData(true); // Force refresh bypassing cache
+      console.log('✅ Appointment refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing appointment data:', error);
+    } finally {
+      setloadingappointments(false);
+    }
+  }, [fetchAppointmentData]);
+
+  // Refresh medical records data function
+  const refreshMedicalRecordsData = useCallback(async () => {
+    console.log('🔄 Manual refresh of medical records data triggered');
+    setloadingpatientdemographics(true);
+    try {
+      await fetchDemographicsData(true); // Force refresh bypassing cache
+      console.log('✅ Medical records refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing medical records data:', error);
+    } finally {
+      setloadingpatientdemographics(false);
+    }
+  }, [fetchDemographicsData]);
+
+  // Refresh inventory data function
+  const refreshInventoryData = useCallback(async () => {
+    console.log('🔄 Manual refresh of inventory data triggered');
+    setloadingambherinventorycategorylist(true);
+    setloadingbautistainventorycategorylist(true);
+    setambherloadingproducts(true);
+    setbautistaloadingproducts(true);
+    try {
+      // Refresh inventory categories and products
+      await fetchambherinventorycategories();
+      await fetchbautistainventorycategories();
+      await fetchambherproducts();
+      await fetchbautistaproducts();
+      console.log('✅ Inventory refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing inventory data:', error);
+    } finally {
+      setloadingambherinventorycategorylist(false);
+      setloadingbautistainventorycategorylist(false);
+      setambherloadingproducts(false);
+      setbautistaloadingproducts(false);
+    }
+  }, []);
+
+  // Refresh billing and orders data function
+  const refreshBillingOrdersData = useCallback(async () => {
+    console.log('🔄 Manual refresh of billing and orders data triggered');
+    setLoadingAmbherOrders(true);
+    setLoadingBautistaOrders(true);
+    try {
+      await fetchAllOrdersOptimized(true); // Force refresh bypassing cache
+      console.log('✅ Billing and orders refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing billing and orders data:', error);
+    } finally {
+      setLoadingAmbherOrders(false);
+      setLoadingBautistaOrders(false);
+    }
+  }, [fetchAllOrdersOptimized]);
+
+  // Helper functions for data processing - MOVED BEFORE useMemo
+  const processMonthlyData = useCallback((data, dateField) => {
+    if (!data || !data.length) return [];
+    console.log('📊 processMonthlyData called with:', data?.length || 0, 'items');
+    const months = {};
+    data.forEach(item => {
+      const date = new Date(item[dateField]);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months[monthKey] = (months[monthKey] || 0) + 1;
+    });
+
+    const result = Object.entries(months).map(([month, count]) => ({
+      month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      count
+    })).sort((a, b) => new Date(a.month) - new Date(b.month));
+    
+    console.log('📊 processMonthlyData result:', result);
+    return result;
+  }, []);
+
+  const processCategoryData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
+    console.log('📊 processCategoryData called with:', orders?.length || 0, 'orders');
+    
+    // Filter only completed orders
+    const completedOrders = orders.filter(order => {
+      const ambherStatus = order.patientorderambherstatus?.toLowerCase();
+      const bautistaStatus = order.patientorderbautistastatus?.toLowerCase();
+      return ambherStatus === 'completed' || bautistaStatus === 'completed';
+    });
+    
+    if (!completedOrders.length) return [];
+    
+    const categories = {};
+    completedOrders.forEach(order => {
+      const category = order.patientorderambherproductcategory || order.patientorderbautistaproductcategory || 'Other';
+      const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
+      categories[category] = (categories[category] || 0) + quantity;
+    });
+
+    const result = Object.entries(categories).map(([category, quantity]) => ({
+      category,
+      quantity,
+      value: quantity
+    }));
+    
+    console.log('📊 processCategoryData result:', result);
+    return result;
+  }, []);
+
+  const processRevenueData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
+    const revenue = {};
+    orders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const total = order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0;
+      revenue[monthKey] = (revenue[monthKey] || 0) + total;
+    });
+
+    return Object.entries(revenue).map(([month, total]) => ({
+      month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      revenue: total
+    })).sort((a, b) => new Date(a.month) - new Date(b.month));
+  }, []);
+
+  const processStatusData = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
+    const statuses = {};
+    orders.forEach(order => {
+      const status = order.patientorderambherstatus || order.patientorderbautistastatus || 'Unknown';
+      statuses[status] = (statuses[status] || 0) + 1;
+    });
+
+    return Object.entries(statuses).map(([status, count]) => ({
+      status,
+      count,
+      value: count
+    }));
+  }, []);
+
+  const processTopProducts = useCallback((orders) => {
+    if (!orders || !orders.length) return [];
+    
+    // Filter only completed orders
+    const completedOrders = orders.filter(order => {
+      const ambherStatus = order.patientorderambherstatus?.toLowerCase();
+      const bautistaStatus = order.patientorderbautistastatus?.toLowerCase();
+      return ambherStatus === 'completed' || bautistaStatus === 'completed';
+    });
+    
+    if (!completedOrders.length) return [];
+    
+    const products = {};
+    completedOrders.forEach(order => {
+      const productName = order.patientorderambherproductname || order.patientorderbautistaproductname || 'Unknown';
+      const quantity = order.patientorderambherproductquantity || order.patientorderbautistaproductquantity || 0;
+      products[productName] = (products[productName] || 0) + quantity;
+    });
+
+    return Object.entries(products)
+      .map(([product, quantity]) => ({ product, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  }, []);
+
+  const processPatientVisits = useCallback((appointments) => {
+    if (!appointments || !appointments.length) return [];
+    const visits = {};
+    appointments.forEach(appointment => {
+      const date = new Date(appointment.createdAt);
+      const dayKey = date.toLocaleDateString();
+      visits[dayKey] = (visits[dayKey] || 0) + 1;
+    });
+
+    return Object.entries(visits).map(([date, visits]) => ({
+      date,
+      visits
+    })).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, []);
+
+  // Process daily appointment data for interactive chart - COMPLETED APPOINTMENTS ONLY
+  const processDailyAppointmentData = useCallback((appointments) => {
+    if (!appointments || !appointments.length) return [];
+    
+    const dailyData = {};
+    
+    appointments.forEach(appointment => {
+      // Only process completed appointments
+      const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
+      const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
+      
+      // Skip if neither clinic appointment is completed
+      if (!isAmbherCompleted && !isBautistaCompleted) {
+        return;
+      }
+      
+      let appointmentDate = null;
+      let clinic = null;
+      
+      // Use the appointment date from the completed clinic
+      if (isAmbherCompleted && appointment.patientambherappointmentdate) {
+        appointmentDate = appointment.patientambherappointmentdate;
+        clinic = 'ambher';
+      } else if (isBautistaCompleted && appointment.patientbautistaappointmentdate) {
+        appointmentDate = appointment.patientbautistaappointmentdate;
+        clinic = 'bautista';
+      }
+      
+      // Skip if no valid appointment date found
+      if (!appointmentDate) {
+        return;
+      }
+      
+      const date = new Date(appointmentDate);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = {
+          date: dateKey,
+          ambher: 0,
+          bautista: 0,
+          total: 0
+        };
+      }
+      
+      // Count completed appointments by clinic
+      if (clinic === 'ambher') {
+        dailyData[dateKey].ambher += 1;
+        dailyData[dateKey].total += 1;
+      } else if (clinic === 'bautista') {
+        dailyData[dateKey].bautista += 1;
+        dailyData[dateKey].total += 1;
+      }
+    });
+    
+    // Convert to array and sort by date
+    const result = Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    console.log('📊 processDailyAppointmentData (COMPLETED ONLY) result:', result);
+    return result;
+  }, []);
+
+  // Helper function to apply date filters to processed chart data
+  const applyDateFiltersToChartsData = useCallback((chartsData) => {
+    // For now, return the same data - you can implement date filtering here if needed
+    // This is much faster than reprocessing raw data every time
+    return chartsData;
+  }, []);
+
+  // Optimized Chart Data Processing with Memoization
+  const processedChartsData = useMemo(() => {
+    const startTime = performance.now();
+    console.log('🔄 Processing charts data...');
+    
+    const { appointments, ambherOrders, bautistaOrders } = reportsData;
+    
+    // Ensure orders are arrays before spreading
+    const safeAmbherOrders = Array.isArray(ambherOrders) ? ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(bautistaOrders) ? bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
+    
+    console.log('📊 Data to process:', {
+      appointmentsCount: appointments?.length || 0,
+      ambherOrdersCount: safeAmbherOrders.length,
+      bautistaOrdersCount: safeBautistaOrders.length,
+      allOrdersCount: allOrders.length
+    });
+
+    // Fast return for empty data
+    if (!appointments.length && !allOrders.length) {
+      console.log('⚡ No data to process, returning empty charts');
+      return {
+        salesByCategory: [],
+        revenueByMonth: [],
+        orderStatusDistribution: [],
+        topProducts: [],
+        patientVisits: []
+      };
+    }
+
+    // Process all chart data in parallel using optimized functions
+    const result = {
+      salesByCategory: processCategoryData(allOrders),
+      revenueByMonth: processRevenueData(allOrders),
+      orderStatusDistribution: processStatusData(allOrders),
+      topProducts: processTopProducts(allOrders),
+      patientVisits: processPatientVisits(appointments),
+      dailyAppointments: processDailyAppointmentData(appointments)
+    };
+    
+    const endTime = performance.now();
+    console.log(`⚡ Charts data processed in ${(endTime - startTime).toFixed(2)}ms`);
+    console.log('📈 Processed charts result:', result);
+    
+    return result;
+  }, [reportsData, processCategoryData, processRevenueData, processStatusData, processTopProducts, processPatientVisits, processDailyAppointmentData]); // Added dependencies
+
+  // Apply date filters to processed data (much faster than reprocessing)
+  const filteredChartsData = useMemo(() => {
+    const startTime = performance.now();
+    
+    if (!processedChartsData.salesByCategory.length) {
+      return processedChartsData;
+    }
+
+    // Apply filters to already processed data
+    const filtered = applyDateFiltersToChartsData(processedChartsData);
+    
+    const endTime = performance.now();
+    console.log(`🔍 Filters applied in ${(endTime - startTime).toFixed(2)}ms`);
+    
+    return filtered;
+  }, [processedChartsData, applyDateFiltersToChartsData]);
+
+  // Paginated Recent Orders
+  const paginatedRecentOrders = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    const startIndex = (recentOrdersCurrentPage - 1) * RECENT_ORDERS_PER_PAGE;
+    const endIndex = startIndex + RECENT_ORDERS_PER_PAGE;
+    
+    return {
+      orders: allOrders.slice(startIndex, endIndex),
+      totalOrders: allOrders.length,
+      totalPages: Math.ceil(allOrders.length / RECENT_ORDERS_PER_PAGE),
+      currentPage: recentOrdersCurrentPage
+    };
+  }, [reportsData, recentOrdersCurrentPage, RECENT_ORDERS_PER_PAGE]);
+
+  // Separate filtered data for each chart with independent filters
+  const filteredSalesByCategory = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, salesCategoryFilter, salesCategoryYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
+    }
+    
+    return processCategoryData(filteredOrders);
+  }, [reportsData, salesCategoryFilter, salesCategoryYear, filterOrdersByDateRange, processCategoryData]);
+
+  const filteredOrderStatusDistribution = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, orderStatusFilter, orderStatusYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
+    }
+    
+    return processStatusData(filteredOrders);
+  }, [reportsData, orderStatusFilter, orderStatusYear, filterOrdersByDateRange, processStatusData]);
+
+  const filteredTopProducts = useMemo(() => {
+    const { ambherOrders, bautistaOrders } = reportsData;
+    const allOrders = [...ambherOrders, ...bautistaOrders];
+    const filteredOrders = filterOrdersByDateRange(allOrders, topProductsFilter, topProductsYear);
+    
+    if (filteredOrders.length === 0) {
+      return [];
+    }
+    
+    return processTopProducts(filteredOrders);
+  }, [reportsData, topProductsFilter, topProductsYear, filterOrdersByDateRange, processTopProducts]);
+
+
+
+
+
+  const calculateTotalRevenue = useCallback(() => {
+    // Safely get orders arrays
+    const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
+    const currentUserClinic = getCurrentUserClinic();
+    
+    // Calculate order revenue - ONLY FROM COMPLETED ORDERS
+    const orderRevenue = allOrders.reduce((total, order) => {
+      // Only include completed orders
+      const isCompleted = (order.patientorderambherstatus === 'Completed') || 
+                         (order.patientorderbautistastatus === 'Completed');
+      
+      if (!isCompleted) return total;
+      
+      return total + (order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0);
+    }, 0);
+    
+    // Calculate appointment payment revenue - ONLY FROM COMPLETED APPOINTMENTS
+    const appointmentRevenue = (reportsData.appointments || []).reduce((total, appointment) => {
+      // Only include completed appointments
+      const isAmbherCompleted = appointment.patientambherappointmentstatus === 'Completed';
+      const isBautistaCompleted = appointment.patientbautistaappointmentstatus === 'Completed';
+      
+      if (!isAmbherCompleted && !isBautistaCompleted) return total;
+      
+      const ambherPayment = isAmbherCompleted ? (appointment.patientambherappointmentpaymentotal || 0) : 0;
+      const bautistaPayment = isBautistaCompleted ? (appointment.patientbautistaappointmentpaymentotal || 0) : 0;
+      
+      // More flexible clinic name matching
+      if (currentUserClinic && currentUserClinic.toLowerCase().includes('ambher')) {
+        // Include Ambher appointment payments
+        return total + ambherPayment;
+      } else if (currentUserClinic && currentUserClinic.toLowerCase().includes('bautista')) {
+        // Include Bautista appointment payments
+        return total + bautistaPayment;
+      } else {
+        // If no specific clinic or admin, include both
+        return total + ambherPayment + bautistaPayment;
+      }
+    }, 0);
+    
+    return orderRevenue + appointmentRevenue;
+  }, [reportsData, getCurrentUserClinic]);
+
+  const calculateMetrics = useCallback(() => {
+    // Safely get orders arrays
+    const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+    const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+    const allOrders = [...safeAmbherOrders, ...safeBautistaOrders];
+    const completedOrders = allOrders.filter(order => 
+      (order.patientorderambherstatus === 'Completed') || 
+      (order.patientorderbautistastatus === 'Completed')
+    );
+    
+    // Calculate completed appointments based on clinic-specific status fields
+    const completedAppointments = Array.isArray(reportsData.appointments) ? reportsData.appointments.filter(apt => 
+      apt.patientambherappointmentstatus === 'Completed' || 
+      apt.patientbautistaappointmentstatus === 'Completed'
+    ) : [];
+    
+    return {
+      totalOrders: allOrders.length,
+      completedOrders: completedOrders.length,
+      totalRevenue: calculateTotalRevenue(),
+      totalAppointments: Array.isArray(reportsData.appointments) ? reportsData.appointments.length : 0,
+      completedAppointments: completedAppointments.length
+    };
+  }, [reportsData, calculateTotalRevenue]);
+
+  // PDF Generation Function
+  const generateReportsPDF = useCallback(() => {
+    if (reportsData.loading) {
+      alert('Please wait for data to load before generating PDF');
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+
+      // Helper function to add new page if needed
+      const checkPageSpace = (requiredSpace) => {
+        if (yPosition + requiredSpace > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      // Get clinic information
+      const getClinicInfo = () => {
+        if (isAmbherOnlyUser()) {
+          return { name: "Ambher Optical", logo: null };
+        } else if (isBautistaOnlyUser()) {
+          return { name: "Bautista Eye Center", logo: null };
+        } else {
+          return { name: "Eye2Wear Optical Management System", logo: null };
+        }
+      };
+
+      const clinicInfo = getClinicInfo();
+
+      // Get user information
+      const getUserInfo = () => {
+        const userType = currentuserloggedin;
+        const fullName = `${adminfirstname} ${adminlastname}`.trim() || 'Unknown User';
+        return { userType, fullName };
+      };
+
+      const userInfo = getUserInfo();
+
+      // Header with clinic name and logo
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(clinicInfo.name, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      pdf.setFontSize(16);
+      pdf.text('Reports and Analytics', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // Generation details
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleString();
+      pdf.text(`Generated on: ${formattedDate}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`Generated by: ${userInfo.fullName} (${userInfo.userType})`, 20, yPosition);
+      yPosition += 15;
+
+      // Summary metrics
+      checkPageSpace(40);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Summary Metrics', 20, yPosition);
+      yPosition += 10;
+
+      const metrics = calculateMetrics();
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      
+      const summaryData = [
+        ['Metric', 'Value'],
+        ['Total Orders', metrics.totalOrders.toString()],
+        ['Total Revenue', `PHP ${metrics.totalRevenue.toLocaleString()}`],
+        ['Total Appointments', metrics.totalAppointments.toString()],
+        ['Completed Orders', metrics.completedOrders.toString()]
+      ];
+
+      autoTable(pdf, {
+        startY: yPosition,
+        head: [summaryData[0]],
+        body: summaryData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: [24, 77, 133] },
+        margin: { left: 20, right: 20 }
+      });
+
+      yPosition = pdf.lastAutoTable.finalY + 15;
+
+      // Revenue Chart Data (if available)
+      if (filteredChartsData?.revenueByMonth && filteredChartsData.revenueByMonth.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Revenue by Month', 20, yPosition);
+        yPosition += 10;
+
+        const revenueHeaders = ['Month', 'Revenue (PHP)'];
+        const revenueData = filteredChartsData.revenueByMonth.map(item => [
+          item.month || item.name || 'N/A',
+          `PHP ${(item.revenue || item.value || 0).toLocaleString()}`
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [revenueHeaders],
+          body: revenueData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Appointments Data (if available)
+      if (filteredChartsData?.dailyAppointments && filteredChartsData.dailyAppointments.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Daily Appointments', 20, yPosition);
+        yPosition += 10;
+
+        const appointmentHeaders = ['Date', 'Total Appointments'];
+        const appointmentData = filteredChartsData.dailyAppointments.slice(0, 10).map(item => [
+          item.date || item.name || 'N/A',
+          (item.total || item.value || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [appointmentHeaders],
+          body: appointmentData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Sales by Category Data
+      if (filteredSalesByCategory && filteredSalesByCategory.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Sales by Category', salesCategoryFilter, salesCategoryYear), 20, yPosition);
+        yPosition += 10;
+
+        const categoryHeaders = ['Category', 'Quantity Sold'];
+        const categoryData = filteredSalesByCategory.map(item => [
+          item.category || 'N/A',
+          (item.quantity || item.value || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [categoryHeaders],
+          body: categoryData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Order Status Distribution
+      if (filteredOrderStatusDistribution && filteredOrderStatusDistribution.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Order Status Distribution', orderStatusFilter, orderStatusYear), 20, yPosition);
+        yPosition += 10;
+
+        const statusHeaders = ['Status', 'Count'];
+        const statusData = filteredOrderStatusDistribution.map(item => [
+          item.status || 'N/A',
+          (item.value || item.count || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [statusHeaders],
+          body: statusData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Top Products Data
+      if (filteredTopProducts && filteredTopProducts.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(getResponsiveTitle('Top Products', topProductsFilter, topProductsYear), 20, yPosition);
+        yPosition += 10;
+
+        const productHeaders = ['Product Name', 'Sales Count'];
+        const productData = filteredTopProducts.slice(0, 10).map(item => [
+          item.product || item.name || item.productName || 'N/A',
+          (item.quantity || item.value || item.sales || item.count || 0).toString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [productHeaders],
+          body: productData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 }
+        });
+
+        yPosition = pdf.lastAutoTable.finalY + 15;
+      }
+
+      // Recent Orders Table (based on current pagination)
+      if (paginatedRecentOrders?.orders && paginatedRecentOrders.orders.length > 0) {
+        checkPageSpace(60);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Recent Orders (Page ${paginatedRecentOrders.currentPage} of ${paginatedRecentOrders.totalPages})`, 20, yPosition);
+        yPosition += 10;
+
+        const orderHeaders = ['Order ID', 'Customer', 'Product', 'Status', 'Total', 'Date'];
+        const orderData = paginatedRecentOrders.orders.map(order => [
+          `#${order.patientorderambherid || order.patientorderbautistaid}`,
+          `${order.patientfirstname} ${order.patientlastname}`,
+          (order.patientorderambherproductname || order.patientorderbautistaproductname || '').substring(0, 20) + '...',
+          order.patientorderambherstatus || order.patientorderbautistastatus || 'N/A',
+          `PHP ${(order.patientorderambherproducttotal || order.patientorderbautistaproducttotal || 0).toLocaleString()}`,
+          new Date(order.createdAt).toLocaleDateString()
+        ]);
+
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [orderHeaders],
+          body: orderData,
+          theme: 'striped',
+          headStyles: { fillColor: [24, 77, 133] },
+          margin: { left: 20, right: 20 },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            2: { cellWidth: 30 }, // Product column
+            3: { cellWidth: 20 }, // Status column
+          }
+        });
+      }
+
+      // Save the PDF with simple, reliable method
+      const fileName = `Reports_Analytics_${clinicInfo.name.replace(/\s+/g, '_')}_${currentDate.toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      // Show success toast
+      setPdfToastMessage("PDF report generated successfully!");
+      setPdfToast(true);
+      setPdfIsClicked(true);
+      setPdfToastClosing(false);
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      
+      // Show error toast
+      setPdfToastMessage("Error generating PDF. Please try again.");
+      setPdfToast(true);
+      setPdfIsClicked(false);
+      setPdfToastClosing(false);
+    }
+  }, [
+    reportsData, 
+    calculateMetrics, 
+    filteredChartsData, 
+    filteredSalesByCategory, 
+    filteredOrderStatusDistribution, 
+    filteredTopProducts,
+    paginatedRecentOrders,
+    salesCategoryFilter,
+    orderStatusFilter,
+    topProductsFilter,
+    salesCategoryYear,
+    orderStatusYear,
+    topProductsYear,
+    getResponsiveTitle,
+    isAmbherOnlyUser,
+    isBautistaOnlyUser,
+    currentuserloggedin,
+    adminfirstname,
+    adminlastname
+  ]);
+
+  // Chart colors
+  const CHART_COLORS = [
+    '#184d85', '#2563eb', '#1c96c5', '#60a5fa', '#93c5fd',
+    '#1e40af', '#1d4ed8', '#2563eb', '#1c96c5', '#60a5fa'
+  ];
+
+  // Optimized Effects with better dependency management
+  useEffect(() => {
+    console.log('🔍 useEffect triggered - activedashboard:', activedashboard);
+    if (activedashboard === 'reportsandanalytics') {
+      console.log('📊 Reports section accessed');
+      
+      // Only fetch if data is empty (first time) or if not loaded yet
+      const safeAppointments = Array.isArray(reportsData.appointments) ? reportsData.appointments : [];
+      const safeAmbherOrders = Array.isArray(reportsData.ambherOrders) ? reportsData.ambherOrders : [];
+      const safeBautistaOrders = Array.isArray(reportsData.bautistaOrders) ? reportsData.bautistaOrders : [];
+      
+      if (!safeAppointments.length && !safeAmbherOrders.length && !safeBautistaOrders.length) {
+        console.log('✅ Fetching reports data (empty data detected)');
+        fetchReportsData();
+      } else {
+        console.log('✅ Using cached reports data - no refetch needed');
+      }
+    } else {
+      console.log('❌ Not in reports section, no data fetch needed');
+    }
+  }, [activedashboard, fetchReportsData]);
+
+  // No need for separate processChartsData useEffect - data is now processed automatically with useMemo
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+//SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables //SMS Monitoring Variables 
+
+// SMS Messages State Variables
+const [smsMessages, setSmsMessages] = useState([]);
+const [loadingSmsMessages, setLoadingSmsMessages] = useState(true);
+const [errorLoadingSmsMessages, setErrorLoadingSmsMessages] = useState(null);
+const [filteredSmsMessages, setFilteredSmsMessages] = useState([]);
+
+// SMS Search and Filter States
+const [searchSmsMessages, setSearchSmsMessages] = useState('');
+const [smsStatusFilter, setSmsStatusFilter] = useState('all');
+const [smsTypeFilter, setSmsTypeFilter] = useState('all');
+
+// SMS Pagination
+const [currentSmsPage, setCurrentSmsPage] = useState(1);
+const smsMessagesPerPage = 10;
+
+// Promotional SMS Modal States
+const [showPromotionalSmsModal, setShowPromotionalSmsModal] = useState(false);
+const [promotionalSmsSubject, setPromotionalSmsSubject] = useState('');
+const [promotionalSmsMessage, setPromotionalSmsMessage] = useState('');
+const [sendingSms, setSendingSms] = useState(false);
+
+// SMS Credits State Variables
+const [smsCredits, setSmsCredits] = useState(null);
+const [loadingSmsCredits, setLoadingSmsCredits] = useState(false);
+const [smsCreditsError, setSmsCreditsError] = useState(null);
+const [lastCreditsUpdate, setLastCreditsUpdate] = useState(null);
+
+// SMS Search functionality
+const searchSmsDebounce = (functions, delay) => {
+  let debounceTimer;
+  return function(...args) {
+    const context = this;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => functions.apply(context, args), delay);
+  };
+};
+
+const filterSmsMessages = useCallback(searchSmsDebounce((term) => {
+  if (!term.trim() && smsStatusFilter === 'all' && smsTypeFilter === 'all') {
+    setFilteredSmsMessages(smsMessages);
+    return;
+  }
+
+  const filtered = smsMessages.filter(sms => {
+    const matchesSearch = !term.trim() || 
+      sms.messageId?.toLowerCase().includes(term.toLowerCase()) ||
+      sms.recipients?.toLowerCase().includes(term.toLowerCase()) ||
+      sms.senderClinic?.toLowerCase().includes(term.toLowerCase()) ||
+      sms.message?.toLowerCase().includes(term.toLowerCase());
+
+    const matchesStatus = smsStatusFilter === 'all' || sms.status === smsStatusFilter;
+    const matchesType = smsTypeFilter === 'all' || sms.type === smsTypeFilter;
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  setFilteredSmsMessages(filtered);
+}, 300), [smsMessages, smsStatusFilter, smsTypeFilter]);
+
+// Fetch SMS Messages Data
+const fetchSmsMessagesData = useCallback(async (forceRefresh = false) => {
+  try {
+    setLoadingSmsMessages(true);
+    setErrorLoadingSmsMessages(null);
+
+    // Get current user's clinic to filter SMS messages
+    const currentUserClinic = getCurrentUserClinic();
+    
+    const smsMessages = await smartFetch(
+      'sms_messages',
+      async () => {
+        // Request all messages with a large limit for frontend pagination
+        // Add clinic filter to only get messages from the current user's clinic
+        let apiUrl_withParams = `${apiUrl}/api/sms?limit=1000&page=1`;
+        
+        // Add clinic filter if user has a specific clinic (not admin)
+        if (currentUserClinic && currentUserClinic.trim()) {
+          apiUrl_withParams += `&clinic=${encodeURIComponent(currentUserClinic)}`;
+        }
+        
+        const response = await fetch(apiUrl_withParams, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch SMS messages');
+        const data = await response.json();
+        
+        // Debug: Log the API response to see what we're getting
+        console.log('API Response Debug:', {
+          'Response type': typeof data,
+          'Has data property': !!data.data,
+          'Data length': data?.data?.length || 0,
+          'Total from API': data?.pagination?.total || 0,
+          'Pages from API': data?.pagination?.pages || 0,
+          'Current user clinic': currentUserClinic,
+          'Response structure': {
+            success: data.success,
+            pagination: data.pagination,
+            dataLength: data.data?.length
+          }
+        });
+        
+        return data;
+      },
+      CACHE_DURATIONS.SHORT, // 1 minute cache
+      forceRefresh
+    );
+
+    // Get the SMS data from the response
+    let smsData = smsMessages.data || smsMessages.smsMessages || smsMessages || [];
+    
+    // Add client-side filtering as a backup (in case the backend doesn't filter properly)
+    if (currentUserClinic && currentUserClinic.trim() && smsData.length > 0) {
+      smsData = smsData.filter(message => 
+        message.senderClinic === currentUserClinic
+      );
+      
+      // Removed debug logging to prevent console spam
+    }
+    
+    setSmsMessages(smsData);
+    
+    // Let the filtering useEffect handle filtering automatically
+  } catch (error) {
+    console.error('Error fetching SMS messages:', error);
+    setErrorLoadingSmsMessages(error.message);
+    setSmsMessages([]);
+    setFilteredSmsMessages([]);
+  } finally {
+    setLoadingSmsMessages(false);
+  }
+}, [smartFetch, CACHE_DURATIONS, currentusertoken, apiUrl, getCurrentUserClinic]);
+
+// SMS Messages Filter Effects
+useEffect(() => {
+  // Only filter if we have SMS messages loaded
+  if (smsMessages.length > 0) {
+    filterSmsMessages(searchSmsMessages);
+  } else {
+    // Clear filtered messages when no SMS data
+    setFilteredSmsMessages([]);
+  }
+}, [searchSmsMessages, smsStatusFilter, smsTypeFilter, filterSmsMessages, smsMessages]);
+
+// Reset page to 1 when SMS data is first loaded
+useEffect(() => {
+  if (smsMessages.length > 0) {
+    setCurrentSmsPage(1);
+  }
+}, [smsMessages.length]);
+
+// Fetch SMS Credits function
+const fetchSmsCredits = useCallback(async (forceRefresh = false) => {
+  setLoadingSmsCredits(true);
+  setSmsCreditsError(null);
+  
+  try {
+    console.log('💳 Fetching SMS credits...');
+    
+    // Get current user's clinic
+    const currentUserClinic = getCurrentUserClinic();
+    console.log('🏥 Fetching SMS credits for clinic:', currentUserClinic);
+    
+    // Build URL with clinic parameter
+    let creditsUrl = `${apiUrl}/api/sms/credits`;
+    if (currentUserClinic && currentUserClinic.trim()) {
+      creditsUrl += `?clinic=${encodeURIComponent(currentUserClinic)}`;
+    }
+    
+    const response = await fetch(creditsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch SMS credits');
+    const data = await response.json();
+    
+    if (data.success) {
+      setSmsCredits(data.balance);
+      setLastCreditsUpdate(new Date());
+      console.log(`✅ SMS credits fetched: ${data.balance} credits remaining`);
+    } else {
+      throw new Error(data.error || 'Failed to get SMS credits');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error fetching SMS credits:', error);
+    setSmsCreditsError(error.message);
+    setSmsCredits(null);
+  } finally {
+    setLoadingSmsCredits(false);
+  }
+}, [currentusertoken, apiUrl, getCurrentUserClinic]);
+
+// Refresh SMS monitoring data function
+const refreshSmsData = useCallback(async () => {
+  console.log('🔄 Manual refresh of SMS data triggered');
+  setLoadingSmsMessages(true);
+  try {
+    await fetchSmsMessagesData(true); // Force refresh bypassing cache
+    await fetchSmsCredits(true); // Force refresh bypassing cache
+    console.log('✅ SMS monitoring refresh completed');
+  } catch (error) {
+    console.error('❌ Error refreshing SMS data:', error);
+  } finally {
+    setLoadingSmsMessages(false);
+  }
+}, [fetchSmsMessagesData, fetchSmsCredits]);
+
+// Refresh Profile Information data function
+const refreshProfileData = useCallback(async () => {
+  console.log('🔄 Manual refresh of profile data triggered');
+  setloadingpatients(true);
+  try {
+    // Refresh patient accounts
+    const fetchresponse = await fetch('/api/patientaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+    
+    if(!fetchresponse.ok){
+      throw new Error("Failed to fetch patient accounts");
+    }
+
+    const patientdata = await fetchresponse.json();
+    setpatients(patientdata);
+    
+    // Also refresh demographic data if it exists
+    await fetchDemographicsData(true);
+    
+    console.log('✅ Profile data refresh completed');
+  } catch (error) {
+    console.error('❌ Error refreshing profile data:', error);
+    setfailedloadingpatients(error.message);
+  } finally {
+    setloadingpatients(false);
+  }
+}, [currentusertoken, fetchDemographicsData]);
+
+// Refresh Account Management data function
+const refreshAccountData = useCallback(async () => {
+  console.log('🔄 Manual refresh of all account data triggered');
+  
+  // Set all loading states to true
+  setloadingpatients(true);
+  setloadingstaffs(true);
+  setloadingowners(true);
+  setloadingadmins(true);
+  
+  // Clear any previous error states
+  setfailedloadingpatients(null);
+  setfailedloadingstaffs(null);
+  setfailedloadingowners(null);
+  setfailedloadingadmins(null);
+
+  // Fetch all account types in parallel
+  const fetchPromises = [];
+
+  // Fetch patients
+  fetchPromises.push(
+    fetch('/api/patientaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch patient accounts");
+      }
+      return response.json();
+    })
+    .then(patientdata => {
+      setpatients(patientdata);
+      console.log('✅ Patient account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing patient account data:', error);
+      setfailedloadingpatients(error.message);
+    })
+    .finally(() => {
+      setloadingpatients(false);
+    })
+  );
+
+  // Fetch staffs
+  fetchPromises.push(
+    fetch('/api/staffaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch staff accounts");
+      }
+      return response.json();
+    })
+    .then(staffdata => {
+      // Apply clinic filtering (except for Admin)
+      if (currentuserloggedin !== "Admin") {
+        if (isAmbherOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Ambher Optical");
+        } else if (isBautistaOnlyUser()) {
+          staffdata = staffdata.filter(staff => staff.staffclinic === "Bautista Eye Center");
+        }
+      }
+      setstaffs(staffdata);
+      console.log('✅ Staff account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing staff account data:', error);
+      setfailedloadingstaffs(error.message);
+    })
+    .finally(() => {
+      setloadingstaffs(false);
+    })
+  );
+
+  // Fetch owners
+  fetchPromises.push(
+    fetch('/api/owneraccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch owner accounts");
+      }
+      return response.json();
+    })
+    .then(ownerdata => {
+      // Apply clinic filtering (except for Admin)
+      if (currentuserloggedin !== "Admin") {
+        if (isAmbherOnlyUser()) {
+          ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Ambher Optical");
+        } else if (isBautistaOnlyUser()) {
+          ownerdata = ownerdata.filter(owner => owner.ownerclinic === "Bautista Eye Center");
+        }
+      }
+      setowners(ownerdata);
+      console.log('✅ Owner account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing owner account data:', error);
+      setfailedloadingowners(error.message);
+    })
+    .finally(() => {
+      setloadingowners(false);
+    })
+  );
+
+  // Fetch admins
+  fetchPromises.push(
+    fetch('/api/adminaccounts', {
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch admin accounts");
+      }
+      return response.json();
+    })
+    .then(admindata => {
+      setadmins(admindata);
+      console.log('✅ Admin account data refresh completed');
+    })
+    .catch(error => {
+      console.error('❌ Error refreshing admin account data:', error);
+      setfailedloadingadmins(error.message);
+    })
+    .finally(() => {
+      setloadingadmins(false);
+    })
+  );
+
+  // Wait for all fetches to complete
+  try {
+    await Promise.allSettled(fetchPromises);
+    console.log('🎉 All account data refresh operations completed');
+  } catch (error) {
+    console.error('❌ Unexpected error during account data refresh:', error);
+  }
+}, [currentusertoken, currentuserloggedin, isAmbherOnlyUser, isBautistaOnlyUser]);
+
+// Initialize SMS data when component mounts
+useEffect(() => {
+  if (activedashboard === 'smsmonitoring') {
+    fetchSmsMessagesData();
+    fetchSmsCredits(); // Also fetch credits when entering SMS monitoring
+  }
+}, [activedashboard, fetchSmsMessagesData, fetchSmsCredits]);
+
+// Listen for real-time SMS updates
+useEffect(() => {
+  if (realtimeUpdates.has('sms')) {
+    fetchSmsMessagesData(true); // Force refresh on real-time update
+  }
+}, [realtimeUpdates, fetchSmsMessagesData]);
+
+// Format SMS date helper function
+const formatSmsDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Get paginated SMS data
+const getPaginatedSmsData = () => {
+  const dataToDisplay = searchSmsMessages.trim() || smsStatusFilter !== 'all' || smsTypeFilter !== 'all' 
+    ? filteredSmsMessages 
+    : smsMessages;
+  
+  // Ensure dataToDisplay is an array
+  if (!Array.isArray(dataToDisplay)) {
+    console.warn('SMS data is not an array:', dataToDisplay);
+    return [];
+  }
+  
+  const startIndex = (currentSmsPage - 1) * smsMessagesPerPage;
+  const endIndex = startIndex + smsMessagesPerPage;
+  return dataToDisplay.slice(startIndex, endIndex);
+};
+
+// Handle SMS page change
+const handleSmsPageChange = (page) => {
+  setCurrentSmsPage(page);
+};
+
+// Send Promotional SMS Function
+const sendPromotionalSms = async () => {
+  if (!promotionalSmsSubject.trim() || !promotionalSmsMessage.trim()) {
+    setSmsIsClicked(false);
+    setSmsToastType('error');
+    setSmsToastMessage('Please fill in both subject and message fields');
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+    return;
+  }
+
+  try {
+    setSendingSms(true);
+    
+    // Get current clinic from localStorage
+    const currentClinic = localStorage.getItem('staffclinic') || localStorage.getItem('ownerclinic');
+    if (!currentClinic) {
+      throw new Error('No clinic information found');
+    }
+
+    // Get current user information from localStorage based on user type
+    let currentUserId;
+    let currentUserName;
+    
+    // Try to get user data from different localStorage keys based on user type
+    if (localStorage.getItem('stafftoken')) {
+      // Staff user
+      currentUserId = localStorage.getItem('staffid');
+      currentUserName = localStorage.getItem('staffname') || 'Staff User';
+    } else if (localStorage.getItem('ownertoken')) {
+      // Owner user  
+      currentUserId = localStorage.getItem('ownerid');
+      currentUserName = localStorage.getItem('ownername') || 'Owner User';
+    } else if (localStorage.getItem('admintoken')) {
+      // Admin user
+      currentUserId = localStorage.getItem('adminid');
+      currentUserName = localStorage.getItem('adminname') || 'Admin User';
+    } else {
+      throw new Error('No valid user session found. Please log in again.');
+    }
+
+    if (!currentUserId) {
+      throw new Error('User ID not found. Please log in again.');
+    }
+
+    const response = await fetch('/api/sms/promotional', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('admintoken') || localStorage.getItem('stafftoken') || localStorage.getItem('ownertoken')}`
+      },
+      body: JSON.stringify({
+        subject: promotionalSmsSubject,
+        message: promotionalSmsMessage,
+        senderClinic: currentClinic,
+        senderUserId: currentUserId,
+        senderUserName: currentUserName
+      })
+    });
+
+    const result = await response.json();
+    console.log('🐛 SMS Response Debug:', {
+      httpStatus: response.status,
+      responseOk: response.ok,
+      result: result,
+      hasSuccess: 'success' in result,
+      successValue: result.success,
+      successCount: result.successCount,
+      failCount: result.failCount,
+      error: result.error
+    });
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send SMS');
+    }
+
+    // Check if the response indicates success but with detailed results
+    const isSuccess = result.success && result.successCount > 0;
+    const isPartialSuccess = result.success && result.successCount > 0 && result.failCount > 0;
+    const isFailure = !result.success || result.successCount === 0;
+
+    // Special handling for insufficient credits or when all messages failed
+    if (result.error && (result.error.toLowerCase().includes('insufficient') || 
+        result.error.toLowerCase().includes('credit')) ||
+        (result.success && result.successCount === 0 && result.failCount > 0) ||
+        (!result.success && result.successCount === 0)) {
+      setSmsIsClicked(false);
+      setSmsToastType('error');
+      
+      // More specific error message based on the failure type
+      let errorMessage = 'Failed to send SMS.';
+      if (result.error && result.error.toLowerCase().includes('insufficient')) {
+        errorMessage = 'Insufficient SMS credits. Please top up your account to send messages.';
+      } else if (result.error && result.error.toLowerCase().includes('credit')) {
+        errorMessage = 'SMS credit issue detected. Please check your account balance.';
+      } else if (result.failCount > 0) {
+        errorMessage = `Failed to send SMS to all ${result.failCount} recipients. Please check your SMS credits.`;
+      } else if (result.error) {
+        errorMessage = result.error;
+      }
+      
+      setSmsToastMessage(errorMessage);
+      setSmsToast(true);
+      setSmsToastClosing(false);
+      
+      // Start progress animation
+      setSmsProgressWidth('0%');
+      setTimeout(() => setSmsProgressWidth('100%'), 100);
+      
+      // Auto-hide toast after 4 seconds
+      setTimeout(() => {
+        setSmsToastClosing(true);
+        setTimeout(() => {
+          setSmsToast(false);
+          setSmsToastClosing(false);
+          setSmsProgressWidth('0%');
+        }, 3000);
+      }, 4000);
+      
+      // Clear form and close modal
+      setPromotionalSmsSubject('');
+      setPromotionalSmsMessage('');
+      setShowPromotionalSmsModal(false);
+      setSendingSms(false);
+      
+      // Refresh SMS credits to show updated balance
+      await fetchSmsCredits(true);
+      return;
+    }
+
+    // Show appropriate message based on results
+    setSmsIsClicked(isSuccess);
+    
+    if (isFailure) {
+      setSmsToastType('error');
+      setSmsToastMessage(
+        result.failCount 
+          ? `Failed to send SMS to all ${result.failCount} recipients. ${result.error || 'Please check your SMS credits and try again.'}`
+          : result.error || 'Failed to send SMS. Please try again.'
+      );
+    } else if (isPartialSuccess) {
+      setSmsToastType('warning');
+      setSmsToastMessage(`SMS sent to ${result.successCount} recipients (${result.failCount} failed). Please check your SMS credits.`);
+    } else {
+      setSmsToastType('success');
+      setSmsToastMessage(`SMS sent successfully to ${result.successCount} recipients`);
+    }
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+
+    // Clear form and close modal
+    setPromotionalSmsSubject('');
+    setPromotionalSmsMessage('');
+    setShowPromotionalSmsModal(false);
+
+    // Refresh SMS messages list and credits
+    await fetchSmsMessagesData(true);
+    await fetchSmsCredits(true); // Refresh credits after sending SMS
+
+  } catch (error) {
+    console.error('Error sending promotional SMS:', error);
+    setSmsIsClicked(false);
+    setSmsToastType('error');
+    setSmsToastMessage(error.message || 'Failed to send promotional SMS');
+    setSmsToast(true);
+    setSmsToastClosing(false);
+    
+    // Start progress animation
+    setSmsProgressWidth('0%');
+    setTimeout(() => setSmsProgressWidth('100%'), 100);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setSmsToastClosing(true);
+      setTimeout(() => {
+        setSmsToast(false);
+        setSmsToastClosing(false);
+        setSmsProgressWidth('0%');
+      }, 3000);
+    }, 4000);
+  } finally {
+    setSendingSms(false);
+  }
+};
+
+// Handle promotional SMS modal close
+const handleClosePromotionalSmsModal = () => {
+  setShowPromotionalSmsModal(false);
+  setPromotionalSmsSubject('');
+  setPromotionalSmsMessage('');
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//2DMAPPING//2DMAPPING//2DMAPPING
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+  // --- Mapbox Fullscreen Fix ---
+  useEffect(() => {
+    // Wait for map to be initialized
+    if (!window.mapboxgl || !document.getElementById('geographicmapcontainer')) return;
+    const mapContainer = document.getElementById('geographicmapcontainer');
+    // Handler for fullscreenchange
+    const handleFullscreenChange = () => {
+      // Only use map.current.resize(), never map.current.getMap()
+      if (map && map.current && typeof map.current.resize === 'function') {
+        setTimeout(() => {
+          map.current.resize();
+          console.log('🔄 Map resized for fullscreen mode');
+        }, 100);
+      } else {
+        // Fallback: try to find mapboxgl.Map instance from DOM
+        const mapDiv = mapContainer.querySelector('.mapboxgl-map');
+        if (mapDiv && mapDiv._map && typeof mapDiv._map.resize === 'function') {
+          setTimeout(() => {
+            mapDiv._map.resize();
+            console.log('🔄 Map resized for fullscreen mode (fallback)');
+          }, 100);
+        }
+      }
+    };
+    mapContainer.addEventListener('fullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    mapContainer.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    return () => {
+      mapContainer.removeEventListener('fullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      mapContainer.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+//2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING //2D MAPPING 
+
+const [clinicLocations, setClinicLocations] = useState([]);
+const [loadingClinicLocations, setLoadingClinicLocations] = useState(true);
+const [selectedClinicLocation, setSelectedClinicLocation] = useState(null);
+const [showAddClinicDialog, setShowAddClinicDialog] = useState(false);
+const [showEditClinicDialog, setShowEditClinicDialog] = useState(false);
+const [showDeleteClinicDialog, setShowDeleteClinicDialog] = useState(false);
+const [showClinicDetailsDialog, setShowClinicDetailsDialog] = useState(false);
+const [isEditingLocation, setIsEditingLocation] = useState(false);
+const [isSavingLocation, setIsSavingLocation] = useState(false);
+const [locationMessage, setLocationMessage] = useState({ text: '', type: '' });
+
+// Nearby clinic discovery states
+const [nearbyEyeClinics, setNearbyEyeClinics] = useState([]);
+const [loadingNearbyClinic, setLoadingNearbyClinic] = useState(false);
+const [searchRadius, setSearchRadius] = useState(5000); // 5km default
+const [showNearbyClinicPanel, setShowNearbyClinicPanel] = useState(false);
+const [showAddExternalClinicDialog, setShowAddExternalClinicDialog] = useState(false);
+const [selectedNearbyClinic, setSelectedNearbyClinic] = useState(null);
+
+// User location states
+const [userLocation, setUserLocation] = useState(null);
+const [loadingUserLocation, setLoadingUserLocation] = useState(false);
+
+// Initialize edit mode data attribute
+useEffect(() => {
+  document.body.setAttribute('data-edit-mode', 'false');
+  return () => {
+    document.body.removeAttribute('data-edit-mode');
+  };
+}, []);
+const [userLocationError, setUserLocationError] = useState(null);
+
+// Mapbox states
+const mapContainer = useRef(null);
+const map = useRef(null);
+const mapMarkersRef = useRef(new Map()); // Use a ref to persist markers across renders
+const userMarkerRef = useRef(null); // Use a ref to persist user location marker
+const [mapLoaded, setMapLoaded] = useState(false);
+const [mapCenter, setMapCenter] = useState([120.4818, 14.6417]); // Metro Manila center
+const [mapZoom, setMapZoom] = useState(10);
+const [realtimeCoordinates, setRealtimeCoordinates] = useState({
+  longitude: 120.4818,
+  latitude: 14.6417,
+  accuracy: null,
+  timestamp: new Date()
+});
+
+// Clinic form data state
+const [clinicFormData, setClinicFormData] = useState({
+  clinicName: '',
+  clinicType: 'Ambher Optical', // Will be updated when user data loads
+  address: {
+    street: '',
+    city: '',
+    state: 'Bataan',
+    zipCode: '',
+    country: 'Philippines',
+    fullAddress: ''
+  },
+  coordinates: {
+    longitude: 120.4818, // Manila, Philippines longitude
+    latitude: 14.6417   // Manila, Philippines latitude
+  },
+  contactInfo: {
+    phone: '',
+    email: '',
+    website: ''
+  },
+  operatingHours: {
+    monday: { open: '09:00', close: '18:00', closed: false },
+    tuesday: { open: '09:00', close: '18:00', closed: false },
+    wednesday: { open: '09:00', close: '18:00', closed: false },
+    thursday: { open: '09:00', close: '18:00', closed: false },
+    friday: { open: '09:00', close: '18:00', closed: false },
+    saturday: { open: '09:00', close: '17:00', closed: false },
+    sunday: { open: '10:00', close: '16:00', closed: true }
+  },
+  services: []
+});
+
+//direction and routing variables
+const [showDirections, setShowDirections] = useState(false);
+const [routeInfo, setRouteInfo] = useState(null);
+const [directionsSteps, setDirectionsSteps] = useState([]);
+const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+const directionsControl = useRef(null);
+const isInitializingMap = useRef(false); // Track if map is currently being initialized
+const directionsInitialized = useRef(false); // Track if directions control has been initialized
+const currentPopup = useRef(null); // Track current open popup to close it when opening a new one
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Add these handler functions after your existing functions (around line 1000)
+
+
+// Load clinic locations
+const fetchClinicLocations = useCallback(async (includeInactive = false) => {
+  try {
+    setLoadingClinicLocations(true);
+    // Use fallback URL if environment variable is not set
+    const baseUrl = apiUrl || '';
+    
+    // Build query parameter for including inactive clinics
+    const includeParam = includeInactive ? '?includeInactive=true' : '';
+    
+    // Try multiple endpoints to fetch clinics
+    const possibleUrls = [
+      `${baseUrl}/api/cliniclocation/clinics${includeParam}`,        // Primary endpoint
+      `${baseUrl}/api/cliniclocation/all-clinics${includeParam}`,    // Alternative endpoint
+      `${baseUrl}/api/cliniclocation${includeParam}`                 // Fallback endpoint
+    ];
+    
+    let response;
+    let fetchUrl;
+    
+    // Try each URL until one works
+    for (const url of possibleUrls) {
+      try {
+        fetchUrl = url;
+        console.log('Trying to fetch clinic locations from:', fetchUrl);
+        
+        response = await fetch(fetchUrl, {
+          headers: {
+            'Authorization': `Bearer ${currentusertoken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          break; // Success, exit the loop
+        } else if (response.status === 404 && url !== possibleUrls[possibleUrls.length - 1]) {
+          console.log(`Endpoint ${url} not found, trying next...`);
+          continue; // Try next URL
+        }
+      } catch (error) {
+        console.log(`Error with ${url}:`, error);
+        if (url === possibleUrls[possibleUrls.length - 1]) {
+          throw error; // If it's the last URL, throw the error
+        }
+        continue; // Try next URL
+      }
+    }
+    
+    console.log('API URL from env:', apiUrl);
+    console.log('Current user token exists:', !!currentusertoken);
+    console.log('Final fetch URL used:', fetchUrl);
+
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Received clinic data:', data);
+      
+      if (data.success && Array.isArray(data.data)) {
+        // Filter out inactive clinics for display unless specifically requested
+        const filteredClinics = includeInactive ? data.data : data.data.filter(clinic => clinic.isActive !== false);
+        console.log(`Setting clinic locations: ${filteredClinics.length} clinics (includeInactive: ${includeInactive})`);
+        setClinicLocations(filteredClinics);
+        setLocationMessage({ 
+          text: `Loaded ${filteredClinics.length} clinic locations from database`, 
+          type: 'success' 
+        });
+      } else {
+        console.warn('Invalid data structure received:', data);
+        setLocationMessage({ text: 'Invalid data received from server', type: 'warning' });
+        setClinicLocations([]);
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      setLocationMessage({ 
+        text: `Failed to load clinics: ${response.status} ${response.statusText}`, 
+        type: 'error' 
+      });
+      setClinicLocations([]);
+    }
+  } catch (error) {
+    console.error('Network error fetching clinic locations:', error);
+    setLocationMessage({ text: 'Network error loading clinic locations', type: 'error' });
+    setClinicLocations([]);
+  } finally {
+    setLoadingClinicLocations(false);
+  }
+}, [apiUrl, currentusertoken]);
+
+
+// Get user's current location with highest accuracy possible (Google-like approach)
+const getUserLocation = useCallback(() => {
+  if (!navigator.geolocation) {
+    setUserLocationError('Geolocation is not supported by this browser');
+    setLocationMessage({ 
+      text: 'Your browser does not support location services. Please use a modern browser.', 
+      type: 'error' 
+    });
+    return;
+  }
+
+  setLoadingUserLocation(true);
+  setUserLocationError(null);
+  setLocationMessage({ 
+    text: 'Getting your precise location...', 
+    type: 'info' 
+  });
+
+  // Ultra-high accuracy options for maximum precision (Google-like)
+  const maxAccuracyOptions = {
+    enableHighAccuracy: true, // Force GPS usage
+    timeout: 30000, // 30 second timeout for GPS lock
+    maximumAge: 0 // No cached data - force fresh reading
+  };
+
+  console.log('🎯 Getting highest accuracy location (Google-like approach)...');
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = position.coords;
+      
+      console.log('📍 Location obtained:', {
+        accuracy: Math.round(accuracy) + 'm',
+        coordinates: [longitude, latitude]
+      });
+      
+      setUserLocation({
+        latitude,
+        longitude,
+        accuracy,
+        altitude,
+        altitudeAccuracy,
+        heading,
+        speed,
+        timestamp: position.timestamp
+      });
+      
+      setLoadingUserLocation(false);
+
+
+      // Auto-zoom to user location based on accuracy
+      if (map.current) {
+        const zoomLevel = accuracy <= 10 ? 18 :     // High precision - building level
+                         accuracy <= 25 ? 16 :     // Good precision - neighborhood
+                         accuracy <= 50 ? 15 :     // Fair precision - district
+                         accuracy <= 100 ? 14 :    // Basic precision - city area
+                         13;                        // Poor precision - wide area
+        
+        console.log(`🗺️ Zooming to user location (zoom: ${zoomLevel}, accuracy: ${Math.round(accuracy)}m)`);
+        
+        map.current.flyTo({
+          center: [longitude, latitude],
+          zoom: zoomLevel,
+          duration: 2000,
+          essential: true
+        });
+        
+        // Add accuracy circle visualization
+        if (map.current.getSource('user-accuracy-circle')) {
+          map.current.removeSource('user-accuracy-circle');
+          map.current.removeLayer('user-accuracy-circle');
+        }
+        
+        const accuracyCircle = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          },
+          properties: {
+            accuracy: accuracy
+          }
+        };
+        
+        map.current.addSource('user-accuracy-circle', {
+          type: 'geojson',
+          data: accuracyCircle
+        });
+        
+        map.current.addLayer({
+          id: 'user-accuracy-circle',
+          type: 'circle',
+          source: 'user-accuracy-circle',
+          paint: {
+            'circle-radius': Math.max(8, Math.min(accuracy / 2, 25)),
+            'circle-color': accuracy <= 10 ? '#10b981' :  // Green (high precision)
+                           accuracy <= 50 ? '#1c96c5' :  // Blue (good precision)
+                           '#f59e0b',                     // Amber (fair precision)
+            'circle-opacity': 0.6,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-opacity': 0.8
+          }
+        });
+      }
+    },
+    (error) => {
+      console.error('❌ Location error:', error);
+      setLoadingUserLocation(false);
+      
+      let errorMessage = 'Unable to retrieve your location';
+      let retryMessage = '';
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Location access denied. Please enable location permissions.';
+          retryMessage = 'Click the location icon in your browser\'s address bar and allow location access.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Location information is unavailable.';
+          retryMessage = 'Make sure GPS is enabled and you have an internet connection.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Location request timed out.';
+          retryMessage = 'Try moving to an area with better GPS signal and try again.';
+          break;
+      }
+      
+      setUserLocationError(`${errorMessage} ${retryMessage}`);
+      setLocationMessage({ 
+        text: `${errorMessage} ${retryMessage}`, 
+        type: 'error' 
+      });
+    },
+    maxAccuracyOptions
+  );
+}, []);
+
+// Handle map click to add new clinic
+const handleMapClick = (e) => {
+  if (!isEditingLocation) return;
+  
+  const mapElement = e.currentTarget;
+  const rect = mapElement.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  
+  // Convert click coordinates to longitude/latitude
+  const longitude = 119 + (x / 100) * 8; // Rough conversion for Philippines bounds
+  const latitude = 21 - (y / 100) * 17;
+  
+  setClinicFormData(prev => ({
+    ...prev,
+    coordinates: { longitude, latitude }
+  }));
+};
+
+// Search for nearby eye clinics using Google Places API (alternative service)
+const searchNearbyEyeClinics = useCallback(async (userLat, userLng, radius = searchRadius) => {
+  if (!userLat || !userLng) {
+    setLocationMessage({ 
+      text: 'User location required to search for nearby clinics', 
+      type: 'warning' 
+    });
+    return;
+  }
+
+  setLoadingNearbyClinic(true);
+  setLocationMessage({ 
+    text: 'Searching for nearby eye clinics...', 
+    type: 'info' 
+  });
+
+  try {
+    // Search for nearby eye clinics using multiple search terms
+    const searchTerms = [
+      'eye clinic',
+      'optical clinic', 
+      'eye doctor',
+      'ophthalmologist',
+      'optometrist',
+      'eye care center'
+    ];
+
+    const allNearbyClinic = [];
+
+    // Use Mapbox Places API to search for eye-related establishments
+    for (const term of searchTerms) {
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(term)}.json?` +
+          `access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}&` +
+          `proximity=${userLng},${userLat}&` +
+          `limit=10&` +
+          `country=ph&` +
+          `types=poi`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          data.features.forEach(feature => {
+            const distance = calculateDistance(
+              userLat, userLng,
+              feature.center[1], feature.center[0]
+            );
+
+            if (distance <= radius / 1000) { // Convert meters to km
+              allNearbyClinic.push({
+                id: `external-${feature.id}`,
+                name: feature.place_name || feature.text,
+                clinicType: 'External Eye Clinic',
+                address: {
+                  fullAddress: feature.place_name
+                },
+                coordinates: {
+                  longitude: feature.center[0],
+                  latitude: feature.center[1]
+                },
+                distance: distance,
+                source: 'mapbox',
+                isExternal: true,
+                searchTerm: term,
+                contactInfo: {
+                  phone: 'Contact info not available',
+                  email: 'Not available'
+                },
+                services: ['General Eye Care'],
+                verified: false
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.warn(`Error searching for "${term}":`, error);
+      }
+    }
+
+    // Remove duplicates based on similar coordinates (within 100m)
+    const uniqueClinic = [];
+    allNearbyClinic.forEach(clinic => {
+      const isDuplicate = uniqueClinic.some(existing => 
+        calculateDistance(
+          clinic.coordinates.latitude, clinic.coordinates.longitude,
+          existing.coordinates.latitude, existing.coordinates.longitude
+        ) < 0.1 // Less than 100m apart
+      );
+      if (!isDuplicate) {
+        uniqueClinic.push(clinic);
+      }
+    });
+
+    // Sort by distance
+    uniqueClinic.sort((a, b) => a.distance - b.distance);
+
+    setNearbyEyeClinics(uniqueClinic);
+    setShowNearbyClinicPanel(true);
+    
+    setLocationMessage({ 
+      text: `Found ${uniqueClinic.length} nearby eye clinics within ${radius/1000}km`, 
+      type: 'success' 
+    });
+
+  } catch (error) {
+    console.error('Error searching nearby clinics:', error);
+    setLocationMessage({ 
+      text: 'Failed to search for nearby clinics. Please try again.', 
+      type: 'error' 
+    });
+  } finally {
+    setLoadingNearbyClinic(false);
+  }
+}, [searchRadius]);
+
+// Calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c; // Distance in kilometers
+  return Math.round(distance * 100) / 100; // Round to 2 decimal places
+};
+
+// Add external clinic to our database
+const addExternalClinic = useCallback(async (clinicData) => {
+  setIsSavingLocation(true);
+  try {
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        clinicId: `external-${Date.now()}`,
+        clinicName: clinicData.name,
+        clinicType: 'External Eye Clinic',
+        address: clinicData.address,
+        longitude: clinicData.coordinates.longitude,
+        latitude: clinicData.coordinates.latitude,
+        contactInfo: clinicData.contactInfo,
+        services: clinicData.services || ['General Eye Care'],
+        operatingHours: {
+          monday: { open: '09:00', close: '17:00', closed: false },
+          tuesday: { open: '09:00', close: '17:00', closed: false },
+          wednesday: { open: '09:00', close: '17:00', closed: false },
+          thursday: { open: '09:00', close: '17:00', closed: false },
+          friday: { open: '09:00', close: '17:00', closed: false },
+          saturday: { open: '09:00', close: '16:00', closed: false },
+          sunday: { open: '10:00', close: '15:00', closed: true }
+        }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setClinicLocations(prev => [...prev, data.data]);
+      setLocationMessage({ 
+        text: 'External clinic added successfully!', 
+        type: 'success' 
+      });
+      setShowAddExternalClinicDialog(false);
+    } else {
+      throw new Error('Failed to add clinic');
+    }
+  } catch (error) {
+    console.error('Error adding external clinic:', error);
+    setLocationMessage({ 
+      text: 'Failed to add external clinic. Please try again.', 
+      type: 'error' 
+    });
+  } finally {
+    setIsSavingLocation(false);
+  }
+}, [apiUrl, currentusertoken]);
+
+// Reset clinic form
+const resetClinicForm = useCallback(() => {
+  // Get the current user's default clinic type
+  const defaultClinicType = (() => {
+    if (currentuserloggedin === "Staff") {
+      return localStorage.getItem('staffclinic') || staffclinic || 'Ambher Optical';
+    } else if (currentuserloggedin === "Owner") {
+      return ownerownedclinic || 'Ambher Optical';
+    }
+    return 'Ambher Optical'; // Default for admin and others
+  })();
+  
+  console.log('🔄 Resetting clinic form with clinic type:', defaultClinicType);
+  
+  setClinicFormData({
+    clinicName: '',
+    clinicType: defaultClinicType,
+    address: {
+      street: '',
+      city: '',
+      state: 'Metro Manila',
+      zipCode: '',
+      country: 'Philippines',
+      fullAddress: ''
+    },
+    coordinates: { x: 50, y: 50 },
+    contactInfo: { phone: '', email: '', website: '' },
+    operatingHours: {
+      monday: { open: '09:00', close: '18:00', closed: false },
+      tuesday: { open: '09:00', close: '18:00', closed: false },
+      wednesday: { open: '09:00', close: '18:00', closed: false },
+      thursday: { open: '09:00', close: '18:00', closed: false },
+      friday: { open: '09:00', close: '18:00', closed: false },
+      saturday: { open: '09:00', close: '17:00', closed: false },
+      sunday: { open: '10:00', close: '16:00', closed: true }
+    },
+    services: []
+  });
+}, [currentuserloggedin, staffclinic, ownerownedclinic]);
+
+// Copy coordinates to clipboard
+const copyCoordinatesToClipboard = useCallback(async () => {
+  const coordText = `${realtimeCoordinates.latitude.toFixed(6)}, ${realtimeCoordinates.longitude.toFixed(6)}`;
+  try {
+    await navigator.clipboard.writeText(coordText);
+    setLocationMessage({ 
+      text: 'Coordinates copied to clipboard!', 
+      type: 'success' 
+    });
+  } catch (error) {
+    console.error('Failed to copy coordinates:', error);
+    setLocationMessage({ 
+      text: 'Failed to copy coordinates', 
+      type: 'error' 
+    });
+  }
+}, [realtimeCoordinates]);
+
+
+
+// Handler functions for clinic location dialogs
+const handleSaveClinicLocation = useCallback(async () => {
+  if (!clinicFormData?.clinicName || !clinicFormData?.coordinates?.latitude || !clinicFormData?.coordinates?.longitude) {
+    setLocationMessage({ text: 'Please fill in all required fields', type: 'error' });
+    return;
+  }
+
+  setIsSavingLocation(true);
+  try {
+    console.log('💾 Saving clinic location with data:', {
+      clinicName: clinicFormData.clinicName,
+      clinicType: clinicFormData.clinicType,
+      coordinates: clinicFormData.coordinates
+    });
+    
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        clinicName: clinicFormData.clinicName,
+        clinicType: clinicFormData.clinicType,
+        address: clinicFormData.address,
+        longitude: clinicFormData.coordinates.longitude,
+        latitude: clinicFormData.coordinates.latitude,
+        contactInfo: clinicFormData.contactInfo,
+        operatingHours: clinicFormData.operatingHours,
+        services: clinicFormData.services
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Add the new clinic to the state directly, which will trigger the marker effect
+      setClinicLocations(prev => [...prev, data.data]);
+      
+      setLocationMessage({ text: 'Clinic location saved successfully', type: 'success' });
+      setShowAddClinicDialog(false);
+      resetClinicForm();
+      
+      // Zoom to the new clinic location on the map
+      if (map.current && data.data?.coordinates) {
+        const coords = data.data.coordinates.coordinates || [data.data.coordinates.longitude, data.data.coordinates.latitude];
+        map.current.flyTo({
+          center: coords,
+          zoom: 14,
+          duration: 2000
+        });
+      }
+    } else {
+      throw new Error('Failed to save clinic location');
+    }
+  } catch (error) {
+    console.error('Error saving clinic location:', error);
+    setLocationMessage({ text: 'Failed to save clinic location', type: 'error' });
+  } finally {
+    setIsSavingLocation(false);
+  }
+}, [apiUrl, currentusertoken, clinicFormData, resetClinicForm]);
+
+const handleUpdateClinicLocation = useCallback(async () => {
+  if (!selectedClinicLocation || !clinicFormData?.clinicName || !clinicFormData?.coordinates?.latitude || !clinicFormData?.coordinates?.longitude) {
+    setLocationMessage({ text: 'Please fill in all required fields', type: 'error' });
+    return;
+  }
+
+  setIsSavingLocation(true);
+  try {
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${selectedClinicLocation.clinicId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        clinicName: clinicFormData.clinicName,
+        clinicType: clinicFormData.clinicType,
+        address: clinicFormData.address,
+        longitude: clinicFormData.coordinates.longitude,
+        latitude: clinicFormData.coordinates.latitude,
+        contactInfo: clinicFormData.contactInfo,
+        operatingHours: clinicFormData.operatingHours,
+        services: clinicFormData.services
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Update the clinic in the state directly, which will trigger the marker effect
+      setClinicLocations(prev => prev.map(clinic => 
+        clinic._id === selectedClinicLocation._id ? data.data : clinic
+      ));
+      
+      setLocationMessage({ text: 'Clinic location updated successfully', type: 'success' });
+      setShowEditClinicDialog(false);
+      setSelectedClinicLocation(null);
+      resetClinicForm();
+      
+      // Zoom to the updated clinic location on the map
+      if (map.current && data.data?.coordinates) {
+        const coords = data.data.coordinates.coordinates || [data.data.coordinates.longitude, data.data.coordinates.latitude];
+        map.current.flyTo({
+          center: coords,
+          zoom: 14,
+          duration: 2000
+        });
+      }
+    } else {
+      throw new Error('Failed to update clinic location');
+    }
+  } catch (error) {
+    console.error('Error updating clinic location:', error);
+    setLocationMessage({ text: 'Failed to update clinic location', type: 'error' });
+  } finally {
+    setIsSavingLocation(false);
+  }
+}, [apiUrl, currentusertoken, clinicFormData, selectedClinicLocation, resetClinicForm]);
+
+const handleDeleteClinicLocation = useCallback(async () => {
+  if (!selectedClinicLocation) return;
+
+  setIsSavingLocation(true);
+  try {
+    console.log('🗑️ Deleting clinic location:', selectedClinicLocation);
+    
+    // Use the clinicId field from the selected clinic, not the MongoDB _id
+    const clinicIdToDelete = selectedClinicLocation.clinicId || selectedClinicLocation._id;
+    
+    // Use hard delete to permanently remove from database
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${clinicIdToDelete}?hardDelete=true`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      console.log('✅ Clinic permanently deleted from database');
+      
+      // Refresh the clinic locations to get updated data (fetch all remaining clinics)
+      await fetchClinicLocations(true); // true = include all clinics (active and inactive)
+      
+      setLocationMessage({ text: 'Clinic location deleted successfully', type: 'success' });
+      setShowDeleteClinicDialog(false);
+      setSelectedClinicLocation(null);
+      
+      // Fly back to center view on the map after deletion
+      if (map.current) {
+        map.current.flyTo({
+          center: [120.4818, 14.6417], // Metro Manila center
+          zoom: 10,
+          duration: 2000
+        });
+      }
+    } else {
+      const errorData = await response.text();
+      console.error('❌ Delete failed with response:', response.status, errorData);
+      throw new Error(`Failed to delete clinic location: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('❌ Error deleting clinic location:', error);
+    setLocationMessage({ text: 'Failed to delete clinic location: ' + error.message, type: 'error' });
+  } finally {
+    setIsSavingLocation(false);
+  }
+}, [apiUrl, currentusertoken, selectedClinicLocation, fetchClinicLocations]);
+
+// Toggle clinic active status
+const handleToggleClinicStatus = useCallback(async (clinic) => {
+  try {
+    console.log('Toggling clinic status for:', clinic.clinicName);
+    
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${clinic.clinicId}/toggle-status`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Toggle response:', data);
+      
+      // Update the clinic in the state, which will trigger the marker effect
+      setClinicLocations(prev => 
+        prev.map(c => c._id === clinic._id ? { ...c, isActive: data.data.isActive } : c)
+      );
+      
+      setLocationMessage({ 
+        text: `Clinic ${data.data.isActive ? 'activated' : 'deactivated'} successfully`, 
+        type: 'success' 
+      });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setLocationMessage({ text: '', type: '' });
+      }, 3000);
+      
+    } else {
+      throw new Error('Failed to toggle clinic status');
+    }
+  } catch (error) {
+    console.error('Error toggling clinic status:', error);
+    setLocationMessage({ text: 'Failed to toggle clinic status', type: 'error' });
+    
+    // Clear error message after 5 seconds
+    setTimeout(() => {
+      setLocationMessage({ text: '', type: '' });
+    }, 5000);
+  }
+}, [apiUrl, currentusertoken]);
+
+
+
+
+const initializeDirectionsControl = useCallback(() => {
+  if (!map.current || directionsControl.current || directionsInitialized.current) return;
+
+  console.log('🧭 Initializing directions control...');
+  directionsInitialized.current = true; // Mark as initialized to prevent re-initialization
+
+  directionsControl.current = new MapboxDirections({
+    accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN,
+    unit: 'metric',
+    profile: 'mapbox/driving',
+    alternatives: false, // Disable alternatives for cleaner display
+    geometries: 'geojson',
+    controls: {
+      instructions: false, // We'll show custom instructions
+      inputs: false, // Disable input fields to prevent manual editing
+      profileSwitcher: false
+    },
+    flyTo: false, // Disable automatic flying to route
+    interactive: false // Make waypoints non-interactive/non-draggable
+  });
+
+  // Add the control to the map but hide it visually
+  map.current.addControl(directionsControl.current, 'top-left');
+  
+  // Hide the default directions control UI
+  setTimeout(() => {
+    const directionsElement = document.querySelector('.mapboxgl-ctrl-directions');
+    if (directionsElement) {
+      directionsElement.style.display = 'none';
+    }
+  }, 100);
+  
+  // Listen for route events
+  directionsControl.current.on('route', (event) => {
+    console.log('🛣️ Route calculated:', event);
+    if (event.route && event.route[0]) {
+      const route = event.route[0];
+      setRouteInfo({
+        distance: (route.distance / 1000).toFixed(1), // Convert to km
+        duration: Math.round(route.duration / 60), // Convert to minutes
+        geometry: route.geometry
+      });
+      setDirectionsSteps(route.legs[0]?.steps || []);
+      setIsLoadingRoute(false);
+      setShowDirections(true); // Show our custom directions panel
+      console.log('✅ Route info updated successfully');
+      
+      // Make waypoints non-draggable after route calculation
+      setTimeout(() => {
+        const waypoints = document.querySelectorAll('.mapbox-directions-waypoint');
+        waypoints.forEach(waypoint => {
+          waypoint.style.pointerEvents = 'none';
+          waypoint.style.cursor = 'default';
+        });
+        
+        // Also disable dragging on route line
+        const routeLines = document.querySelectorAll('.mapbox-directions-route-line');
+        routeLines.forEach(line => {
+          line.style.pointerEvents = 'none';
+        });
+      }, 100);
+    }
+  });
+
+  directionsControl.current.on('error', (e) => {
+    setIsLoadingRoute(false);
+    console.error('❌ Error calculating route:', e);
+    setLocationMessage({
+      text: 'Failed to calculate route. Please try again.',
+      type: 'error'
+    });
+  });
+
+  directionsControl.current.on('clear', () => {
+    console.log('🧹 Directions cleared');
+    setShowDirections(false);
+    setRouteInfo(null);
+    setDirectionsSteps([]);
+  });
+
+  console.log('✅ Directions control initialized successfully');
+}, []);
+
+const clearDirections = useCallback(() => {
+  console.log('🧹 Clearing directions...');
+  if (directionsControl.current) {
+    directionsControl.current.removeRoutes();
+  }
+  setShowDirections(false);
+  setRouteInfo(null);
+  setDirectionsSteps([]);
+  setIsLoadingRoute(false);
+  
+  setLocationMessage({
+    text: 'Directions cleared',
+    type: 'info'
+  });
+}, []);
+
+
+const getStepIcon = (maneuverType) => {
+  const iconMap = {
+    'turn': 'bx-turn-right',
+    'new name': 'bx-right-arrow',
+    'depart': 'bx-play',
+    'arrive': 'bx-flag',
+    'merge': 'bx-merge',
+    'on ramp': 'bx-up-arrow',
+    'off ramp': 'bx-down-arrow',
+    'fork': 'bx-git-branch',
+    'end of road': 'bx-stop',
+    'use lane': 'bx-right-arrow',
+    'continue': 'bx-up-arrow',
+    'roundabout': 'bx-refresh',
+    'rotary': 'bx-refresh',
+    'roundabout turn': 'bx-refresh',
+    'notification': 'bx-info-circle',
+    'exit roundabout': 'bx-log-out',
+    'exit rotary': 'bx-log-out'
+  };
+  
+  return iconMap[maneuverType] || 'bx-right-arrow';
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const legendControlRef = useRef(null);
+  const directionsPanelRef = useRef(null);
+
+  // Custom Fullscreen Control
+  const toggleFullscreen = useCallback(() => {
+    const container = map.current.getContainer();
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+
+    if (!fullscreenElement) {
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+  }, []);
+
+  // Initialize Mapbox map
+  useEffect(() => {
+    console.log('🔄 Map useEffect triggered - Dashboard:', activedashboard);
+    
+    // Debug current state (without adding to dependencies)
+    console.log('🔍 Map Debug State:', {
+      mapExists: !!map.current,
+      mapLoaded: mapLoaded,
+      isInitializing: isInitializingMap.current,
+      activeDashboard: activedashboard,
+      containerExists: !!mapContainer.current
+    });
+    
+    // Only initialize if we're on the mapping dashboard
+    if (activedashboard !== 'mappingintegration') {
+      console.log('❌ Not on mapping dashboard, skipping map initialization');
+      return;
+    }
+
+    // Check if container exists and map needs initialization
+    if (!mapContainer.current) {
+      console.log('❌ Map container not found, waiting...');
+      return;
+    }
+
+    // Prevent multiple simultaneous initializations
+    if (isInitializingMap.current) {
+      console.log('⏳ Map is already being initialized, skipping...');
+      return;
+    }
+
+    // If map already exists and is working properly, don't reinitialize unnecessarily
+    if (map.current && map.current.getContainer() === mapContainer.current) {
+      console.log('✅ Map already initialized and working properly - KEEPING EXISTING MAP');
+      return;
+    }
+
+    // Set initialization flag
+    isInitializingMap.current = true;
+    console.log('🔄 Setting initialization flag to true');
+
+    // Clean up existing map if it exists but container is different
+    if (map.current) {
+      console.log('🧹 Cleaning up existing map before reinitializing...');
+      try {
+        // Remove all existing controls before cleanup to prevent duplication
+        const controls = map.current._controls;
+        if (controls && controls.length > 0) {
+          controls.slice().forEach(control => {
+            try {
+              map.current.removeControl(control);
+            } catch (e) {
+              console.warn('Could not remove control:', e);
+            }
+          });
+          console.log('🧹 Removed all existing map controls');
+        }
+        map.current.remove();
+      } catch (error) {
+        console.warn('Warning during map cleanup:', error);
+      }
+      map.current = null;
+      setMapLoaded(false);
+      
+      // Clear markers reference when map is destroyed during re-initialization
+      mapMarkersRef.current.clear();
+      
+      // Clear directions control reference during re-initialization
+      if (directionsControl.current) {
+        directionsControl.current = null;
+      }
+      directionsInitialized.current = false;
+      
+      console.log('🧹 Cleared markers reference during map cleanup');
+    }
+
+    console.log('🚀 Initializing new map instance...');
+
+    // Set Mapbox access token
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+    try {
+      // Initialize the map with minimal, stable configuration
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [120.4818, 14.6417], // Metro Manila center
+        zoom: 10,
+        // Disable rotation and tilting
+        bearing: 0, // Lock rotation to north-up
+        pitch: 0, // Keep map flat (no 3D tilt)
+        maxPitch: 0, // Prevent any tilting
+        dragRotate: false, // Disable rotation via drag
+        touchPitch: false, // Disable pitch on touch devices
+        // Essential options only to prevent URL parsing errors
+        attributionControl: true,
+        logoPosition: 'bottom-right',
+        // Disable telemetry to prevent network errors
+        collectResourceTiming: false,
+        transformRequest: (url) => {
+          // Block analytics/telemetry requests
+          if (url.includes('events.mapbox.com') || url.includes('analytics') || url.includes('telemetry')) {
+            console.log('🚫 Blocked telemetry request:', url);
+            return { url: '', headers: {} };
+          }
+          return { url, headers: {} };
+        }
+      });
+
+      console.log('✅ Map instance created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create map instance:', error);
+      setLocationMessage({ 
+        text: 'Failed to initialize map. Please refresh the page.', 
+        type: 'error' 
+      });
+      isInitializingMap.current = false; // Reset flag on error
+      return;
+    }
+
+    // Add navigation controls (without rotation controls) - only once
+    if (!map.current._controls || map.current._controls.length === 0) {
+      map.current.addControl(new mapboxgl.NavigationControl({
+        showCompass: false, // Hide compass since rotation is disabled
+        showZoom: true,
+        visualizePitch: false // Hide pitch visualization
+      }));
+      console.log('✅ Added navigation controls to map');
+    } else {
+      console.log('⚠️ Navigation controls already exist, skipping addition');
+    }
+
+    // Add ultra-high accuracy geolocate control
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true, // Force GPS usage
+        timeout: 30000, // Extended timeout for GPS lock
+        maximumAge: 0 // No cached data - force fresh reading
+      },
+      trackUserLocation: true, // Continuously track user location
+      showUserHeading: true, // Show direction user is facing
+      showAccuracyCircle: true, // Show accuracy circle around user location
+      fitBoundsOptions: {
+        maxZoom: 17, // Higher zoom for better accuracy visualization
+        padding: 50 // Padding around accuracy circle
+      }
+    });
+    
+    // Add enhanced event listeners for accuracy feedback
+    geolocate.on('geolocate', (e) => {
+      const accuracy = e.coords.accuracy;
+      const accuracyLevel = accuracy <= 20 ? 'excellent' : accuracy <= 50 ? 'good' : accuracy <= 100 ? 'fair' : 'poor';
+      const accuracyColor = accuracy <= 20 ? 'success' : accuracy <= 50 ? 'success' : accuracy <= 100 ? 'warning' : 'error';
+      
+      console.log('Geolocate control update:', {
+        accuracy: Math.round(accuracy),
+        level: accuracyLevel,
+        coordinates: [e.coords.longitude, e.coords.latitude]
+      });
+      
+      setLocationMessage({ 
+        text: `Location updated: ${accuracyLevel} accuracy (${Math.round(accuracy)}m)`, 
+        type: accuracyColor
+      });
+      
+      // Update user location state with geolocate data
+      setUserLocation({
+        latitude: e.coords.latitude,
+        longitude: e.coords.longitude,
+        accuracy: e.coords.accuracy,
+        altitude: e.coords.altitude,
+        altitudeAccuracy: e.coords.altitudeAccuracy,
+        heading: e.coords.heading,
+        speed: e.coords.speed,
+        timestamp: Date.now()
+      });
+    });
+    
+    geolocate.on('trackuserlocationstart', () => {
+      setLocationMessage({ 
+        text: 'Starting high-accuracy location tracking...', 
+        type: 'info' 
+      });
+    });
+    
+    geolocate.on('trackuserlocationend', () => {
+      setLocationMessage({ 
+        text: 'Location tracking stopped', 
+        type: 'info' 
+      });
+    });
+    
+    geolocate.on('error', (e) => {
+      console.error('Geolocate control error:', e);
+      setLocationMessage({ 
+        text: 'Geolocate failed. Use "Get My Location" button for manual location.', 
+        type: 'error' 
+      });
+    });
+    
+    // Add geolocate control - check if not already added
+    const existingGeolocate = map.current._controls.find(control => 
+      control instanceof mapboxgl.GeolocateControl
+    );
+    if (!existingGeolocate) {
+      map.current.addControl(geolocate);
+      console.log('✅ Added geolocate control to map');
+    } else {
+      console.log('⚠️ Geolocate control already exists, skipping addition');
+    }
+
+    // Add fullscreen control for better user experience - check if not already added
+    const existingFullscreen = map.current._controls.find(control => 
+      control instanceof mapboxgl.FullscreenControl
+    );
+    if (!existingFullscreen) {
+      const fullscreenControl = new mapboxgl.FullscreenControl({
+        container: document.querySelector('#geographicmapcontainer')
+      });
+      map.current.addControl(fullscreenControl, 'top-right');
+      console.log('✅ Added fullscreen control to map');
+    } else {
+      console.log('⚠️ Fullscreen control already exists, skipping addition');
+    }
+
+
+    // Add fullscreen event listeners for better UX
+    const handleFullscreenChange = () => {
+      const isFullscreen = document.fullscreenElement || 
+                          document.webkitFullscreenElement || 
+                          document.mozFullScreenElement;
+      
+      if (isFullscreen) {
+        console.log('🔍 Map entered fullscreen mode');
+        setLocationMessage({ 
+          text: '🔍 Map in fullscreen mode - Press ESC to exit', 
+          type: 'info' 
+        });
+        
+        // Force map container to take full screen dimensions
+        const mapContainer = document.querySelector('#geographicmapcontainer');
+        const mapElement = map.current.getContainer();
+        
+        if (mapContainer) {
+          mapContainer.style.width = '100vw';
+          mapContainer.style.height = '100vh';
+          mapContainer.style.maxWidth = '100vw';
+          mapContainer.style.maxHeight = '100vh';
+          mapContainer.style.minWidth = '100vw';
+          mapContainer.style.minHeight = '100vh';
+          mapContainer.style.margin = '0';
+          mapContainer.style.padding = '0';
+          mapContainer.style.position = 'fixed';
+          mapContainer.style.top = '0';
+          mapContainer.style.left = '0';
+          mapContainer.style.right = '0';
+          mapContainer.style.bottom = '0';
+          mapContainer.style.zIndex = '999999';
+          mapContainer.style.border = 'none';
+          mapContainer.style.outline = 'none';
+          mapContainer.style.boxSizing = 'border-box';
+        }
+        
+        if (mapElement) {
+          mapElement.style.width = '100vw';
+          mapElement.style.height = '100vh';
+          mapElement.style.maxWidth = '100vw';
+          mapElement.style.maxHeight = '100vh';
+          mapElement.style.minWidth = '100vw';
+          mapElement.style.minHeight = '100vh';
+          mapElement.style.position = 'absolute';
+          mapElement.style.top = '0';
+          mapElement.style.left = '0';
+          mapElement.style.right = '0';
+          mapElement.style.bottom = '0';
+          mapElement.style.margin = '0';
+          mapElement.style.padding = '0';
+          mapElement.style.border = 'none';
+          mapElement.style.outline = 'none';
+          mapElement.style.boxSizing = 'border-box';
+        }
+        
+        // Also force all child elements to take full width
+        const allElements = document.querySelectorAll('#geographicmapcontainer *');
+        allElements.forEach(el => {
+          if (el.classList.contains('mapboxgl-map') || 
+              el.classList.contains('mapboxgl-canvas-container') || 
+              el.classList.contains('mapboxgl-canvas')) {
+            el.style.width = '100vw';
+            el.style.height = '100vh';
+            el.style.maxWidth = '100vw';
+            el.style.maxHeight = '100vh';
+            el.style.minWidth = '100vw';
+            el.style.minHeight = '100vh';
+            el.style.boxSizing = 'border-box';
+          }
+        });
+        
+        // Force immediate map resize to handle fullscreen dimensions
+        if (map.current) {
+          map.current.resize();
+        }
+        
+        // Force map resize again after a delay to ensure proper rendering
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('🔄 Map resized for fullscreen mode');
+          }
+        }, 100);
+        
+        // Additional resize after fullscreen transition completes
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            console.log('🔄 Map resized again after fullscreen transition');
+          }
+        }, 300);
+        
+        // No need to add additional controls in fullscreen mode
+        // Legend and directions panels are already properly positioned
+
+      } else {
+        console.log('🔍 Map exited fullscreen mode');
+        setLocationMessage({ 
+          text: '🔍 Fullscreen mode disabled', 
+          type: 'info' 
+        });
+        
+        // Reset container styles when exiting fullscreen but preserve visibility
+        const mapContainer = document.querySelector('#geographicmapcontainer');
+        const mapElement = map.current.getContainer();
+        
+        if (mapContainer) {
+          // Reset fullscreen-specific styles but keep essential ones
+          mapContainer.style.position = 'relative';
+          mapContainer.style.width = '100%';
+          mapContainer.style.height = '580px'; // Match container CSS class height
+          mapContainer.style.maxWidth = 'none';
+          mapContainer.style.maxHeight = 'none';
+          mapContainer.style.minWidth = 'auto';
+          mapContainer.style.minHeight = '580px'; // Match container height
+          mapContainer.style.margin = '0';
+          mapContainer.style.padding = '0';
+          mapContainer.style.top = 'auto';
+          mapContainer.style.left = 'auto';
+          mapContainer.style.right = 'auto';
+          mapContainer.style.bottom = 'auto';
+          mapContainer.style.zIndex = 'auto';
+          mapContainer.style.border = 'none';
+          mapContainer.style.outline = 'none';
+          mapContainer.style.boxSizing = 'border-box';
+          mapContainer.style.display = 'block'; // Ensure visibility
+          mapContainer.style.visibility = 'visible'; // Ensure visibility
+        }
+        
+        if (mapElement) {
+          // Reset fullscreen-specific styles but keep essential ones for map element
+          mapElement.style.position = 'relative';
+          mapElement.style.width = '100%';
+          mapElement.style.height = '100%';
+          mapElement.style.maxWidth = 'none';
+          mapElement.style.maxHeight = 'none';
+          mapElement.style.minWidth = 'auto';
+          mapElement.style.minHeight = 'auto';
+          mapElement.style.top = 'auto';
+          mapElement.style.left = 'auto';
+          mapElement.style.right = 'auto';
+          mapElement.style.bottom = 'auto';
+          mapElement.style.margin = '0';
+          mapElement.style.padding = '0';
+          mapElement.style.border = 'none';
+          mapElement.style.outline = 'none';
+          mapElement.style.boxSizing = 'border-box';
+          mapElement.style.display = 'block'; // Ensure visibility
+          mapElement.style.visibility = 'visible'; // Ensure visibility
+        }
+        
+        // Reset all child elements styles but preserve essential ones
+        const allElements = document.querySelectorAll('#geographicmapcontainer *');
+        allElements.forEach(el => {
+          if (el.classList.contains('mapboxgl-map') || 
+              el.classList.contains('mapboxgl-canvas-container') || 
+              el.classList.contains('mapboxgl-canvas')) {
+            // Reset fullscreen styles but keep essential display properties
+            el.style.width = '100%';
+            el.style.height = '100%';
+            el.style.maxWidth = 'none';
+            el.style.maxHeight = 'none';
+            el.style.minWidth = 'auto';
+            el.style.minHeight = 'auto';
+            el.style.boxSizing = 'border-box';
+            el.style.display = 'block'; // Ensure visibility
+            el.style.visibility = 'visible'; // Ensure visibility
+          }
+        });
+        
+        // Force map resize when exiting fullscreen with multiple resize calls
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+          }
+        }, 100);
+        
+        // Additional resize after DOM has settled
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+            // Force a redraw to ensure proper rendering
+            map.current.getMap().triggerRepaint();
+          }
+        }, 300);
+        
+        // Move legend and directions back to their original container
+        if (legendControlRef.current && legendControlRef.current.parentNode) {
+            legendControlRef.current.parentNode.removeChild(legendControlRef.current);
+            document.querySelector('#geographicmapcontainer').appendChild(legendControlRef.current);
+        }
+        if (directionsPanelRef.current && directionsPanelRef.current.parentNode) {
+            directionsPanelRef.current.parentNode.removeChild(directionsPanelRef.current);
+            document.querySelector('#geographicmapcontainer').appendChild(directionsPanelRef.current);
+        }
+      }
+      
+      // Resize map to fit container
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 100);
+
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setLocationMessage({ text: '', type: '' });
+      }, 3000);
+    };
+
+    // Add fullscreen event listeners
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+
+    // Handle map load
+    map.current.on('load', () => {
+      console.log('✅ Map loaded successfully');
+      setMapLoaded(true);
+      isInitializingMap.current = false; // Reset initialization flag
+    });
+
+    // Clean up on unmount
+    return () => {
+      // Remove fullscreen event listeners
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+        setMapLoaded(false);
+      }
+      
+      // Clear markers reference when map is destroyed
+      mapMarkersRef.current.clear();
+      
+      // Clear directions control reference
+      if (directionsControl.current) {
+        directionsControl.current = null;
+      }
+      
+      // Reset initialization flags
+      isInitializingMap.current = false;
+      directionsInitialized.current = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activedashboard]); // Only depend on dashboard switch - mapLoaded intentionally excluded to prevent infinite loop
+
+// Initialize directions control after map is loaded
+useEffect(() => {
+  if (mapLoaded && activedashboard === 'mappingintegration' && !directionsInitialized.current) {
+    console.log('🗺️ Map loaded, initializing directions control...');
+    initializeDirectionsControl();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [mapLoaded, activedashboard]); // Remove initializeDirectionsControl from deps to prevent re-runs
+
+// Simplified map container health check - prevent map destruction
+useEffect(() => {
+  if (activedashboard !== 'mappingintegration' || !map.current) return;
+
+  // Just log that we're monitoring the map health, but don't interfere with it
+  console.log('🔍 Map health check - map is active');
+
+  return () => {
+    // Cleanup timeout if needed
+  };
+}, [activedashboard]); // Removed clinicLocations to prevent unnecessary re-renders
+
+// Separate effect for map click handler to avoid dependency issues
+useEffect(() => {
+  if (!map.current || !mapLoaded) return;
+
+  const handleMapClick = (e) => {
+    if (isEditingLocation) {
+      // Check if the click target is a marker by looking for clinic marker data attribute
+      const clickTarget = e.originalEvent?.target;
+      
+      // If clicking on a marker, don't open add dialog
+      if (clickTarget && (
+        clickTarget.hasAttribute('data-clinic-marker') ||
+        clickTarget.tagName === 'IMG' || 
+        clickTarget.closest('.mapboxgl-marker') ||
+        clickTarget.classList.contains('mapboxgl-marker')
+      )) {
+        console.log('🎯 Clicked on clinic marker, ignoring map click for add dialog');
+        return;
+      }
+      
+      console.log('🗺️ Clicked on empty map area, opening add dialog');
+      const { lng, lat } = e.lngLat;
+      
+      // Ensure clinic type is set to the correct value for the current user
+      const currentClinicType = getUserDefaultClinicType();
+      console.log('🏥 Setting clinic type for new clinic:', currentClinicType);
+      
+      setClinicFormData(prev => ({
+        ...prev,
+        clinicType: currentClinicType,
+        coordinates: { longitude: lng, latitude: lat }
+      }));
+      
+      // Show add form dialog only when clicking on empty map areas
+      setShowAddClinicDialog(true);
+    }
+  };
+
+  map.current.on('click', handleMapClick);
+
+  return () => {
+    if (map.current) {
+      map.current.off('click', handleMapClick);
+    }
+  };
+}, [mapLoaded, isEditingLocation, getUserDefaultClinicType]);
+
+// Separate effect for real-time coordinate tracking
+useEffect(() => {
+  if (!map.current || !mapLoaded) return;
+
+  const mapInstance = map.current;
+
+  // Real-time coordinate tracking function
+  const updateRealtimeCoordinates = (lngLat) => {
+    setRealtimeCoordinates({
+      longitude: lngLat.lng,
+      latitude: lngLat.lat,
+      accuracy: userLocation?.accuracy || null,
+      timestamp: new Date()
+    });
+  };
+
+  // Event handlers
+  const handleMouseMove = (e) => {
+    updateRealtimeCoordinates(e.lngLat);
+  };
+
+  const handleMapMove = () => {
+    const center = mapInstance.getCenter();
+    updateRealtimeCoordinates(center);
+  };
+
+  // Add event listeners
+  mapInstance.on('mousemove', handleMouseMove);
+  mapInstance.on('move', handleMapMove);
+
+  // Initial coordinate update
+  updateRealtimeCoordinates(mapInstance.getCenter());
+
+  // Cleanup function
+  return () => {
+    if (mapInstance) {
+      mapInstance.off('mousemove', handleMouseMove);
+      mapInstance.off('move', handleMapMove);
+    }
+  };
+}, [mapLoaded, userLocation]);
+
+// Separate effect for handling clinic markers
+useEffect(() => {
+  if (!map.current || !mapLoaded || !clinicLocations) return;
+
+  console.log('🔄 Syncing clinic markers with map...');
+  const markersOnMap = mapMarkersRef.current;
+  const newMarkers = new Map();
+
+  // Add or update markers for current clinic locations
+  if (Array.isArray(clinicLocations)) {
+    clinicLocations.forEach(clinic => {
+      const clinicId = clinic._id;
+      if (!clinicId) {
+        console.warn('Clinic found with no _id:', clinic);
+        return;
+      }
+
+      let longitude, latitude;
+
+      if (clinic.coordinates?.coordinates && Array.isArray(clinic.coordinates.coordinates)) {
+        longitude = clinic.coordinates.coordinates[0];
+        latitude = clinic.coordinates.coordinates[1];
+      } else if (clinic.coordinates?.longitude && clinic.coordinates?.latitude) {
+        longitude = clinic.coordinates.longitude;
+        latitude = clinic.coordinates.latitude;
+      }
+
+      if (!longitude || !latitude) {
+        console.warn(`Clinic ${clinic.clinicName} has invalid coordinates.`);
+        return;
+      }
+
+      // If marker already exists, update it with new data instead of just reusing
+      if (markersOnMap.has(clinicId)) {
+        const existingMarker = markersOnMap.get(clinicId);
+        // Update position if it can change
+        existingMarker.setLngLat([longitude, latitude]);
+        
+        // Update marker styling for edit mode accessibility
+        const markerElement = existingMarker.getElement();
+        if (markerElement) {
+          // Check if user can edit this clinic type for visual feedback
+          const userDefaultClinicType = getUserDefaultClinicType();
+          const isAdminUser = currentuserloggedin === 'Admin';
+          const canEditThisClinic = isAdminUser || clinic.clinicType === userDefaultClinicType;
+          
+          markerElement.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            ${!clinic.isActive ? 'opacity: 0.6;' : ''}
+            ${isEditingLocation ? (canEditThisClinic ? 'transform: scale(1.1); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);' : 'opacity: 0.5; filter: grayscale(50%); cursor: not-allowed;') : ''}
+          `;
+          
+          // Update tooltip
+          if (isEditingLocation) {
+            markerElement.title = canEditThisClinic ? `Click to edit ${clinic.clinicName}` : `Cannot edit ${clinic.clinicType} clinics (Access denied)`;
+          } else {
+            markerElement.title = clinic.isActive ? clinic.clinicName : `${clinic.clinicName} (Inactive)`;
+          }
+        }
+        
+        // UPDATE: Recreate popup content with current clinic data to reflect status changes
+        const updatedPopupContent = `
+          <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
+            
+            <div class="flex items-center mb-3 pr-6">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-10 h-10 rounded-full object-cover"/>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-lg text-[#1f1f1f] ">${clinic.clinicName}</h3>
+                <span class="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                  clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                }">
+                  ${clinic.clinicType}
+                </span>
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                clinic.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }">
+                                <div class="w-2 h-2 rounded-full ${
+                                  clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                                }"></div>
+                                ${clinic.isActive ? 'Active' : 'Inactive'}
+                              </div>
+                            </div>
+              <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
+              ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
+              ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
+            </div>
+
+            <div class="flex w-full h-10 mb-4 gap-1">
+              <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-2xl bg-[#0e80a7] text-xs sm:text-sm"><i class="bx bx-directions"></i> Directions</div>
+              <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-2xl bg-[#dd9a2d] text-xs sm:text-sm"><i class="bx bx-street-view"></i> Street View</div>
+            </div>
+          </div>
+        `;
+
+        // Update the popup content with current clinic data
+        const updatedPopup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false 
+        }).setHTML(updatedPopupContent);
+
+        // Add event listener to track when this popup opens
+        updatedPopup.on('open', () => {
+          // Close the previously open popup if it exists
+          if (currentPopup.current && currentPopup.current !== updatedPopup) {
+            currentPopup.current.remove();
+          }
+          // Set this popup as the current one
+          currentPopup.current = updatedPopup;
+        });
+
+        // Add event listener to clear reference when popup closes
+        updatedPopup.on('close', () => {
+          if (currentPopup.current === updatedPopup) {
+            currentPopup.current = null;
+          }
+        });
+
+        // Set the updated popup on the existing marker
+        existingMarker.setPopup(updatedPopup);
+        
+        newMarkers.set(clinicId, existingMarker);
+        markersOnMap.delete(clinicId); // Mark as processed
+      } else {
+        // Create a new marker
+        const markerEl = document.createElement('img');
+        markerEl.className = `w-10 h-10 rounded-full transition-all duration-200 ease-out will-change-transform transform-gpu hover:shadow-lg cursor-pointer border-2 border-white shadow-md ${isEditingLocation ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`;
+        
+        // Add data attribute to identify as clinic marker
+        markerEl.setAttribute('data-clinic-marker', 'true');
+        markerEl.setAttribute('data-clinic-id', clinicId);
+        
+        if (clinic.clinicType === 'Ambher Optical') {
+          markerEl.src = ambherlogo;
+        } else if (clinic.clinicType === 'Bautista Eye Center') {
+          markerEl.src = bautistalogo;
+        } else {
+          // Fallback for any other clinic type, though not expected
+          markerEl.src = defaultprofilepic; 
+        }
+        
+        // Check if user can edit this clinic type for visual feedback
+        const userDefaultClinicType = getUserDefaultClinicType();
+        const isAdminUser = currentuserloggedin === 'Admin';
+        const canEditThisClinic = isAdminUser || clinic.clinicType === userDefaultClinicType;
+        
+        markerEl.style.cssText = `
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: white;
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          ${!clinic.isActive ? 'opacity: 0.6;' : ''}
+          ${isEditingLocation ? (canEditThisClinic ? 'transform: scale(1.1); ' : 'opacity: 0.8; filter: grayscale(50%); cursor: not-allowed;') : ''}
+        `;
+        
+        // Set tooltip based on edit mode and accessibility
+        if (isEditingLocation) {
+          markerEl.title = canEditThisClinic ? `Click to edit ${clinic.clinicName}` : `Cannot edit ${clinic.clinicType} clinics (Access denied)`;
+        } else {
+          markerEl.title = clinic.isActive ? clinic.clinicName : `${clinic.clinicName} (Inactive)`;
+        }
+
+        const popupContent = `
+          <div class="bg-white p-4 w-72 sm:w-80 max-w-sm relative">
+            
+            <div class="flex items-center mb-3 pr-6">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="${clinic.clinicType === 'Ambher Optical' ? ambherlogo : bautistalogo}" class="w-10 h-10 rounded-full object-cover"/>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-lg text-[#1f1f1f] ">${clinic.clinicName}</h3>
+                <span class="inline-block rounded-2xl px-2 py-1 text-[13px] font-semibold ${
+                  clinic.clinicType === 'Ambher Optical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-sky-800'
+                }">
+                  ${clinic.clinicType}
+                </span>
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                clinic.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }">
+                                <div class="w-2 h-2 rounded-full ${
+                                  clinic.isActive ? 'bg-green-500' : 'bg-gray-400'
+                                }"></div>
+                                ${clinic.isActive ? 'Active' : 'Inactive'}
+                              </div>
+                            </div>
+              <div class="font-medium flex items-start justify-start"><i class="bx bx-map text-[#b42525] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-words">${clinic.address.fullAddress}</p></div>
+              ${clinic.contactInfo.phone ? `<div class="font-medium flex items-center justify-start"><i class="bx bx-phone text-[#209206] mr-2 flex-shrink-0"></i><p class="break-all">${clinic.contactInfo.phone}</p></div>` : ''}
+              ${clinic.contactInfo.email ? `<div class="font-medium flex items-start justify-start"><i class="bx bx-envelope text-[#4d9be0] mr-2 mt-0.5 flex-shrink-0"></i><p class="break-all"><a href="mailto:${clinic.contactInfo.email}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">${clinic.contactInfo.email}</a></p></div>` : ''}
+            </div>
+
+            <div class="flex w-full h-10 mb-4 gap-1">
+              <div onclick="showDirectionsToClinic('${clinic._id}')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#177898] rounded-2xl bg-[#0e80a7] text-xs sm:text-sm"><i class="bx bx-directions"></i> Directions</div>
+              <div onclick="window.open('https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}', '_blank')" class="gap-1 flex items-center justify-center text-white font-semibold w-1/2 h-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#d39228] rounded-2xl bg-[#dd9a2d] text-xs sm:text-sm"><i class="bx bx-street-view"></i> Street View</div>
+            </div>
+          </div>
+        `;
+
+        const popup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false 
+        }).setHTML(popupContent);
+
+        // Add event listener to track when this popup opens
+        popup.on('open', () => {
+          // Close the previously open popup if it exists
+          if (currentPopup.current && currentPopup.current !== popup) {
+            currentPopup.current.remove();
+          }
+          // Set this popup as the current one
+          currentPopup.current = popup;
+        });
+
+        // Add event listener to clear reference when popup closes
+        popup.on('close', () => {
+          if (currentPopup.current === popup) {
+            currentPopup.current = null;
+          }
+        });
+
+        const newMarker = new mapboxgl.Marker(markerEl)
+          .setLngLat([longitude, latitude])
+          .setPopup(popup)
+          .addTo(map.current);
+
+        // Add click handler for edit mode - populate form with clinic data
+        markerEl.addEventListener('click', (e) => {
+          // Check current edit mode state directly from DOM or a global flag
+          const currentEditMode = document.body.getAttribute('data-edit-mode') === 'true';
+          
+          if (currentEditMode) {
+            e.stopPropagation(); // Prevent map click handler from firing
+            e.preventDefault(); // Prevent any default behavior
+            
+            // Check if user can edit this clinic type
+            const userDefaultClinicType = getUserDefaultClinicType();
+            const isAdminUser = currentuserloggedin === 'Admin';
+            
+            if (!isAdminUser && clinic.clinicType !== userDefaultClinicType) {
+              console.log('🚫 Access denied: User cannot edit', clinic.clinicType, 'clinics');
+              setLocationMessage({
+                text: `Access denied: You can only edit ${userDefaultClinicType} clinic locations`,
+                type: 'error'
+              });
+              return;
+            }
+            
+            console.log('🔧 Edit mode: Clicked marker for clinic:', clinic.clinicName);
+            console.log('🔧 Edit mode: Populating form with clinic data:', clinic);
+            
+            // Populate the form with the clicked clinic's data
+            setClinicFormData({
+              clinicName: clinic.clinicName || '',
+              clinicType: clinic.clinicType || 'Ambher Optical',
+              address: {
+                street: clinic.address?.street || '',
+                city: clinic.address?.city || '',
+                state: clinic.address?.state || 'Bataan',
+                zipCode: clinic.address?.zipCode || '',
+                country: clinic.address?.country || 'Philippines',
+                fullAddress: clinic.address?.fullAddress || ''
+              },
+              coordinates: {
+                longitude: longitude,
+                latitude: latitude
+              },
+              contactInfo: {
+                phone: clinic.contactInfo?.phone || '',
+                email: clinic.contactInfo?.email || '',
+                website: clinic.contactInfo?.website || ''
+              },
+              operatingHours: clinic.operatingHours || {
+                monday: { open: '09:00', close: '18:00', closed: false },
+                tuesday: { open: '09:00', close: '18:00', closed: false },
+                wednesday: { open: '09:00', close: '18:00', closed: false },
+                thursday: { open: '09:00', close: '18:00', closed: false },
+                friday: { open: '09:00', close: '18:00', closed: false },
+                saturday: { open: '09:00', close: '17:00', closed: false },
+                sunday: { open: '10:00', close: '16:00', closed: true }
+              },
+              services: clinic.services || []
+            });
+            
+            // Set the selected clinic for editing
+            setSelectedClinicLocation(clinic);
+            
+            // Close any open popups first
+            if (currentPopup.current) {
+              currentPopup.current.remove();
+              currentPopup.current = null;
+            }
+            
+            // Small delay to ensure state is set before opening dialog
+            setTimeout(() => {
+              // Show the EDIT dialog (not add dialog)
+              setShowEditClinicDialog(true);
+              console.log('✅ Opening EDIT dialog for clinic:', clinic.clinicName);
+            }, 50);
+          } else {
+            // Normal mode - just show popup
+            console.log('📍 Normal mode: Showing popup for clinic:', clinic.clinicName);
+          }
+        }, true); // Use capture phase to ensure it fires before map click
+
+
+          
+        newMarkers.set(clinicId, newMarker);
+      }
+    });
+  }
+
+  // Remove markers that are no longer in clinicLocations
+  markersOnMap.forEach((marker, clinicId) => {
+    console.log(`Removing stale marker for clinic ID: ${clinicId}`);
+    marker.remove();
+  });
+
+  // Update the ref with the new set of markers
+  mapMarkersRef.current = newMarkers;
+
+  console.log(`✅ Map synced. Total markers: ${mapMarkersRef.current.size}`);
+
+}, [mapLoaded, clinicLocations, userLocation, isEditingLocation, currentuserloggedin, getUserDefaultClinicType]); // Include all dependencies used in marker click handlers
+
+// Global function for adding nearby clinic from popup
+useEffect(() => {
+  window.addNearbyClinicToDatabase = (clinicId) => {
+    const clinic = nearbyEyeClinics.find(c => c.id === clinicId);
+    if (clinic) {
+      setSelectedNearbyClinic(clinic);
+      setShowAddExternalClinicDialog(true);
+    }
+  };
+  
+  return () => {
+    delete window.addNearbyClinicToDatabase;
+  };
+}, [nearbyEyeClinics]);
+
+// Update user location on map
+useEffect(() => {
+  if (map.current && userLocation) {
+    // Remove previous user location marker if it exists
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch (error) {
+        console.warn('Error removing previous user marker:', error);
+      }
+      userMarkerRef.current = null;
+    }
+    
+    // Remove previous accuracy circle if it exists
+    if (map.current.getSource('user-accuracy-circle')) {
+      try {
+        map.current.removeLayer('user-accuracy-circle');
+        map.current.removeSource('user-accuracy-circle');
+      } catch (error) {
+        console.warn('Error removing previous accuracy circle:', error);
+      }
+    }
+    
+    // Add new user location marker
+    const userMarkerEl = document.createElement('div');
+    userMarkerEl.className = 'w-5 h-5 rounded-full bg-emerald-500 border-3 border-white shadow-md animate-location-pulse transform-gpu will-change-auto';
+
+    const userMarker = new mapboxgl.Marker(userMarkerEl)
+      .setLngLat([userLocation.longitude, userLocation.latitude])
+      .addTo(map.current);
+    
+    // Store the marker in the ref for future cleanup
+    userMarkerRef.current = userMarker;
+
+    // Center map on user location with smooth animation
+    map.current.flyTo({
+      center: [userLocation.longitude, userLocation.latitude],
+      zoom: 12,
+      duration: 2000, // 2 seconds for smooth transition
+      essential: true, // This animation is essential for accessibility
+      easing: (t) => t * (2 - t) // Smooth easing function (ease-out)
+    });
+  }
+  
+  // Cleanup function to remove marker when component unmounts or userLocation changes
+  return () => {
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch (error) {
+        console.warn('Error removing user marker on cleanup:', error);
+      }
+      userMarkerRef.current = null;
+    }
+    
+    // Also remove accuracy circle on cleanup
+    if (map.current && map.current.getSource('user-accuracy-circle')) {
+      try {
+        map.current.removeLayer('user-accuracy-circle');
+        map.current.removeSource('user-accuracy-circle');
+      } catch (error) {
+        console.warn('Error removing accuracy circle on cleanup:', error);
+      }
+    }
+  };
+}, [userLocation]);
+
+// Handle clinic form input changes
+const handleClinicFormChange = (field, value) => {
+  const keys = field.split('.');
+  setClinicFormData(prev => {
+    const updated = { ...prev };
+    let current = updated;
+    for (let i = 0; i < keys.length - 1; i++) {
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = value;
+    return updated;
+  });
+};
+
+// Add new clinic
+const handleAddClinic = async () => {
+  try {
+    setIsSavingLocation(true);
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        ...clinicFormData,
+        longitude: clinicFormData.coordinates.longitude,
+        latitude: clinicFormData.coordinates.latitude
+      })
+    });
+
+    if (response.ok) {
+      const newClinic = {
+        ...clinicFormData,
+        _id: Date.now().toString() // Temporary ID
+      };
+      setClinicLocations(prev => [...prev, newClinic]);
+      setLocationMessage({ text: 'Clinic location added successfully!', type: 'success' });
+      setShowAddClinicDialog(false);
+      resetClinicForm();
+    } else {
+      setLocationMessage({ text: 'Failed to add clinic location', type: 'error' });
+    }
+  } catch (error) {
+    console.error('Error adding clinic:', error);
+    setLocationMessage({ text: 'Error adding clinic location', type: 'error' });
+  } finally {
+    setIsSavingLocation(false);
+  }
+};
+
+// Update clinic
+const handleUpdateClinic = async () => {
+  try {
+    setIsSavingLocation(true);
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${selectedClinicLocation._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentusertoken}`
+      },
+      body: JSON.stringify({
+        ...clinicFormData,
+        longitude: clinicFormData.coordinates.longitude,
+        latitude: clinicFormData.coordinates.latitude
+      })
+    });
+
+    if (response.ok) {
+      setClinicLocations(prev => 
+        prev.map(clinic => 
+          clinic._id === selectedClinicLocation._id ? { ...clinic, ...clinicFormData } : clinic
+        )
+      );
+      setLocationMessage({ text: 'Clinic location updated successfully!', type: 'success' });
+      setShowEditClinicDialog(false);
+      setSelectedClinicLocation(null);
+      resetClinicForm();
+    } else {
+      setLocationMessage({ text: 'Failed to update clinic location', type: 'error' });
+    }
+  } catch (error) {
+    console.error('Error updating clinic:', error);
+    setLocationMessage({ text: 'Error updating clinic location', type: 'error' });
+  } finally {
+    setIsSavingLocation(false);
+  }
+};
+
+// Delete clinic
+const handleDeleteClinic = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/api/cliniclocation/clinics/${selectedClinicLocation._id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentusertoken}`
+      }
+    });
+
+    if (response.ok) {
+      setClinicLocations(prev => 
+        prev.filter(clinic => clinic._id !== selectedClinicLocation._id)
+      );
+      setLocationMessage({ text: 'Clinic location deleted successfully!', type: 'success' });
+      setShowDeleteClinicDialog(false);
+      setSelectedClinicLocation(null);
+    } else {
+      setLocationMessage({ text: 'Failed to delete clinic location', type: 'error' });
+    }
+  } catch (error) {
+    console.error('Error deleting clinic:', error);
+    setLocationMessage({ text: 'Error deleting clinic location', type: 'error' });
+  }
+};
+
+// Load clinic locations and user location on component mount
+useEffect(() => {
+  if (activedashboard === 'mappingintegration') {
+    fetchClinicLocations(true); // true = include all clinics (active and inactive)
+    getUserLocation();
+  }
+}, [activedashboard, fetchClinicLocations, getUserLocation]);
+
+// Load clinic locations automatically for staff/owner users after login
+useEffect(() => {
+  if (userDataLoaded && (currentuserloggedin === "Staff" || currentuserloggedin === "Owner")) {
+    console.log('Auto-loading clinic locations for', currentuserloggedin, 'user after login...');
+    
+    const loadClinicLocationsOnLogin = async () => {
+      try {
+        await fetchClinicLocations(true); // true = include all clinics (active and inactive)
+        console.log('Clinic locations loaded successfully for', currentuserloggedin);
+      } catch (clinicError) {
+        console.error('Error loading clinic locations on login:', clinicError);
+        setLocationMessage({ 
+          text: 'User logged in successfully, but failed to load clinic locations', 
+          type: 'warning' 
+        });
+      }
+    };
+    
+    loadClinicLocationsOnLogin();
+  }
+}, [userDataLoaded, currentuserloggedin, fetchClinicLocations]);
+
+// Clear messages after 5 seconds
+useEffect(() => {
+  if (locationMessage.text) {
+    const timer = setTimeout(() => {
+      setLocationMessage({ text: '', type: '' });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }
+}, [locationMessage]);
+
+// Update clinic form data clinic type when user data is loaded
+useEffect(() => {
+  if (userDataLoaded && (currentuserloggedin === 'Staff' || currentuserloggedin === 'Owner')) {
+    const correctClinicType = (() => {
+      if (currentuserloggedin === "Staff") {
+        return localStorage.getItem('staffclinic') || staffclinic || 'Ambher Optical';
+      } else if (currentuserloggedin === "Owner") {
+        return ownerownedclinic || 'Ambher Optical';
+      }
+      return 'Ambher Optical';
+    })();
+    
+    console.log('🏥 Updating clinic form data with correct clinic type:', correctClinicType);
+    
+    setClinicFormData(prev => ({
+      ...prev,
+      clinicType: correctClinicType
+    }));
+  }
+}, [userDataLoaded, currentuserloggedin, staffclinic, ownerownedclinic]);
+
+
+
+// Add this useEffect to create global functions for popup interactions
+useEffect(() => {
+  // Global function for getting directions from popup
+  window.showDirectionsToClinic = (clinicId) => {
+    console.log('🧭 Showing directions to clinic:', clinicId);
+    console.log('🔍 Debug state:', {
+      mapLoaded,
+      mapExists: !!map.current,
+      directionsControlExists: !!directionsControl.current,
+      directionsInitialized: directionsInitialized.current,
+      userLocation,
+      clinicLocationsCount: clinicLocations?.length || 0
+    });
+    
+    const clinic = clinicLocations.find(c => c._id === clinicId);
+    
+    if (!clinic) {
+      console.error('❌ Clinic not found:', clinicId);
+      console.error('Available clinics:', clinicLocations.map(c => ({ id: c._id, name: c.clinicName })));
+      alert('Clinic not found. Please try again.');
+      return;
+    }
+
+    if (!userLocation) {
+      console.error('❌ User location not available');
+      alert('Please enable location services to get directions');
+      return;
+    }
+
+    if (!map.current) {
+      console.error('❌ Map not initialized');
+      alert('Map is not ready. Please try again.');
+      return;
+    }
+
+    if (!directionsControl.current) {
+      console.error('❌ Directions control not initialized');
+      console.log('🔄 Attempting to initialize directions control...');
+      
+      // Try to initialize directions control if it's missing
+      if (mapLoaded && activedashboard === 'mappingintegration') {
+        initializeDirectionsControl();
+        // Wait a moment for initialization
+        setTimeout(() => {
+          if (directionsControl.current) {
+            console.log('✅ Directions control initialized, retrying...');
+            window.showDirectionsToClinic(clinicId);
+          } else {
+            alert('Directions service is not available. Please try again.');
+          }
+        }, 500);
+      } else {
+        alert('Directions service is not available. Please try again.');
+      }
+      return;
+    }
+
+    console.log('📍 Setting up route from user location to clinic...');
+    console.log('User location:', userLocation);
+    console.log('Clinic coordinates:', clinic.coordinates);
+
+    setIsLoadingRoute(true);
+    setShowDirections(true);
+    setRouteInfo(null);
+    setDirectionsSteps([]);
+
+    try {
+      // Clear any existing routes first
+      directionsControl.current.removeRoutes();
+      
+      // Set origin (user location) - this will be locked and non-draggable
+      directionsControl.current.setOrigin([userLocation.longitude, userLocation.latitude]);
+      
+      // Set destination (clinic location) - handle different coordinate formats
+      let clinicLng, clinicLat;
+      
+      if (clinic.coordinates?.coordinates && Array.isArray(clinic.coordinates.coordinates)) {
+        clinicLng = clinic.coordinates.coordinates[0];
+        clinicLat = clinic.coordinates.coordinates[1];
+      } else if (clinic.coordinates?.longitude && clinic.coordinates?.latitude) {
+        clinicLng = clinic.coordinates.longitude;
+        clinicLat = clinic.coordinates.latitude;
+      } else {
+        console.error('❌ Invalid clinic coordinates format:', clinic.coordinates);
+        alert('Invalid clinic coordinates. Cannot calculate route.');
+        setIsLoadingRoute(false);
+        return;
+      }
+
+      console.log('🎯 Setting destination:', [clinicLng, clinicLat]);
+      directionsControl.current.setDestination([clinicLng, clinicLat]);
+      
+      // Fly to show the route area
+      map.current.fitBounds([
+        [Math.min(userLocation.longitude, clinicLng), Math.min(userLocation.latitude, clinicLat)],
+        [Math.max(userLocation.longitude, clinicLng), Math.max(userLocation.latitude, clinicLat)]
+      ], {
+        padding: 100,
+        duration: 1000
+      });
+      
+    } catch (error) {
+      console.error('❌ Error setting up directions:', error);
+      setIsLoadingRoute(false);
+      alert('Failed to calculate route. Please try again.');
+    }
+  };
+
+  return () => {
+    // Cleanup
+    delete window.showDirectionsToClinic;
+  };
+}, [clinicLocations, userLocation, mapLoaded, activedashboard, initializeDirectionsControl]); // Include all dependencies
+
+
+
+
+
+
+  useEffect(() => {
+  const mapContainer = document.getElementById('geographicmapcontainer');
+  const handleFullscreenChange = () => {
+    // If not in fullscreen, reset styles and force map resize
+    const isFullscreen = document.fullscreenElement === mapContainer ||
+      document.webkitFullscreenElement === mapContainer ||
+      document.mozFullScreenElement === mapContainer;
+    if (!isFullscreen && mapContainer) {
+      mapContainer.style.width = '';
+      mapContainer.style.height = '';
+      mapContainer.style.position = '';
+      mapContainer.style.zIndex = '';
+      // If using Mapbox GL JS, force map resize
+      if (window.geographicMap && typeof window.geographicMap.resize === 'function') {
+        window.geographicMap.resize();
+      }
+    }
+  };
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  return () => {
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+  };
+}, []);
+

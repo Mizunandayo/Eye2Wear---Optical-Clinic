@@ -42,6 +42,18 @@ export const createpatientorderbautista = async (req, res) => {
             orderData.patientorderbautistaproductchosenpickupdate = `${year}-${month}-${day}`;
         }
 
+        // Initialize payment history with the initial payment
+        if (orderData.patientorderbautistaamountpaid && orderData.patientorderbautistaamountpaid > 0) {
+            orderData.patientorderbautistapaymenthistory = [{
+                amount: orderData.patientorderbautistaamountpaid,
+                paymentDate: new Date(),
+                paymentType: 'Initial Payment',
+                processedBy: req.body.processedBy || 'System', // You can pass admin info from frontend
+                paymentMethod: orderData.patientorderbautistaproductpaymentmethod || 'Cash',
+                remarks: 'Order creation - Initial payment'
+            }];
+        }
+
         const neworder = new PatientOrderBautista(orderData);
         const savedorder = await neworder.save();
 
@@ -87,7 +99,7 @@ export const createpatientorderbautista = async (req, res) => {
             // Execute optimized queries in parallel
             const [patientorderbautistas, totalCount] = await Promise.all([
                 PatientOrderBautista.find(queryFilter)
-                    .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickuptime patientorderbautistaproductchosenpickupplace patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
+                    .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistapaymenthistory patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickuptime patientorderbautistaproductchosenpickupplace patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
                     .sort({patientorderbautistaid: -1})
                     .skip(skip)
                     .limit(limit)
@@ -122,7 +134,7 @@ export const createpatientorderbautista = async (req, res) => {
             const patientorderbautista = await PatientOrderBautista.findOne({
                 patientorderbautistaid: req.params.id
             })
-            .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace patientorderbautistaproductchosenpickuptime patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
+            .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistapaymenthistory patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickupplace patientorderbautistaproductchosenpickuptime patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
             .lean(); // Returns plain JavaScript objects for better performance
             
             if(!patientorderbautista) return res.status(404).json({message: "Bautista Order not found"});
@@ -151,7 +163,7 @@ export const createpatientorderbautista = async (req, res) => {
                 PatientOrderBautista.find({
                     patientemail: req.params.email
                 })
-                .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickuptime patientorderbautistaproductchosenpickupplace patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
+                .select('patientorderbautistaid patientorderbautistastatus patientorderbautistahistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderbautistaproductid patientorderbautistaproductname patientorderbautistaproductbrand patientorderbautistaproductmodelnumber patientorderbautistaproductcategory patientorderbautistaproductimage patientorderbautistaproductprice patientorderbautistaproductquantity patientorderbautistaproductsubtotal patientorderbautistaproductdescription patientorderbautistaproductnotes patientorderbautistacustomfee patientorderbautistadiscount patientorderbautistadiscountamount patientorderbautistaamountpaid patientorderbautistaremainingbalance patientorderbautistaamountpaidchange patientorderbautistaproducttotal patientorderbautistaproductpaymentmethod patientorderbautistapaymenthistory patientorderbautistaproductpaymentreceiptimage patientorderbautistaproductpaymentstatus patientorderbautistaproductpaymenttransactionid patientorderbautistaproductpickupstatus patientorderbautistaproductchosenpickupdate patientorderbautistaproductchosenpickuptime patientorderbautistaproductchosenpickupplace patientorderbautistaproducauthorizedname patientorderbautistaproducauthorizedtype createdAt updatedAt')
                 .sort({patientorderbautistaid: -1})
                 .skip(skip)
                 .limit(limit)
@@ -361,12 +373,26 @@ export const getbautistaproductsoldcountbyid = async (req, res) => {
 export const updatePaymentBautista = async (req, res) => {
   try {
     const { id } = req.params;
-    const { patientorderbautistaamountpaid, patientorderbautistaamountpaidchange } = req.body;
+    const { patientorderbautistaamountpaid, patientorderbautistaamountpaidchange, processedBy } = req.body;
 
     const order = await PatientOrderBautista.findOne({ patientorderbautistaid: id });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
+    // Calculate the additional payment amount
+    const previousAmountPaid = order.patientorderbautistaamountpaid || 0;
+    const additionalPaymentAmount = patientorderbautistaamountpaid - previousAmountPaid;
+
+    // Add to payment history if there's a new payment
+    const paymentHistoryEntry = {
+      amount: additionalPaymentAmount,
+      paymentDate: new Date(),
+      paymentType: 'Additional Payment',
+      processedBy: processedBy || 'Admin',
+      paymentMethod: order.patientorderbautistaproductpaymentmethod || 'Cash',
+      remarks: `Additional payment of ₱${additionalPaymentAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+    };
 
     // Update the payment fields
     const remainingBalance = order.patientorderbautistaproducttotal - patientorderbautistaamountpaid;
@@ -378,7 +404,8 @@ export const updatePaymentBautista = async (req, res) => {
         patientorderbautistaamountpaid: patientorderbautistaamountpaid,
         patientorderbautistaamountpaidchange: patientorderbautistaamountpaidchange,
         patientorderbautistaremainingbalance: remainingBalance,
-        patientorderbautistaproductpaymentstatus: paymentStatus
+        patientorderbautistaproductpaymentstatus: paymentStatus,
+        $push: { patientorderbautistapaymenthistory: paymentHistoryEntry }
       },
       { new: true }
     );

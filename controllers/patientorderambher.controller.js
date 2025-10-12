@@ -42,6 +42,18 @@ export const createpatientorderambher = async (req, res) => {
             orderData.patientorderambherproductchosenpickupdate = `${year}-${month}-${day}`;
         }
 
+        // Initialize payment history with the initial payment
+        if (orderData.patientorderambheramountpaid && orderData.patientorderambheramountpaid > 0) {
+            orderData.patientorderambherpaymenthistory = [{
+                amount: orderData.patientorderambheramountpaid,
+                paymentDate: new Date(),
+                paymentType: 'Initial Payment',
+                processedBy: req.body.processedBy || 'System', // You can pass admin info from frontend
+                paymentMethod: orderData.patientorderambherproductpaymentmethod || 'Cash',
+                remarks: 'Order creation - Initial payment'
+            }];
+        }
+
         const neworder = new PatientOrderAmbher(orderData);
         const savedorder = await neworder.save();
 
@@ -89,7 +101,7 @@ export const createpatientorderambher = async (req, res) => {
             // Execute optimized queries in parallel
             const [patientorderambhers, totalCount] = await Promise.all([
                 PatientOrderAmbher.find(queryFilter)
-                    .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
+                    .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherpaymenthistory patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
                     .sort({patientorderambherid: -1})
                     .skip(skip)
                     .limit(limit)
@@ -124,7 +136,7 @@ export const createpatientorderambher = async (req, res) => {
             const patientorderambher = await PatientOrderAmbher.findOne({
                 patientorderambherid: req.params.id
             })
-            .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace patientorderambherproductchosenpickuptime patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
+            .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherpaymenthistory patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickupplace patientorderambherproductchosenpickuptime patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
             .lean(); // Returns plain JavaScript objects for better performance
             
             if(!patientorderambher) return res.status(404).json({message: "Order Ambher not found"});
@@ -153,7 +165,7 @@ export const createpatientorderambher = async (req, res) => {
                 PatientOrderAmbher.find({
                     patientemail: req.params.email
                 })
-                .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
+                .select('patientorderambherid patientorderambherstatus patientorderambherhistory patientprofilepicture patientlastname patientfirstname patientmiddlename patientemail patientcontactnumber patientorderambherproductid patientorderambherproductname patientorderambherproductbrand patientorderambherproductmodelnumber patientorderambherproductcategory patientorderambherproductimage patientorderambherproductprice patientorderambherproductquantity patientorderambherproductsubtotal patientorderambherproductdescription patientorderambherproductnotes patientorderambhercustomfee patientorderambherdiscount patientorderambherdiscountamount patientorderambheramountpaid patientorderambherremainingbalance patientorderambheramountpaidchange patientorderambherproducttotal patientorderambherproductpaymentmethod patientorderambherpaymenthistory patientorderambherproductpaymentreceiptimage patientorderambherproductpaymentstatus patientorderambherproductpaymenttransactionid patientorderambherproductpickupstatus patientorderambherproductchosenpickupdate patientorderambherproductchosenpickuptime patientorderambherproductchosenpickupplace patientorderambherproducauthorizedname patientorderambherproducauthorizedtype createdAt updatedAt')
                 .sort({patientorderambherid: -1})
                 .skip(skip)
                 .limit(limit)
@@ -365,12 +377,26 @@ export const getambherproductsoldcountbyid = async (req, res) => {
 export const updatePaymentAmbher = async (req, res) => {
   try {
     const { id } = req.params;
-    const { patientorderambheramountpaid, patientorderambheramountpaidchange } = req.body;
+    const { patientorderambheramountpaid, patientorderambheramountpaidchange, processedBy } = req.body;
 
     const order = await PatientOrderAmbher.findOne({ patientorderambherid: id });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
+    // Calculate the additional payment amount
+    const previousAmountPaid = order.patientorderambheramountpaid || 0;
+    const additionalPaymentAmount = patientorderambheramountpaid - previousAmountPaid;
+
+    // Add to payment history if there's a new payment
+    const paymentHistoryEntry = {
+      amount: additionalPaymentAmount,
+      paymentDate: new Date(),
+      paymentType: 'Additional Payment',
+      processedBy: processedBy || 'Admin',
+      paymentMethod: order.patientorderambherproductpaymentmethod || 'Cash',
+      remarks: `Additional payment of ₱${additionalPaymentAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+    };
 
     // Update the payment fields
     const remainingBalance = order.patientorderambherproducttotal - patientorderambheramountpaid;
@@ -382,7 +408,8 @@ export const updatePaymentAmbher = async (req, res) => {
         patientorderambheramountpaid: patientorderambheramountpaid,
         patientorderambheramountpaidchange: patientorderambheramountpaidchange,
         patientorderambherremainingbalance: remainingBalance,
-        patientorderambherproductpaymentstatus: paymentStatus
+        patientorderambherproductpaymentstatus: paymentStatus,
+        $push: { patientorderambherpaymenthistory: paymentHistoryEntry }
       },
       { new: true }
     );

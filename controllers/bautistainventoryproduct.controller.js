@@ -102,10 +102,20 @@ import PatientDemographic from "../models/patientdemographic.js";
                 { new: true }
             );
 
-            // If product was restocked, send SMS notifications to wishlist customers
+            // If product was restocked, send SMS notifications and remove from wishlists
             if (isRestocked) {
                 console.log(`🔄 Product restocked detected: ${updatedbautistainventoryproduct.bautistainventoryproductname}`);
+                
+                // Send SMS notifications to wishlist customers
                 await sendWishlistRestockNotifications(updatedbautistainventoryproduct, 'bautista');
+                
+                // Auto-remove from all wishlists since product is now back in stock
+                const removeResult = await PatientWishlist.deleteMany({
+                    patientwishlistinventoryproductid: updatedbautistainventoryproduct.bautistainventoryproductid,
+                    clinicType: 'bautista'
+                });
+                
+                console.log(`🗑️ Removed product from ${removeResult.deletedCount} wishlists after restock`);
             }
         
             res.status(200).json(updatedbautistainventoryproduct);

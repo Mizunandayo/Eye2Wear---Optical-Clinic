@@ -50,6 +50,15 @@ const PatientOrderBautistaSchema = new mongoose.Schema({
     patientorderbautistaamountpaidchange: { type: Number, default: 0 }, // Computed from deducting overall total to total paid amount
     patientorderbautistaproducttotal: { type: Number, default: 0 },  // Subtotal + CustomizationFee - Discount
     patientorderbautistaproductpaymentmethod: {type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash'},
+    // Payment history tracking - records all payments made
+    patientorderbautistapaymenthistory: [{
+        amount: { type: Number, required: true }, // Payment amount
+        paymentDate: { type: Date, default: Date.now }, // When payment was made
+        paymentType: { type: String, enum: ['Initial Payment', 'Additional Payment'], default: 'Additional Payment' }, // Type of payment
+        processedBy: String, // Admin who processed the payment
+        paymentMethod: { type: String, enum: ['Cash', 'Bank Transfer'], default: 'Cash' }, // Method used
+        remarks: String // Optional notes about the payment
+    }],
     // Payment receipt image - Cloudinary URL
     patientorderbautistaproductpaymentreceiptimage: String,
     // Cloudinary public_id for payment receipt image

@@ -15,8 +15,6 @@ import { checkAndUpdateOrderStatus, updateAmbherOrderStatus, updateBautistaOrder
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import Footer from "./Footer";
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import defaulticon from "../src/assets/images/defaulticon.png";
 
 
@@ -137,6 +135,19 @@ function PatientOrders(){
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  // Add CSS animation for spinner
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
 
   
   const [patientfirstname, setpatientfirstname] = useState('');
@@ -251,6 +262,7 @@ const [searchpatientorderedProducts, setsearchpatientorderedProducts] = useState
 const [selectedOrderForView, setSelectedOrderForView] = useState(null);
 const [showViewOrderModal, setShowViewOrderModal] = useState(false);
 const [viewOrderCurrentImageIndex, setViewOrderCurrentImageIndex] = useState(0);
+const [isExportingPDF, setIsExportingPDF] = useState(false);
 
 
 const showorderstable = (orderstableid) => {
@@ -417,14 +429,16 @@ useEffect(() => {
     }
   };
 
-  // PDF Export function for billing details
+  // Modern PDF Export function using Puppeteer backend
   const exportBillingToPDF = async (orderData) => {
+    setIsExportingPDF(true);
     try {
       // Determine if it's Ambher or Bautista order
       const isAmbher = orderData.patientorderambherid;
       
       // Extract order details
       const orderId = isAmbher ? orderData.patientorderambherid : orderData.patientorderbautistaid;
+      const orderStatus = isAmbher ? orderData.patientorderambherstatus : orderData.patientorderbautistastatus;
       const productName = isAmbher 
         ? orderData.patientorderambherproductname 
         : orderData.patientorderbautistaproductname;
@@ -449,193 +463,555 @@ useEffect(() => {
       const discountAmount = isAmbher 
         ? orderData.patientorderambherdiscountamount 
         : orderData.patientorderbautistadiscountamount;
+      const paymentMethod = isAmbher
+        ? orderData.patientorderambherproductpaymentmethod
+        : orderData.patientorderbautistaproductpaymentmethod;
+      const paymentHistory = isAmbher
+        ? orderData.patientorderambherpaymenthistory || []
+        : orderData.patientorderbautistapaymenthistory || [];
+      
+      // Debug: Log payment history
+      console.log('📊 Payment History for PDF:', paymentHistory);
+      console.log('📊 Number of payments:', paymentHistory.length);
+      
       const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
       const clinicAddress = isAmbher
         ? orderData.patientorderambherproductchosenpickupplace
         : orderData.patientorderbautistaproductchosenpickupplace;
-      const customerName = `${patientfirstname} ${patientlastname}`;
-      const customerEmail = patientemail;
+      const customerName = `${orderData.patientfirstname} ${orderData.patientlastname}`;
+      const customerEmail = orderData.patientemail;
       const orderDate = formatorderDates(orderData.createdAt);
       const orderNotes = isAmbher 
         ? orderData.patientorderambherproductnotes 
         : orderData.patientorderbautistaproductnotes;
 
-      // Create new PDF document
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      
-      // Set font
-      pdf.setFont('helvetica');
-      
-      // Header Section
-      pdf.setFontSize(20);
-      pdf.setTextColor(24, 77, 133); // #184d85
-      pdf.text('OFFICIAL RECEIPT', pageWidth / 2, 25, { align: 'center' });
-      
-      // Clinic Information
-      pdf.setFontSize(16);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(clinic, pageWidth / 2, 40, { align: 'center' });
-      
-      pdf.setFontSize(10);
-      pdf.text(clinicAddress, pageWidth / 2, 48, { align: 'center' });
-      
-      // TIN Number (You should replace this with actual TIN)
-      const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
-      pdf.text(tinNumber, pageWidth / 2, 55, { align: 'center' });
-      
-      // Horizontal line
-      pdf.setLineWidth(0.5);
-      pdf.line(20, 65, pageWidth - 20, 65);
-      
-      // Receipt Details
-      pdf.setFontSize(12);
-      const leftCol = 25;
-      const rightCol = 120;
-      let yPos = 80;
-      
-      // Receipt Information
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`Receipt No: #${orderId}`, leftCol, yPos);
-      pdf.text(`Date: ${orderDate}`, rightCol, yPos);
-      yPos += 10;
-      
-      // Customer Information
-      pdf.text('BILL TO:', leftCol, yPos);
-      yPos += 8;
-      pdf.text(`${customerName}`, leftCol, yPos);
-      yPos += 6;
-      pdf.text(`${customerEmail}`, leftCol, yPos);
-      yPos += 15;
-      
-      // Table Header
-      pdf.setFillColor(24, 77, 133); // #184d85
-      pdf.setTextColor(255, 255, 255);
-      pdf.rect(20, yPos, pageWidth - 40, 10, 'F');
-      
-      pdf.setFontSize(10);
-      pdf.text('DESCRIPTION', 25, yPos + 7);
-      pdf.text('QTY', 120, yPos + 7);
-      pdf.text('UNIT PRICE', 140, yPos + 7);
-      pdf.text('AMOUNT', 170, yPos + 7);
-      
-      yPos += 15;
-      
-      // Product Details
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(10);
-      
-      // Product name (split if too long)
-      const productNameLines = pdf.splitTextToSize(productName, 90);
-      pdf.text(productNameLines, 25, yPos);
-      
-      // Calculate the height needed for product name
-      const lineHeight = 5;
-      const productNameHeight = productNameLines.length * lineHeight;
-      
-      pdf.text(`${productQuantity}`, 120, yPos);
-      pdf.text(`PHP ${Number(productPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 140, yPos);
-      pdf.text(`PHP ${(Number(productPrice) * Number(productQuantity)).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-      
-      yPos += Math.max(productNameHeight, 8) + 5;
-      
-      // Order notes if available
-      if (orderNotes && orderNotes.trim()) {
-        pdf.setFontSize(9);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text('Notes:', 25, yPos);
-        yPos += 5;
-        const notesLines = pdf.splitTextToSize(orderNotes, 160);
-        pdf.text(notesLines, 25, yPos);
-        yPos += notesLines.length * 4 + 5;
-      }
-      
-      // Horizontal line before totals
-      pdf.setLineWidth(0.3);
-      pdf.line(20, yPos, pageWidth - 20, yPos);
-      yPos += 10;
-      
-      // Totals Section
-      pdf.setFontSize(11);
-      pdf.setTextColor(0, 0, 0);
-      
-      const subtotal = Number(productPrice) * Number(productQuantity);
-      
-      pdf.text('Subtotal:', 140, yPos);
-      pdf.text(`PHP ${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-      yPos += 8;
-      
-      // Customization Fee (if any)
-      if (customFee > 0) {
-        pdf.text('Custom Fee:', 140, yPos);
-        pdf.text(`PHP ${Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-        yPos += 8;
-      }
-      
-      // Discount (if any)
-      if (discountPercentage > 0) {
-        pdf.setTextColor(196, 54, 54); // Red color for discount
-        pdf.text(`Discount (${discountPercentage}%):`, 140, yPos);
-        pdf.text(`-PHP ${Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-        pdf.setTextColor(0, 0, 0); // Reset to black
-        yPos += 8;
-      }
-      
-      // Amount Paid
-      pdf.text('Amount Paid:', 140, yPos);
-      pdf.text(`PHP ${Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-      yPos += 8;
-      
-      // Remaining Balance (if any)
+      // Calculate payment details
+      const hasDownpayment = Number(amountPaid) < Number(productTotal);
       const remainingBalance = Number(productTotal) - Number(amountPaid);
-      if (remainingBalance > 0) {
-        pdf.setTextColor(196, 54, 54); // Red color for balance
-        pdf.text('Remaining Balance:', 140, yPos);
-        pdf.text(`PHP ${remainingBalance.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
-        yPos += 8;
+      const subtotal = Number(productPrice) * Number(productQuantity);
+      const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
+      
+      // Format payment history rows - ensure all payments are shown
+      let paymentHistoryRows = '';
+      let runningTotal = 0;
+      
+      // Check if we have payment history array with data
+      if (paymentHistory && paymentHistory.length > 0) {
+        // Use payment history from database
+        paymentHistory.forEach((payment, index) => {
+          runningTotal += Number(payment.amount);
+          const paymentDate = new Date(payment.paymentDate);
+          const formattedDateTime = paymentDate.toLocaleString('en-PH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Manila'
+          });
+          
+          paymentHistoryRows += `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 6px 4px; font-size: 10px; color: #333;">${index + 1}</td>
+              <td style="padding: 6px 4px; font-size: 10px; color: #333;">${payment.paymentType || 'Payment'}</td>
+              <td style="padding: 6px 4px; font-size: 10px; color: #333;">${formattedDateTime}</td>
+              <td style="padding: 6px 4px; text-align: right; font-size: 10px; font-weight: 600; color: #000;">₱${Number(payment.amount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td style="padding: 6px 4px; font-size: 10px; color: #333;">${payment.processedBy || 'System'}</td>
+            </tr>
+          `;
+        });
+      } else if (amountPaid > 0) {
+        // Fallback: If no payment history array but there's an amount paid, show it
+        runningTotal = Number(amountPaid);
+        const formattedDateTime = new Date(orderData.createdAt).toLocaleString('en-PH', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'Asia/Manila'
+        });
+        
+        paymentHistoryRows += `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 6px 4px; font-size: 10px; color: #333;">1</td>
+            <td style="padding: 6px 4px; font-size: 10px; color: #333;">Initial Payment</td>
+            <td style="padding: 6px 4px; font-size: 10px; color: #333;">${formattedDateTime}</td>
+            <td style="padding: 6px 4px; text-align: right; font-size: 10px; font-weight: 600; color: #000;">₱${Number(amountPaid).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td style="padding: 6px 4px; font-size: 10px; color: #333;">System</td>
+          </tr>
+        `;
       }
       
-      // Total line
-      pdf.setLineWidth(0.5);
-      pdf.line(135, yPos, pageWidth - 20, yPos);
-      yPos += 8;
+      // Build payment history section HTML - show if there's payment history OR any amount paid
+      const paymentHistorySection = (paymentHistory && paymentHistory.length > 0) || amountPaid > 0 ? `
+        <div style="margin-top: 25px;">
+          <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 12px;">
+            <h3 style="color: #000; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+              Payment History
+            </h3>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+            <thead>
+              <tr style="border-bottom: 1px solid #ddd;">
+                <th style="padding: 6px 4px; text-align: left; font-weight: 600; color: #555;">#</th>
+                <th style="padding: 6px 4px; text-align: left; font-weight: 600; color: #555;">Type</th>
+                <th style="padding: 6px 4px; text-align: left; font-weight: 600; color: #555;">Date & Time</th>
+                <th style="padding: 6px 4px; text-align: right; font-weight: 600; color: #555;">Amount</th>
+                <th style="padding: 6px 4px; text-align: left; font-weight: 600; color: #555;">Processed By</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${paymentHistoryRows}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 1px solid #000;">
+                <td colspan="3" style="padding: 8px 4px; text-align: right; font-weight: 700; font-size: 11px;">TOTAL PAID:</td>
+                <td style="padding: 8px 4px; text-align: right; font-weight: 700; font-size: 11px;">₱${runningTotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      ` : '';
       
-      // Total Amount
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('TOTAL:', 140, yPos);
-      pdf.text(`PHP ${Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 170, yPos);
+      // Determine status badge
+      const statusBadge = remainingBalance <= 0 
+        ? `<div style="border: 2px solid #10b981; color: #10b981; padding: 8px 20px; display: inline-block; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">✓ Fully Paid</div>`
+        : `<div style="border: 2px solid #dc2626; color: #dc2626; padding: 8px 20px; display: inline-block; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">⚠ Partial Payment</div>`;
       
-      yPos += 25;
-      
-      // Payment Status
-      pdf.setFontSize(10);
-      if (remainingBalance <= 0) {
-        pdf.setTextColor(35, 165, 74); // Green
-        pdf.text('FULLY PAID', pageWidth / 2, yPos, { align: 'center' });
-      } else {
-        pdf.setTextColor(196, 54, 54); // Red
-        pdf.text('PARTIAL PAYMENT', pageWidth / 2, yPos, { align: 'center' });
+      // Create modern HTML receipt
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+              
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: white;
+                padding: 20px;
+                color: #000;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              @page {
+                size: A4;
+                margin: 15mm;
+              }
+              
+              .receipt-container {
+                max-width: 700px;
+                margin: 0 auto;
+                background: white;
+              }
+              
+              .receipt-header {
+                text-align: center;
+                border-bottom: 2px solid #000;
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+              }
+              
+              .receipt-header h1 {
+                font-size: 16px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+              }
+              
+              .clinic-name {
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 4px;
+              }
+              
+              .clinic-address {
+                font-size: 11px;
+                color: #555;
+                margin-bottom: 2px;
+              }
+              
+              .tin-number {
+                font-size: 10px;
+                color: #666;
+                margin-top: 4px;
+              }
+              
+              .receipt-body {
+                padding: 0;
+              }
+              
+              .receipt-info {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #ddd;
+              }
+              
+              .info-group {
+                font-size: 11px;
+              }
+              
+              .info-group h4 {
+                color: #666;
+                font-size: 9px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 3px;
+                font-weight: 600;
+              }
+              
+              .info-group p {
+                color: #000;
+                font-size: 11px;
+                font-weight: 600;
+              }
+              
+              .customer-section {
+                background: #fafafa;
+                padding: 12px 15px;
+                margin-bottom: 20px;
+                border-left: 3px solid #000;
+              }
+              
+              .customer-section h3 {
+                color: #000;
+                font-size: 9px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
+              }
+              
+              .customer-section p {
+                color: #333;
+                font-size: 11px;
+                margin: 2px 0;
+              }
+              
+              .products-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                font-size: 11px;
+              }
+              
+              .products-table thead {
+                border-bottom: 2px solid #000;
+              }
+              
+              .products-table th {
+                padding: 8px 6px;
+                text-align: left;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                color: #000;
+              }
+              
+              .products-table td {
+                padding: 12px 6px;
+                border-bottom: 1px solid #eee;
+                font-size: 11px;
+                color: #333;
+              }
+              
+              .products-table tbody tr:last-child td {
+                border-bottom: none;
+              }
+              
+              .product-name {
+                font-weight: 600;
+                color: #000;
+              }
+              
+              .notes-section {
+                background: #fffbeb;
+                border-left: 3px solid #f59e0b;
+                padding: 10px 12px;
+                margin: 15px 0;
+                font-size: 10px;
+              }
+              
+              .notes-section strong {
+                color: #92400e;
+                font-size: 9px;
+                display: block;
+                margin-bottom: 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+              }
+              
+              .notes-section p {
+                color: #78350f;
+                font-size: 10px;
+                line-height: 1.4;
+              }
+              
+              .totals-section {
+                margin: 20px 0;
+                padding: 15px 0;
+                border-top: 1px solid #ddd;
+                border-bottom: 2px solid #000;
+              }
+              
+              .total-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 0;
+                font-size: 11px;
+              }
+              
+              .total-row.subtotal {
+                color: #666;
+              }
+              
+              .total-row.discount {
+                color: #dc2626;
+                font-weight: 600;
+              }
+              
+              .total-row.grand-total {
+                font-size: 14px;
+                font-weight: 700;
+                color: #000;
+                border-top: 1px solid #000;
+                padding-top: 10px;
+                margin-top: 8px;
+              }
+              
+              .remaining-balance {
+                background: #fef2f2;
+                border-left: 3px solid #dc2626;
+                padding: 10px 12px;
+                margin-top: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 11px;
+              }
+              
+              .remaining-balance span:first-child {
+                color: #991b1b;
+                font-weight: 700;
+              }
+              
+              .remaining-balance span:last-child {
+                color: #dc2626;
+                font-weight: 700;
+                font-size: 13px;
+              }
+              
+              .status-badge-container {
+                text-align: center;
+                margin: 25px 0;
+              }
+              
+              .receipt-footer {
+                text-align: center;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                margin-top: 20px;
+              }
+              
+              .receipt-footer p {
+                color: #666;
+                font-size: 9px;
+                margin: 4px 0;
+              }
+              
+              .receipt-footer .thank-you {
+                color: #000;
+                font-size: 12px;
+                font-weight: 700;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              @media print {
+                body {
+                  padding: 0;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="receipt-container">
+              <!-- Header -->
+              <div class="receipt-header">
+                <h1>Official Receipt</h1>
+                <div class="clinic-name">${clinic}</div>
+                <div class="clinic-address">${clinicAddress}</div>
+                <div class="tin-number">${tinNumber}</div>
+              </div>
+              
+              <!-- Body -->
+              <div class="receipt-body">
+                <!-- Receipt Info -->
+                <div class="receipt-info">
+                  <div class="info-group">
+                    <h4>Receipt No</h4>
+                    <p>#${orderId}</p>
+                  </div>
+                  <div class="info-group">
+                    <h4>Date</h4>
+                    <p>${orderDate}</p>
+                  </div>
+                  <div class="info-group">
+                    <h4>Status</h4>
+                    <p>${orderStatus}</p>
+                  </div>
+
+                </div>
+                
+                <!-- Customer Info -->
+                <div class="customer-section">
+                  <h3>Bill To</h3>
+                  <p style="font-weight: 600;">${customerName}</p>
+                  <p>${customerEmail}</p>
+                </div>
+                
+                <!-- Products Table -->
+                <table class="products-table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th style="text-align: center; width: 60px;">Qty</th>
+                      <th style="text-align: right; width: 100px;">Unit Price</th>
+                      <th style="text-align: right; width: 100px;">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="product-name">${productName}</td>
+                      <td style="text-align: center;">${productQuantity}</td>
+                      <td style="text-align: right;">₱${Number(productPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                      <td style="text-align: right; font-weight: 600;">₱${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                ${orderNotes && orderNotes.trim() ? `
+                <div class="notes-section">
+                  <strong>Order Notes</strong>
+                  <p>${orderNotes}</p>
+                </div>
+                ` : ''}
+                
+                <!-- Totals -->
+                <div class="totals-section">
+                  <div class="total-row subtotal">
+                    <span>Subtotal</span>
+                    <span>₱${subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  ${customFee > 0 ? `
+                  <div class="total-row subtotal">
+                    <span>Custom Fee</span>
+                    <span>₱${Number(customFee).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  ` : ''}
+                  ${discountPercentage > 0 ? `
+                  <div class="total-row discount">
+                    <span>Discount (${discountPercentage}%)</span>
+                    <span>-₱${Number(discountAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  ` : ''}
+                  <div class="total-row grand-total">
+                    <span>TOTAL AMOUNT</span>
+                    <span>₱${Number(productTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  ${remainingBalance > 0 ? `
+                  <div class="remaining-balance">
+                    <span>Remaining Balance</span>
+                    <span>₱${remainingBalance.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  ` : ''}
+                </div>
+                
+                <!-- Payment History -->
+                ${paymentHistorySection}
+                
+                <!-- Status Badge -->
+                <div class="status-badge-container">
+                  ${statusBadge}
+                </div>
+              </div>
+              
+              <!-- Footer -->
+              <div class="receipt-footer">
+                <p class="thank-you">Thank you for your business</p>
+                <p>This is an official receipt generated by Eye2Wear Optical System</p>
+                <p>Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Generate filename
+      const statusText = orderStatus.replace(/\s+/g, '_');
+      const fileName = `Receipt_${clinic.replace(/\s+/g, '_')}_Order_${orderId}_${statusText}_${customerName.replace(/\s+/g, '_')}.pdf`;
+
+      // Send HTML to backend for PDF generation using Puppeteer
+      const response = await fetch(`${apiUrl}/api/pdf/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          htmlContent,
+          fileName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
       }
+
+      // Get the PDF as arrayBuffer for proper binary handling
+      const arrayBuffer = await response.arrayBuffer();
       
-      yPos += 20;
+      // Create blob from arrayBuffer with correct MIME type
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
       
-      // Footer
-      pdf.setFontSize(9);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text('Thank you for your business!', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
-      pdf.text('This is an official receipt generated by Eye2Wear Optical System', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
-      pdf.text(`Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}`, pageWidth / 2, yPos, { align: 'center' });
-      
-      // Save the PDF
-      const fileName = `Receipt_${clinic.replace(' ', '_')}_Order_${orderId}_${customerName.replace(' ', '_')}.pdf`;
-      pdf.save(fileName);
-      
+      // Cleanup after a short delay to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Error generating PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -1257,25 +1633,58 @@ useEffect(() => {
                       <img src={darklogo} alt="Eye2Wear: Optical Clinic" className="w-15 hover:scale-105 transition-all p-1" />
                       <h1 className="text-[#184d85] font-albertsans font-bold ml-3 text-[30px]">Billing Details</h1>
                     </div>
-                <div className="flex items-center gap-4">
-                  {(() => {
-                    const orderStatus = selectedOrderForView.patientorderambherid 
-                      ? selectedOrderForView.patientorderambherstatus 
-                      : selectedOrderForView.patientorderbautistastatus;
-                    
-                    return orderStatus === 'Completed' && (
-                      <div
-                        onClick={() => exportBillingToPDF(selectedOrderForView)}
-                        className="bg-[#184d85] hover:bg-[#0f3a6b] text-white px-6 py-3 rounded-lg font-medium font-albertsans transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
-                      >
-                        <i className="bx bx-download text-lg"></i>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <button
+                    onClick={() => exportBillingToPDF(selectedOrderForView)}
+                    disabled={isExportingPDF}
+                    style={{
+                      backgroundColor: isExportingPDF ? '#9ca3af' : '#184d85',
+                      color: 'white',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      fontFamily: 'albertsans',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                      border: 'none',
+                      cursor: isExportingPDF ? 'not-allowed' : 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isExportingPDF) {
+                        e.target.style.backgroundColor = '#0f3a6b';
+                        e.target.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isExportingPDF) {
+                        e.target.style.backgroundColor = '#184d85';
+                        e.target.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                      }
+                    }}
+                  >
+                    {isExportingPDF ? (
+                      <>
+                        <svg style={{ animation: 'spin 1s linear infinite', height: '20px', width: '20px', color: 'white' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bx bx-download" style={{ fontSize: '18px' }}></i>
                         Export PDF
-                      </div>
-                    );
-                  })()}
+                      </>
+                    )}
+                  </button>
                   <div 
                     onClick={closeViewOrderModal}
-                    className="cursor-pointer text-gray-500 hover:text-black text-[50px]"
+                    style={{ cursor: 'pointer', color: '#6b7280', fontSize: '50px', lineHeight: '1' }}
+                    onMouseEnter={(e) => e.target.style.color = '#000000'}
+                    onMouseLeave={(e) => e.target.style.color = '#6b7280'}
                   >
                     ×
                   </div>

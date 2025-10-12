@@ -1102,6 +1102,22 @@ const handleviewappointment = (appointment) => {
    );
  };
 
+ // Helper function to check if patient has accepted Ambher appointment
+ const hasAcceptedAmbherAppointment = () => {
+   return patientappointments.some(appointment => 
+     appointment.patientambherappointmentdate && 
+     appointment.patientambherappointmentstatus === 'Accepted'
+   );
+ };
+
+ // Helper function to check if patient has accepted Bautista appointment
+ const hasAcceptedBautistaAppointment = () => {
+   return patientappointments.some(appointment => 
+     appointment.patientbautistaappointmentdate && 
+     appointment.patientbautistaappointmentstatus === 'Accepted'
+   );
+ };
+
  // Search functionality for appointments with debounce
  const [searchAppointments, setSearchAppointments] = useState('');
  const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -2817,7 +2833,14 @@ useEffect(() => {
                               {/* Appointment Booking Prompt/Mask */}
                               {!showAmbherAppointmentForm ? (
                                 <div className="flex flex-col items-center justify-center gap-4">
-                                  {hasPendingAmbherAppointment() ? (
+                                  {hasAcceptedAmbherAppointment() ? (
+                                    <div className="text-center py-4">
+                                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-300 rounded-lg">
+                                        <i className="bx bx-check-circle text-green-600 text-lg"></i>
+                                        <span className="text-sm text-green-800 font-medium">You have an accepted appointment</span>
+                                      </div>
+                                    </div>
+                                  ) : hasPendingAmbherAppointment() ? (
                                     <div className="text-center py-4">
                                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-300 rounded-lg">
                                         <i className="bx bx-info-circle text-yellow-600 text-lg"></i>
@@ -3084,7 +3107,14 @@ useEffect(() => {
                               {/* Appointment Booking Prompt/Mask */}
                               {!showBautistaAppointmentForm ? (
                                 <div className="flex flex-col items-center justify-center gap-4">
-                                  {hasPendingBautistaAppointment() ? (
+                                  {hasAcceptedBautistaAppointment() ? (
+                                    <div className="text-center py-4">
+                                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-300 rounded-lg">
+                                        <i className="bx bx-check-circle text-blue-600 text-lg"></i>
+                                        <span className="text-sm text-blue-800 font-medium">You have an accepted appointment</span>
+                                      </div>
+                                    </div>
+                                  ) : hasPendingBautistaAppointment() ? (
                                     <div className="text-center py-4">
                                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-300 rounded-lg">
                                         <i className="bx bx-info-circle text-blue-600 text-lg"></i>
@@ -3235,13 +3265,13 @@ useEffect(() => {
                           </div>
                         </div>
 
-                        {/* Warning message when both clinics have pending appointments */}
-                        {hasPendingAmbherAppointment() && hasPendingBautistaAppointment() && (
+                        {/* Warning message when both clinics have pending/accepted appointments */}
+                        {(hasPendingAmbherAppointment() || hasAcceptedAmbherAppointment()) && (hasPendingBautistaAppointment() || hasAcceptedBautistaAppointment()) && (
                             <div className="w-full"></div>
                         )}
 
-                        {/* Additional Information Section - Hidden if both clinics have pending appointments */}
-                        {!(hasPendingAmbherAppointment() && hasPendingBautistaAppointment()) && (
+                        {/* Additional Information Section - Hidden if both clinics have pending/accepted appointments */}
+                        {!((hasPendingAmbherAppointment() || hasAcceptedAmbherAppointment()) && (hasPendingBautistaAppointment() || hasAcceptedBautistaAppointment())) && (
                           <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
                             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
                               <i className="bx bx-note text-gray-600"></i>
@@ -3368,8 +3398,8 @@ useEffect(() => {
                         </div>
                         )}
 
-                        {/* Submit Section - Hidden if both clinics have pending appointments */}
-                        {!(hasPendingAmbherAppointment() && hasPendingBautistaAppointment()) && (
+                        {/* Submit Section - Hidden if both clinics have pending/accepted appointments */}
+                        {!((hasPendingAmbherAppointment() || hasAcceptedAmbherAppointment()) && (hasPendingBautistaAppointment() || hasAcceptedBautistaAppointment())) && (
                           <div className="flex justify-center pt-8">
                             <button 
                               type="submit" 
@@ -3697,7 +3727,9 @@ useEffect(() => {
                 }}>
                   Show/Hide Columns
                 </div>
-                {Object.entries(visibleColumns).map(([key, visible]) => (
+                {Object.entries(visibleColumns)
+                  .filter(([key]) => key !== 'actions')
+                  .map(([key, visible]) => (
                   <div
                     key={key}
                     onClick={() => toggleColumn(key)}

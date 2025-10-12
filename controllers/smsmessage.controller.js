@@ -1030,7 +1030,7 @@ Clinic: ${clinicName}
 Location: ${appointmentLocation}
 Eye Specialist: ${eyeSpecialist || 'To be assigned'}
 
-Please arrive 15 minutes early for your appointment. Bring a valid ID and any previous eye examination records.
+Please arrive 15 minutes early for your appointment.
 
 If you need to reschedule, please contact us immediately.
 
@@ -3419,7 +3419,7 @@ ${productName ? `Product: ${productName}` : ''}
 Pickup Date: ${formattedPickupDate}
 Location: ${clinic}
 
-Please bring a valid ID when picking up your order.
+Please bring the official receipt of your order.
 
 Thank you,
 ${clinic}`;
