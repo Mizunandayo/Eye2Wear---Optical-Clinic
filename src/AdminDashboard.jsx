@@ -23218,24 +23218,12 @@ useEffect(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
-{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="rounded-2xl shadow-lg border-1 bg-white flex flex-col items-center justify-center w-[100%] h-[100%] p-8" > d
+{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="rounded-2xl shadow-lg border-1 bg-white flex flex-col items-center justify-center w-[100%] h-[100%] p-8" > 
   
   {/* Clinic Information Display */}
   <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-2xl">
@@ -25731,6 +25719,16 @@ Are you sure you want to delete this admin account?
 
 
 
+
+
+
+
+
+
+
+
+
+
 {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} 
 {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} 
 {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} {/*Profile Information*/} 
@@ -26592,12 +26590,12 @@ Are you sure you want to delete this admin account?
                           {addpatientprofileissubmitting ? (
                             <>
                               <i className="bx bx-loader-alt animate-spin mr-2"></i>
-                              Creating Profile...
+                              Saving Profile...
                             </>
                           ) : (
                             <>
                               <i className="bx bx-user-plus mr-2"></i>
-                              Create Patient Profile
+                              Save Patient Profile
                             </>
                           )}
                         </button>
@@ -26735,6 +26733,13 @@ Are you sure you want to delete this patient profile?
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
+
+
+
+
+
+
+
 
 
 
@@ -30441,6 +30446,11 @@ itemName="appointments"
 
 
 
+
+
+
+
+
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -33595,18 +33605,7 @@ Are you sure you want to delete this medical record?
         )}
       </div>
       
-      {/* HMO - Editable */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">HMO</label>
-        <input 
-          type="text" 
-          name="hmo"
-          defaultValue={selectedbautistarecord?.hmo || ''}
-          readOnly={selectedbautistarecord || isbautistaformreadonly}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${selectedbautistarecord || isbautistaformreadonly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
-          placeholder="Enter HMO provider (if applicable)..."
-        />
-      </div>
+
     </div>
   </div>
   
@@ -34345,7 +34344,6 @@ Are you sure you want to delete this medical record?
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
-
 
 
 
@@ -41640,6 +41638,10 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
 
 
 
