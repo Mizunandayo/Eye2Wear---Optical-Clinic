@@ -23285,6 +23285,8 @@ useEffect(() => {
 
 
 
+
+
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
@@ -30496,6 +30498,11 @@ itemName="appointments"
 
 
 
+
+
+
+
+
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -31180,41 +31187,7 @@ return filteredOtherClinicRecords.map((record) => (
   <i className="bx bx-show text-lg"></i>
 </button>
 
-<button 
-  onClick={() => {
-    setselectedpatientappointment({
-      ...record,
-      otherclinicid: record.patientotherclinicrecordid,
-      date: record.patientotherclinicconsultationdate,
-      eyespecialist: record.patientothercliniceyespecialist,
-      clinicname: record.patientotherclinicname,
-      submittedbyfirstname: record.patientotherclinicsubmittedbyfirstname,
-      submittedbymiddlename: record.patientotherclinicsubmittedbymiddlename,
-      submittedbylastname: record.patientotherclinicsubmittedbylastname,
-      patientotherclinicrecordimage: record.patientotherclinicrecordimage,
-      patientotherclinidescription: record.patientotherclinidescription
-    });
-    setshowdeleteotherclinicrecorddialog(true);
-  }}
-  style={{
-    backgroundColor: "#dc2626",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "500",
-    border: "none",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  }}
-  onMouseEnter={(e) => e.target.style.backgroundColor = "#b91c1c"}
-  onMouseLeave={(e) => e.target.style.backgroundColor = "#dc2626"}
->
-  <i className="bx bxs-trash text-sm"/>
-</button>
+
 </div>
 </div>
 ));
@@ -31394,31 +31367,7 @@ return filteredDocuments
   )}
 </button>
 
-<button 
-  onClick={() => {
-    setselectedmedicaldocument(document);
-    setshowdeletemedicaldocumentdialog(true);
-  }}
-  style={{
-    backgroundColor: "#dc2626",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "500",
-    border: "none",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  }}
-  onMouseEnter={(e) => e.target.style.backgroundColor = "#b91c1c"}
-  onMouseLeave={(e) => e.target.style.backgroundColor = "#dc2626"}
->
-  <i className="bx bxs-trash text-sm"/>
-  
-</button>
+
 </div>
 </div>
 ));
@@ -32943,21 +32892,32 @@ Are you sure you want to delete this medical record?
             placeholder="Not specified"
           />
         ) : (
-          <select 
-            name="patientstatus" 
-            defaultValue={selectedambherrecord?.patientstatus || ''}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
-          >
-            <option value="">Select status...</option>
-            {/* Hide "New" option if patient has existing Ambher medical records or completed Ambher appointments */}
+          <>
+            {/* Check if patient has existing Ambher medical records or completed Ambher appointments */}
             {!(selectedpatientmedicalrecord?.patientmedicalrecordambher?.length > 0 || 
-               selectedpatientmedicalrecord?.patientambherappointments?.some(apt => apt.patientambherappointmentstatus === 'Completed')) && (
-              <option value="New">New</option>
+               selectedpatientmedicalrecord?.patientambherappointments?.some(apt => apt.patientambherappointmentstatus === 'Completed')) ? (
+              /* New patient - show read-only "New" field */
+              <input 
+                type="text" 
+                name="patientstatus"
+                value="New"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed"
+                readOnly
+              />
+            ) : (
+              /* Existing patient - show full dropdown */
+              <select 
+                name="patientstatus" 
+                defaultValue={selectedambherrecord?.patientstatus || ''}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
+              >
+                <option value="">Select status...</option>
+                <option value="Follow-up">Follow-up</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Consultation">Consultation</option>
+              </select>
             )}
-            <option value="Follow-up">Follow-up</option>
-            <option value="Emergency">Emergency</option>
-            <option value="Consultation">Consultation</option>
-          </select>
+          </>
         )}
       </div>
     </div>
@@ -33509,21 +33469,32 @@ Are you sure you want to delete this medical record?
             placeholder="Not specified"
           />
         ) : (
-          <select 
-            name="patientstatus" 
-            defaultValue={selectedbautistarecord?.patientstatus || ''}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-          >
-            <option value="">Select status...</option>
-            {/* Hide "New" option if patient has existing Bautista medical records or completed Bautista appointments */}
+          <>
+            {/* Check if patient has existing Bautista medical records or completed Bautista appointments */}
             {!(selectedpatientmedicalrecord?.patientmedicalrecordbautista?.length > 0 || 
-               selectedpatientmedicalrecord?.patientbautistaappointments?.some(apt => apt.patientbautistaappointmentstatus === 'Completed')) && (
-              <option value="New">New</option>
+               selectedpatientmedicalrecord?.patientbautistaappointments?.some(apt => apt.patientbautistaappointmentstatus === 'Completed')) ? (
+              /* New patient - show read-only "New" field */
+              <input 
+                type="text" 
+                name="patientstatus"
+                value="New"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed"
+                readOnly
+              />
+            ) : (
+              /* Existing patient - show full dropdown */
+              <select 
+                name="patientstatus" 
+                defaultValue={selectedbautistarecord?.patientstatus || ''}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+              >
+                <option value="">Select status...</option>
+                <option value="Follow-up">Follow-up</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Consultation">Consultation</option>
+              </select>
             )}
-            <option value="Follow-up">Follow-up</option>
-            <option value="Emergency">Emergency</option>
-            <option value="Consultation">Consultation</option>
-          </select>
+          </>
         )}
       </div>
     </div>
@@ -34403,6 +34374,15 @@ Are you sure you want to delete this medical record?
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -41721,15 +41701,6 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
-
-
-
-
-
-
-
-
-
 
 
 
