@@ -14759,6 +14759,16 @@ const [isSubmittingAmbherPendingOrder, setIsSubmittingAmbherPendingOrder] = useS
 const [isMarkingOrderComplete, setIsMarkingOrderComplete] = useState(false);
 const [sendingSmsForOrder, setSendingSmsForOrder] = useState(null); // Track which order is having SMS sent
 
+// Auto-reset pickup selection to "Later" when amount paid is less than total with fee
+useEffect(() => {
+  if (Number(orderambheramountPaid) < Number(orderambhertotalwithFee) && Number(orderambheramountPaid) > 0) {
+    if (activeambherpickupnoworlater === 'ambherorderpickupnow') {
+      setactiveambherpickupnoworlater('ambherorderpickuplater');
+      setambherpickupStatus('Later');
+    }
+  }
+}, [orderambheramountPaid, orderambhertotalwithFee, activeambherpickupnoworlater]);
+
 
 //Order Bautista
  const [orderbautistainventorycategorynamebox , setorderbautistainventorycategorynamebox ] = useState("");
@@ -14800,6 +14810,16 @@ const [bautistaproductsoldCount, setbautistaproductsoldCount] = useState(0);
 const [bautistaproductsoldCounts, setbautistaproductsoldCounts] = useState(0);
 const [isSubmittingBautistaCompleteOrder, setIsSubmittingBautistaCompleteOrder] = useState(false);
 const [isSubmittingBautistaPendingOrder, setIsSubmittingBautistaPendingOrder] = useState(false);
+
+// Auto-reset pickup selection to "Later" when amount paid is less than total with fee
+useEffect(() => {
+  if (Number(orderbautistaamountPaid) < Number(orderbautistatotalwithFee) && Number(orderbautistaamountPaid) > 0) {
+    if (activebautistapickupnoworlater === 'bautistaorderpickupnow') {
+      setactivebautistapickupnoworlater('bautistaorderpickuplater');
+      setbautistapickupStatus('Later');
+    }
+  }
+}, [orderbautistaamountPaid, orderbautistatotalwithFee, activebautistapickupnoworlater]);
 
 
 
@@ -23201,6 +23221,9 @@ useEffect(() => {
 
 
           <div className="w-full h-[88%]  rounded-2xl" id="overview">
+
+
+
 
 
 
@@ -37108,6 +37131,25 @@ Are you sure you want to delete this product?
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
@@ -39613,6 +39655,9 @@ paginatedBautistaOrders.map((order) => (
 
 
 
+
+
+
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
@@ -41638,12 +41683,6 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
-
-
-
-
-
-
 
 
 
