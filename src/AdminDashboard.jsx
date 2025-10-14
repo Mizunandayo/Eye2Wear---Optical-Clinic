@@ -7331,51 +7331,55 @@ const [selectedBautistaServices, setSelectedBautistaServices] = useState({});
 const [bautistaAutoPricingEnabled, setBautistaAutoPricingEnabled] = useState(true);
 const [ambherAutoPricingEnabled, setAmbherAutoPricingEnabled] = useState(true);
 
+// Fetch Ambher Services function (reusable)
+const fetchAmbherServicesData = useCallback(async () => {
+  setLoadingAmbherServicesList(true);
+  try {
+    const response = await fetch('/api/ambherservice');
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Filter out archived services
+      const activeServices = data.filter(service => !service.ambherserviceisarchived);
+      setAmbherServicesList(activeServices);
+      console.log('✅ Ambher services refreshed');
+    }
+  } catch (error) {
+    console.error('Error fetching Ambher services:', error);
+  } finally {
+    setLoadingAmbherServicesList(false);
+  }
+}, []);
+
+// Fetch Bautista Services function (reusable)
+const fetchBautistaServicesData = useCallback(async () => {
+  setLoadingBautistaServicesList(true);
+  try {
+    const response = await fetch('/api/bautistaservice');
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Filter out archived services
+      const activeServices = data.filter(service => !service.bautistaserviceisarchived);
+      setBautistaServicesList(activeServices);
+      console.log('✅ Bautista services refreshed');
+    }
+  } catch (error) {
+    console.error('Error fetching Bautista services:', error);
+  } finally {
+    setLoadingBautistaServicesList(false);
+  }
+}, []);
+
 // Fetch Ambher Services for appointment checkboxes
 useEffect(() => {
-  const fetchAmbherServices = async () => {
-    setLoadingAmbherServicesList(true);
-    try {
-      const response = await fetch('/api/ambherservice');
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Filter out archived services
-        const activeServices = data.filter(service => !service.ambherserviceisarchived);
-        setAmbherServicesList(activeServices);
-      }
-    } catch (error) {
-      console.error('Error fetching Ambher services:', error);
-    } finally {
-      setLoadingAmbherServicesList(false);
-    }
-  };
-
-  fetchAmbherServices();
-}, []);
+  fetchAmbherServicesData();
+}, [fetchAmbherServicesData]);
 
 // Fetch Bautista Services for appointment checkboxes
 useEffect(() => {
-  const fetchBautistaServices = async () => {
-    setLoadingBautistaServicesList(true);
-    try {
-      const response = await fetch('/api/bautistaservice');
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Filter out archived services
-        const activeServices = data.filter(service => !service.bautistaserviceisarchived);
-        setBautistaServicesList(activeServices);
-      }
-    } catch (error) {
-      console.error('Error fetching Bautista services:', error);
-    } finally {
-      setLoadingBautistaServicesList(false);
-    }
-  };
-
-  fetchBautistaServices();
-}, []);
+  fetchBautistaServicesData();
+}, [fetchBautistaServicesData]);
 
 // Decline Appointment Modal States
 const [showdeclineambherappointmentdialog, setshowdeclineambherappointmentdialog] = useState(false);
@@ -17584,6 +17588,15 @@ const handlePaymentInputChange = (e) => {
 const submitpatientorderambher = async (e) => {
 e.preventDefault();
 
+// Validate clinic address is selected
+if (!orderambherpickupplace || orderambherpickupplace.trim() === '') {
+  setpatientorderambherproductToastMessage('Please select a clinic address before submitting the order');
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+  setpatientorderambherproductisClicked(false);
+  return;
+}
+
 // PROTECTION: Don't submit new orders if we're marking an existing order as complete
 if (isMarkingOrderComplete) {
   console.warn('⚠️ Blocking Ambher order submission during order completion process');
@@ -17925,6 +17938,15 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
 //BAUTISTA ORDER PRODUCT
 const submitpatientorderbautista = async (e) => {
 e.preventDefault();
+
+// Validate clinic address is selected
+if (!orderbautistapickupplace || orderbautistapickupplace.trim() === '') {
+  setpatientorderbautistaproductToastMessage('Please select a clinic address before submitting the order');
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+  setpatientorderbautistaproductisClicked(false);
+  return;
+}
 
 // PROTECTION: Don't submit new orders if we're marking an existing order as complete
 if (isMarkingOrderComplete) {
@@ -18270,6 +18292,16 @@ console.error('Failed to deleting the wishlisted product', wishlistError);
 //AMBHER OPTICAL ORDER PRODUCT
 const submitpatientpendingorderambher = async (e) => {
 e.preventDefault();
+
+// Validate clinic address is selected
+if (!orderambherpickupplace || orderambherpickupplace.trim() === '') {
+  setpatientorderambherproductToastMessage('Please select a clinic address before submitting the order');
+  setpatientorderambherproductToast(true);
+  setpatientorderambherproductToastClosing(false);
+  setpatientorderambherproductisClicked(false);
+  return;
+}
+
 setIsSubmittingAmbherPendingOrder(true);
 
 try {
@@ -18396,6 +18428,16 @@ try {
 //BAUTISTA ORDER PRODUCT
 const submitpatientpendingorderbautista = async (e) => {
 e.preventDefault();
+
+// Validate clinic address is selected
+if (!orderbautistapickupplace || orderbautistapickupplace.trim() === '') {
+  setpatientorderbautistaproductToastMessage('Please select a clinic address before submitting the order');
+  setpatientorderbautistaproductToast(true);
+  setpatientorderbautistaproductToastClosing(false);
+  setpatientorderbautistaproductisClicked(false);
+  return;
+}
+
 setIsSubmittingBautistaPendingOrder(true);
 
 try {
@@ -18717,13 +18759,15 @@ try {
     setloadingappointments(true);
     try {
       await fetchAppointmentData(true); // Force refresh bypassing cache
-      console.log('✅ Appointment refresh completed');
+      await fetchAmbherServicesData(); // Refresh Ambher services
+      await fetchBautistaServicesData(); // Refresh Bautista services
+      console.log('✅ Appointment and services refresh completed');
     } catch (error) {
       console.error('❌ Error refreshing appointment data:', error);
     } finally {
       setloadingappointments(false);
     }
-  }, [fetchAppointmentData]);
+  }, [fetchAppointmentData, fetchAmbherServicesData, fetchBautistaServicesData]);
 
   // Refresh medical records data function
   const refreshMedicalRecordsData = useCallback(async () => {
@@ -23300,6 +23344,12 @@ useEffect(() => {
 
 
 
+
+
+
+
+
+
 {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} 
 {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} 
 {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} {/*Start of Account Management*/} 
@@ -23599,7 +23649,7 @@ useEffect(() => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-gray-700">
-                        Middle Name (Optional)
+                        Middle Name
                       </label>
                       <input 
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -24002,7 +24052,7 @@ Are you sure you want to delete this patient account?
 
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-700">
-            Middle Name (Optional)
+            Middle Name
           </label>
           <input 
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -24347,7 +24397,7 @@ Are you sure you want to delete this staff account?
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-700">
-                Middle Name (Optional)
+                Middle Name
               </label>
               <input 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -24659,7 +24709,7 @@ Are you sure you want to delete this staff account?
 
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-700">
-            Middle Name (Optional)
+            Middle Name
           </label>
           <input 
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -24919,7 +24969,7 @@ Are you sure you want to delete this staff account?
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">
-              Middle Name (Optional)
+              Middle Name
             </label>
             <input 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -25344,7 +25394,7 @@ Are you sure you want to delete this owner account?
 
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-700">
-            Middle Name (Optional)
+            Middle Name
           </label>
           <input 
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -25671,7 +25721,7 @@ Are you sure you want to delete this admin account?
 
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-700">
-            Middle Name (Optional)
+            Middle Name
           </label>
           <input 
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -25733,10 +25783,6 @@ Are you sure you want to delete this admin account?
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
 {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} {/*End of Account Management*/} 
-
-
-
-
 
 
 
@@ -26004,7 +26050,7 @@ Are you sure you want to delete this admin account?
 
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700">
-                          Middle Name (Optional)
+                          Middle Name
                         </label>
                         <input 
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -26261,10 +26307,10 @@ Are you sure you want to delete this admin account?
                                 <p className="text-sky-600 text-sm font-medium">Uploading...</p>
                               </div>
                             </div>
-                          ) : (previewimage || demoformdata.patientprofilepicture) ? (
+                          ) : (addpatientprofilepreviewimage || demoformdata.patientprofilepicture) ? (
                             <img 
                               className="relative w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300" 
-                              src={previewimage || demoformdata.patientprofilepicture || defaultprofilepic}
+                              src={addpatientprofilepreviewimage || demoformdata.patientprofilepicture || defaultprofilepic}
                               alt="Profile"
                               onError={(e) => {
                                 e.target.style.display = 'none';
@@ -26297,16 +26343,7 @@ Are you sure you want to delete this admin account?
                         />
                         
                         <div className="flex items-center gap-2">
-                          {(previewimage || demoformdata.patientprofilepicture) && !addpatientprofileisuploadingimage && (
-                            <button
-                              type="button"
-                              onClick={addpatientprofilehandleremoveprofile}
-                              className="cursor-pointer flex items-center justify-center px-3 h-11 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                              title="Remove Photo"
-                            >
-                              <i className="bx bx-trash w-4 h-4"></i>
-                            </button>
-                          )}
+
                           
                           <button
                             type="button"
@@ -26415,7 +26452,7 @@ Are you sure you want to delete this admin account?
 
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700">
-                          Middle Name (Optional)
+                          Middle Name
                         </label>
                         <input 
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -26756,16 +26793,6 @@ Are you sure you want to delete this patient profile?
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
 {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} {/*End of Profile Information*/} 
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -27656,7 +27683,8 @@ itemName="appointments"
       </div>
 
       {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
-      {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && selectedpatientappointment.patientambherappointmentstatus !== "Declined" && (
+      {/* Only show for Ambher users or Admin */}
+      {(isAmbherOnlyUser() || currentuserloggedin === "Admin") && selectedpatientappointment.patientambherappointmentstatus !== "Pending" && selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && selectedpatientappointment.patientambherappointmentstatus !== "Declined" && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2" style={{ margin: 0 }}>
@@ -28462,7 +28490,8 @@ itemName="appointments"
       </div>
 
       {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
-      {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && selectedpatientappointment.patientbautistaappointmentstatus !== "Declined" && (
+      {/* Only show for Bautista users or Admin */}
+      {(isBautistaOnlyUser() || currentuserloggedin === "Admin") && selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && selectedpatientappointment.patientbautistaappointmentstatus !== "Declined" && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h3 id="bautistaservicedoneheader" className="text-lg font-semibold text-gray-800 flex items-center gap-2" style={{ margin: 0 }}>
@@ -30467,13 +30496,6 @@ itemName="appointments"
 
 
 
-
-
-
-
-
-
-
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
 {/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}{/*Start of Medical Records*/}
@@ -30679,7 +30701,7 @@ itemName="appointments"
                           </p>
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm">No completed appointments</p>
+                        <p className="text-gray-500 text-sm">-</p>
                       );
                     })()}
                   </td>
@@ -30698,7 +30720,7 @@ itemName="appointments"
                           </p>
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm">No completed appointments</p>
+                        <p className="text-gray-500 text-sm">-</p>
                       );
                     })()}
                   </td>
@@ -32927,7 +32949,11 @@ Are you sure you want to delete this medical record?
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
           >
             <option value="">Select status...</option>
-            <option value="New">New</option>
+            {/* Hide "New" option if patient has existing Ambher medical records or completed Ambher appointments */}
+            {!(selectedpatientmedicalrecord?.patientmedicalrecordambher?.length > 0 || 
+               selectedpatientmedicalrecord?.patientambherappointments?.some(apt => apt.patientambherappointmentstatus === 'Completed')) && (
+              <option value="New">New</option>
+            )}
             <option value="Follow-up">Follow-up</option>
             <option value="Emergency">Emergency</option>
             <option value="Consultation">Consultation</option>
@@ -33060,7 +33086,10 @@ Are you sure you want to delete this medical record?
             <option value="Employed/Formal Economy">Employed/Formal Economy</option>
             <option value="Indigent/Informal Economy">Indigent/Informal Economy</option>
             <option value="Sponsored">Sponsored</option>
-            <option value="Senior Citizen">Senior Citizen</option>
+            {/* Only show Senior Citizen option if patient is 60 years old or above */}
+            {Number(selectedpatientmedicalrecord?.patientage) >= 60 && (
+              <option value="Senior Citizen">Senior Citizen</option>
+            )}
             <option value="PWD">PWD (Person with Disability)</option>
             <option value="Lifetime Member">Lifetime Member</option>
             <option value="OFW">OFW (Overseas Filipino Worker)</option>
@@ -33486,7 +33515,11 @@ Are you sure you want to delete this medical record?
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
           >
             <option value="">Select status...</option>
-            <option value="New">New</option>
+            {/* Hide "New" option if patient has existing Bautista medical records or completed Bautista appointments */}
+            {!(selectedpatientmedicalrecord?.patientmedicalrecordbautista?.length > 0 || 
+               selectedpatientmedicalrecord?.patientbautistaappointments?.some(apt => apt.patientbautistaappointmentstatus === 'Completed')) && (
+              <option value="New">New</option>
+            )}
             <option value="Follow-up">Follow-up</option>
             <option value="Emergency">Emergency</option>
             <option value="Consultation">Consultation</option>
@@ -33619,7 +33652,10 @@ Are you sure you want to delete this medical record?
             <option value="Employed/Formal Economy">Employed/Formal Economy</option>
             <option value="Indigent/Informal Economy">Indigent/Informal Economy</option>
             <option value="Sponsored">Sponsored</option>
-            <option value="Senior Citizen">Senior Citizen</option>
+            {/* Only show Senior Citizen option if patient is 60 years old or above */}
+            {Number(selectedpatientmedicalrecord?.patientage) >= 60 && (
+              <option value="Senior Citizen">Senior Citizen</option>
+            )}
             <option value="PWD">PWD (Person with Disability)</option>
             <option value="Lifetime Member">Lifetime Member</option>
             <option value="OFW">OFW (Overseas Filipino Worker)</option>
@@ -34367,6 +34403,8 @@ Are you sure you want to delete this medical record?
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
 {/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}{/*End of Medical Records*/}
+
+
 
 
 
@@ -37139,17 +37177,6 @@ Are you sure you want to delete this product?
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
 {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} {/*Start of Billings and Orders*/} 
@@ -39658,6 +39685,17 @@ paginatedBautistaOrders.map((order) => (
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
@@ -41683,6 +41721,10 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
 
 
 
