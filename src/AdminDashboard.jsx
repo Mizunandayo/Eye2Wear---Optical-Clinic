@@ -6433,7 +6433,7 @@ const staffhandlechange = (e) => {
           method:'PUT',
           headers: {
             'Content-Type' : 'application/json',
-            'Authorization' : `Bearer ${localStorage.getItem('admintoken')}`
+            'Authorization' : `Bearer ${currentusertoken}`
           },
           body: JSON.stringify(updateowneraccountdetails)
         });
@@ -6446,7 +6446,7 @@ const staffhandlechange = (e) => {
 
         const fetchresponse = await fetch('/api/owneraccounts',{
           headers: {
-            'Authorization' : `Bearer ${localStorage.getItem('admintoken')}` 
+            'Authorization' : `Bearer ${currentusertoken}` 
           }
         });
 
@@ -24729,14 +24729,31 @@ Are you sure you want to delete this staff account?
           <label className="block text-sm font-semibold text-gray-700">
             Clinic <span className="text-red-500">*</span>
           </label>
-          <input 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
-            type="text" 
-            name="ownerclinic" 
-            id="ownerclinic" 
-            value={ownerformdata.ownerclinic} 
-            readOnly
-          />
+          {currentuserloggedin === "Admin" ? (
+            /* Admin users can select from dropdown */
+            <select
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              name="ownerclinic" 
+              id="ownerclinic" 
+              value={ownerformdata.ownerclinic} 
+              onChange={ownerhandlechange}
+              required
+            >
+              <option value="">Select Clinic...</option>
+              <option value="Ambher Optical">Ambher Optical</option>
+              <option value="Bautista Eye Center">Bautista Eye Center</option>
+            </select>
+          ) : (
+            /* Staff and Owner users see read-only field with their clinic */
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+              type="text" 
+              name="ownerclinic" 
+              id="ownerclinic" 
+              value={ownerformdata.ownerclinic} 
+              readOnly
+            />
+          )}
         </div>
 
         <div id="ownereyespecialistfield" className="space-y-2">
@@ -24747,7 +24764,7 @@ Are you sure you want to delete this staff account?
             <OwnereyespecialistYesorNoBox 
               value={ownerformdata.owneriseyespecialist} 
               onChange={ownerhandlechange} 
-              clinic={ownerownedclinic}
+              clinic={ownerformdata.ownerclinic}
             />
           </div>
         </div>
@@ -39663,19 +39680,6 @@ paginatedBautistaOrders.map((order) => (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
 {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} {/*Start of Reports and Analytics*/} 
@@ -41701,6 +41705,148 @@ paginatedBautistaOrders.map((order) => (
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
 {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} {/* End of Mapping Integration */} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

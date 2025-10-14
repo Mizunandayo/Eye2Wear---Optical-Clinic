@@ -24,7 +24,7 @@ export function OwnereyespecialistYesorNoBox({ value, onChange, clinic }) {
 
   // Filter options based on clinic
   const filteredOptions = React.useMemo(() => {
-    if (!clinic) return genderOptions;
+    if (!clinic) return [];
     
     return genderOptions.filter(option => 
       option.clinic === "both" || option.clinic === clinic
@@ -40,6 +40,15 @@ export function OwnereyespecialistYesorNoBox({ value, onChange, clinic }) {
       }
     })
     setOpen(false)
+  }
+
+  // Don't render if no clinic is selected
+  if (!clinic) {
+    return (
+      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-center">
+        Please select a clinic first
+      </div>
+    );
   }
 
   return (
