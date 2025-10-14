@@ -262,6 +262,12 @@ function PatientDashboard(){
   const [showBautistaAppointmentForm, setShowBautistaAppointmentForm] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   
+  // Service states
+  const [ambherServices, setAmbherServices] = useState([]);
+  const [bautistaServices, setBautistaServices] = useState([]);
+  const [loadingAmbherServices, setLoadingAmbherServices] = useState(true);
+  const [loadingBautistaServices, setLoadingBautistaServices] = useState(true);
+  
   // Demographic profile completion states
   const [isDemographicLoading, setIsDemographicLoading] = useState(true);
   const [isDemographicComplete, setIsDemographicComplete] = useState(false);
@@ -334,6 +340,48 @@ function PatientDashboard(){
    }; loadpatient();
   }, [fetchpatientdetails, fetchPatientAppointments]);
 
+
+  // Fetch Ambher Services
+  useEffect(() => {
+    const fetchAmbherServices = async () => {
+      try {
+        const response = await fetch(`/api/ambherservice`);
+        if (!response.ok) throw new Error("Failed to fetch Ambher services");
+        const data = await response.json();
+        // Filter only active (non-archived) services
+        const activeServices = data.filter(service => !service.ambherserviceisarchived);
+        setAmbherServices(activeServices);
+      } catch (error) {
+        console.error("Error fetching Ambher services:", error);
+        setAmbherServices([]);
+      } finally {
+        setLoadingAmbherServices(false);
+      }
+    };
+
+    fetchAmbherServices();
+  }, []);
+
+  // Fetch Bautista Services
+  useEffect(() => {
+    const fetchBautistaServices = async () => {
+      try {
+        const response = await fetch(`/api/bautistaservice`);
+        if (!response.ok) throw new Error("Failed to fetch Bautista services");
+        const data = await response.json();
+        // Filter only active (non-archived) services
+        const activeServices = data.filter(service => !service.bautistaserviceisarchived);
+        setBautistaServices(activeServices);
+      } catch (error) {
+        console.error("Error fetching Bautista services:", error);
+        setBautistaServices([]);
+      } finally {
+        setLoadingBautistaServices(false);
+      }
+    };
+
+    fetchBautistaServices();
+  }, []);
 
 
 
@@ -2061,6 +2109,9 @@ const handleCancelAppointment = async (appointmentId, clinicType) => {
  const [selectedImage, setSelectedImage] = useState(null);
  const [isDownloading, setIsDownloading] = useState(false);
 
+ // PDF Export state
+ const [isExportingPDF, setIsExportingPDF] = useState(false);
+
  // Keyboard support for image modal
  useEffect(() => {
    const handleKeyDown = (event) => {
@@ -2135,6 +2186,504 @@ const handleCancelAppointment = async (appointmentId, clinicType) => {
     console.error(`Patient feedback submission failed: ${clinicType} `, error);
   }
  };
+
+
+// Modern PDF Export function for Appointments using Puppeteer backend
+const exportAppointmentToPDF = async (appointmentData, clinicType) => {
+  setIsExportingPDF(true);
+  try {
+    // Determine if it's Ambher or Bautista appointment based on the clinicType parameter
+    const isAmbher = clinicType === 'ambher';
+    
+    // Extract appointment details
+    const appointmentId = isAmbher 
+      ? appointmentData.patientambherappointmentid 
+      : appointmentData.patientbautistaappointmentid;
+    const appointmentStatus = isAmbher 
+      ? appointmentData.patientambherappointmentstatus 
+      : appointmentData.patientbautistaappointmentstatus;
+    const eyeSpecialist = isAmbher 
+      ? appointmentData.patientambherappointmenteyespecialist 
+      : appointmentData.patientbautistaappointmenteyespecialist;
+    const appointmentDate = isAmbher 
+      ? appointmentData.patientambherappointmentdate 
+      : appointmentData.patientbautistaappointmentdate;
+    const appointmentTime = isAmbher 
+      ? appointmentData.patientambherappointmenttime 
+      : appointmentData.patientbautistaappointmenttime;
+    const locationAddress = isAmbher 
+      ? appointmentData.patientambherappointmentlocationaddress 
+      : appointmentData.patientbautistaappointmentlocationaddress;
+    const billingTotal = isAmbher 
+      ? appointmentData.patientambherappointmentpaymentotal 
+      : appointmentData.patientbautistaappointmentpaymentotal;
+    const consultationRemarksSubject = isAmbher 
+      ? appointmentData.patientambherappointmentconsultationremarkssubject 
+      : appointmentData.patientbautistaappointmentconsultationremarkssubject;
+    const consultationRemarks = isAmbher 
+      ? appointmentData.patientambherappointmentconsultationremarks 
+      : appointmentData.patientbautistaappointmentconsultationremarks;
+    const prescription = isAmbher 
+      ? appointmentData.patientambherappointmentprescription 
+      : appointmentData.patientbautistaappointmentprescription;
+    
+    const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
+    const clinicColor = isAmbher ? '#10b981' : '#3b82f6';
+    const customerName = `${appointmentData.patientappointmentfirstname} ${appointmentData.patientappointmentlastname}`;
+    const customerEmail = appointmentData.patientappointmentemail;
+    const formattedDate = formatappointmatedates(appointmentDate);
+    const formattedTime = formatappointmenttimes(appointmentTime);
+    const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
+    
+    // Get services done from database arrays (without prices)
+    let servicesHTML = '';
+    if (isAmbher) {
+      // Get Ambher services from servicesavailed array
+      const services = [];
+      if (appointmentData.patientambherappointmentservicesavailed && appointmentData.patientambherappointmentservicesavailed.length > 0) {
+        appointmentData.patientambherappointmentservicesavailed.forEach(service => {
+          services.push({
+            name: service.serviceName
+          });
+        });
+      }
+      if (appointmentData.patientambherappointmentotherservice) {
+        services.push({
+          name: `Other Service: ${appointmentData.patientambherappointmentotherservicenote || 'Not specified'}`
+        });
+      }
+      
+      if (services.length > 0) {
+        servicesHTML = services.map(service => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px 8px; font-size: 11px; color: #333; font-weight: 500;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #10b981; font-size: 14px;">✓</span>
+                <span>${service.name}</span>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } else {
+      // Get Bautista services from servicesavailed array
+      const services = [];
+      if (appointmentData.patientbautistaappointmentservicesavailed && appointmentData.patientbautistaappointmentservicesavailed.length > 0) {
+        appointmentData.patientbautistaappointmentservicesavailed.forEach(service => {
+          services.push({
+            name: service.serviceName
+          });
+        });
+      }
+      if (appointmentData.patientbautistaappointmentotherservice) {
+        services.push({
+          name: `Other Service: ${appointmentData.patientbautistaappointmentotherservicenote || 'Not specified'}`
+        });
+      }
+      
+      if (services.length > 0) {
+        servicesHTML = services.map(service => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px 8px; font-size: 11px; color: #333; font-weight: 500;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #3b82f6; font-size: 14px;">✓</span>
+                <span>${service.name}</span>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+    
+    // Create modern HTML appointment summary
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+              background: white;
+              padding: 20px;
+              color: #000;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            
+            .appointment-container {
+              max-width: 700px;
+              margin: 0 auto;
+              background: white;
+            }
+            
+            .appointment-header {
+              text-align: center;
+              border-bottom: 2px solid ${clinicColor};
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            
+            .appointment-header h1 {
+              font-size: 16px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 10px;
+              color: ${clinicColor};
+            }
+            
+            .clinic-name {
+              font-size: 18px;
+              font-weight: 700;
+              margin-bottom: 4px;
+              color: ${clinicColor};
+            }
+            
+            .clinic-address {
+              font-size: 11px;
+              color: #555;
+              margin-bottom: 2px;
+            }
+            
+            .tin-number {
+              font-size: 10px;
+              color: #666;
+              margin-top: 4px;
+            }
+            
+            .appointment-body {
+              padding: 0;
+            }
+            
+            .appointment-info {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
+              border-bottom: 1px solid #ddd;
+            }
+            
+            .info-group {
+              font-size: 11px;
+            }
+            
+            .info-group h4 {
+              color: #666;
+              font-size: 9px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 3px;
+              font-weight: 600;
+            }
+            
+            .info-group p {
+              color: #000;
+              font-size: 11px;
+              font-weight: 600;
+            }
+            
+            .patient-section {
+              background: #fafafa;
+              padding: 12px 15px;
+              margin-bottom: 20px;
+              border-left: 3px solid ${clinicColor};
+            }
+            
+            .patient-section h3 {
+              color: #000;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 6px;
+            }
+            
+            .patient-section p {
+              color: #333;
+              font-size: 11px;
+              margin: 2px 0;
+            }
+            
+            .services-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 11px;
+            }
+            
+            .services-table thead {
+              border-bottom: 2px solid ${clinicColor};
+            }
+            
+            .services-table th {
+              padding: 8px 6px;
+              text-align: left;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+              color: ${clinicColor};
+            }
+            
+            .services-table td {
+              padding: 12px 6px;
+              border-bottom: 1px solid #eee;
+              font-size: 11px;
+              color: #333;
+            }
+            
+            .services-table tbody tr:last-child td {
+              border-bottom: none;
+            }
+            
+            .notes-section {
+              background: #f0f9ff;
+              border-left: 3px solid ${clinicColor};
+              padding: 10px 12px;
+              margin: 15px 0;
+              font-size: 10px;
+            }
+            
+            .notes-section strong {
+              color: ${clinicColor};
+              font-size: 9px;
+              display: block;
+              margin-bottom: 4px;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            
+            .notes-section p {
+              color: #333;
+              font-size: 10px;
+              line-height: 1.4;
+            }
+            
+            .totals-section {
+              margin: 20px 0;
+              padding: 15px 0;
+              border-top: 1px solid #ddd;
+              border-bottom: 2px solid ${clinicColor};
+            }
+            
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 10px 0;
+              font-size: 14px;
+              font-weight: 700;
+              color: ${clinicColor};
+            }
+            
+            .status-badge {
+              text-align: center;
+              margin: 25px 0;
+            }
+            
+            .status-badge div {
+              border: 2px solid ${clinicColor};
+              color: ${clinicColor};
+              padding: 8px 20px;
+              display: inline-block;
+              font-weight: 700;
+              font-size: 13px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .appointment-footer {
+              text-align: center;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              margin-top: 20px;
+            }
+            
+            .appointment-footer p {
+              color: #666;
+              font-size: 9px;
+              margin: 4px 0;
+            }
+            
+            .appointment-footer .thank-you {
+              color: #000;
+              font-size: 12px;
+              font-weight: 700;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="appointment-container">
+            <!-- Header -->
+            <div class="appointment-header">
+              <h1>Appointment Summary</h1>
+              <div class="clinic-name">${clinic}</div>
+              <div class="clinic-address">${locationAddress}</div>
+              <div class="tin-number">${tinNumber}</div>
+            </div>
+            
+            <!-- Body -->
+            <div class="appointment-body">
+              <!-- Appointment Info -->
+              <div class="appointment-info">
+                <div class="info-group">
+                  <h4>Appointment No</h4>
+                  <p>#${appointmentId}</p>
+                </div>
+                <div class="info-group">
+                  <h4>Date & Time</h4>
+                  <p>${formattedDate} (${formattedTime})</p>
+                </div>
+                <div class="info-group">
+                  <h4>Status</h4>
+                  <p>${appointmentStatus}</p>
+                </div>
+                <div class="info-group">
+                  <h4>Eye Specialist</h4>
+                  <p>${eyeSpecialist || 'Not assigned'}</p>
+                </div>
+              </div>
+              
+              <!-- Patient Info -->
+              <div class="patient-section">
+                <h3>Patient Information</h3>
+                <p style="font-weight: 600;">${customerName}</p>
+                <p>${customerEmail}</p>
+              </div>
+              
+              <!-- Services Table -->
+              ${servicesHTML ? `
+              <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: ${clinicColor};">
+                  Services Performed
+                </h3>
+                <table class="services-table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${servicesHTML}
+                  </tbody>
+                </table>
+              </div>
+              ` : ''}
+              
+              ${consultationRemarksSubject || consultationRemarks ? `
+              <div class="notes-section">
+                <strong>Consultation Notes</strong>
+                ${consultationRemarksSubject ? `<p style="font-weight: 600; margin-bottom: 4px;">${consultationRemarksSubject}</p>` : ''}
+                ${consultationRemarks ? `<p>${consultationRemarks}</p>` : ''}
+              </div>
+              ` : ''}
+              
+              ${prescription ? `
+              <div class="notes-section">
+                <strong>Prescription</strong>
+                <p>${prescription}</p>
+              </div>
+              ` : ''}
+              
+              <!-- Totals -->
+              ${billingTotal ? `
+              <div class="totals-section">
+                <div class="total-row">
+                  <span>TOTAL BILLING</span>
+                  <span>₱${Number(billingTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+              ` : ''}
+              
+              <!-- Status Badge -->
+              <div class="status-badge">
+                <div>✓ ${appointmentStatus}</div>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="appointment-footer">
+              <p class="thank-you">Thank you for choosing ${clinic}</p>
+              <p>This is an official appointment summary generated by Eye2Wear Optical System</p>
+              <p>Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Generate filename
+    const statusText = appointmentStatus.replace(/\s+/g, '_');
+    const fileName = `Appointment_Summary_${clinic.replace(/\s+/g, '_')}_${appointmentId}_${statusText}_${customerName.replace(/\s+/g, '_')}.pdf`;
+
+    // Send HTML to backend for PDF generation using Puppeteer
+    const response = await fetch(`${_apiUrl}/api/pdf/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        htmlContent,
+        fileName
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `Server error: ${response.status}`);
+    }
+
+    // Get the PDF as arrayBuffer for proper binary handling
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Create blob from arrayBuffer with correct MIME type
+    const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup after a short delay to ensure download starts
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+
+  } catch (error) {
+    console.error('Error generating appointment PDF:', error);
+    alert('Error generating appointment PDF. Please try again.');
+  } finally {
+    setIsExportingPDF(false);
+  }
+};
 
 
 
@@ -2783,47 +3332,36 @@ useEffect(() => {
                                   </p>
                                   
                                   <div className="space-y-2 sm:space-y-3 text-gray-600">
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Visual & Cataract Screening</span> - Early detection and assessment of cataracts and vision problems
+                                    {loadingAmbherServices ? (
+                                      // Loading skeleton
+                                      <>
+                                        {[...Array(3)].map((_, index) => (
+                                          <div key={index} className="flex items-start gap-2 sm:gap-3 animate-pulse">
+                                            <div className="w-5 h-5 bg-gray-300 rounded-full mt-0.5 flex-shrink-0"></div>
+                                            <div className="flex-1 space-y-2">
+                                              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                                              <div className="h-3 bg-gray-200 rounded w-full"></div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </>
+                                    ) : ambherServices.length > 0 ? (
+                                      // Display fetched services
+                                      ambherServices.map((service) => (
+                                        <div key={service._id} className="flex items-start gap-2 sm:gap-3">
+                                          <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                          <div>
+                                            <span className="font-medium text-black">{service.ambherservicename}</span> - {service.ambherservicedescription}
+                                          </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      // No services available
+                                      <div className="flex items-center gap-2 text-gray-500 py-2">
+                                        <i className="bx bx-info-circle text-lg"></i>
+                                        <span className="text-sm">No services available at the moment.</span>
                                       </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Pediatric Eye Care</span> - Specialized assessments and optometry services for children
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Color Vision Testing</span> - Comprehensive color blindness and vision deficiency evaluations
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Low Vision Solutions</span> - Assistive devices and rehabilitation for vision impairment
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Refraction Services</span> - Precise measurement for eyeglass and contact lens prescriptions
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-green-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Contact Lens Fitting</span> - Professional fitting and consultation for all contact lens types
-                                      </div>
-                                    </div>
+                                    )}
                                   </div>
 
                                 </div>
@@ -3054,47 +3592,36 @@ useEffect(() => {
                                   </p>
                                   
                                   <div className="space-y-2 sm:space-y-3 text-gray-600">
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Comprehensive Eye Examinations</span> - Complete diagnostic evaluations and vision assessments
+                                    {loadingBautistaServices ? (
+                                      // Loading skeleton
+                                      <>
+                                        {[...Array(3)].map((_, index) => (
+                                          <div key={index} className="flex items-start gap-2 sm:gap-3 animate-pulse">
+                                            <div className="w-5 h-5 bg-gray-300 rounded-full mt-0.5 flex-shrink-0"></div>
+                                            <div className="flex-1 space-y-2">
+                                              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                                              <div className="h-3 bg-gray-200 rounded w-full"></div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </>
+                                    ) : bautistaServices.length > 0 ? (
+                                      // Display fetched services
+                                      bautistaServices.map((service) => (
+                                        <div key={service._id} className="flex items-start gap-2 sm:gap-3">
+                                          <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
+                                          <div>
+                                            <span className="font-medium text-black">{service.bautistaservicename}</span> - {service.bautistaservicedescription}
+                                          </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      // No services available
+                                      <div className="flex items-center gap-2 text-gray-500 py-2">
+                                        <i className="bx bx-info-circle text-lg"></i>
+                                        <span className="text-sm">No services available at the moment.</span>
                                       </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Diabetic Retinopathy Management</span> - Specialized care for diabetes-related eye complications
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Glaucoma Treatment</span> - Advanced diagnosis and management of intraocular pressure disorders
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Hypertensive Retinopathy Care</span> - Treatment for high blood pressure-related eye damage
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Retinal Problem Solutions</span> - Expert diagnosis and treatment of retinal disorders
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-start gap-2 sm:gap-3">
-                                      <i className="bx bx-check-circle text-sky-500 text-base sm:text-lg mt-0.5 flex-shrink-0"></i>
-                                      <div>
-                                        <span className="font-medium text-black">Surgical Procedures</span> - Cataract surgery and pterygium removal with modern techniques
-                                      </div>
-                                    </div>
+                                    )}
                                   </div>
                                   
 
@@ -4339,16 +4866,78 @@ useEffect(() => {
             <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
           </div>
         </div>
-        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-            selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-            selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-            selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
-            'bg-gray-100 text-gray-800'}`}>
-          {selectedpatientappointment.patientambherappointmentstatus}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+            ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+              selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
+              selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+              selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
+              'bg-gray-100 text-gray-800'}`}>
+            {selectedpatientappointment.patientambherappointmentstatus}
+          </span>
+
+          {/* Export PDF Button - Only show when Completed */}
+          {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+            <button
+              onClick={() => !isExportingPDF && exportAppointmentToPDF(selectedpatientappointment, 'ambher')}
+              disabled={isExportingPDF}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: isExportingPDF ? '#9ca3af' : '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: isExportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#059669';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#10b981';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+              }}
+            >
+              {isExportingPDF ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '16px',
+                    width: '16px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bxs-file-pdf" style={{ fontSize: '18px' }}></i>
+                  <span>Export PDF</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
 
@@ -4383,7 +4972,7 @@ useEffect(() => {
 
           {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
             <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
-              <span className="text-sm font-medium text-green-700">Payment Total:</span>
+              <span className="text-sm font-medium text-green-700">Total Billed:</span>
               <p className="text-green-800 font-bold text-lg">
                 ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
               </p>
@@ -4421,59 +5010,27 @@ useEffect(() => {
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-green-600"></i>
-            Selected Services
+            Services Done
           </h3>
           <div className="bg-white rounded-xl p-4 border border-green-200">
             <div className="space-y-3">
-              {selectedpatientappointment.patientambherappointmentcataractscreening && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Visual/Cataract Screening</span>
+              {/* Display services from database array when completed */}
+              {selectedpatientappointment.patientambherappointmentservicesavailed && 
+               selectedpatientappointment.patientambherappointmentservicesavailed.length > 0 ? (
+                selectedpatientappointment.patientambherappointmentservicesavailed.map((service) => (
+                  <div key={service.serviceId} className="flex items-center gap-3">
+                    <i className="bx bx-check-circle text-green-500 text-lg"></i>
+                    <span className="text-black font-medium">{service.serviceName}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <i className="bx bx-info-circle text-2xl mb-2"></i>
+                  <p className="text-sm">No services recorded for this appointment</p>
                 </div>
               )}
               
-              {selectedpatientappointment.patientambherappointmentpediatricassessment && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Pediatric Assessment</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientambherappointmentpediatricoptometrist && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Pediatric Optometrist</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientambherappointmentcolorvisiontesting && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Color Vision Testing</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientambherappointmentlowvisionaid && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Low Vision Aid</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientambherappointmentrefraction && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Refraction</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientambherappointmentcontactlensefitting && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-green-500 text-lg"></i>
-                  <span className="text-black font-medium">Contact Lens Fitting</span>
-                </div>
-              )}
-              
+              {/* Show other service if applicable */}
               {selectedpatientappointment.patientambherappointmentotherservice && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -4565,16 +5122,78 @@ useEffect(() => {
             <h2 className="text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
           </div>
         </div>
-        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
-            'bg-gray-100 text-gray-800'}`}>
-          {selectedpatientappointment.patientbautistaappointmentstatus}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+            ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-[#9edc7a] text-[#2b5910]':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-[#74c4ce] text-[#1a5566]':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Expired' ? 'bg-gray-300 text-gray-700':
+              'bg-gray-100 text-gray-800'}`}>
+            {selectedpatientappointment.patientbautistaappointmentstatus}
+          </span>
+
+          {/* Export PDF Button - Only show when Completed */}
+          {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
+            <button
+              onClick={() => !isExportingPDF && exportAppointmentToPDF(selectedpatientappointment, 'bautista')}
+              disabled={isExportingPDF}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: isExportingPDF ? '#9ca3af' : '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: isExportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#2563eb';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#3b82f6';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+              }}
+            >
+              {isExportingPDF ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '16px',
+                    width: '16px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bxs-file-pdf" style={{ fontSize: '18px' }}></i>
+                  <span>Export PDF</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
 
@@ -4609,7 +5228,7 @@ useEffect(() => {
 
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
-              <span className="text-sm font-medium text-sky-700">Payment Total:</span>
+              <span className="text-sm font-medium text-sky-700">Total Billed:</span>
               <p className="text-sky-800 font-bold text-lg">
                 ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
               </p>
@@ -4647,59 +5266,27 @@ useEffect(() => {
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i className="bx bx-list-check text-sky-600"></i>
-            Selected Services
+            Services Done
           </h3>
           <div className="bg-white rounded-xl p-4 border border-blue-200">
             <div className="space-y-3">
-              {selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Comprehensive Eye Exam</span>
+              {/* Display services from database array when completed */}
+              {selectedpatientappointment.patientbautistaappointmentservicesavailed && 
+               selectedpatientappointment.patientbautistaappointmentservicesavailed.length > 0 ? (
+                selectedpatientappointment.patientbautistaappointmentservicesavailed.map((service) => (
+                  <div key={service.serviceId} className="flex items-center gap-3">
+                    <i className="bx bx-check-circle text-sky-500 text-lg"></i>
+                    <span className="text-black font-medium">{service.serviceName}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <i className="bx bx-info-circle text-2xl mb-2"></i>
+                  <p className="text-sm">No services recorded for this appointment</p>
                 </div>
               )}
               
-              {selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Diabetic Retinopathy</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientbautistaappointmentglaucoma && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Glaucoma</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Hypertensive Retinopathy</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientbautistaappointmentretinolproblem && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Retinal Problem</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientbautistaappointmentcataractsurgery && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Cataract Surgery</span>
-                </div>
-              )}
-              
-              {selectedpatientappointment.patientbautistaappointmentpterygiumsurgery && (
-                <div className="flex items-center gap-3">
-                  <i className="bx bx-check-circle text-sky-500 text-lg"></i>
-                  <span className="text-black font-medium">Pterygium Surgery</span>
-                </div>
-              )}
-              
+              {/* Show other service if applicable */}
               {selectedpatientappointment.patientbautistaappointmentotherservice && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -4793,7 +5380,7 @@ useEffect(() => {
                                            <i className="bx bx-receipt text-white text-xl"></i>
                                          </div>
                                          <div>
-                                           <h3 className="text-xl font-bold text-gray-800 font-albertsans">Combined Total Payment</h3>
+                                           <h3 className="text-xl font-bold text-gray-800 font-albertsans">Combined Total Billing</h3>
                                            <p className="text-gray-600">Total cost for both clinic appointments</p>
                                          </div>
                                        </div>

@@ -102,6 +102,20 @@ patientambherappointmentrefraction: {type: Boolean, default: false},
 patientambherappointmentcontactlensefitting: {type: Boolean, default: false},
 patientambherappointmentotherservice: {type: Boolean, default: false},
 patientambherappointmentotherservicenote: String,
+patientambherappointmentservicesavailed: [{
+    serviceId: {
+        type: String,
+        required: true
+    },
+    serviceName: {
+        type: String,
+        required: true
+    },
+    servicePrice: {
+        type: Number,
+        required: true
+    }
+}],
 patientambherappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired'], default: 'Pending'},
 patientambherappointmentstatushistory: [{
     status:{
@@ -162,6 +176,20 @@ patientbautistaappointmentcataractsurgery: {type: Boolean, default: false},
 patientbautistaappointmentpterygiumsurgery: {type: Boolean, default: false},
 patientbautistaappointmentotherservice: {type: Boolean, default: false},
 patientbautistaappointmentotherservicenote: String,
+patientbautistaappointmentservicesavailed: [{
+    serviceId: {
+        type: String,
+        required: true
+    },
+    serviceName: {
+        type: String,
+        required: true
+    },
+    servicePrice: {
+        type: Number,
+        required: true
+    }
+}],
 patientbautistaappointmentstatus:{type:String, enum:['Cancelled', 'Pending', 'Declined', 'Accepted', 'Completed', 'Expired'], default: 'Pending'},
 patientbautistaappointmentstatushistory: [{
     status:{

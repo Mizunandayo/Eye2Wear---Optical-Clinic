@@ -22,6 +22,8 @@ import bautistainventoryproductrouter from "./routes/bautistainventoryproduct.ro
 import patientwishlistinventoryproductrouter from "./routes/patientwishlist.route.js";
 import patientorderambherrouter from "./routes/patientorderambher.route.js";
 import patientorderbautistarouter from "./routes/patientorderbautista.route.js";
+import ambherservicerouter from "./routes/ambherservice.route.js";
+import bautistaservicerouter from "./routes/bautistaservice.route.js";
 import Message from "./models/message.js";
 import messagerouter from "./routes/message.route.js";
 import smsrouter from "./routes/sms.js";
@@ -157,6 +159,10 @@ app.use("/api/patientwishlistinventoryproduct", patientwishlistinventoryproductr
 app.use("/api/patientorderambher", patientorderambherrouter);
 //Routes
 app.use("/api/patientorderbautista", patientorderbautistarouter);
+//Routes
+app.use("/api/ambherservice", ambherservicerouter);
+//Routes
+app.use("/api/bautistaservice", bautistaservicerouter);
 //Routes
 app.use("/api/messages", messagerouter);
 

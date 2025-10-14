@@ -7321,6 +7321,62 @@ const [ambherappointmentconsultationremarkssubject, setambherappointmentconsulta
 const [bautistaappointmentconsultationremarks, setbautistaappointmentconsultationremarks] = useState("");
 const [ambherappointmentconsultationremarks, setambherappointmentconsultationremarks] = useState("");
 
+// Service Management States
+const [ambherServicesList, setAmbherServicesList] = useState([]);
+const [bautistaServicesList, setBautistaServicesList] = useState([]);
+const [loadingAmbherServicesList, setLoadingAmbherServicesList] = useState(true);
+const [loadingBautistaServicesList, setLoadingBautistaServicesList] = useState(true);
+const [selectedAmbherServices, setSelectedAmbherServices] = useState({});
+const [selectedBautistaServices, setSelectedBautistaServices] = useState({});
+const [bautistaAutoPricingEnabled, setBautistaAutoPricingEnabled] = useState(true);
+const [ambherAutoPricingEnabled, setAmbherAutoPricingEnabled] = useState(true);
+
+// Fetch Ambher Services for appointment checkboxes
+useEffect(() => {
+  const fetchAmbherServices = async () => {
+    setLoadingAmbherServicesList(true);
+    try {
+      const response = await fetch('/api/ambherservice');
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Filter out archived services
+        const activeServices = data.filter(service => !service.ambherserviceisarchived);
+        setAmbherServicesList(activeServices);
+      }
+    } catch (error) {
+      console.error('Error fetching Ambher services:', error);
+    } finally {
+      setLoadingAmbherServicesList(false);
+    }
+  };
+
+  fetchAmbherServices();
+}, []);
+
+// Fetch Bautista Services for appointment checkboxes
+useEffect(() => {
+  const fetchBautistaServices = async () => {
+    setLoadingBautistaServicesList(true);
+    try {
+      const response = await fetch('/api/bautistaservice');
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Filter out archived services
+        const activeServices = data.filter(service => !service.bautistaserviceisarchived);
+        setBautistaServicesList(activeServices);
+      }
+    } catch (error) {
+      console.error('Error fetching Bautista services:', error);
+    } finally {
+      setLoadingBautistaServicesList(false);
+    }
+  };
+
+  fetchBautistaServices();
+}, []);
+
 // Decline Appointment Modal States
 const [showdeclineambherappointmentdialog, setshowdeclineambherappointmentdialog] = useState(false);
 const [showdeclinebautistaappointmentdialog, setshowdeclinebautistaappointmentdialog] = useState(false);
@@ -9172,6 +9228,32 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
   // Set loading state to true
   setIsCompletingAppointment(true);
   
+  // Prepare services availed array based on selected services
+  let servicesAvailed = [];
+  if (clinicType === 'ambher') {
+    // Get selected services from ambherServicesList
+    ambherServicesList.forEach(service => {
+      if (selectedAmbherServices[service._id]) {
+        servicesAvailed.push({
+          serviceId: service._id,
+          serviceName: service.ambherservicename,
+          servicePrice: service.ambherserviceprice
+        });
+      }
+    });
+  } else if (clinicType === 'bautista') {
+    // Get selected services from bautistaServicesList
+    bautistaServicesList.forEach(service => {
+      if (selectedBautistaServices[service._id]) {
+        servicesAvailed.push({
+          serviceId: service._id,
+          serviceName: service.bautistaservicename,
+          servicePrice: service.bautistaserviceprice
+        });
+      }
+    });
+  }
+  
   try {
     // Make API call to update appointment status with correct URL
     const response = await fetch(
@@ -9187,37 +9269,24 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
           [`patient${clinicType}appointmentstatushistory`]: {
             changedBy: adminfirstname
           },
-          [`patient${clinicType}appointmenteyespecialist`]: clinicType === 'ambher' ? ambhereyespecialist : bautistaeyespecialist,
+          [`patient${clinicType}appointmenteyespecialist`]: clinicType === 'ambher' 
+            ? (ambhereyespecialist || selectedpatientappointment.patientambherappointmenteyespecialist)
+            : (bautistaeyespecialist || selectedpatientappointment.patientbautistaappointmenteyespecialist),
           [`patient${clinicType}appointmentpaymentotal`]: clinicType === 'ambher' ? Number(ambherappointmentpaymentotal) || 0 : Number(bautistaappointmentpaymentotal) || 0,
           [`patient${clinicType}appointmentconsultationremarkssubject`]: clinicType === 'ambher' ? ambherappointmentconsultationremarkssubject : bautistaappointmentconsultationremarkssubject,
           [`patient${clinicType}appointmentconsultationremarks`]: clinicType === 'ambher' ? ambherappointmentconsultationremarks : bautistaappointmentconsultationremarks,
           [`patient${clinicType}appointmentprescription`]: clinicType === 'ambher' ? ambherappointmentprescription : bautistaappointmentprescription,
           
-          // Include all service selections for Ambher
-          ...(clinicType === 'ambher' && {
-            patientambherappointmentcataractscreening: selectedpatientappointment.patientambherappointmentcataractscreening || false,
-            patientambherappointmentpediatricassessment: selectedpatientappointment.patientambherappointmentpediatricassessment || false,
-            patientambherappointmentpediatricoptometrist: selectedpatientappointment.patientambherappointmentpediatricoptometrist || false,
-            patientambherappointmentcolorvisiontesting: selectedpatientappointment.patientambherappointmentcolorvisiontesting || false,
-            patientambherappointmentlowvisionaid: selectedpatientappointment.patientambherappointmentlowvisionaid || false,
-            patientambherappointmentrefraction: selectedpatientappointment.patientambherappointmentrefraction || false,
-            patientambherappointmentcontactlensefitting: selectedpatientappointment.patientambherappointmentcontactlensefitting || false,
-            patientambherappointmentotherservice: selectedpatientappointment.patientambherappointmentotherservice || false,
-            patientambherappointmentotherservicenote: selectedpatientappointment.patientambherappointmentotherservicenote || ''
-          }),
+          // Save services availed array
+          [`patient${clinicType}appointmentservicesavailed`]: servicesAvailed,
           
-          // Include all service selections for Bautista
-          ...(clinicType === 'bautista' && {
-            patientbautistaappointmentcomprehensiveeyeexam: selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam || false,
-            patientbautistaappointmentdiabeticretinopathy: selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy || false,
-            patientbautistaappointmentglaucoma: selectedpatientappointment.patientbautistaappointmentglaucoma || false,
-            patientbautistaappointmenthypertensiveretinopathy: selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy || false,
-            patientbautistaappointmentretinolproblem: selectedpatientappointment.patientbautistaappointmentretinolproblem || false,
-            patientbautistaappointmentcataractsurgery: selectedpatientappointment.patientbautistaappointmentcataractsurgery || false,
-            patientbautistaappointmentpterygiumsurgery: selectedpatientappointment.patientbautistaappointmentpterygiumsurgery || false,
-            patientbautistaappointmentotherservice: selectedpatientappointment.patientbautistaappointmentotherservice || false,
-            patientbautistaappointmentotherservicenote: selectedpatientappointment.patientbautistaappointmentotherservicenote || ''
-          })
+          // Include other service if selected
+          [`patient${clinicType}appointmentotherservice`]: clinicType === 'ambher' 
+            ? selectedpatientappointment.patientambherappointmentotherservice || false
+            : selectedpatientappointment.patientbautistaappointmentotherservice || false,
+          [`patient${clinicType}appointmentotherservicenote`]: clinicType === 'ambher'
+            ? selectedpatientappointment.patientambherappointmentotherservicenote || ''
+            : selectedpatientappointment.patientbautistaappointmentotherservicenote || ''
         })
       }
     );
@@ -9230,6 +9299,13 @@ const handleCompleteAppointment = async (appointmentId, clinicType) => {
     // Update the UI with the new appointment data
     const updatedAppointment = await response.json();
     setselectedpatientappointment(updatedAppointment);
+    
+    // Clear all service checkboxes after completing
+    if (clinicType === 'ambher') {
+      setSelectedAmbherServices({});
+    } else if (clinicType === 'bautista') {
+      setSelectedBautistaServices({});
+    }
     
     // Update the appointments list to reflect the change
     setpatientappointments(prevAppointments => 
@@ -12645,8 +12721,404 @@ try{
 }
 
 
+//SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT
+//SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT //SERVICE MANAGEMENT
+// Ambher Services States
+const [showambherservicesdialog, setshowambherservicesdialog] = useState(false);
+const [showaddambherservicedialog, setshowaddambherservicedialog] = useState(false);
+const [showeditambherservicedialog, setshoweditambherservicedialog] = useState(false);
+const [showarchiveambherservicedialog, setshowarchiveambherservicedialog] = useState(false);
+const [ambherservicelist, setambherservicelist] = useState([]);
+const [loadingambherservicelist, setloadingambherservicelist] = useState(true);
+const [selectedambherservice, setselectedambherservice] = useState(null);
+const [ambherservicefilter, setambherservicefilter] = useState('all'); // 'all', 'active', 'archived'
 
+// Form states for Ambher Services
+const [ambherservicename, setambherservicename] = useState("");
+const [ambherservicedescription, setambherservicedescription] = useState("");
+const [ambherserviceprice, setambherserviceprice] = useState("");
+const [ambherservicesubmitting, setambherservicesubmitting] = useState(false);
+const [ambherservicenamecheck, setambherservicenamecheck] = useState(false);
+const [ambherservicenameexist, setambherservicenameexist] = useState(false);
 
+// Bautista Services States
+const [showbautistaservicesdialog, setshowbautistaservicesdialog] = useState(false);
+const [showaddbautistaservicedialog, setshowaddbautistaservicedialog] = useState(false);
+const [showeditbautistaservicedialog, setshoweditbautistaservicedialog] = useState(false);
+const [showarchivebautistaservicedialog, setshowarchivebautistaservicedialog] = useState(false);
+const [bautistaservicelist, setbautistaservicelist] = useState([]);
+const [loadingbautistaservicelist, setloadingbautistaservicelist] = useState(true);
+const [selectedbautistaservice, setselectedbautistaservice] = useState(null);
+const [bautistaservicefilter, setbautistaservicefilter] = useState('all'); // 'all', 'active', 'archived'
+
+// Form states for Bautista Services
+const [bautistaservicename, setbautistaservicename] = useState("");
+const [bautistaservicedescription, setbautistaservicedescription] = useState("");
+const [bautistaserviceprice, setbautistaserviceprice] = useState("");
+const [bautistaservicesubmitting, setbautistaservicesubmitting] = useState(false);
+const [bautistaservicenamecheck, setbautistaservicenamecheck] = useState(false);
+const [bautistaservicenameexist, setbautistaservicenameexist] = useState(false);
+
+// Fetch Ambher Services
+useEffect(() => {
+  const fetchAmbherServices = async () => {
+    if (isBautistaOnlyUser() && currentuserloggedin !== "Admin") {
+      setloadingambherservicelist(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/ambherservice`);
+      if (!response.ok) throw new Error("Failed to fetch Ambher services");
+      const data = await response.json();
+      setambherservicelist(data);
+    } catch (error) {
+      console.error("Error fetching Ambher services:", error);
+    } finally {
+      setloadingambherservicelist(false);
+    }
+  };
+
+  fetchAmbherServices();
+}, []);
+
+// Fetch Bautista Services
+useEffect(() => {
+  const fetchBautistaServices = async () => {
+    if (isAmbherOnlyUser() && currentuserloggedin !== "Admin") {
+      setloadingbautistaservicelist(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/bautistaservice`);
+      if (!response.ok) throw new Error("Failed to fetch Bautista services");
+      const data = await response.json();
+      setbautistaservicelist(data);
+    } catch (error) {
+      console.error("Error fetching Bautista services:", error);
+    } finally {
+      setloadingbautistaservicelist(false);
+    }
+  };
+
+  fetchBautistaServices();
+}, []);
+
+// Check Ambher service name exists
+useEffect(() => {
+  if (!ambherservicename.trim() || !showaddambherservicedialog) {
+    setambherservicenameexist(false);
+    return;
+  }
+
+  let ismounted = true;
+
+  const checkServiceName = async () => {
+    if (ismounted) setambherservicenamecheck(true);
+
+    try {
+      const response = await fetch(`/api/ambherservice/check-name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          servicename: ambherservicename,
+          excludeId: showeditambherservicedialog ? selectedambherservice?._id : null
+        })
+      });
+
+      if (!ismounted) return;
+
+      const data = await response.json();
+      setambherservicenameexist(data.exists);
+    } catch (error) {
+      if (ismounted) setambherservicenameexist(false);
+    } finally {
+      if (ismounted) setambherservicenamecheck(false);
+    }
+  };
+
+  const timer = setTimeout(checkServiceName, 500);
+  return () => {
+    ismounted = false;
+    clearTimeout(timer);
+  };
+}, [ambherservicename, showaddambherservicedialog, showeditambherservicedialog, selectedambherservice]);
+
+// Check Bautista service name exists
+useEffect(() => {
+  if (!bautistaservicename.trim() || !showaddbautistaservicedialog) {
+    setbautistaservicenameexist(false);
+    return;
+  }
+
+  let ismounted = true;
+
+  const checkServiceName = async () => {
+    if (ismounted) setbautistaservicenamecheck(true);
+
+    try {
+      const response = await fetch(`/api/bautistaservice/check-name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          servicename: bautistaservicename,
+          excludeId: showeditbautistaservicedialog ? selectedbautistaservice?._id : null
+        })
+      });
+
+      if (!ismounted) return;
+
+      const data = await response.json();
+      setbautistaservicenameexist(data.exists);
+    } catch (error) {
+      if (ismounted) setbautistaservicenameexist(false);
+    } finally {
+      if (ismounted) setbautistaservicenamecheck(false);
+    }
+  };
+
+  const timer = setTimeout(checkServiceName, 500);
+  return () => {
+    ismounted = false;
+    clearTimeout(timer);
+  };
+}, [bautistaservicename, showaddbautistaservicedialog, showeditbautistaservicedialog, selectedbautistaservice]);
+
+// Submit Ambher Service
+const submitAmbherService = async (e) => {
+  e.preventDefault();
+  if (ambherservicenameexist) return;
+  
+  setambherservicesubmitting(true);
+
+  try {
+    const serviceData = {
+      ambherservicename: ambherservicename,
+      ambherservicedescription: ambherservicedescription,
+      ambherserviceprice: parseFloat(ambherserviceprice),
+      ambherserviceaddedby: currentuserdata.email || '',
+      ambherserviceaddedbytype: currentuserdata.type || '',
+      ambherserviceaddedbyfirstname: currentuserdata.firstname || '',
+      ambherserviceaddedbylastname: currentuserdata.lastname || '',
+      ambherserviceaddedbyprofilepicture: currentuserdata.profilepicture || ''
+    };
+
+    const response = await fetch(`/api/ambherservice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(serviceData)
+    });
+
+    if (!response.ok) throw new Error("Failed to add service");
+
+    const newService = await response.json();
+    setambherservicelist(prev => [newService.service, ...prev]);
+    
+    // Reset form
+    setambherservicename("");
+    setambherservicedescription("");
+    setambherserviceprice("");
+    setshowaddambherservicedialog(false);
+  } catch (error) {
+    console.error("Error adding Ambher service:", error);
+    alert("Failed to add service. Please try again.");
+  } finally {
+    setambherservicesubmitting(false);
+  }
+};
+
+// Submit Bautista Service
+const submitBautistaService = async (e) => {
+  e.preventDefault();
+  if (bautistaservicenameexist) return;
+  
+  setbautistaservicesubmitting(true);
+
+  try {
+    const serviceData = {
+      bautistaservicename: bautistaservicename,
+      bautistaservicedescription: bautistaservicedescription,
+      bautistaserviceprice: parseFloat(bautistaserviceprice),
+      bautistaserviceaddedby: currentuserdata.email || '',
+      bautistaserviceaddedbytype: currentuserdata.type || '',
+      bautistaserviceaddedbyfirstname: currentuserdata.firstname || '',
+      bautistaserviceaddedbylastname: currentuserdata.lastname || '',
+      bautistaserviceaddedbyprofilepicture: currentuserdata.profilepicture || ''
+    };
+
+    const response = await fetch(`/api/bautistaservice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(serviceData)
+    });
+
+    if (!response.ok) throw new Error("Failed to add service");
+
+    const newService = await response.json();
+    setbautistaservicelist(prev => [newService.service, ...prev]);
+    
+    // Reset form
+    setbautistaservicename("");
+    setbautistaservicedescription("");
+    setbautistaserviceprice("");
+    setshowaddbautistaservicedialog(false);
+  } catch (error) {
+    console.error("Error adding Bautista service:", error);
+    alert("Failed to add service. Please try again.");
+  } finally {
+    setbautistaservicesubmitting(false);
+  }
+};
+
+// Update Ambher Service
+const updateAmbherService = async (e) => {
+  e.preventDefault();
+  if (ambherservicenameexist || !selectedambherservice) return;
+  
+  setambherservicesubmitting(true);
+
+  try {
+    const serviceData = {
+      ambherservicename: ambherservicename,
+      ambherservicedescription: ambherservicedescription,
+      ambherserviceprice: parseFloat(ambherserviceprice)
+    };
+
+    const response = await fetch(`/api/ambherservice/${selectedambherservice._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(serviceData)
+    });
+
+    if (!response.ok) throw new Error("Failed to update service");
+
+    const updatedService = await response.json();
+    setambherservicelist(prev => 
+      prev.map(service => service._id === selectedambherservice._id ? updatedService.service : service)
+    );
+    
+    // Reset form
+    setambherservicename("");
+    setambherservicedescription("");
+    setambherserviceprice("");
+    setselectedambherservice(null);
+    setshoweditambherservicedialog(false);
+  } catch (error) {
+    console.error("Error updating Ambher service:", error);
+    alert("Failed to update service. Please try again.");
+  } finally {
+    setambherservicesubmitting(false);
+  }
+};
+
+// Update Bautista Service
+const updateBautistaService = async (e) => {
+  e.preventDefault();
+  if (bautistaservicenameexist || !selectedbautistaservice) return;
+  
+  setbautistaservicesubmitting(true);
+
+  try {
+    const serviceData = {
+      bautistaservicename: bautistaservicename,
+      bautistaservicedescription: bautistaservicedescription,
+      bautistaserviceprice: parseFloat(bautistaserviceprice)
+    };
+
+    const response = await fetch(`/api/bautistaservice/${selectedbautistaservice._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(serviceData)
+    });
+
+    if (!response.ok) throw new Error("Failed to update service");
+
+    const updatedService = await response.json();
+    setbautistaservicelist(prev => 
+      prev.map(service => service._id === selectedbautistaservice._id ? updatedService.service : service)
+    );
+    
+    // Reset form
+    setbautistaservicename("");
+    setbautistaservicedescription("");
+    setbautistaserviceprice("");
+    setselectedbautistaservice(null);
+    setshoweditbautistaservicedialog(false);
+  } catch (error) {
+    console.error("Error updating Bautista service:", error);
+    alert("Failed to update service. Please try again.");
+  } finally {
+    setbautistaservicesubmitting(false);
+  }
+};
+
+// Archive/Unarchive Ambher Service
+const archiveAmbherService = async (archive) => {
+  if (!selectedambherservice) return;
+
+  try {
+    const response = await fetch(`/api/ambherservice/${selectedambherservice._id}/archive`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archive })
+    });
+
+    if (!response.ok) throw new Error("Failed to archive service");
+
+    const updatedService = await response.json();
+    setambherservicelist(prev => 
+      prev.map(service => service._id === selectedambherservice._id ? updatedService.service : service)
+    );
+    
+    setselectedambherservice(null);
+    setshowarchiveambherservicedialog(false);
+  } catch (error) {
+    console.error("Error archiving Ambher service:", error);
+    alert("Failed to archive service. Please try again.");
+  }
+};
+
+// Archive/Unarchive Bautista Service
+const archiveBautistaService = async (archive) => {
+  if (!selectedbautistaservice) return;
+
+  try {
+    const response = await fetch(`/api/bautistaservice/${selectedbautistaservice._id}/archive`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archive })
+    });
+
+    if (!response.ok) throw new Error("Failed to archive service");
+
+    const updatedService = await response.json();
+    setbautistaservicelist(prev => 
+      prev.map(service => service._id === selectedbautistaservice._id ? updatedService.service : service)
+    );
+    
+    setselectedbautistaservice(null);
+    setshowarchivebautistaservicedialog(false);
+  } catch (error) {
+    console.error("Error archiving Bautista service:", error);
+    alert("Failed to archive service. Please try again.");
+  }
+};
+
+// Filter services
+const filteredAmbherServices = ambherservicelist.filter(service => {
+  if (ambherservicefilter === 'active') return !service.ambherserviceisarchived;
+  if (ambherservicefilter === 'archived') return service.ambherserviceisarchived;
+  return true;
+});
+
+const filteredBautistaServices = bautistaservicelist.filter(service => {
+  if (bautistaservicefilter === 'active') return !service.bautistaserviceisarchived;
+  if (bautistaservicefilter === 'archived') return service.bautistaserviceisarchived;
+  return true;
+});
+
+//END SERVICE MANAGEMENT //END SERVICE MANAGEMENT //END SERVICE MANAGEMENT //END SERVICE MANAGEMENT
 
 
 //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT //INVENTORY MANAGEMENT
@@ -15769,6 +16241,505 @@ const exportBillingToPDF = async (orderData) => {
   } catch (error) {
     console.error('Error generating PDF:', error);
     alert('Error generating PDF. Please try again.');
+  } finally {
+    setIsExportingPDF(false);
+  }
+};
+
+
+
+// Modern PDF Export function for Appointments using Puppeteer backend
+const exportAppointmentToPDF = async (appointmentData, clinicType) => {
+  setIsExportingPDF(true);
+  try {
+    // Determine if it's Ambher or Bautista appointment
+    const isAmbher = clinicType === 'ambher';
+    
+    // Extract appointment details
+    const appointmentId = isAmbher 
+      ? appointmentData.patientambherappointmentid 
+      : appointmentData.patientbautistaappointmentid;
+    const appointmentStatus = isAmbher 
+      ? appointmentData.patientambherappointmentstatus 
+      : appointmentData.patientbautistaappointmentstatus;
+    const eyeSpecialist = isAmbher 
+      ? appointmentData.patientambherappointmenteyespecialist 
+      : appointmentData.patientbautistaappointmenteyespecialist;
+    const appointmentDate = isAmbher 
+      ? appointmentData.patientambherappointmentdate 
+      : appointmentData.patientbautistaappointmentdate;
+    const appointmentTime = isAmbher 
+      ? appointmentData.patientambherappointmenttime 
+      : appointmentData.patientbautistaappointmenttime;
+    const locationAddress = isAmbher 
+      ? appointmentData.patientambherappointmentlocationaddress 
+      : appointmentData.patientbautistaappointmentlocationaddress;
+    const billingTotal = isAmbher 
+      ? appointmentData.patientambherappointmentpaymentotal 
+      : appointmentData.patientbautistaappointmentpaymentotal;
+    const consultationRemarksSubject = isAmbher 
+      ? appointmentData.patientambherappointmentconsultationremarkssubject 
+      : appointmentData.patientbautistaappointmentconsultationremarkssubject;
+    const consultationRemarks = isAmbher 
+      ? appointmentData.patientambherappointmentconsultationremarks 
+      : appointmentData.patientbautistaappointmentconsultationremarks;
+    const prescription = isAmbher 
+      ? appointmentData.patientambherappointmentprescription 
+      : appointmentData.patientbautistaappointmentprescription;
+    
+    const clinic = isAmbher ? 'Ambher Optical' : 'Bautista Eye Center';
+    const clinicColor = isAmbher ? '#10b981' : '#3b82f6';
+    const customerName = `${appointmentData.patientappointmentfirstname} ${appointmentData.patientappointmentlastname}`;
+    const customerEmail = appointmentData.patientappointmentemail;
+    const formattedDate = formatappointmatedates(appointmentDate);
+    const formattedTime = formatappointmenttime(appointmentTime);
+    const tinNumber = isAmbher ? 'TIN: 123-456-789-001' : 'TIN: 987-654-321-002';
+    
+    // Get services done from database arrays (without prices)
+    let servicesHTML = '';
+    if (isAmbher) {
+      // Get Ambher services from servicesavailed array
+      const services = [];
+      if (appointmentData.patientambherappointmentservicesavailed && appointmentData.patientambherappointmentservicesavailed.length > 0) {
+        appointmentData.patientambherappointmentservicesavailed.forEach(service => {
+          services.push({
+            name: service.serviceName
+          });
+        });
+      }
+      if (appointmentData.patientambherappointmentotherservice) {
+        services.push({
+          name: `Other Service: ${appointmentData.patientambherappointmentotherservicenote || 'Not specified'}`
+        });
+      }
+      
+      if (services.length > 0) {
+        servicesHTML = services.map(service => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px 8px; font-size: 11px; color: #333; font-weight: 500;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #10b981; font-size: 14px;">✓</span>
+                <span>${service.name}</span>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } else {
+      // Get Bautista services from servicesavailed array
+      const services = [];
+      if (appointmentData.patientbautistaappointmentservicesavailed && appointmentData.patientbautistaappointmentservicesavailed.length > 0) {
+        appointmentData.patientbautistaappointmentservicesavailed.forEach(service => {
+          services.push({
+            name: service.serviceName
+          });
+        });
+      }
+      if (appointmentData.patientbautistaappointmentotherservice) {
+        services.push({
+          name: `Other Service: ${appointmentData.patientbautistaappointmentotherservicenote || 'Not specified'}`
+        });
+      }
+      
+      if (services.length > 0) {
+        servicesHTML = services.map(service => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px 8px; font-size: 11px; color: #333; font-weight: 500;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #3b82f6; font-size: 14px;">✓</span>
+                <span>${service.name}</span>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+    
+    // Create modern HTML appointment summary
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+              background: white;
+              padding: 20px;
+              color: #000;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            
+            .appointment-container {
+              max-width: 700px;
+              margin: 0 auto;
+              background: white;
+            }
+            
+            .appointment-header {
+              text-align: center;
+              border-bottom: 2px solid ${clinicColor};
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            
+            .appointment-header h1 {
+              font-size: 16px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 10px;
+              color: ${clinicColor};
+            }
+            
+            .clinic-name {
+              font-size: 18px;
+              font-weight: 700;
+              margin-bottom: 4px;
+              color: ${clinicColor};
+            }
+            
+            .clinic-address {
+              font-size: 11px;
+              color: #555;
+              margin-bottom: 2px;
+            }
+            
+            .tin-number {
+              font-size: 10px;
+              color: #666;
+              margin-top: 4px;
+            }
+            
+            .appointment-body {
+              padding: 0;
+            }
+            
+            .appointment-info {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
+              border-bottom: 1px solid #ddd;
+            }
+            
+            .info-group {
+              font-size: 11px;
+            }
+            
+            .info-group h4 {
+              color: #666;
+              font-size: 9px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 3px;
+              font-weight: 600;
+            }
+            
+            .info-group p {
+              color: #000;
+              font-size: 11px;
+              font-weight: 600;
+            }
+            
+            .patient-section {
+              background: #fafafa;
+              padding: 12px 15px;
+              margin-bottom: 20px;
+              border-left: 3px solid ${clinicColor};
+            }
+            
+            .patient-section h3 {
+              color: #000;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 6px;
+            }
+            
+            .patient-section p {
+              color: #333;
+              font-size: 11px;
+              margin: 2px 0;
+            }
+            
+            .services-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 11px;
+            }
+            
+            .services-table thead {
+              border-bottom: 2px solid ${clinicColor};
+            }
+            
+            .services-table th {
+              padding: 8px 6px;
+              text-align: left;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+              color: ${clinicColor};
+            }
+            
+            .services-table td {
+              padding: 12px 6px;
+              border-bottom: 1px solid #eee;
+              font-size: 11px;
+              color: #333;
+            }
+            
+            .services-table tbody tr:last-child td {
+              border-bottom: none;
+            }
+            
+            .notes-section {
+              background: #f0f9ff;
+              border-left: 3px solid ${clinicColor};
+              padding: 10px 12px;
+              margin: 15px 0;
+              font-size: 10px;
+            }
+            
+            .notes-section strong {
+              color: ${clinicColor};
+              font-size: 9px;
+              display: block;
+              margin-bottom: 4px;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            
+            .notes-section p {
+              color: #333;
+              font-size: 10px;
+              line-height: 1.4;
+            }
+            
+            .totals-section {
+              margin: 20px 0;
+              padding: 15px 0;
+              border-top: 1px solid #ddd;
+              border-bottom: 2px solid ${clinicColor};
+            }
+            
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 10px 0;
+              font-size: 14px;
+              font-weight: 700;
+              color: ${clinicColor};
+            }
+            
+            .status-badge {
+              text-align: center;
+              margin: 25px 0;
+            }
+            
+            .status-badge div {
+              border: 2px solid ${clinicColor};
+              color: ${clinicColor};
+              padding: 8px 20px;
+              display: inline-block;
+              font-weight: 700;
+              font-size: 13px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .appointment-footer {
+              text-align: center;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              margin-top: 20px;
+            }
+            
+            .appointment-footer p {
+              color: #666;
+              font-size: 9px;
+              margin: 4px 0;
+            }
+            
+            .appointment-footer .thank-you {
+              color: #000;
+              font-size: 12px;
+              font-weight: 700;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="appointment-container">
+            <!-- Header -->
+            <div class="appointment-header">
+              <h1>Appointment Summary</h1>
+              <div class="clinic-name">${clinic}</div>
+              <div class="clinic-address">${locationAddress}</div>
+              <div class="tin-number">${tinNumber}</div>
+            </div>
+            
+            <!-- Body -->
+            <div class="appointment-body">
+              <!-- Appointment Info -->
+              <div class="appointment-info">
+                <div class="info-group">
+                  <h4>Appointment No</h4>
+                  <p>#${appointmentId}</p>
+                </div>
+                <div class="info-group">
+                  <h4>Date & Time</h4>
+                  <p>${formattedDate} (${formattedTime})</p>
+                </div>
+                <div class="info-group">
+                  <h4>Status</h4>
+                  <p>${appointmentStatus}</p>
+                </div>
+                <div class="info-group">
+                  <h4>Eye Specialist</h4>
+                  <p>${eyeSpecialist || 'Not assigned'}</p>
+                </div>
+              </div>
+              
+              <!-- Patient Info -->
+              <div class="patient-section">
+                <h3>Patient Information</h3>
+                <p style="font-weight: 600;">${customerName}</p>
+                <p>${customerEmail}</p>
+              </div>
+              
+              <!-- Services Table -->
+              ${servicesHTML ? `
+              <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: ${clinicColor};">
+                  Services Performed
+                </h3>
+                <table class="services-table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${servicesHTML}
+                  </tbody>
+                </table>
+              </div>
+              ` : ''}
+              
+              ${consultationRemarksSubject || consultationRemarks ? `
+              <div class="notes-section">
+                <strong>Consultation Notes</strong>
+                ${consultationRemarksSubject ? `<p style="font-weight: 600; margin-bottom: 4px;">${consultationRemarksSubject}</p>` : ''}
+                ${consultationRemarks ? `<p>${consultationRemarks}</p>` : ''}
+              </div>
+              ` : ''}
+              
+              ${prescription ? `
+              <div class="notes-section">
+                <strong>Prescription</strong>
+                <p>${prescription}</p>
+              </div>
+              ` : ''}
+              
+              <!-- Totals -->
+              ${billingTotal ? `
+              <div class="totals-section">
+                <div class="total-row">
+                  <span>TOTAL BILLING</span>
+                  <span>₱${Number(billingTotal).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+              ` : ''}
+              
+              <!-- Status Badge -->
+              <div class="status-badge">
+                <div>✓ ${appointmentStatus}</div>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="appointment-footer">
+              <p class="thank-you">Thank you for choosing ${clinic}</p>
+              <p>This is an official appointment summary generated by Eye2Wear Optical System</p>
+              <p>Generated on: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Generate filename
+    const statusText = appointmentStatus.replace(/\s+/g, '_');
+    const fileName = `Appointment_Summary_${clinic.replace(/\s+/g, '_')}_${appointmentId}_${statusText}_${customerName.replace(/\s+/g, '_')}.pdf`;
+
+    // Send HTML to backend for PDF generation using Puppeteer
+    const response = await fetch(`${apiUrl}/api/pdf/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        htmlContent,
+        fileName
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `Server error: ${response.status}`);
+    }
+
+    // Get the PDF as arrayBuffer for proper binary handling
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Create blob from arrayBuffer with correct MIME type
+    const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup after a short delay to ensure download starts
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+
+  } catch (error) {
+    console.error('Error generating appointment PDF:', error);
+    alert('Error generating appointment PDF. Please try again.');
   } finally {
     setIsExportingPDF(false);
   }
@@ -22259,16 +23230,12 @@ useEffect(() => {
 
 
 
-
-
-
-
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
 {/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}{/* Summary Overview */}
-{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="rounded-2xl shadow-lg border-1 bg-white flex flex-col items-center justify-center w-[100%] h-[100%] p-8" > 
+{ (activedashboard === 'summaryoverview' && !isAdminRole) && ( <div id="summaryoverview" className="rounded-2xl shadow-lg border-1 bg-white flex flex-col items-center justify-center w-[100%] h-[100%] p-8" > d
   
   {/* Clinic Information Display */}
   <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-2xl">
@@ -25785,6 +26752,10 @@ Are you sure you want to delete this patient profile?
 
 
 
+
+
+
+
 {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
 {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
 {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/} {/*APPOINTMENT MANAGEMENT*/}
@@ -26114,7 +27085,55 @@ Are you sure you want to delete this patient profile?
       )}
     </div>
   </div>
+
+
+
+  {/*Service Management Buttons*/}
+{(() => {
+  const currentUserClinic = getCurrentUserClinic();
+  return (
+    <>
+      {currentUserClinic === "Ambher Optical" && (
+        <div className="w-60 px-2  flex justify-end">
+          <button
+            onClick={() => {
+              setshowambherservicesdialog(true);
+              setambherservicefilter('all');
+            }}
+            className="px-3 py-3 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white rounded-2xl font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <i className="bx bx-briefcase text-lg"></i>
+            <span>Manage Services</span>
+          </button>
+        </div>
+      )}
+
+      {currentUserClinic === "Bautista Eye Center" && (
+        <div className="w-60 px-2  flex justify-end">
+          <button
+            onClick={() => {
+              setshowbautistaservicesdialog(true);
+              setbautistaservicefilter('all');
+            }}
+            className="px-3 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-2xl font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <i className="bx bx-briefcase text-lg"></i>
+            <span>Manage Services</span>
+          </button>
+        </div>
+      )}
+    </>
+  );
+})()}
 </div>
+
+
+
+
+
+
+
+
 
 {loadingappointmens ? (
 <div className="space-y-4 p-4 flex-1">
@@ -26421,7 +27440,6 @@ itemName="appointments"
             <h2 className="text-2xl font-bold text-gray-900">
               Appointment Management
             </h2>
-            <p className="text-sm text-gray-500">Review and manage patient appointment details</p>
           </div>
         </div>
  
@@ -26487,18 +27505,80 @@ itemName="appointments"
           <img src={ambherlogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Ambher Optical"/>  
           <div>
             <h2 className="text-xl font-bold text-green-700 font-albertsans">Ambher Optical</h2>
-            <p className="text-gray-900 text-sm">Vision Care & Eye Wellness</p>
           </div>
         </div>
-        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-            selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
-            selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
-            'bg-red-100 text-red-800'}`}>
-          {selectedpatientappointment.patientambherappointmentstatus}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+            ${selectedpatientappointment.patientambherappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+              selectedpatientappointment.patientambherappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-100 text-gray-800':
+              'bg-red-100 text-red-800'}`}>
+            {selectedpatientappointment.patientambherappointmentstatus}
+          </span>
+
+          {/* Export PDF Button - Only show when Completed */}
+          {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
+            <button
+              onClick={() => !isExportingPDF && exportAppointmentToPDF(selectedpatientappointment, 'ambher')}
+              disabled={isExportingPDF}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: isExportingPDF ? '#9ca3af' : '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: isExportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#059669';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#10b981';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+              }}
+            >
+              {isExportingPDF ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '16px',
+                    width: '16px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bxs-file-pdf" style={{ fontSize: '18px' }}></i>
+                  <span>Export PDF</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
 
@@ -26511,7 +27591,8 @@ itemName="appointments"
         </h3>
         <div className="bg-white rounded-xl p-4 border border-green-200">
           {(selectedpatientappointment.patientambherappointmentstatus === "Accepted" ||
-          selectedpatientappointment.patientambherappointmentstatus === "Completed") && (
+          selectedpatientappointment.patientambherappointmentstatus === "Completed") && 
+          selectedpatientappointment.patientambherappointmenteyespecialist && (
             <div className="mb-3">
               <span className="text-sm font-medium text-gray-500">Eye Specialist:</span>
               <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientambherappointmenteyespecialist}</p>
@@ -26532,12 +27613,16 @@ itemName="appointments"
           </div>
 
           {selectedpatientappointment.patientambherappointmentstatus === "Completed" && (
-            <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
-              <span className="text-sm font-medium text-green-700">Payment Total:</span>
-              <p className="text-green-800 font-bold text-lg">
-                ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
-              </p>
-            </div>
+            <>
+              <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
+                <span className="text-sm font-medium text-green-700">Billing Total:</span>
+                <p className="text-green-800 font-bold text-lg">
+                  ₱{selectedpatientappointment.patientambherappointmentpaymentotal}
+                </p>
+              </div>
+              
+
+            </>
           )}
         </div>
       </div>
@@ -26545,277 +27630,125 @@ itemName="appointments"
       {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
       {selectedpatientappointment.patientambherappointmentstatus !== "Pending" && selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && selectedpatientappointment.patientambherappointmentstatus !== "Declined" && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="bx bx-list-check text-green-600"></i>
-            Services Done
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2" style={{ margin: 0 }}>
+              <i className="bx bx-list-check text-green-600"></i>
+              Services Done
+            </h3>
+            {/* Hide Auto-Pricing button when Completed or Cancelled */}
+            {selectedpatientappointment.patientambherappointmentstatus !== "Completed" && selectedpatientappointment.patientambherappointmentstatus !== "Cancelled" && (
+              <button
+                onClick={() => {
+                  // Toggle the auto-pricing state
+                  const newState = !ambherAutoPricingEnabled;
+                  setAmbherAutoPricingEnabled(newState);
+                  
+                  // Clear selected services checkboxes
+                  setSelectedAmbherServices({});
+                  
+                  // Clear total billing field
+                  setambherappointmentpaymentotal('');
+                }}
+                disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: ambherAutoPricingEnabled ? '#10b981' : '#e5e7eb',
+                  color: ambherAutoPricingEnabled ? '#ffffff' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  cursor: selectedpatientappointment.patientambherappointmentstatus === "Completed" ? 'not-allowed' : 'pointer',
+                  opacity: selectedpatientappointment.patientambherappointmentstatus === "Completed" ? 0.5 : 1,
+                  transition: 'all 0.2s ease'
+                }}
+                title={ambherAutoPricingEnabled ? 'Auto-pricing enabled' : 'Auto-pricing disabled'}
+              >
+               
+                <span>₱ {ambherAutoPricingEnabled ? 'Auto-Pricing ON' : 'Auto-Pricing OFF'}</span>
+              </button>
+            )}
+          </div>
           <div className="bg-white rounded-xl p-4 border border-green-200">
             <div className="space-y-3">
-              {/* Visual/Cataract Screening */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentcataractscreening) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-cataract"
-                    checked={selectedpatientappointment.patientambherappointmentcataractscreening || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentcataractscreening: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-cataract" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Visual/Cataract Screening</label>
-                </div>
-              )}
-              
-              {/* Pediatric Assessment */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentpediatricassessment) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-pediatric-assessment"
-                    checked={selectedpatientappointment.patientambherappointmentpediatricassessment || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentpediatricassessment: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-pediatric-assessment" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Pediatric Assessment</label>
-                </div>
-              )}
-              
-              {/* Pediatric Optometrist */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentpediatricoptometrist) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-pediatric-optometrist"
-                    checked={selectedpatientappointment.patientambherappointmentpediatricoptometrist || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentpediatricoptometrist: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-pediatric-optometrist" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Pediatric Optometrist</label>
-                </div>
-              )}
-              
-              {/* Color Vision Testing */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentcolorvisiontesting) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-color-vision"
-                    checked={selectedpatientappointment.patientambherappointmentcolorvisiontesting || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentcolorvisiontesting: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-color-vision" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Color Vision Testing</label>
-                </div>
-              )}
-              
-              {/* Low Vision Aid */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentlowvisionaid) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-low-vision"
-                    checked={selectedpatientappointment.patientambherappointmentlowvisionaid || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentlowvisionaid: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-low-vision" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Low Vision Aid</label>
-                </div>
-              )}
-              
-              {/* Refraction */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentrefraction) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-refraction"
-                    checked={selectedpatientappointment.patientambherappointmentrefraction || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentrefraction: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-refraction" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Refraction</label>
-                </div>
-              )}
-              
-              {/* Contact Lens Fitting */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentcontactlensefitting) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="ambher-contact-lens"
-                    checked={selectedpatientappointment.patientambherappointmentcontactlensefitting || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientambherappointmentcontactlensefitting: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="ambher-contact-lens" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Contact Lens Fitting</label>
-                </div>
-              )}
-              
-              {/* Other Service */}
-              {(selectedpatientappointment.patientambherappointmentstatus !== "Completed" || selectedpatientappointment.patientambherappointmentotherservice) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      id="ambher-other"
-                      checked={selectedpatientappointment.patientambherappointmentotherservice || false}
-                      onChange={(e) => {
-                        if (selectedpatientappointment.patientambherappointmentstatus !== "Completed") {
-                          setselectedpatientappointment(prev => ({
-                            ...prev,
-                            patientambherappointmentotherservice: e.target.checked,
-                            // Clear the note if unchecking
-                            ...(!e.target.checked && { patientambherappointmentotherservicenote: '' })
-                          }));
-                        }
-                      }}
-                      disabled={selectedpatientappointment.patientambherappointmentstatus === "Completed"}
-                      className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                        selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                          ? 'cursor-not-allowed opacity-60' 
-                          : 'cursor-pointer'
-                      }`}
-                    />
-                    <label htmlFor="ambher-other" className={`text-gray-700 font-medium ${
-                      selectedpatientappointment.patientambherappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed' 
-                        : 'cursor-pointer'
-                    }`}>Other Service</label>
-                  </div>
-                  {selectedpatientappointment.patientambherappointmentotherservice && (
-                    <div className="ml-7">
-                      {selectedpatientappointment.patientambherappointmentstatus === "Completed" ? (
-                        <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
-                          {selectedpatientappointment.patientambherappointmentotherservicenote || "No details provided"}
+              {/* Display services based on appointment status */}
+              {selectedpatientappointment.patientambherappointmentstatus === "Completed" ? (
+                /* Show saved services from database when completed */
+                <>
+                  {selectedpatientappointment.patientambherappointmentservicesavailed && 
+                   selectedpatientappointment.patientambherappointmentservicesavailed.length > 0 ? (
+                    selectedpatientappointment.patientambherappointmentservicesavailed.map((service) => (
+                      <div key={service.serviceId} className="flex items-center justify-between gap-1  p-1 rounded-lg">
+                        <div className="flex items-center gap-3 flex-1">
+                          <i className="bx bx-check-circle text-green-600 text-xl"></i>
+                          <span className="text-gray-800 font-medium">{service.serviceName}</span>
                         </div>
-                      ) : (
-                        <input
-                          type="text"
-                          value={selectedpatientappointment.patientambherappointmentotherservicenote || ''}
-                          onChange={(e) => {
-                            setselectedpatientappointment(prev => ({
-                              ...prev,
-                              patientambherappointmentotherservicenote: e.target.value
-                            }));
-                          }}
-                          placeholder="Specify other service"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      )}
+
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      <i className="bx bx-info-circle text-2xl mb-2"></i>
+                      <p className="text-sm">No services recorded for this appointment</p>
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                /* Show interactive service checkboxes when not completed */
+                <>
+                  {loadingAmbherServicesList ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+                      <span className="ml-2 text-gray-600">Loading services...</span>
+                    </div>
+                  ) : (
+                    ambherServicesList.map((service) => (
+                      <div key={service._id} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <input 
+                            type="checkbox" 
+                            id={`ambher-service-${service._id}`}
+                            checked={selectedAmbherServices[service._id] || false}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedAmbherServices(prev => ({
+                                ...prev,
+                                [service._id]: isChecked
+                              }));
+                              
+                              // Update total billing only if auto-pricing is enabled
+                              if (ambherAutoPricingEnabled) {
+                                if (isChecked) {
+                                  const currentTotal = parseFloat(ambherappointmentpaymentotal) || 0;
+                                  setambherappointmentpaymentotal((currentTotal + service.ambherserviceprice).toString());
+                                } else {
+                                  const currentTotal = parseFloat(ambherappointmentpaymentotal) || 0;
+                                  setambherappointmentpaymentotal(Math.max(0, currentTotal - service.ambherserviceprice).toString());
+                                }
+                              }
+                            }}
+                            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer"
+                          />
+                          <label htmlFor={`ambher-service-${service._id}`} className="text-gray-700 font-medium flex-1 cursor-pointer">
+                            {service.ambherservicename}
+                          </label>
+                        </div>
+                        {ambherAutoPricingEnabled && (
+                          <span className="text-green-600 font-semibold whitespace-nowrap">
+                            ₱{service.ambherserviceprice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </>
               )}
+              
+
+
             </div>
           </div>
         </div>
@@ -26980,62 +27913,7 @@ itemName="appointments"
                 </div>
               )}
               
-              {/* Other Service */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentotherservice) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      id="bautista-other"
-                      checked={selectedpatientappointment.patientbautistaappointmentotherservice || false}
-                      onChange={(e) => {
-                        if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                          setselectedpatientappointment(prev => ({
-                            ...prev,
-                            patientbautistaappointmentotherservice: e.target.checked,
-                            // Clear the note if unchecking
-                            ...(!e.target.checked && { patientbautistaappointmentotherservicenote: '' })
-                          }));
-                        }
-                      }}
-                      disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                      className={`w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 ${
-                        selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                          ? 'cursor-not-allowed opacity-60' 
-                          : 'cursor-pointer'
-                      }`}
-                    />
-                    <label htmlFor="bautista-other" className={`text-gray-700 font-medium ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed' 
-                        : 'cursor-pointer'
-                    }`}>Other Service</label>
-                  </div>
-                  {selectedpatientappointment.patientbautistaappointmentotherservice && (
-                    <div className="ml-7">
-                      <input
-                        type="text"
-                        value={selectedpatientappointment.patientbautistaappointmentotherservicenote || ''}
-                        onChange={(e) => {
-                          if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                            setselectedpatientappointment(prev => ({
-                              ...prev,
-                              patientbautistaappointmentotherservicenote: e.target.value
-                            }));
-                          }
-                        }}
-                        disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                        placeholder="Specify other service"
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                          selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                            ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-                            : 'bg-white'
-                        }`}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+
             </div>
           </div>
         </div>
@@ -27437,18 +28315,80 @@ itemName="appointments"
           <img src={bautistalogo} className="w-12 h-12 rounded-lg shadow-sm" alt="Bautista Eye Center"/>  
           <div>
             <h2 className="text-xl font-bold text-sky-800 font-albertsans">Bautista Eye Center</h2>
-            <p className="text-gray-900 text-sm">Comprehensive Eye Care & Surgery</p>
           </div>
         </div>
-        <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
-          ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
-            selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
-            'bg-red-100 text-red-800'}`}>
-          {selectedpatientappointment.patientbautistaappointmentstatus}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`font-albertsans font-semibold rounded-full text-sm leading-5 px-4 py-2 inline-flex
+            ${selectedpatientappointment.patientbautistaappointmentstatus === 'Cancelled' ? 'bg-orange-200 text-orange-900':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Declined' ? 'bg-red-100 text-red-800':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Pending' ? 'bg-yellow-100 text-yellow-800':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Accepted' ? 'bg-green-100 text-green-800':
+              selectedpatientappointment.patientbautistaappointmentstatus === 'Completed' ? 'bg-blue-100 text-blue-800':
+              selectedpatientappointment.patientambherappointmentstatus === 'Expired' ? 'bg-gray-100 text-gray-800':
+              'bg-red-100 text-red-800'}`}>
+            {selectedpatientappointment.patientbautistaappointmentstatus}
+          </span>
+
+          {/* Export PDF Button - Only show when Completed */}
+          {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
+            <button
+              onClick={() => !isExportingPDF && exportAppointmentToPDF(selectedpatientappointment, 'bautista')}
+              disabled={isExportingPDF}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: isExportingPDF ? '#9ca3af' : '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: isExportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#2563eb';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isExportingPDF) {
+                  e.target.style.backgroundColor = '#3b82f6';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+              }}
+            >
+              {isExportingPDF ? (
+                <>
+                  <div style={{
+                    animation: 'spin 1s linear infinite',
+                    borderRadius: '50%',
+                    height: '16px',
+                    width: '16px',
+                    borderBottom: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderLeft: '2px solid transparent',
+                    borderRight: '2px solid transparent'
+                  }}></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <i className="bx bxs-file-pdf" style={{ fontSize: '18px' }}></i>
+                  <span>Export PDF</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
 
@@ -27461,7 +28401,8 @@ itemName="appointments"
         </h3>
         <div className="bg-white rounded-xl p-4 border border-blue-200">
           {(selectedpatientappointment.patientbautistaappointmentstatus === "Accepted" ||
-          selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && (
+          selectedpatientappointment.patientbautistaappointmentstatus === "Completed") && 
+          selectedpatientappointment.patientbautistaappointmenteyespecialist && (
             <div className="mb-3">
               <span className="text-sm font-medium text-gray-500">Eye Specialist:</span>
               <p className="text-gray-800 font-semibold">{selectedpatientappointment.patientbautistaappointmenteyespecialist}</p>
@@ -27483,7 +28424,7 @@ itemName="appointments"
 
           {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" && (
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-sky-500">
-              <span className="text-sm font-medium text-blue-700">Payment Total:</span>
+              <span className="text-sm font-medium text-blue-700">Billing Total:</span>
               <p className="text-blue-800 font-bold text-lg">
                 ₱{selectedpatientappointment.patientbautistaappointmentpaymentotal}
               </p>
@@ -27495,279 +28436,131 @@ itemName="appointments"
       {/* Services - Hidden when appointment is Pending, Cancelled, or Declined */}
       {selectedpatientappointment.patientbautistaappointmentstatus !== "Pending" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && selectedpatientappointment.patientbautistaappointmentstatus !== "Declined" && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="bx bx-list-check text-blue-600"></i>
-            Services Done
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 id="bautistaservicedoneheader" className="text-lg font-semibold text-gray-800 flex items-center gap-2" style={{ margin: 0 }}>
+              <i className="bx bx-list-check text-blue-600"></i>
+              Services Done
+            </h3>
+            {/* Hide Auto-Pricing button when Completed or Cancelled */}
+            {selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" && selectedpatientappointment.patientbautistaappointmentstatus !== "Cancelled" && (
+              <button
+                onClick={() => {
+                  // Toggle the auto-pricing state
+                  const newState = !bautistaAutoPricingEnabled;
+                  setBautistaAutoPricingEnabled(newState);
+                  
+                  // Clear selected services checkboxes
+                  setSelectedBautistaServices({});
+                  
+                  // Clear total billing field
+                  setbautistaappointmentpaymentotal('');
+                }}
+                disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: bautistaAutoPricingEnabled ? '#3b82f6' : '#e5e7eb',
+                  color: bautistaAutoPricingEnabled ? '#ffffff' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  cursor: selectedpatientappointment.patientbautistaappointmentstatus === "Completed" ? 'not-allowed' : 'pointer',
+                  opacity: selectedpatientappointment.patientbautistaappointmentstatus === "Completed" ? 0.5 : 1,
+                  transition: 'all 0.2s ease'
+                }}
+                title={bautistaAutoPricingEnabled ? 'Auto-pricing enabled' : 'Auto-pricing disabled'}
+              >
+
+                <span>₱ {bautistaAutoPricingEnabled ? 'Auto-Pricing ON' : 'Auto-Pricing OFF'}</span>
+              </button>
+            )}
+          </div>
+
+
           <div className="bg-white rounded-xl p-4 border border-blue-200">
             <div className="space-y-3">
-              {/* Comprehensive Eye Exam */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-comprehensive"
-                    checked={selectedpatientappointment.patientbautistaappointmentcomprehensiveeyeexam || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentcomprehensiveeyeexam: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-comprehensive" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Comprehensive Eye Exam</label>
-                </div>
-              )}
-              
-              {/* Diabetic Retinopathy */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-diabetic"
-                    checked={selectedpatientappointment.patientbautistaappointmentdiabeticretinopathy || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentdiabeticretinopathy: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-diabetic" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Diabetic Retinopathy</label>
-                </div>
-              )}
-              
-              {/* Glaucoma */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentglaucoma) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-glaucoma"
-                    checked={selectedpatientappointment.patientbautistaappointmentglaucoma || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentglaucoma: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-glaucoma" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Glaucoma</label>
-                </div>
-              )}
-              
-              {/* Hypertensive Retinopathy */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-hypertensive"
-                    checked={selectedpatientappointment.patientbautistaappointmenthypertensiveretinopathy || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmenthypertensiveretinopathy: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-hypertensive" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Hypertensive Retinopathy</label>
-                </div>
-              )}
-              
-              {/* Retinal Problem */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentretinolproblem) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-retinal"
-                    checked={selectedpatientappointment.patientbautistaappointmentretinolproblem || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentretinolproblem: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-retinal" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Retinal Problem</label>
-                </div>
-              )}
-              
-              {/* Cataract Surgery */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentcataractsurgery) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-cataract-surgery"
-                    checked={selectedpatientappointment.patientbautistaappointmentcataractsurgery || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentcataractsurgery: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-cataract-surgery" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Cataract Surgery</label>
-                </div>
-              )}
-              
-              {/* Pterygium Surgery */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentpterygiumsurgery) && (
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="bautista-pterygium"
-                    checked={selectedpatientappointment.patientbautistaappointmentpterygiumsurgery || false}
-                    onChange={(e) => {
-                      if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                        setselectedpatientappointment(prev => ({
-                          ...prev,
-                          patientbautistaappointmentpterygiumsurgery: e.target.checked
-                        }));
-                      }
-                    }}
-                    disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed opacity-60' 
-                        : 'cursor-pointer'
-                    }`}
-                  />
-                  <label htmlFor="bautista-pterygium" className={`text-gray-700 font-medium ${
-                    selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                      ? 'cursor-not-allowed' 
-                      : 'cursor-pointer'
-                  }`}>Pterygium Surgery</label>
-                </div>
-              )}
-              
-              {/* Other Service */}
-              {(selectedpatientappointment.patientbautistaappointmentstatus !== "Completed" || selectedpatientappointment.patientbautistaappointmentotherservice) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      id="bautista-other"
-                      checked={selectedpatientappointment.patientbautistaappointmentotherservice || false}
-                      onChange={(e) => {
-                        if (selectedpatientappointment.patientbautistaappointmentstatus !== "Completed") {
-                          setselectedpatientappointment(prev => ({
-                            ...prev,
-                            patientbautistaappointmentotherservice: e.target.checked,
-                            // Clear the note if unchecking
-                            ...(!e.target.checked && { patientbautistaappointmentotherservicenote: '' })
-                          }));
-                        }
-                      }}
-                      disabled={selectedpatientappointment.patientbautistaappointmentstatus === "Completed"}
-                      className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 ${
-                        selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                          ? 'cursor-not-allowed opacity-60' 
-                          : 'cursor-pointer'
-                      }`}
-                    />
-                    <label htmlFor="bautista-other" className={`text-gray-700 font-medium ${
-                      selectedpatientappointment.patientbautistaappointmentstatus === "Completed" 
-                        ? 'cursor-not-allowed' 
-                        : 'cursor-pointer'
-                    }`}>Other Service</label>
-                  </div>
-                  {selectedpatientappointment.patientbautistaappointmentotherservice && (
-                    <div className="ml-7">
-                      {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" ? (
-                        <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
-                          {selectedpatientappointment.patientbautistaappointmentotherservicenote || "No details provided"}
+              {/* Display services based on appointment status */}
+              {selectedpatientappointment.patientbautistaappointmentstatus === "Completed" ? (
+                /* Show saved services from database when completed */
+                <>
+                  {selectedpatientappointment.patientbautistaappointmentservicesavailed && 
+                   selectedpatientappointment.patientbautistaappointmentservicesavailed.length > 0 ? (
+                    selectedpatientappointment.patientbautistaappointmentservicesavailed.map((service) => (
+                      <div key={service.serviceId} className="flex items-center justify-between gap-3 p-1 rounded-lg ">
+                        <div className="flex items-center gap-3 flex-1">
+                          <i className="bx bx-check-circle text-blue-600 text-xl"></i>
+                          <span className="text-gray-800 font-medium">{service.serviceName}</span>
                         </div>
-                      ) : (
-                        <input
-                          type="text"
-                          value={selectedpatientappointment.patientbautistaappointmentotherservicenote || ''}
-                          onChange={(e) => {
-                            setselectedpatientappointment(prev => ({
-                              ...prev,
-                              patientbautistaappointmentotherservicenote: e.target.value
-                            }));
-                          }}
-                          placeholder="Specify other service"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                        />
-                      )}
+
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      <i className="bx bx-info-circle text-2xl mb-2"></i>
+                      <p className="text-sm">No services recorded for this appointment</p>
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                /* Show interactive service checkboxes when not completed */
+                <>
+                  {loadingBautistaServicesList ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500"></div>
+                      <span className="ml-2 text-gray-600">Loading services...</span>
+                    </div>
+                  ) : (
+                    bautistaServicesList.map((service) => (
+                      <div key={service._id} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <input 
+                            type="checkbox" 
+                            id={`bautista-service-${service._id}`}
+                            checked={selectedBautistaServices[service._id] || false}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedBautistaServices(prev => ({
+                                ...prev,
+                                [service._id]: isChecked
+                              }));
+                              
+                              // Update total billing only if auto-pricing is enabled
+                              if (bautistaAutoPricingEnabled) {
+                                if (isChecked) {
+                                  const currentTotal = parseFloat(bautistaappointmentpaymentotal) || 0;
+                                  setbautistaappointmentpaymentotal((currentTotal + service.bautistaserviceprice).toString());
+                                } else {
+                                  const currentTotal = parseFloat(bautistaappointmentpaymentotal) || 0;
+                                  setbautistaappointmentpaymentotal(Math.max(0, currentTotal - service.bautistaserviceprice).toString());
+                                }
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 cursor-pointer"
+                          />
+                          <label htmlFor={`bautista-service-${service._id}`} className="text-gray-700 font-medium flex-1 cursor-pointer">
+                            {service.bautistaservicename}
+                          </label>
+                        </div>
+                        {bautistaAutoPricingEnabled && (
+                          <span className="text-green-600 font-semibold whitespace-nowrap">
+                            ₱{service.bautistaserviceprice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </>
               )}
+              
+
+
             </div>
           </div>
+
+
         </div>
       )}
 
@@ -28154,8 +28947,14 @@ itemName="appointments"
         </div>
       )}
     </div>
+
+
+
+
   </div>
 )}
+             
+             
                    </div>
 
                    {/* Combined Payment Total */}
@@ -28306,6 +29105,1323 @@ itemName="appointments"
 
 
 
+
+
+
+
+
+
+
+
+
+
+{/* Main Ambher Services Dialog */}
+{showambherservicesdialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-briefcase text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Service Management</h2>
+            <p className="text-sm text-gray-500">Ambher Optical Services</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowambherservicesdialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+        <div className="p-6">
+          {/* Filter and Add Button */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setambherservicefilter('all')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: ambherservicefilter === 'all' ? '#0ea5e9' : '#f3f4f6',
+                  color: ambherservicefilter === 'all' ? '#ffffff' : '#4b5563'
+                }}
+                onMouseEnter={(e) => {
+                  if (ambherservicefilter !== 'all') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (ambherservicefilter !== 'all') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                All Services
+              </button>
+              <button
+                onClick={() => setambherservicefilter('active')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: ambherservicefilter === 'active' ? '#22c55e' : '#f3f4f6',
+                  color: ambherservicefilter === 'active' ? '#ffffff' : '#4b5563'
+                }}
+                onMouseEnter={(e) => {
+                  if (ambherservicefilter !== 'active') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (ambherservicefilter !== 'active') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setambherservicefilter('archived')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: ambherservicefilter === 'archived' ? '#f97316' : '#f3f4f6',
+                  color: ambherservicefilter === 'archived' ? '#ffffff' : '#4b5563'
+                }}
+                onMouseEnter={(e) => {
+                  if (ambherservicefilter !== 'archived') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (ambherservicefilter !== 'archived') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Archived
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => {
+                setambherservicename("");
+                setambherservicedescription("");
+                setambherserviceprice("");
+                setselectedambherservice(null);
+                setshowaddambherservicedialog(true);
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#6aa84f',
+                color: '#ffffff',
+                borderRadius: '1.5rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#5f9747';
+                e.target.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#6aa84f';
+                e.target.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)';
+              }}
+            >
+              <i className="bx bx-plus text-lg"></i>
+              <span>Add Service</span>
+            </button>
+          </div>
+          
+          {/* Services Table */}
+          <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
+            {filteredAmbherServices.length === 0 ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                <i className="bx bx-info-circle text-yellow-500 text-3xl mb-2"></i>
+                <h3 className="text-yellow-800 font-medium text-lg">No Services Found</h3>
+                <p className="text-yellow-600 text-sm">
+                  {ambherservicefilter === 'all' ? 'No services available' : 
+                   ambherservicefilter === 'active' ? 'No active services' : 
+                   'No archived services'}
+                </p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">Service Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loadingambherservicelist ? (
+                    <>
+                      {[...Array(5)].map((_, index) => (
+                        <CategoryTableSkeleton key={index} />
+                      ))}
+                    </>
+                  ) : (
+                    filteredAmbherServices.map((service) => (
+                      <tr 
+                        key={service._id}
+                        className="hover:bg-gray-50 transition-all ease-in-out duration-200"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {service.ambherservicename}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 max-w-md">
+                          <div className="line-clamp-2">{service.ambherservicedescription}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                          ₱{service.ambherserviceprice.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {service.ambherserviceisarchived ? (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                              Archived
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img 
+                              src={service.ambherserviceaddedbyprofilepicture || 'https://via.placeholder.com/40'}
+                              alt="Profile" 
+                              className="rounded-full h-10 w-10 object-cover mr-3"
+                              onError={(e) => {
+                                if (e.target.src !== 'https://via.placeholder.com/40') {
+                                  e.target.src = 'https://via.placeholder.com/40';
+                                }
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {service.ambherserviceaddedbyfirstname} {service.ambherserviceaddedbylastname}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {service.ambherserviceaddedbytype}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setselectedambherservice(service);
+                                setambherservicename(service.ambherservicename);
+                                setambherservicedescription(service.ambherservicedescription);
+                                setambherserviceprice(service.ambherserviceprice);
+                                setshoweditambherservicedialog(true);
+                              }}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: '#eff6ff',
+                                color: '#2563eb',
+                                borderRadius: '0.5rem',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                transition: 'all 0.2s',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = '#dbeafe'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#eff6ff'}
+                            >
+                              <i className="bx bx-edit text-sm"></i>
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setselectedambherservice(service);
+                                setshowarchiveambherservicedialog(true);
+                              }}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: service.ambherserviceisarchived ? '#f0fdf4' : '#fff7ed',
+                                color: service.ambherserviceisarchived ? '#16a34a' : '#ea580c',
+                                borderRadius: '0.5rem',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                transition: 'all 0.2s',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = service.ambherserviceisarchived ? '#dcfce7' : '#ffedd5';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = service.ambherserviceisarchived ? '#f0fdf4' : '#fff7ed';
+                              }}
+                            >
+                              <i className={`bx ${service.ambherserviceisarchived ? 'bx-archive-out' : 'bx-archive-in'} text-sm`}></i>
+                              <span>{service.ambherserviceisarchived ? 'Unarchive' : 'Archive'}</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Add Ambher Service Dialog */}
+{showaddambherservicedialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-plus text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Add Service</h2>
+            <p className="text-sm text-gray-500">Create new Ambher Optical service</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowaddambherservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <form onSubmit={submitAmbherService}>
+        <div className="p-6 space-y-6">
+          {/* Service Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+              placeholder="e.g., Eye Examination, Contact Lens Fitting..."
+              value={ambherservicename} 
+              onChange={(e) => setambherservicename(e.target.value)} 
+              type="text" 
+              required
+            />
+            
+            {ambherservicenamecheck && (
+              <p className="text-blue-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Checking service name...
+              </p>
+            )}
+            
+            {ambherservicenameexist && (
+              <p className="text-red-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-error-circle mr-2"></i>
+                Service name already exists
+              </p>
+            )}
+          </div>
+
+          {/* Service Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Description <span className="text-red-500">*</span>
+            </label>
+            <textarea 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 min-h-[100px]" 
+              placeholder="Describe the service in detail..."
+              value={ambherservicedescription} 
+              onChange={(e) => setambherservicedescription(e.target.value)} 
+              required
+            />
+          </div>
+
+          {/* Service Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Price (₱) <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+              placeholder="0.00"
+              value={ambherserviceprice} 
+              onChange={(e) => setambherserviceprice(e.target.value)} 
+              type="number"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => setshowaddambherservicedialog(false)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={ambherservicesubmitting || ambherservicenameexist}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: (ambherservicesubmitting || ambherservicenameexist) ? '#9ca3af' : '#6aa84f',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: (ambherservicesubmitting || ambherservicenameexist) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (!ambherservicesubmitting && !ambherservicenameexist) {
+                e.target.style.backgroundColor = '#5f9747';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!ambherservicesubmitting && !ambherservicenameexist) {
+                e.target.style.backgroundColor = '#6aa84f';
+              }
+            }}
+          >
+            {ambherservicesubmitting ? "Adding..." : "Add Service"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{/* Edit Ambher Service Dialog */}
+{showeditambherservicedialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-edit text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Edit Service</h2>
+            <p className="text-sm text-gray-500">Update service information</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshoweditambherservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <form onSubmit={updateAmbherService}>
+        <div className="p-6 space-y-6">
+          {/* Service Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+              placeholder="e.g., Eye Examination, Contact Lens Fitting..."
+              value={ambherservicename} 
+              onChange={(e) => setambherservicename(e.target.value)} 
+              type="text" 
+              required
+            />
+            
+            {ambherservicenamecheck && (
+              <p className="text-blue-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Checking service name...
+              </p>
+            )}
+            
+            {ambherservicenameexist && (
+              <p className="text-red-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-error-circle mr-2"></i>
+                Service name already exists
+              </p>
+            )}
+          </div>
+
+          {/* Service Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Description <span className="text-red-500">*</span>
+            </label>
+            <textarea 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 min-h-[100px]" 
+              placeholder="Describe the service in detail..."
+              value={ambherservicedescription} 
+              onChange={(e) => setambherservicedescription(e.target.value)} 
+              required
+            />
+          </div>
+
+          {/* Service Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Price (₱) <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200" 
+              placeholder="0.00"
+              value={ambherserviceprice} 
+              onChange={(e) => setambherserviceprice(e.target.value)} 
+              type="number"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => setshoweditambherservicedialog(false)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={ambherservicesubmitting || ambherservicenameexist}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: (ambherservicesubmitting || ambherservicenameexist) ? '#9ca3af' : '#3b82f6',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: (ambherservicesubmitting || ambherservicenameexist) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (!ambherservicesubmitting && !ambherservicenameexist) {
+                e.target.style.backgroundColor = '#2563eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!ambherservicesubmitting && !ambherservicenameexist) {
+                e.target.style.backgroundColor = '#3b82f6';
+              }
+            }}
+          >
+            {ambherservicesubmitting ? "Updating..." : "Update Service"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{/* Archive/Unarchive Ambher Service Dialog */}
+{showarchiveambherservicedialog && selectedambherservice && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            selectedambherservice.ambherserviceisarchived ? 'bg-green-500' : 'bg-orange-500'
+          }`}>
+            <i className={`bx ${selectedambherservice.ambherserviceisarchived ? 'bx-archive-out' : 'bx-archive-in'} text-white text-xl`}></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {selectedambherservice.ambherserviceisarchived ? 'Unarchive' : 'Archive'} Service
+            </h2>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowarchiveambherservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <div className="p-6">
+        <p className="text-gray-700 mb-4">
+          Are you sure you want to {selectedambherservice.ambherserviceisarchived ? 'unarchive' : 'archive'} this service?
+        </p>
+
+        <div className="bg-gray-50 p-4 rounded-xl mb-6">
+          <p className="font-medium text-gray-800 mb-1">{selectedambherservice.ambherservicename}</p>
+          <p className="text-sm text-gray-600">{selectedambherservice.ambherservicedescription}</p>
+          <p className="text-sm font-semibold text-green-600 mt-2">₱{selectedambherservice.ambherserviceprice.toLocaleString()}</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setshowarchiveambherservicedialog(false)}
+            style={{
+              flex: '1',
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => archiveAmbherService(!selectedambherservice.ambherserviceisarchived)}
+            style={{
+              flex: '1',
+              padding: '0.75rem 1.5rem',
+              backgroundColor: selectedambherservice.ambherserviceisarchived ? '#22c55e' : '#f97316',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = selectedambherservice.ambherserviceisarchived ? '#16a34a' : '#ea580c';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = selectedambherservice.ambherserviceisarchived ? '#22c55e' : '#f97316';
+            }}
+          >
+            {selectedambherservice.ambherserviceisarchived ? 'Unarchive' : 'Archive'} Service
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+{/* ===================================== BAUTISTA SERVICES MODALS ===================================== */}
+
+{/* Main Bautista Services Dialog */}
+{showbautistaservicesdialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-briefcase text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Service Management</h2>
+            <p className="text-sm text-gray-500">Bautista Eye Center Services</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowbautistaservicesdialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+        <div className="p-6">
+          {/* Filter and Add Button */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setbautistaservicefilter('all')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: bautistaservicefilter === 'all' ? '#f97316' : '#f3f4f6',
+                  color: bautistaservicefilter === 'all' ? '#ffffff' : '#4b5563',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (bautistaservicefilter !== 'all') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (bautistaservicefilter !== 'all') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                All Services
+              </button>
+              <button
+                onClick={() => setbautistaservicefilter('active')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: bautistaservicefilter === 'active' ? '#22c55e' : '#f3f4f6',
+                  color: bautistaservicefilter === 'active' ? '#ffffff' : '#4b5563',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (bautistaservicefilter !== 'active') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (bautistaservicefilter !== 'active') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setbautistaservicefilter('archived')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  backgroundColor: bautistaservicefilter === 'archived' ? '#ef4444' : '#f3f4f6',
+                  color: bautistaservicefilter === 'archived' ? '#ffffff' : '#4b5563',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (bautistaservicefilter !== 'archived') e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (bautistaservicefilter !== 'archived') e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Archived
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => {
+                setbautistaservicename("");
+                setbautistaservicedescription("");
+                setbautistaserviceprice("");
+                setselectedbautistaservice(null);
+                setshowaddbautistaservicedialog(true);
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#6aa84f',
+                color: '#ffffff',
+                borderRadius: '1.5rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#5f9747';
+                e.target.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#6aa84f';
+                e.target.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)';
+              }}
+            >
+              <i className="bx bx-plus text-lg"></i>
+              <span>Add Service</span>
+            </button>
+          </div>
+          
+          {/* Services Table */}
+          <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
+            {filteredBautistaServices.length === 0 ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                <i className="bx bx-info-circle text-yellow-500 text-3xl mb-2"></i>
+                <h3 className="text-yellow-800 font-medium text-lg">No Services Found</h3>
+                <p className="text-yellow-600 text-sm">
+                  {bautistaservicefilter === 'all' ? 'No services available' : 
+                   bautistaservicefilter === 'active' ? 'No active services' : 
+                   'No archived services'}
+                </p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">Service Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loadingbautistaservicelist ? (
+                    <>
+                      {[...Array(5)].map((_, index) => (
+                        <CategoryTableSkeleton key={index} />
+                      ))}
+                    </>
+                  ) : (
+                    filteredBautistaServices.map((service) => (
+                      <tr 
+                        key={service._id}
+                        className="hover:bg-gray-50 transition-all ease-in-out duration-200"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {service.bautistaservicename}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 max-w-md">
+                          <div className="line-clamp-2">{service.bautistaservicedescription}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                          ₱{service.bautistaserviceprice.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {service.bautistaserviceisarchived ? (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                              Archived
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img 
+                              src={service.bautistaserviceaddedbyprofilepicture || 'https://via.placeholder.com/40'}
+                              alt="Profile" 
+                              className="rounded-full h-10 w-10 object-cover mr-3"
+                              onError={(e) => {
+                                if (e.target.src !== 'https://via.placeholder.com/40') {
+                                  e.target.src = 'https://via.placeholder.com/40';
+                                }
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {service.bautistaserviceaddedbyfirstname} {service.bautistaserviceaddedbylastname}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {service.bautistaserviceaddedbytype}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setselectedbautistaservice(service);
+                                setbautistaservicename(service.bautistaservicename);
+                                setbautistaservicedescription(service.bautistaservicedescription);
+                                setbautistaserviceprice(service.bautistaserviceprice);
+                                setshoweditbautistaservicedialog(true);
+                              }}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: '#eff6ff',
+                                color: '#2563eb',
+                                borderRadius: '0.5rem',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                transition: 'all 0.2s',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = '#dbeafe'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#eff6ff'}
+                            >
+                              <i className="bx bx-edit text-sm"></i>
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setselectedbautistaservice(service);
+                                setshowarchivebautistaservicedialog(true);
+                              }}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: service.bautistaserviceisarchived ? '#f0fdf4' : '#fef2f2',
+                                color: service.bautistaserviceisarchived ? '#16a34a' : '#dc2626',
+                                borderRadius: '0.5rem',
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                transition: 'all 0.2s',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = service.bautistaserviceisarchived ? '#dcfce7' : '#fee2e2';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = service.bautistaserviceisarchived ? '#f0fdf4' : '#fef2f2';
+                              }}
+                            >
+                              <i className={`bx ${service.bautistaserviceisarchived ? 'bx-archive-out' : 'bx-archive-in'} text-sm`}></i>
+                              <span>{service.bautistaserviceisarchived ? 'Unarchive' : 'Archive'}</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Add Bautista Service Dialog */}
+{showaddbautistaservicedialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-plus text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Add Service</h2>
+            <p className="text-sm text-gray-500">Create new Bautista Eye Center service</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowaddbautistaservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <form onSubmit={submitBautistaService}>
+        <div className="p-6 space-y-6">
+          {/* Service Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200" 
+              placeholder="e.g., Cataract Surgery, Retinal Exam..."
+              value={bautistaservicename} 
+              onChange={(e) => setbautistaservicename(e.target.value)} 
+              type="text" 
+              required
+            />
+            
+            {bautistaservicenamecheck && (
+              <p className="text-blue-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Checking service name...
+              </p>
+            )}
+            
+            {bautistaservicenameexist && (
+              <p className="text-red-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-error-circle mr-2"></i>
+                Service name already exists
+              </p>
+            )}
+          </div>
+
+          {/* Service Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Description <span className="text-red-500">*</span>
+            </label>
+            <textarea 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 min-h-[100px]" 
+              placeholder="Describe the service in detail..."
+              value={bautistaservicedescription} 
+              onChange={(e) => setbautistaservicedescription(e.target.value)} 
+              required
+            />
+          </div>
+
+          {/* Service Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Price (₱) <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200" 
+              placeholder="0.00"
+              value={bautistaserviceprice} 
+              onChange={(e) => setbautistaserviceprice(e.target.value)} 
+              type="number"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => setshowaddbautistaservicedialog(false)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={bautistaservicesubmitting || bautistaservicenameexist}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: (bautistaservicesubmitting || bautistaservicenameexist) ? '#9ca3af' : '#6aa84f',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: (bautistaservicesubmitting || bautistaservicenameexist) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (!bautistaservicesubmitting && !bautistaservicenameexist) {
+                e.target.style.backgroundColor = '#5f9747';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!bautistaservicesubmitting && !bautistaservicenameexist) {
+                e.target.style.backgroundColor = '#6aa84f';
+              }
+            }}
+          >
+            {bautistaservicesubmitting ? "Adding..." : "Add Service"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{/* Edit Bautista Service Dialog */}
+{showeditbautistaservicedialog && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+            <i className="bx bx-edit text-white text-xl"></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Edit Service</h2>
+            <p className="text-sm text-gray-500">Update service information</p>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshoweditbautistaservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <form onSubmit={updateBautistaService}>
+        <div className="p-6 space-y-6">
+          {/* Service Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200" 
+              placeholder="e.g., Cataract Surgery, Retinal Exam..."
+              value={bautistaservicename} 
+              onChange={(e) => setbautistaservicename(e.target.value)} 
+              type="text" 
+              required
+            />
+            
+            {bautistaservicenamecheck && (
+              <p className="text-blue-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-loader-alt animate-spin mr-2"></i>
+                Checking service name...
+              </p>
+            )}
+            
+            {bautistaservicenameexist && (
+              <p className="text-red-600 text-sm font-medium flex items-center mt-2">
+                <i className="bx bx-error-circle mr-2"></i>
+                Service name already exists
+              </p>
+            )}
+          </div>
+
+          {/* Service Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Description <span className="text-red-500">*</span>
+            </label>
+            <textarea 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 min-h-[100px]" 
+              placeholder="Describe the service in detail..."
+              value={bautistaservicedescription} 
+              onChange={(e) => setbautistaservicedescription(e.target.value)} 
+              required
+            />
+          </div>
+
+          {/* Service Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Price (₱) <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200" 
+              placeholder="0.00"
+              value={bautistaserviceprice} 
+              onChange={(e) => setbautistaserviceprice(e.target.value)} 
+              type="number"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+          <button 
+            type="button"
+            onClick={() => setshoweditbautistaservicedialog(false)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={bautistaservicesubmitting || bautistaservicenameexist}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: (bautistaservicesubmitting || bautistaservicenameexist) ? '#9ca3af' : '#3b82f6',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: (bautistaservicesubmitting || bautistaservicenameexist) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (!bautistaservicesubmitting && !bautistaservicenameexist) {
+                e.target.style.backgroundColor = '#2563eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!bautistaservicesubmitting && !bautistaservicenameexist) {
+                e.target.style.backgroundColor = '#3b82f6';
+              }
+            }}
+          >
+            {bautistaservicesubmitting ? "Updating..." : "Update Service"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{/* Archive/Unarchive Bautista Service Dialog */}
+{showarchivebautistaservicedialog && selectedbautistaservice && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            selectedbautistaservice.bautistaserviceisarchived ? 'bg-green-500' : 'bg-red-500'
+          }`}>
+            <i className={`bx ${selectedbautistaservice.bautistaserviceisarchived ? 'bx-archive-out' : 'bx-archive-in'} text-white text-xl`}></i>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {selectedbautistaservice.bautistaserviceisarchived ? 'Unarchive' : 'Archive'} Service
+            </h2>
+          </div>
+        </div>
+        <div 
+          onClick={() => setshowarchivebautistaservicedialog(false)}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 cursor-pointer"
+        >
+          <i className="bx bx-x text-gray-600 text-xl"></i>
+        </div>
+      </div>
+
+      {/* Modal Content */}
+      <div className="p-6">
+        <p className="text-gray-700 mb-4">
+          Are you sure you want to {selectedbautistaservice.bautistaserviceisarchived ? 'unarchive' : 'archive'} this service?
+        </p>
+
+        <div className="bg-gray-50 p-4 rounded-xl mb-6">
+          <p className="font-medium text-gray-800 mb-1">{selectedbautistaservice.bautistaservicename}</p>
+          <p className="text-sm text-gray-600">{selectedbautistaservice.bautistaservicedescription}</p>
+          <p className="text-sm font-semibold text-green-600 mt-2">₱{selectedbautistaservice.bautistaserviceprice.toLocaleString()}</p>
+        </div>
+
+        <div className="flex gap-3">
+
+<button
+            onClick={() => setshowarchivebautistaservicedialog(false)}
+            style={{
+              flex: '1',
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => archiveBautistaService(!selectedbautistaservice.bautistaserviceisarchived)}
+            style={{
+              flex: '1',
+              padding: '0.75rem 1.5rem',
+              backgroundColor: selectedbautistaservice.bautistaserviceisarchived ? '#22c55e' : '#ef4444',
+              color: '#ffffff',
+              borderRadius: '0.75rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = selectedbautistaservice.bautistaserviceisarchived ? '#16a34a' : '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = selectedbautistaservice.bautistaserviceisarchived ? '#22c55e' : '#ef4444';
+            }}
+          >
+            {selectedbautistaservice.bautistaserviceisarchived ? 'Unarchive' : 'Archive'} Service
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
+
+
+
+
+
+
  </div>)}
 
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
@@ -28313,8 +30429,6 @@ itemName="appointments"
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
 {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} {/*END OF APPOINTMENT MANAGEMENT*/} 
-
-
 
 
 
@@ -33072,6 +35186,12 @@ Are you sure you want to delete this category?
 </div>
 </div>
 )}
+
+
+
+
+
+
 
 {/*Ambher Inventory Product Modal*/}
 {showaddambherinventoryproductdialog && (
@@ -39561,15 +41681,6 @@ paginatedBautistaOrders.map((order) => (
 
 
 
-
-
-
-
-
-
-
-
-
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div style={{
@@ -40193,6 +42304,10 @@ paginatedBautistaOrders.map((order) => (
           </div>
         </div>
       )}
+
+
+
+
 
     </>
   )
